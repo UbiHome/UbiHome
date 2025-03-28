@@ -1,25 +1,28 @@
+// For format details, see https://aka.ms/devcontainer.json. For config options, see the
+// README at: https://github.com/devcontainers/templates/tree/main/src/rust
 {
-    "name": "Rust Dev Container",
-    "remoteEnv": {
-      "RUST_LOG": "info",
-      "RUST_BACKTRACE": "1"
-    },
-    "customizations": {
-      "vscode": {
-        "extensions": [
-          "GitHub.copilot",
-          "GitHub.copilot-chat",
-          "GitHub.copilot-labs",
-          "ms-azuretools.vscode-docker",
-          "ms-dotnettools.csdevkit"
-        ]
-      },
-      "settings": {
-        "terminal.integrated.shell.linux": "/bin/bash"
-      }
-    },
-    "postCreateCommand": "rustup component add rustfmt clippy && cargo build",
-    "features": {
-          "ghcr.io/devcontainers/features/rust:1": {}
-    }
-  }
+	"name": "Rust Dev Container",
+	// Or use a Dockerfile or Docker Compose file. More info: https://containers.dev/guide/dockerfile
+	"image": "mcr.microsoft.com/devcontainers/universal:2-focal",
+	"remoteEnv": {
+		"RUST_LOG": "info",
+		"RUST_BACKTRACE": "1"
+	},
+	"customizations": {
+		"vscode": {
+		"extensions": [
+			"GitHub.copilot",
+			"GitHub.copilot-chat",
+			"GitHub.copilot-labs",
+			"ms-azuretools.vscode-docker"
+		]
+		},
+		"settings": {
+		"terminal.integrated.shell.linux": "/bin/bash"
+		}
+	},
+	"postCreateCommand": "rustup component add rustfmt clippy && cargo build",
+	"features": {
+			"ghcr.io/devcontainers/features/rust:1": {}
+	}
+}
