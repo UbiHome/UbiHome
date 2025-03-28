@@ -1,28 +1,22 @@
-use axum::{
-    extract::State,
-    routing::{get},
-    Router,
-    response::{IntoResponse},
-    Json,
-    http::StatusCode,
-};
+use axum::{extract::State, http::StatusCode, response::IntoResponse, routing::get, Json, Router};
 use os_home_core::Message;
 use os_home_shell::execute_command;
+use rumqttc::tokio_rustls::rustls::internal::msgs::base;
 use std::time::Duration;
 
+use clap::Parser;
 use env_logger;
 use env_logger::Env;
-use clap::Parser;
+use log::{debug, info, warn};
 use os_home::AppState;
 use os_home::Config;
+use os_home_mqtt::start_mqtt_client;
+use std::fs;
 use std::sync::Arc;
-use log::{debug, info};
-use tokio::{net::TcpListener, sync::broadcast};
 use tokio::signal;
+use tokio::{net::TcpListener, sync::broadcast};
 use tower_http::timeout::TimeoutLayer;
 use tower_http::trace::TraceLayer;
-use std::fs;
-use os_home_mqtt::start_mqtt_client;
 
 async fn handle_request(State(_state): State<Arc<AppState>>) -> impl IntoResponse {
     (StatusCode::OK, Json("Hello, World!"))
@@ -56,7 +50,10 @@ fn read_full_config(path: Option<&str>) -> Result<Config, serde_yaml::Error> {
         if let Ok(content) = fs::read_to_string(path) {
             return serde_yaml::from_str(&content);
         } else {
-            eprintln!("Failed to read the configuration file at '{}', falling back to default.", path);
+            eprintln!(
+                "Failed to read the configuration file at '{}', falling back to default.",
+                path
+            );
         }
     }
 
@@ -64,12 +61,15 @@ fn read_full_config(path: Option<&str>) -> Result<Config, serde_yaml::Error> {
     serde_yaml::from_str(DEFAULT_CONFIG)
 }
 
-fn read_base_config(path: Option<&str>) -> Result<os_home_core::Config, serde_yaml::Error> {
+fn read_base_config(path: Option<&str>) -> Result<os_home_core::CoreConfig, serde_yaml::Error> {
     if let Some(path) = path {
         if let Ok(content) = fs::read_to_string(path) {
             return serde_yaml::from_str(&content);
         } else {
-            eprintln!("Failed to read the configuration file at '{}', falling back to default.", path);
+            eprintln!(
+                "Failed to read the configuration file at '{}', falling back to default.",
+                path
+            );
         }
     }
 
@@ -87,15 +87,23 @@ async fn main() {
     println!("Listening on http://{}", bind_address);
 
     // Read the configuration file or use the embedded default
-    let config: Config = read_full_config(cli.configuration_file.as_deref()).unwrap_or_else(|err| {
-        eprintln!("Failed to parse configuration: {}, using default configuration.", err);
-        read_full_config(None).expect("Failed to load embedded default configuration")
-    });
+    let config: Config =
+        read_full_config(cli.configuration_file.as_deref()).unwrap_or_else(|err| {
+            eprintln!(
+                "Failed to parse configuration: {}, using default configuration.",
+                err
+            );
+            read_full_config(None).expect("Failed to load embedded default configuration")
+        });
 
-    let base_config: os_home_core::Config = read_base_config(cli.configuration_file.as_deref()).unwrap_or_else(|err| {
-        eprintln!("Failed to parse configuration: {}, using default configuration.", err);
-        read_base_config(None).expect("Failed to load embedded default configuration")
-    });
+    let base_config: os_home_core::CoreConfig = read_base_config(cli.configuration_file.as_deref())
+        .unwrap_or_else(|err| {
+            eprintln!(
+                "Failed to parse configuration: {}, using default configuration.",
+                err
+            );
+            read_base_config(None).expect("Failed to load embedded default configuration")
+        });
 
     let app_state = Arc::new(AppState {
         custom_directory: "bla".to_string(),
@@ -104,23 +112,30 @@ async fn main() {
 
     let (tx, mut rx) = broadcast::channel(16);
 
-
+    let mqtt_base_config = base_config.clone();
     // Start MQTT client in a separate task
     if let Some(mqtt_config) = config.mqtt {
         tokio::spawn(async move {
-            start_mqtt_client(tx, &base_config, &mqtt_config).await;
+            start_mqtt_client(tx, &mqtt_base_config, &mqtt_config).await;
         });
     }
 
     if let Some(shell_config) = config.shell {
-    tokio::spawn(async move {
-        while let Ok(Some(cmd)) = rx.recv().await {
-            use Message::*;
-    
-            match cmd {
-                ButtonPress { key } => {
-                    debug!("Button pressed: {}", key);
-                        execute_command(&shell_config).await;
+        tokio::spawn(async move {
+            while let Ok(Some(cmd)) = rx.recv().await {
+                use Message::*;
+
+                match cmd {
+                    ButtonPress { key } => {
+                        if let Some(button) = &base_config.button.as_ref().and_then(|b| b.get(&key))
+                        {
+                            debug!("Button pressed: {}", key);
+                            debug!("Executing command: {}", button.command);
+                            execute_command(&shell_config, &button.command).await;
+                        } else {
+                            debug!("Button pressed: {}", key);
+                            warn!("No Action found?!");
+                        }
                     }
                 }
             }
@@ -139,13 +154,12 @@ async fn main() {
     let listener = TcpListener::bind(bind_address).await.unwrap();
     axum::serve(listener, app)
         .with_graceful_shutdown(shutdown_signal())
-        .await.unwrap();
+        .await
+        .unwrap();
 
     info!("Server shutdown complete");
     std::process::exit(0);
 }
-
-
 
 async fn shutdown_signal() {
     let ctrl_c = async {

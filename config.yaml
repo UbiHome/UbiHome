@@ -1,6 +1,6 @@
 # TODO: Dynamic compilation based on configured options - currently everything is compiled.
 oshome:
-  name: awesome
+  name: new_awesome
 os:
   type: windows
 
@@ -15,5 +15,5 @@ shell:
 button: 
  - platform: shell
    id: my_button
-   name: "Generic Output"
-   command: "echo 'Hello World'"
+   name: "Say Hello World"
+   command: "echo 'Hello World Daniel'"

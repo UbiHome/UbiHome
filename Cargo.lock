@@ -727,6 +727,7 @@ dependencies = [
  "os-home-core",
  "rumqttc",
  "serde",
+ "serde_json",
  "tokio",
  "whoami",
 ]

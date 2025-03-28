@@ -1,3 +1,4 @@
+use os_home_core::ButtonConfig;
 use serde::Deserialize;
 use os_home_mqtt::MqttConfig;
 use os_home_shell::ShellConfig;
@@ -5,13 +6,6 @@ use os_home_shell::ShellConfig;
 #[derive(Clone, Deserialize, Debug)]
 pub struct OSHome {
     pub name: String
-}
-
-#[derive(Clone, Deserialize, Debug)]
-pub struct ButtonConfig {
-    pub platform: String,
-    pub name: String,
-    pub command: String,
 }
 
 #[derive(Clone, Deserialize, Debug)]

@@ -1,9 +1,9 @@
 use log::debug;
-use os_home_core::{Config, Message};
-use serde::Deserialize;
+use os_home_core::{CoreConfig, Message};
+use serde::{Deserialize, Serialize};
 use rumqttc::{AsyncClient, Event, MqttOptions, QoS};
 use tokio::sync::broadcast::Sender;
-use std::{str, time::Duration};
+use std::{collections::HashMap, str, time::Duration};
 
 #[derive(Clone, Deserialize, Debug)]
 pub struct MqttConfig {
@@ -14,9 +14,55 @@ pub struct MqttConfig {
     pub password: Option<String>,
 }
 
+#[derive(Clone, Serialize, Deserialize, Debug)]
+#[serde(untagged)]
+enum Component {
+    Button(HAButton),
+    Sensor(HASensor)
+}
+
+#[derive(Clone, Serialize, Deserialize, Debug)]
+struct HAButton {
+    p: String,
+    unique_id: String,
+    command_topic: String,
+    name: String,
+    object_id: String,
+}
+
+#[derive(Clone, Serialize, Deserialize, Debug)]
+struct HASensor {
+    p: String,
+    unique_id: String,
+    object_id: String,
+    state_topic: String,
+}
+
+#[derive(Clone, Serialize, Deserialize, Debug)]
+struct Device {
+    identifiers: Vec<String>,
+    manufacturer: String,
+    name: String,
+    model: String,
+}
+
+#[derive(Clone, Serialize, Deserialize, Debug)]
+struct Origin {
+    name: String,
+    sw: String,
+    url: String,
+}
+
+#[derive(Clone, Serialize, Deserialize, Debug)]
+struct DiscoveryMessage {
+    device: Device,
+    origin: Origin,
+    components: HashMap<String, Component>,
+}
 
 
-pub async fn start_mqtt_client(sender: Sender<Option<Message>>, config: &Config, mqtt_config: &MqttConfig) {
+
+pub async fn start_mqtt_client(sender: Sender<Option<Message>>, config: &CoreConfig, mqtt_config: &MqttConfig) {
     let mut mqttoptions = MqttOptions::new(
         config.oshome.name.clone(),
         mqtt_config.broker.clone(),
@@ -33,34 +79,55 @@ pub async fn start_mqtt_client(sender: Sender<Option<Message>>, config: &Config,
 
     let base_topic = format!("{}/{}", mqtt_config.discovery_prefix.clone().unwrap_or("os-home".to_string()), config.oshome.name);
     let discovery_topic = format!("homeassistant/device/{}/config", config.oshome.name);
-    let discovery_payload = format!(
-        r#"{{
-            "device": {{
-                "identifiers": ["{}"],
-                "manufacturer": "{}",
-                "name": "Test: {}",
-                "model": "{}"
-            }},
-            "origin": {{
-                "name": "os-home", 
-                "sw": "0.1",
-                "url": "https://test.com"
-            }}, 
-            "components": {{
-                "test": {{
-                    "p": "sensor",
-                    "unique_id":"test",
-                    "state_topic": "{}/test"
-                }},
-                "button": {{
-                    "p": "button",
-                    "unique_id":"test_button",
-                    "command_topic": "{}/button"
-                }}
-            }}
-        }}"#,
-        config.oshome.name, format!("{} {} {}", whoami::platform(), whoami::distro(), whoami::arch()), config.oshome.name, whoami::devicename(), base_topic, base_topic
+
+    let mut components: HashMap<String, Component> = HashMap::new();
+    components.insert(
+        "test_sensor".to_string(),
+        Component::Sensor(
+            HASensor {
+                p: "sensor".to_string(),
+                unique_id: format!("{}_{}", config.oshome.name, "test"),
+                state_topic: format!("{}/button", base_topic),
+                object_id: format!("{}_{}", config.oshome.name, "test"),
+        })
     );
+
+    if let Some(buttons) = config.button.clone() {
+        for (key, button) in buttons {
+            let id = format!("{}_{}", config.oshome.name, key.clone());
+            components.insert(
+                key.clone(),
+                Component::Button(
+                    HAButton {
+                        p: "button".to_string(),
+                        unique_id: id.clone(),
+                        name: button.name.clone(),
+                        command_topic: format!("{}/{}", base_topic, key.clone()),
+                        object_id: id.clone(),
+            })
+            );
+        }
+    }
+
+    let device = Device {
+        identifiers: vec![config.oshome.name.clone()],
+        manufacturer: format!("{} {} {}", whoami::platform(), whoami::distro(), whoami::arch()),
+        name: config.oshome.name.clone(),
+        model: whoami::devicename(),
+    };
+
+    let origin = Origin {
+        name: "os-home".to_string(),
+        sw: "0.1".to_string(),
+        url: "https://test.com".to_string(),
+    };
+
+    let discovery_message = DiscoveryMessage {
+        device,
+        origin,
+        components: components.clone(),
+    };
+    let discovery_payload = serde_json::to_string(&discovery_message).unwrap();
 
     debug!("Publishing discovery message to topic: {}", discovery_topic);
     debug!("Discovery payload: {}", discovery_payload);
@@ -98,15 +165,16 @@ pub async fn start_mqtt_client(sender: Sender<Option<Message>>, config: &Config,
                 Ok(Event::Incoming(incoming)) => {
                     println!("Incoming: {:?}", incoming);
                     if let rumqttc::Packet::Publish(publish) = incoming {
-                        if publish.topic == format!("{}/button", base_topic) {
+                        let topic = publish.topic.clone().split_off(base_topic.len() + 1);
+                        debug!("Received message on topic: {}", topic);
+                        if components.contains_key(&topic) {
                             let payload = str::from_utf8(&publish.payload).unwrap_or("");
                             let msg = Message::ButtonPress {
-                                key: payload.to_string(),
+                                key: topic.to_string(),
                             };
 
                             sender.send(Some(msg));
                             println!("Button command received: {:?}", publish.payload);
-                            // Handle button command here
                         }
                     }
                 }
