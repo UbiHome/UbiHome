@@ -1,0 +1,7 @@
+shell: 
+  type: powershell
+
+button: 
+ - platform: shell
+   name: "Generic Output"
+   commmand: "echo 'Hello World'"

@@ -1,0 +1,18 @@
+# TODO: Dynamic compilation based on configured options - currently everything is compiled.
+oshome:
+  name: awesome
+os:
+  type: windows
+
+mqtt: 
+  broker: 10.0.0.2
+  username: livingroom
+  password: !secret mqtt_password
+
+shell: 
+  type: powershell
+
+button: 
+ - platform: shell
+   name: "Generic Output"
+   commmand: "echo 'Hello World'"
