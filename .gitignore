@@ -1,0 +1,12 @@
+# Ignore build artifacts
+/target/
+
+
+# Ignore other unnecessary files
+*.log
+*.tmp
+
+
+# Dotnet
+bin/
+obj/

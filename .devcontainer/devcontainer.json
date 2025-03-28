@@ -1,0 +1,25 @@
+{
+    "name": "Rust Dev Container",
+    "remoteEnv": {
+      "RUST_LOG": "info",
+      "RUST_BACKTRACE": "1"
+    },
+    "customizations": {
+      "vscode": {
+        "extensions": [
+          "GitHub.copilot",
+          "GitHub.copilot-chat",
+          "GitHub.copilot-labs",
+          "ms-azuretools.vscode-docker",
+          "ms-dotnettools.csdevkit"
+        ]
+      },
+      "settings": {
+        "terminal.integrated.shell.linux": "/bin/bash"
+      }
+    },
+    "postCreateCommand": "rustup component add rustfmt clippy && cargo build",
+    "features": {
+          "ghcr.io/devcontainers/features/rust:1": {}
+    }
+  }
