@@ -1,7 +1,9 @@
 use log::debug;
+use os_home_core::{Config, Message};
 use serde::Deserialize;
-use rumqttc::{tokio_rustls::client, AsyncClient, Event, MqttOptions, QoS};
-use std::time::Duration;
+use rumqttc::{AsyncClient, Event, MqttOptions, QoS};
+use tokio::sync::broadcast::Sender;
+use std::{str, time::Duration};
 
 #[derive(Clone, Deserialize, Debug)]
 pub struct MqttConfig {
@@ -14,23 +16,23 @@ pub struct MqttConfig {
 
 
 
-pub async fn start_mqtt_client(device_name: &String, config: &MqttConfig) {
+pub async fn start_mqtt_client(sender: Sender<Option<Message>>, config: &Config, mqtt_config: &MqttConfig) {
     let mut mqttoptions = MqttOptions::new(
-        device_name,
-        config.broker.clone(),
-        config.port.unwrap_or(1883),
+        config.oshome.name.clone(),
+        mqtt_config.broker.clone(),
+        mqtt_config.port.unwrap_or(1883),
     );
     mqttoptions.set_keep_alive(Duration::from_secs(5));
 
-    if let Some(username) = config.username.clone() {
-        if let Some(password) = config.password.clone() {
+    if let Some(username) = mqtt_config.username.clone() {
+        if let Some(password) = mqtt_config.password.clone() {
             mqttoptions.set_credentials(username, password);
         }
     }
     let (client, mut eventloop) = AsyncClient::new(mqttoptions, 10);
 
-    let base_topic = format!("{}/{}", config.discovery_prefix.clone().unwrap_or("os-home".to_string()), device_name);
-    let discovery_topic = format!("homeassistant/device/{}/config", device_name);
+    let base_topic = format!("{}/{}", mqtt_config.discovery_prefix.clone().unwrap_or("os-home".to_string()), config.oshome.name);
+    let discovery_topic = format!("homeassistant/device/{}/config", config.oshome.name);
     let discovery_payload = format!(
         r#"{{
             "device": {{
@@ -49,10 +51,15 @@ pub async fn start_mqtt_client(device_name: &String, config: &MqttConfig) {
                     "p": "sensor",
                     "unique_id":"test",
                     "state_topic": "{}/test"
+                }},
+                "button": {{
+                    "p": "button",
+                    "unique_id":"test_button",
+                    "command_topic": "{}/button"
                 }}
             }}
         }}"#,
-        device_name, format!("{} {} {}", whoami::platform(), whoami::distro(), whoami::arch()), device_name, whoami::devicename(), base_topic
+        config.oshome.name, format!("{} {} {}", whoami::platform(), whoami::distro(), whoami::arch()), config.oshome.name, whoami::devicename(), base_topic, base_topic
     );
 
     debug!("Publishing discovery message to topic: {}", discovery_topic);
@@ -71,7 +78,15 @@ pub async fn start_mqtt_client(device_name: &String, config: &MqttConfig) {
 
     debug!("Discovery message published successfully");
     
-
+    // Subscribe to the discovery topic
+    client
+        .subscribe(
+            &format!("{}/#", base_topic),
+            QoS::AtLeastOnce,
+        )
+        .await
+        .unwrap();
+    debug!("Subscribed to topic: {}/#", base_topic);
 
     // Publish a test message
     client.publish(format!("{}/{}", base_topic, "test"), QoS::AtMostOnce, false, "Hello MQTT!").await.unwrap();
@@ -82,6 +97,18 @@ pub async fn start_mqtt_client(device_name: &String, config: &MqttConfig) {
             match eventloop.poll().await {
                 Ok(Event::Incoming(incoming)) => {
                     println!("Incoming: {:?}", incoming);
+                    if let rumqttc::Packet::Publish(publish) = incoming {
+                        if publish.topic == format!("{}/button", base_topic) {
+                            let payload = str::from_utf8(&publish.payload).unwrap_or("");
+                            let msg = Message::ButtonPress {
+                                key: payload.to_string(),
+                            };
+
+                            sender.send(Some(msg));
+                            println!("Button command received: {:?}", publish.payload);
+                            // Handle button command here
+                        }
+                    }
                 }
                 Ok(Event::Outgoing(_)) => {}
                 Err(e) => {

@@ -14,5 +14,6 @@ shell:
 
 button: 
  - platform: shell
+   id: my_button
    name: "Generic Output"
-   commmand: "echo 'Hello World'"
+   command: "echo 'Hello World'"

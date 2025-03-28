@@ -1,6 +1,4 @@
 use serde::Deserialize;
-use os_home_mqtt::MqttConfig;
-use os_home_shell::ShellConfig;
 
 #[derive(Clone, Deserialize, Debug)]
 pub struct OSHome {
@@ -10,20 +8,19 @@ pub struct OSHome {
 #[derive(Clone, Deserialize, Debug)]
 pub struct ButtonConfig {
     pub platform: String,
+    pub id: Option<String>,
     pub name: String,
     pub command: String,
 }
 
 #[derive(Clone, Deserialize, Debug)]
 pub struct Config {
-    pub mqtt: Option<MqttConfig>,
-    pub shell: Option<ShellConfig>,
     pub oshome: OSHome,
-    pub button: Option<Vec<ButtonConfig>>
 }
 
-#[derive(Clone, Debug)]
-pub struct AppState {
-    pub custom_directory: String,
-    pub config: Config,
+#[derive(Debug, Clone)]
+pub enum Message {
+    ButtonPress {
+        key: String,
+    },
 }

@@ -6,6 +6,8 @@ use axum::{
     Json,
     http::StatusCode,
 };
+use os_home_core::Message;
+use os_home_shell::execute_command;
 use std::time::Duration;
 
 use env_logger;
@@ -14,8 +16,8 @@ use clap::Parser;
 use os_home::AppState;
 use os_home::Config;
 use std::sync::Arc;
-use log::{info};
-use tokio::net::TcpListener;
+use log::{debug, info};
+use tokio::{net::TcpListener, sync::broadcast};
 use tokio::signal;
 use tower_http::timeout::TimeoutLayer;
 use tower_http::trace::TraceLayer;
@@ -49,7 +51,20 @@ struct Cli {
 const DEFAULT_CONFIG: &str = include_str!("../config.yaml");
 
 // Function to read the YAML configuration file
-fn read_config(path: Option<&str>) -> Result<Config, serde_yaml::Error> {
+fn read_full_config(path: Option<&str>) -> Result<Config, serde_yaml::Error> {
+    if let Some(path) = path {
+        if let Ok(content) = fs::read_to_string(path) {
+            return serde_yaml::from_str(&content);
+        } else {
+            eprintln!("Failed to read the configuration file at '{}', falling back to default.", path);
+        }
+    }
+
+    // Fallback to the embedded default configuration
+    serde_yaml::from_str(DEFAULT_CONFIG)
+}
+
+fn read_base_config(path: Option<&str>) -> Result<os_home_core::Config, serde_yaml::Error> {
     if let Some(path) = path {
         if let Ok(content) = fs::read_to_string(path) {
             return serde_yaml::from_str(&content);
@@ -72,9 +87,14 @@ async fn main() {
     println!("Listening on http://{}", bind_address);
 
     // Read the configuration file or use the embedded default
-    let config: Config = read_config(cli.configuration_file.as_deref()).unwrap_or_else(|err| {
+    let config: Config = read_full_config(cli.configuration_file.as_deref()).unwrap_or_else(|err| {
         eprintln!("Failed to parse configuration: {}, using default configuration.", err);
-        read_config(None).expect("Failed to load embedded default configuration")
+        read_full_config(None).expect("Failed to load embedded default configuration")
+    });
+
+    let base_config: os_home_core::Config = read_base_config(cli.configuration_file.as_deref()).unwrap_or_else(|err| {
+        eprintln!("Failed to parse configuration: {}, using default configuration.", err);
+        read_base_config(None).expect("Failed to load embedded default configuration")
     });
 
     let app_state = Arc::new(AppState {
@@ -82,14 +102,30 @@ async fn main() {
         config: config.clone(), // Clone the config here
     });
 
+    let (tx, mut rx) = broadcast::channel(16);
+
+
+    // Start MQTT client in a separate task
     if let Some(mqtt_config) = config.mqtt {
-        let name = config.oshome.name.clone();
         tokio::spawn(async move {
-            start_mqtt_client(&name, &mqtt_config).await;
+            start_mqtt_client(tx, &base_config, &mqtt_config).await;
         });
     }
-    // Start MQTT client in a separate task
 
+    if let Some(shell_config) = config.shell {
+    tokio::spawn(async move {
+        while let Ok(Some(cmd)) = rx.recv().await {
+            use Message::*;
+    
+            match cmd {
+                ButtonPress { key } => {
+                    debug!("Button pressed: {}", key);
+                        execute_command(&shell_config).await;
+                    }
+                }
+            }
+        });
+    };
     let app = Router::new()
         .route("/", get(handle_request))
         .layer((
