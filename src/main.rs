@@ -79,13 +79,15 @@ async fn main() {
 
     let app_state = Arc::new(AppState {
         custom_directory: "bla".to_string(),
-        config,
+        config: config.clone(), // Clone the config here
     });
 
+    if let Some(mqtt_config) = config.mqtt { // Use the original config here
+        tokio::spawn(async {
+            start_mqtt_client(mqtt_config).await;
+        });
+    }
     // Start MQTT client in a separate task
-    tokio::spawn(async {
-        start_mqtt_client().await;
-    });
 
     let app = Router::new()
         .route("/", get(handle_request))

@@ -5,9 +5,9 @@ os:
   type: windows
 
 mqtt: 
-  broker: 10.0.0.2
-  username: livingroom
-  password: !secret mqtt_password
+  broker: 192.168.178.167
+  username: test
+  password: a887aeda-7248-4b0f-a2e7-6f4ee0026f5e
 
 shell: 
   type: powershell

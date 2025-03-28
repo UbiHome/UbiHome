@@ -4,15 +4,14 @@ use std::time::Duration;
 
 #[derive(Clone, Deserialize, Debug)]
 pub struct MqttConfig {
-    #[serde(default = "discovery_prefix_default")]
-    pub discovery_prefix: String,
+    pub discovery_prefix: Option<String>,
     pub broker: String,
     pub port: Option<u16>,
     pub username: Option<String>,
     pub password: Option<String>,
 }
 
-fn discovery_prefix_default() -> String { "homeassistant".to_string() }
+
 
 pub async fn start_mqtt_client(config: MqttConfig) {
     let mut mqttoptions = MqttOptions::new(
