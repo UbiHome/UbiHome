@@ -82,9 +82,10 @@ async fn main() {
         config: config.clone(), // Clone the config here
     });
 
-    if let Some(mqtt_config) = config.mqtt { // Use the original config here
-        tokio::spawn(async {
-            start_mqtt_client(mqtt_config).await;
+    if let Some(mqtt_config) = config.mqtt {
+        let name = config.oshome.name.clone();
+        tokio::spawn(async move {
+            start_mqtt_client(&name, &mqtt_config).await;
         });
     }
     // Start MQTT client in a separate task

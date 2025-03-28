@@ -1,5 +1,6 @@
+use log::debug;
 use serde::Deserialize;
-use rumqttc::{AsyncClient, MqttOptions, QoS, Event};
+use rumqttc::{tokio_rustls::client, AsyncClient, Event, MqttOptions, QoS};
 use std::time::Duration;
 
 #[derive(Clone, Deserialize, Debug)]
@@ -13,27 +14,67 @@ pub struct MqttConfig {
 
 
 
-pub async fn start_mqtt_client(config: MqttConfig) {
+pub async fn start_mqtt_client(device_name: &String, config: &MqttConfig) {
     let mut mqttoptions = MqttOptions::new(
-        "test-client",
-        config.broker,
+        device_name,
+        config.broker.clone(),
         config.port.unwrap_or(1883),
     );
     mqttoptions.set_keep_alive(Duration::from_secs(5));
 
-    if let Some(username) = config.username {
-        if let Some(password) = config.password {
+    if let Some(username) = config.username.clone() {
+        if let Some(password) = config.password.clone() {
             mqttoptions.set_credentials(username, password);
         }
     }
-
     let (client, mut eventloop) = AsyncClient::new(mqttoptions, 10);
 
-    // Subscribe to a test topic
-    client.subscribe("test/topic", QoS::AtMostOnce).await.unwrap();
+    let base_topic = format!("{}/{}", config.discovery_prefix.clone().unwrap_or("os-home".to_string()), device_name);
+    let discovery_topic = format!("homeassistant/device/{}/config", device_name);
+    let discovery_payload = format!(
+        r#"{{
+            "device": {{
+                "identifiers": ["{}"],
+                "manufacturer": "{}",
+                "name": "Test: {}",
+                "model": "{}"
+            }},
+            "origin": {{
+                "name": "os-home", 
+                "sw": "0.1",
+                "url": "https://test.com"
+            }}, 
+            "components": {{
+                "test": {{
+                    "p": "sensor",
+                    "unique_id":"test",
+                    "state_topic": "{}/test"
+                }}
+            }}
+        }}"#,
+        device_name, format!("{} {} {}", whoami::platform(), whoami::distro(), whoami::arch()), device_name, whoami::devicename(), base_topic
+    );
+
+    debug!("Publishing discovery message to topic: {}", discovery_topic);
+    debug!("Discovery payload: {}", discovery_payload);
+    
+
+    client
+        .publish(
+            &discovery_topic,
+            QoS::AtLeastOnce,
+            false,
+            discovery_payload,
+        )
+        .await
+        .unwrap();
+
+    debug!("Discovery message published successfully");
+    
+
 
     // Publish a test message
-    client.publish("test/topic", QoS::AtMostOnce, false, "Hello MQTT!").await.unwrap();
+    client.publish(format!("{}/{}", base_topic, "test"), QoS::AtMostOnce, false, "Hello MQTT!").await.unwrap();
 
     // Handle incoming messages
     tokio::spawn(async move {
