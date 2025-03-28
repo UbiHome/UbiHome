@@ -45,6 +45,23 @@ struct Cli {
     configuration_file: String,
 }
 
+// Embed the default configuration file at compile time
+const DEFAULT_CONFIG: &str = include_str!("../config.yaml");
+
+// Function to read the YAML configuration file
+fn read_config(path: Option<&str>) -> Result<Config, serde_yaml::Error> {
+    if let Some(path) = path {
+        if let Ok(content) = fs::read_to_string(path) {
+            return serde_yaml::from_str(&content);
+        } else {
+            eprintln!("Failed to read the configuration file at '{}', falling back to default.", path);
+        }
+    }
+
+    // Fallback to the embedded default configuration
+    serde_yaml::from_str(DEFAULT_CONFIG)
+}
+
 #[tokio::main]
 async fn main() {
     env_logger::init_from_env(Env::default().default_filter_or("debug"));
@@ -54,8 +71,11 @@ async fn main() {
     let bind_address = std::env::var("BIND_ADDRESS").unwrap_or_else(|_| cli.bind_address.clone());
     println!("Listening on http://{}", bind_address);
 
-    // Read the YAML configuration file
-    let config: Config = read_config("config.yaml").expect("Failed to read config.yaml");
+    // Read the configuration file or use the embedded default
+    let config: Config = read_config(Some(&cli.configuration_file)).unwrap_or_else(|err| {
+        eprintln!("Failed to parse configuration: {}, using default configuration.", err);
+        read_config(None).expect("Failed to load embedded default configuration")
+    });
 
     let app_state = Arc::new(AppState {
         custom_directory: "bla".to_string(),
@@ -84,12 +104,6 @@ async fn main() {
 
     info!("Server shutdown complete");
     std::process::exit(0);
-}
-
-// Function to read the YAML configuration file
-fn read_config(path: &str) -> Result<Config, serde_yaml::Error> {
-    let content = fs::read_to_string(path).expect("Failed to read the file");
-    serde_yaml::from_str(&content)
 }
 
 async fn start_mqtt_client() {
