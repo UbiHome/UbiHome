@@ -737,8 +737,10 @@ name = "os-home-shell"
 version = "0.1.0"
 dependencies = [
  "log",
+ "os-home-core",
  "serde",
  "shell_exec",
+ "tokio",
 ]
 
 [[package]]

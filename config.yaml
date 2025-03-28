@@ -17,3 +17,24 @@ button:
    id: my_button
    name: "Say Hello World"
    command: "echo 'Hello World Daniel'"
+
+binary_sensor:
+  - platform: shell
+    device_class: motion
+
+sensor:
+  - platform: shell
+    name: "RAM Usage"
+    id: ram_usage
+    icon: "mdi:bluetooth-settings"
+    # device_class: "data_size"
+    state_class: "measurement"
+    unit_of_measurement: "%"
+    update_interval: 30s # 0 only executes it once and assumes a long running processes.
+    command: |-
+      free | grep Mem | awk '{print $3/$2 * 100.0}'
+    # entity_category: "diagnostic"
+    # lambda: |-
+    #   int limit = bluetooth_proxy::global_bluetooth_proxy->get_bluetooth_connections_limit();
+    #   ESP_LOGD("bluetooth_proxy_sensor", "Current connections limit => %d", limit);
+    #   return limit;

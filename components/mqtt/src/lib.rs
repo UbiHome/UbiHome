@@ -1,8 +1,8 @@
 use log::debug;
 use os_home_core::{CoreConfig, Message};
 use serde::{Deserialize, Serialize};
-use rumqttc::{AsyncClient, Event, MqttOptions, QoS};
-use tokio::sync::broadcast::Sender;
+use rumqttc::{tokio_rustls::rustls::internal::msgs::base, AsyncClient, Event, MqttOptions, QoS};
+use tokio::sync::broadcast::{Receiver, Sender};
 use std::{collections::HashMap, str, time::Duration};
 
 #[derive(Clone, Deserialize, Debug)]
@@ -33,6 +33,9 @@ struct HAButton {
 #[derive(Clone, Serialize, Deserialize, Debug)]
 struct HASensor {
     p: String,
+    name: String,
+    device_class: Option<String>,
+    unit_of_measurement: String,
     unique_id: String,
     object_id: String,
     state_topic: String,
@@ -62,7 +65,7 @@ struct DiscoveryMessage {
 
 
 
-pub async fn start_mqtt_client(sender: Sender<Option<Message>>, config: &CoreConfig, mqtt_config: &MqttConfig) {
+pub async fn start_mqtt_client(sender: Sender<Option<Message>>, mut receiver: Receiver<Option<Message>>, config: &CoreConfig, mqtt_config: &MqttConfig) {
     let mut mqttoptions = MqttOptions::new(
         config.oshome.name.clone(),
         mqtt_config.broker.clone(),
@@ -81,16 +84,25 @@ pub async fn start_mqtt_client(sender: Sender<Option<Message>>, config: &CoreCon
     let discovery_topic = format!("homeassistant/device/{}/config", config.oshome.name);
 
     let mut components: HashMap<String, Component> = HashMap::new();
-    components.insert(
-        "test_sensor".to_string(),
-        Component::Sensor(
-            HASensor {
-                p: "sensor".to_string(),
-                unique_id: format!("{}_{}", config.oshome.name, "test"),
-                state_topic: format!("{}/button", base_topic),
-                object_id: format!("{}_{}", config.oshome.name, "test"),
-        })
-    );
+
+    if let Some(sensors) = config.sensor.clone() {
+        for (key, sensor) in sensors {
+            let id = format!("{}_{}", config.oshome.name, key.clone());
+            components.insert(
+                key.clone(),
+                Component::Sensor(
+                    HASensor {
+                        p: "sensor".to_string(),
+                        unique_id: id.clone(),
+                        device_class: sensor.device_class.clone(),
+                        unit_of_measurement: sensor.unit_of_measurement.clone(),
+                        name: sensor.name.clone(),
+                        state_topic: format!("{}/{}", base_topic.clone(), key.clone()),
+                        object_id: id.clone(),
+            })
+            );
+        }
+    }
 
     if let Some(buttons) = config.button.clone() {
         for (key, button) in buttons {
@@ -102,7 +114,7 @@ pub async fn start_mqtt_client(sender: Sender<Option<Message>>, config: &CoreCon
                         p: "button".to_string(),
                         unique_id: id.clone(),
                         name: button.name.clone(),
-                        command_topic: format!("{}/{}", base_topic, key.clone()),
+                        command_topic: format!("{}/{}", base_topic.clone(), key.clone()),
                         object_id: id.clone(),
             })
             );
@@ -148,32 +160,33 @@ pub async fn start_mqtt_client(sender: Sender<Option<Message>>, config: &CoreCon
     // Subscribe to the discovery topic
     client
         .subscribe(
-            &format!("{}/#", base_topic),
+            &format!("{}/#", base_topic.clone()),
             QoS::AtLeastOnce,
         )
         .await
         .unwrap();
-    debug!("Subscribed to topic: {}/#", base_topic);
+    debug!("Subscribed to topic: {}/#", base_topic.clone());
 
     // Publish a test message
-    client.publish(format!("{}/{}", base_topic, "test"), QoS::AtMostOnce, false, "Hello MQTT!").await.unwrap();
+    client.publish(format!("{}/{}", base_topic.clone(), "test"), QoS::AtMostOnce, false, "Hello MQTT!").await.unwrap();
 
     // Handle incoming messages
+    let base_topic1 = base_topic.clone();
     tokio::spawn(async move {
         loop {
             match eventloop.poll().await {
                 Ok(Event::Incoming(incoming)) => {
                     println!("Incoming: {:?}", incoming);
                     if let rumqttc::Packet::Publish(publish) = incoming {
-                        let topic = publish.topic.clone().split_off(base_topic.len() + 1);
+                        let topic = publish.topic.clone().split_off(base_topic1.clone().len() + 1);
                         debug!("Received message on topic: {}", topic);
                         if components.contains_key(&topic) {
-                            let payload = str::from_utf8(&publish.payload).unwrap_or("");
+                            // let payload = str::from_utf8(&publish.payload).unwrap_or("");
                             let msg = Message::ButtonPress {
                                 key: topic.to_string(),
                             };
 
-                            sender.send(Some(msg));
+                            let _ = sender.send(Some(msg));
                             println!("Button command received: {:?}", publish.payload);
                         }
                     }
@@ -182,6 +195,25 @@ pub async fn start_mqtt_client(sender: Sender<Option<Message>>, config: &CoreCon
                 Err(e) => {
                     eprintln!("Error in MQTT event loop: {:?}", e);
                     break;
+                }
+            }
+        }
+    });
+
+    // Handle Sensor Updates
+    let base_topic2 = base_topic.clone();
+    tokio::spawn(async move {
+        while let Ok(Some(cmd)) = receiver.recv().await {
+            use Message::*;
+
+            match cmd {
+                SensorValueChange { key, value } => {
+                    debug!("Sensor value changed: {} = {}", key, value);
+                    // Handle sensor value change
+                    client.publish(format!("{}/{}", base_topic2, key), QoS::AtMostOnce, false, value).await.unwrap();
+                }
+                _ => {
+                    debug!("Ignored message type: {:?}", cmd);
                 }
             }
         }

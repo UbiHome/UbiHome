@@ -1,7 +1,6 @@
 use axum::{extract::State, http::StatusCode, response::IntoResponse, routing::get, Json, Router};
 use os_home_core::Message;
-use os_home_shell::execute_command;
-use rumqttc::tokio_rustls::rustls::internal::msgs::base;
+use os_home_shell::start;
 use std::time::Duration;
 
 use clap::Parser;
@@ -23,7 +22,7 @@ async fn handle_request(State(_state): State<Arc<AppState>>) -> impl IntoRespons
 }
 
 #[derive(Parser)]
-#[command(name = "API Mock Server")]
+#[command(name = "OSHome")]
 struct Cli {
     #[arg(
         short,
@@ -38,7 +37,7 @@ struct Cli {
         long,
         help = "Optional configuration file. If not provided, the default configuration will be used."
     )]
-    configuration_file: Option<String>,
+    configuration_override_file: Option<String>,
 }
 
 // Embed the default configuration file at compile time
@@ -50,7 +49,7 @@ fn read_full_config(path: Option<&str>) -> Result<Config, serde_yaml::Error> {
         if let Ok(content) = fs::read_to_string(path) {
             return serde_yaml::from_str(&content);
         } else {
-            eprintln!(
+            warn!(
                 "Failed to read the configuration file at '{}', falling back to default.",
                 path
             );
@@ -66,7 +65,7 @@ fn read_base_config(path: Option<&str>) -> Result<os_home_core::CoreConfig, serd
         if let Ok(content) = fs::read_to_string(path) {
             return serde_yaml::from_str(&content);
         } else {
-            eprintln!(
+            warn!(
                 "Failed to read the configuration file at '{}', falling back to default.",
                 path
             );
@@ -84,21 +83,20 @@ async fn main() {
     let cli = Cli::parse();
 
     let bind_address = std::env::var("BIND_ADDRESS").unwrap_or_else(|_| cli.bind_address.clone());
-    println!("Listening on http://{}", bind_address);
 
     // Read the configuration file or use the embedded default
     let config: Config =
-        read_full_config(cli.configuration_file.as_deref()).unwrap_or_else(|err| {
-            eprintln!(
+        read_full_config(cli.configuration_override_file.as_deref()).unwrap_or_else(|err| {
+            warn!(
                 "Failed to parse configuration: {}, using default configuration.",
                 err
             );
             read_full_config(None).expect("Failed to load embedded default configuration")
         });
 
-    let base_config: os_home_core::CoreConfig = read_base_config(cli.configuration_file.as_deref())
+    let base_config: os_home_core::CoreConfig = read_base_config(cli.configuration_override_file.as_deref())
         .unwrap_or_else(|err| {
-            eprintln!(
+            warn!(
                 "Failed to parse configuration: {}, using default configuration.",
                 err
             );
@@ -115,13 +113,21 @@ async fn main() {
     let mqtt_base_config = base_config.clone();
     // Start MQTT client in a separate task
     if let Some(mqtt_config) = config.mqtt {
+        let tx2 = tx.clone();
         tokio::spawn(async move {
-            start_mqtt_client(tx, &mqtt_base_config, &mqtt_config).await;
+            let rx2 = tx2.subscribe();
+            start_mqtt_client(tx2, rx2, &mqtt_base_config, &mqtt_config).await;
         });
     }
 
     if let Some(shell_config) = config.shell {
+        let tx2 = tx.clone();
+        let shell_base_config = base_config.clone();
+
         tokio::spawn(async move {
+            let rx2 = tx2.subscribe();
+            start(tx2, rx2, &shell_base_config, &shell_config).await;
+
             while let Ok(Some(cmd)) = rx.recv().await {
                 use Message::*;
 
@@ -131,11 +137,14 @@ async fn main() {
                         {
                             debug!("Button pressed: {}", key);
                             debug!("Executing command: {}", button.command);
-                            execute_command(&shell_config, &button.command).await;
                         } else {
                             debug!("Button pressed: {}", key);
                             warn!("No Action found?!");
                         }
+                    },
+                    SensorValueChange { key, value } => {
+                        debug!("Sensor value changed: {} = {}", key, value);
+                        // Handle sensor value change
                     }
                 }
             }
@@ -151,11 +160,14 @@ async fn main() {
         ))
         .with_state(app_state.clone());
 
-    let listener = TcpListener::bind(bind_address).await.unwrap();
+    let listener = TcpListener::bind(bind_address.clone()).await.unwrap();
     axum::serve(listener, app)
         .with_graceful_shutdown(shutdown_signal())
         .await
         .unwrap();
+
+    println!("Listening on http://{}", bind_address);
+
 
     info!("Server shutdown complete");
     std::process::exit(0);

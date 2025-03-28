@@ -8,3 +8,5 @@ edition = "2018"
 log = "0.4"
 serde = { version = "1.0", features = ["derive"] }
 shell_exec = "0.2.0"
+os-home-core = { path = "../core" }
+tokio = { version = "1", features = ["full"] }

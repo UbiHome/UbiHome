@@ -14,5 +14,9 @@ Analog to ESPHome OSHome is a system which allows you to integrate any device ru
   - [ ] MacOS?
 
 - [ ] Additional Components:
+  - [ ] HTTP and Web Enpoint
   - [ ] BLE (https://github.com/deviceplug/btleplug)
   - [ ] Bluetooth Proxy (https://esphome.io/components/bluetooth_proxy.html)
+
+- [ ] Homeassistant Native API
+
