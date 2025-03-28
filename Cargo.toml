@@ -15,4 +15,8 @@ log = "0.4"
 rumqttc = "0.24.0"
 serde = { version = "1.0", features = ["derive"] }
 serde_yaml = "0.9"
-shell_exec = "0.2.0"
+os-home-mqtt = { path = "components/mqtt" }
+
+[workspace]
+resolver = "2"
+members = ["components/mqtt"]

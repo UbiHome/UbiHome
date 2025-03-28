@@ -19,8 +19,8 @@ use tokio::net::TcpListener;
 use tokio::signal;
 use tower_http::timeout::TimeoutLayer;
 use tower_http::trace::TraceLayer;
-use rumqttc::{AsyncClient, MqttOptions, QoS, Event};
 use std::fs;
+use os_home_mqtt::start_mqtt_client;
 
 async fn handle_request(State(_state): State<Arc<AppState>>) -> impl IntoResponse {
     (StatusCode::OK, Json("Hello, World!"))
@@ -40,9 +40,9 @@ struct Cli {
     #[arg(
         short,
         long,
-        help = "Configuration file if the default configuration should not be used."
+        help = "Optional configuration file. If not provided, the default configuration will be used."
     )]
-    configuration_file: String,
+    configuration_file: Option<String>,
 }
 
 // Embed the default configuration file at compile time
@@ -72,7 +72,7 @@ async fn main() {
     println!("Listening on http://{}", bind_address);
 
     // Read the configuration file or use the embedded default
-    let config: Config = read_config(Some(&cli.configuration_file)).unwrap_or_else(|err| {
+    let config: Config = read_config(cli.configuration_file.as_deref()).unwrap_or_else(|err| {
         eprintln!("Failed to parse configuration: {}, using default configuration.", err);
         read_config(None).expect("Failed to load embedded default configuration")
     });
@@ -106,34 +106,7 @@ async fn main() {
     std::process::exit(0);
 }
 
-async fn start_mqtt_client() {
-    let mut mqttoptions = MqttOptions::new("test-client", "test.mosquitto.org", 1883);
-    mqttoptions.set_keep_alive(Duration::from_secs(5));
 
-    let (client, mut eventloop) = AsyncClient::new(mqttoptions, 10);
-
-    // Subscribe to a test topic
-    client.subscribe("test/topic", QoS::AtMostOnce).await.unwrap();
-
-    // Publish a test message
-    client.publish("test/topic", QoS::AtMostOnce, false, "Hello MQTT!").await.unwrap();
-
-    // Handle incoming messages
-    tokio::spawn(async move {
-        loop {
-            match eventloop.poll().await {
-                Ok(Event::Incoming(incoming)) => {
-                    println!("Incoming: {:?}", incoming);
-                }
-                Ok(Event::Outgoing(_)) => {}
-                Err(e) => {
-                    eprintln!("Error in MQTT event loop: {:?}", e);
-                    break;
-                }
-            }
-        }
-    });
-}
 
 async fn shutdown_signal() {
     let ctrl_c = async {
