@@ -20,11 +20,20 @@ jobs:
       uses: actions-rs/toolchain@v1
       with:
         toolchain: stable
-    - name: Build
-      run: cargo build --release # --verbose
-    - name: Run tests
-      run: cargo test # --verbose
 
+    - name: Rust Cache
+      uses: Swatinem/rust-cache@v2.7.8
+
+    - name: Build
+      run: cargo build --release
+
+    - name: Run tests
+      run: cargo test
+
+    - name: Prepare artifacts tests
+      run: |-
+        rm -rf target/release/deps
+        rm -rf target/release/build
       # Save executable
     - name: Archive artifacts
       uses: actions/upload-artifact@v4

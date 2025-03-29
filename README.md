@@ -20,3 +20,6 @@ Analog to ESPHome OSHome is a system which allows you to integrate any device ru
 
 - [ ] Homeassistant Native API
 
+
+Rust clippy: 
+https://github.com/rust-lang/rust-clippy
