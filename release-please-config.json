@@ -1,11 +1,21 @@
 {
     "$schema": "https://raw.githubusercontent.com/googleapis/release-please/main/schemas/config.json",
     "packages": {
-        ".": {},
-        "components/core": {},
-        "components/mqtt": {},
-        "components/shell": {},
-        "components/web_server": {}
+        ".": {
+            "include-component-in-tag": false
+        },
+        "components/core": {
+            "skip-github-release": true
+        },
+        "components/mqtt": {
+            "skip-github-release": true
+        },
+        "components/shell": {
+            "skip-github-release": true
+        },
+        "components/web_server": {
+            "skip-github-release": true
+        }
     },
     "plugins": [
         "cargo-workspace"
