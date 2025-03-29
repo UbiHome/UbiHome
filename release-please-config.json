@@ -7,5 +7,5 @@
     "plugins": [
         "cargo-workspace"
     ],
-    "release-type": "cargo"
+    "release-type": "rust"
 }
