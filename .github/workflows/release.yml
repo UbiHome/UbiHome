@@ -1,0 +1,48 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build:
+    name: Build and Release
+    runs-on: ubuntu-latest
+
+    strategy:
+        matrix:
+            os: [ubuntu-latest, windows-latest, macos-latest]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+  
+      - name: Rust Cache
+        uses: Swatinem/rust-cache@v2.7.8
+        with:
+          key: release
+  
+      - name: Build
+        run: cargo build --release
+        
+      - name: Prepare artifacts tests
+        run: |
+          rm -r target/release/deps
+          rm -r target/release/build
+
+
+      - name: Prepare artifact
+        run: |
+          mkdir -p artifact
+          cp target/release/* artifact/
+          zip -j artifact/${{ matrix.os }}.zip artifact/*
+
+      - name: Upload Release Artifact
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh release upload ${{ github.ref_name }} artifact/${{ matrix.os }}.zip
