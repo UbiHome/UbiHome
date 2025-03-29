@@ -1,4 +1,5 @@
 {
+    "$schema": "https://raw.githubusercontent.com/googleapis/release-please/main/schemas/config.json",
     "packages": {
         ".": {},
         "components/core": {}
@@ -6,5 +7,5 @@
     "plugins": [
         "cargo-workspace"
     ],
-    "release-type": "rust"
+    "release-type": "cargo"
 }
