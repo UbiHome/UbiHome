@@ -16,7 +16,6 @@ use std::time::Duration;
 use std::{env, fs};
 use tokio::sync::broadcast;
 use tokio::{runtime::Runtime, signal};
-use windows_service::service_dispatcher;
 
 #[cfg(target_os = "windows")]
 use windows_service::{
@@ -226,10 +225,14 @@ fn main() {
         Some(("run", sub_matches)) => {
             let is_windows_service = sub_matches.get_one::<bool>("as-windows-service").unwrap();
             if *is_windows_service {
+                #[cfg(target_os = "linux")]
+                panic!("Running as a Windows service is not supported on Linux.");
                 // Run as a Windows service
                 info!("Running as Windows service");
+                #[cfg(target_os = "windows")]
+                use windows_service::service_dispatcher;
+                #[cfg(target_os = "windows")]
                 service_dispatcher::start(constants::SERVICE_NAME, ffi_service_main).unwrap();
-                // Ok::<(), Box<dyn std::error::Error>>(());
             } else {
                 // Run normally
                 run(config_file.clone(), None).unwrap();

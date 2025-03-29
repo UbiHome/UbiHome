@@ -6,7 +6,7 @@ use shell_exec::{Execution, Shell};
 use std::str;
 
 #[cfg(target_os = "linux")]
-pub fn install(location: &str){
+pub async fn install(location: &str){
 
 
 
@@ -36,20 +36,20 @@ WantedBy=multi-user.target", location);
 
     fs::write(systemd_file_path, systemd_file).expect("Unable to write file");
     info!("- Running Commands for installation");
-    execute_command("systemctl daemon-reload");
-    execute_command("systemctl enable oshome.service");
-    execute_command("systemctl start oshome.service");
+    execute_command("systemctl daemon-reload").await;
+    execute_command("systemctl enable oshome.service").await;
+    execute_command("systemctl start oshome.service").await;
 
 }
 
-fn execute_command(command: &str) {
+async fn execute_command(command: &str) {
     let execution = Execution::builder()
     .shell(Shell::default())
     .timeout(Duration::from_secs(5))
     .cmd(command.to_string())
     .build();
 
-    let output = execution.execute(b"");
+    let output = execution.execute(b"").await;
     match output {
         Ok(output) => {
             let output_string = str::from_utf8(&output).unwrap_or(""); 
