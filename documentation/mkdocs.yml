@@ -9,7 +9,21 @@ plugins:
 nav:
   - Home: index.md
   - Getting started: getting_started.md
-  - Feature: features.md
+  - Features: 
+    - features/index.md
+    - Connectivity:
+      - features/connectivity/index.md
+      - MQTT: features/connectivity/mqtt.md
+      - HTTP: features/connectivity/http.md
+      - Web Server: features/connectivity/web_server.md
+    - Components:
+      - features/components/index.md
+      - Button: features/components/button.md
+      - Sensor: features/components/sensor.md
+      - Binary Sensor: features/components/binary_sensor.md
+    - Platforms:
+      - features/platforms/index.md
+      - Shell: features/platforms/shell.md
 theme:
   name: material
   language: en
@@ -42,11 +56,43 @@ theme:
     - navigation.instant.progress
     - navigation.tracking
     - navigation.tabs
+    - navigation.indexes 
     - toc.follow
     - navigation.top
     - search
     - search.suggest
     - search.highlight
     - search.share
-
-
+    - content.code.copy
+    - content.code.annotate 
+    - content.tabs.link
+    - content.tooltips
+    - content.footnote.tooltips
+markdown_extensions:
+  - pymdownx.critic
+  - pymdownx.caret
+  - pymdownx.keys
+  - pymdownx.mark
+  - pymdownx.tilde
+  - admonition
+  - pymdownx.details
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+      slugify: !!python/object/apply:pymdownx.slugs.slugify
+        kwds:
+          case: lower
+  - abbr
+  - attr_list
+  - footnotes
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+  - md_in_html
+  - pymdownx.betterem

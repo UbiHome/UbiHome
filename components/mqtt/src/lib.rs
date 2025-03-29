@@ -63,7 +63,7 @@ struct DiscoveryMessage {
     components: HashMap<String, Component>,
 }
 
-
+// TODO: Reconnect to MQTT broker if connection is lost
 
 pub async fn start_mqtt_client(sender: Sender<Option<Message>>, mut receiver: Receiver<Option<Message>>, config: &CoreConfig, mqtt_config: &MqttConfig) {
     let mut mqttoptions = MqttOptions::new(
