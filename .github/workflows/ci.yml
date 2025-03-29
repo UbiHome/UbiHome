@@ -30,7 +30,7 @@ jobs:
       run: cargo build --release
       
     - name: Prepare artifacts tests
-      run: |-
+      run: |
         rm -r target/release/deps
         rm -r target/release/build
 
