@@ -1,6 +1,6 @@
 use tokio::runtime::Runtime;
 
-#[cfg(target_os = "linux")]
+#[cfg(any(target_os = "linux", target_os = "macos"))]
 mod linux;
 #[cfg(target_os = "windows")]
 mod windows;
