@@ -32,8 +32,8 @@ jobs:
 
     - name: Prepare artifacts tests
       run: |-
-        rm -rf target/release/deps
-        rm -rf target/release/build
+        rm -r target/release/deps
+        rm -r target/release/build
       # Save executable
     - name: Archive artifacts
       uses: actions/upload-artifact@v4
