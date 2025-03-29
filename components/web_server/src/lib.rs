@@ -1,28 +1,29 @@
 use axum::{extract::State, http::StatusCode, response::IntoResponse, routing::get, Json, Router};
+use std::env;
 use std::time::Duration;
 
-use log::{info, warn};
+use log::info;
 use std::sync::Arc;
 use tokio::signal;
-use tokio::{net::TcpListener};
+use tokio::net::TcpListener;
 use tower_http::timeout::TimeoutLayer;
 use tower_http::trace::TraceLayer;
 
 #[derive(Clone, Debug)]
 struct AppState {
-    pub custom_directory: String,
+    current_directory: String,
 }
 
 
-async fn handle_request(State(_state): State<Arc<AppState>>) -> impl IntoResponse {
-    (StatusCode::OK, Json("Hello, World!"))
+async fn handle_request(State(state): State<Arc<AppState>>) -> impl IntoResponse {
+    (StatusCode::OK, Json(state.current_directory.clone()))
 }
 
 pub async fn start(){
     let bind_address = "0.0.0.0:8080";
 
     let app_state = Arc::new(AppState {
-        custom_directory: "bla".to_string()
+        current_directory: env::current_dir().unwrap().to_string_lossy().to_string(),
     });
 
     let app = Router::new()
@@ -35,7 +36,7 @@ pub async fn start(){
     ))
     .with_state(app_state.clone());
 
-    let listener = TcpListener::bind(bind_address.clone()).await.unwrap();
+    let listener = TcpListener::bind(bind_address).await.unwrap();
     axum::serve(listener, app)
         .with_graceful_shutdown(shutdown_signal())
         .await
