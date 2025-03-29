@@ -1,6 +1,5 @@
 {
     ".": "0.1.1",
-    "oshome": "0.1.1",
     "components/core": "0.1.1",
     "components/mqtt": "0.1.1",
     "components/shell": "0.1.1",
