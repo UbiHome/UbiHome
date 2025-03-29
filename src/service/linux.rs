@@ -5,7 +5,6 @@ use log::debug;
 use shell_exec::{Execution, Shell};
 use std::str;
 
-#[cfg(target_os = "linux")]
 pub async fn install(location: &str){
     use crate::constants::{SERVICE_DESCRIPTION, SERVICE_NAME};
 
@@ -63,7 +62,6 @@ async fn execute_command(command: &str) {
     }
 }
 
-#[cfg(target_os = "linux")]
 pub fn uninstall(location: &str){
 
     info!("Uninstalling OSHome at {}", location);
