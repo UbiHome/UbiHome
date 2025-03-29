@@ -4,7 +4,7 @@ use log::{debug, info};
 
 use crate::constants;
 
-pub fn install(location: &str) -> Result<(), Box<dyn std::error::Error>> {
+pub async fn install(location: &str) -> Result<(), Box<dyn std::error::Error>> {
     info!("Installing OSHome to {}", location);
     info!(" - Creating Folder at {}", location);
     fs::create_dir_all(location).expect("Unable to create directory");
@@ -51,7 +51,7 @@ pub fn install(location: &str) -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
-pub fn uninstall(location: &str) -> Result<(), Box<dyn std::error::Error>> {
+pub async fn uninstall(location: &str) -> Result<(), Box<dyn std::error::Error>> {
     use std::{
         thread::sleep,
         time::{Duration, Instant},

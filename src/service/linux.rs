@@ -62,7 +62,7 @@ async fn execute_command(command: &str) {
     }
 }
 
-pub fn uninstall(location: &str){
+pub async fn uninstall(location: &str){
 
     info!("Uninstalling OSHome at {}", location);
     // "systemctl daemon-reload"

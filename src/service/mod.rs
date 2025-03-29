@@ -14,14 +14,19 @@ pub fn install(location: &str) {
         linux::install(location).await;
 
         #[cfg(target_os = "windows")]
-        windows::install(location).await;
+        windows::install(location).await.unwrap();
     });
 }
 
 pub fn uninstall(location: &str) {
-    #[cfg(any(target_os = "linux", target_os = "macos"))]
-    linux::uninstall(location);
+    let rt = Runtime::new().unwrap();
 
-    #[cfg(target_os = "windows")]
-    windows::uninstall(location);
+    // Spawn the root task
+    rt.block_on(async {
+        #[cfg(any(target_os = "linux", target_os = "macos"))]
+        linux::uninstall(location).await;
+
+        #[cfg(target_os = "windows")]
+        windows::uninstall(location).await.unwrap();
+    });
 }
