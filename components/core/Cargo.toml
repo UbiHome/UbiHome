@@ -3,6 +3,7 @@ name = "oshome-core"
 version = "0.1.0"
 authors = ["Daniel Habenicht <daniel-habenicht@outlook.de>"]
 edition = "2018"
+description = "Core package"
 
 [dependencies]
 serde = { version = "1.0", features = ["derive"] }
