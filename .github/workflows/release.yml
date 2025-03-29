@@ -34,6 +34,8 @@ jobs:
         run: |
           rm -r target/release/deps
           rm -r target/release/build
+          rm -r target/release/examples
+          rm -r target/release/incremental
 
 
       - name: Prepare artifact
