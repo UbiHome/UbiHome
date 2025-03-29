@@ -33,12 +33,13 @@ jobs:
       run: |-
         rm -r target/release/deps
         rm -r target/release/build
-        # Save executable
-        - name: Archive artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: release-${{ matrix.os }}
-          path: |
+
+    # Save executable
+    - name: Archive artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: release-${{ matrix.os }}
+        path: |
           target/release
           
   # test:
