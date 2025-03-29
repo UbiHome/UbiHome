@@ -933,7 +933,7 @@ checksum = "04744f49eae99ab78e0d5c0b603ab218f515ea8cfe5a456d7629ad883a3b6e7d"
 
 [[package]]
 name = "oshome"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "clap",
  "directories",
@@ -957,7 +957,7 @@ dependencies = [
 
 [[package]]
 name = "oshome-core"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "duration-str",
  "serde",
@@ -965,7 +965,7 @@ dependencies = [
 
 [[package]]
 name = "oshome-mqtt"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "log",
  "oshome-core",
@@ -978,7 +978,7 @@ dependencies = [
 
 [[package]]
 name = "oshome-shell"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "log",
  "oshome-core",
@@ -989,7 +989,7 @@ dependencies = [
 
 [[package]]
 name = "oshome-web_server"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "axum",
  "log",
