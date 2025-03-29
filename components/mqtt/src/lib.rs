@@ -1,4 +1,4 @@
-use log::debug;
+use log::{debug, error, info};
 use oshome_core::{CoreConfig, Message};
 use serde::{Deserialize, Serialize};
 use rumqttc::{AsyncClient, Event, MqttOptions, QoS};
@@ -176,7 +176,6 @@ pub async fn start_mqtt_client(sender: Sender<Option<Message>>, mut receiver: Re
         loop {
             match eventloop.poll().await {
                 Ok(Event::Incoming(incoming)) => {
-                    println!("Incoming: {:?}", incoming);
                     if let rumqttc::Packet::Publish(publish) = incoming {
                         let topic = publish.topic.clone().split_off(base_topic1.clone().len() + 1);
                         debug!("Received message on topic: {}", topic);
@@ -187,13 +186,13 @@ pub async fn start_mqtt_client(sender: Sender<Option<Message>>, mut receiver: Re
                             };
 
                             let _ = sender.send(Some(msg));
-                            println!("Button command received: {:?}", publish.payload);
+                            info!("Button command received: {:?}", publish.payload);
                         }
                     }
                 }
                 Ok(Event::Outgoing(_)) => {}
                 Err(e) => {
-                    eprintln!("Error in MQTT event loop: {:?}", e);
+                    error!("Error in MQTT event loop: {:?}", e);
                     break;
                 }
             }

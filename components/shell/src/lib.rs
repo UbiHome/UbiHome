@@ -62,6 +62,7 @@ pub async fn start(sender: Sender<Option<Message>>, mut receiver: Receiver<Optio
                             loop {
                                 interval.tick().await;
                                 let output = execute_command(&cloned_shell_config, shell.command.as_str(), &duration).await;
+                                // TODO: Handle long running commands (e.g. newline per value) and multivalued outputs (e.g. json)
                                 match output {
                                     Ok(output) => {
                                         debug!("Sensor {} output: {}", key, output);

@@ -1,5 +1,5 @@
 # OSHome
-Analog to ESPHome OSHome is a system which allows you to integrate any device running an OS into a smart home device.
+Analog to ESPHome OSHome is a system which allows you to integrate any device running an OS into your smart home.
 
 
 
@@ -11,6 +11,7 @@ Analog to ESPHome OSHome is a system which allows you to integrate any device ru
 - [ ] Auto installation
   - [ ] Windows (https://github.com/mullvad/windows-service-rs) https://medium.com/@aleksej.gudkov/rust-windows-service-example-building-a-windows-service-in-rust-907be67d2287
   - [ ] Linux Service
+    - debian (https://github.com/kornelski/cargo-deb/blob/fc34c45fafc3904cadf652473ff7e9e0344c605c/systemd.md)
   - [ ] MacOS?
 
 - [ ] Additional Components:

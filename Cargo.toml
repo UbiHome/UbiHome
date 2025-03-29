@@ -3,6 +3,8 @@ name = "oshome"
 version = "0.1.0"
 authors = ["Daniel Habenicht <daniel-habenicht@outlook.de>"]
 edition = "2018"
+description = "Analog to ESPHome OSHome is a system which allows you to integrate any device running an OS into your smart home."
+homepage = "https://github.com/DanielHabenicht/OSHome"
 
 [dependencies]
 tokio = { version = "1", features = ["full"] }
@@ -17,6 +19,12 @@ oshome-mqtt = { path = "components/mqtt" }
 oshome-shell = { path = "components/shell" }
 oshome-core = { path = "components/core" }
 oshome-web_server = { path = "components/web_server" }
+inquire = "0.7.5"
+shell_exec = "0.2.0"
+
+[target.'cfg(windows)'.dependencies]
+windows-service = "0.5"
+
 
 [workspace]
 resolver = "2"
