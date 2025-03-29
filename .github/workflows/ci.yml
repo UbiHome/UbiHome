@@ -23,4 +23,12 @@ jobs:
     - name: Build
       run: cargo build --release # --verbose
     - name: Run tests
-      run: cargo test --verbose
+      run: cargo test # --verbose
+
+      # Save executable
+    - name: Archive artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: dist-without-markdown
+        path: |
+          target/release
