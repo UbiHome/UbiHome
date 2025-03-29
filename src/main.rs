@@ -1,6 +1,5 @@
-mod service;
 mod constants;
-
+mod service;
 
 use directories::BaseDirs;
 use flexi_logger::{Age, Cleanup, Criterion, Duplicate, FileSpec, Logger, Naming, WriteMode};
@@ -8,14 +7,16 @@ use inquire::Text;
 use oshome_shell::start;
 
 use clap::{Arg, ArgAction, Command};
-use log::{info, warn};
+use log::{debug, info, warn};
 use oshome::Config;
 use oshome_mqtt::start_mqtt_client;
 use service::{install, uninstall};
-use windows_service::service_dispatcher;
+use std::sync::mpsc::{self, Receiver};
+use std::time::Duration;
 use std::{env, fs};
-use tokio::{runtime::Runtime, signal};
 use tokio::sync::broadcast;
+use tokio::{runtime::Runtime, signal};
+use windows_service::service_dispatcher;
 
 #[cfg(target_os = "windows")]
 use windows_service::{
@@ -34,30 +35,30 @@ fn windows_service_main(_arguments: Vec<std::ffi::OsString>) {
     use std::time::Duration;
 
     use constants::SERVICE_NAME;
-    use tokio::runtime::Runtime;
     info!("Starting Windows service...");
 
     let (shutdown_tx, shutdown_rx) = std::sync::mpsc::channel();
-    let status_handle = service_control_handler::register(
-        SERVICE_NAME,
-        move |control_event| match control_event {
+    let status_handle =
+        service_control_handler::register(SERVICE_NAME, move |control_event| match control_event {
             ServiceControl::Stop => {
                 shutdown_tx.send(()).unwrap();
                 ServiceControlHandlerResult::NoError
             }
             _ => ServiceControlHandlerResult::NotImplemented,
-        },
-    ).unwrap();
-    
-    status_handle.set_service_status(ServiceStatus {
-        process_id: None,
-        service_type: ServiceType::OWN_PROCESS,
-        current_state: ServiceState::Running,
-        controls_accepted: ServiceControlAccept::STOP,
-        exit_code: ServiceExitCode::Win32(0),
-        checkpoint: 0,
-        wait_hint: Duration::from_secs(0),
-    }).unwrap();
+        })
+        .unwrap();
+
+    status_handle
+        .set_service_status(ServiceStatus {
+            process_id: None,
+            service_type: ServiceType::OWN_PROCESS,
+            current_state: ServiceState::Running,
+            controls_accepted: ServiceControlAccept::STOP,
+            exit_code: ServiceExitCode::Win32(0),
+            checkpoint: 0,
+            wait_hint: Duration::from_secs(0),
+        })
+        .unwrap();
 
     info!("Run run");
 
@@ -66,20 +67,20 @@ fn windows_service_main(_arguments: Vec<std::ffi::OsString>) {
     dir.push("config.yaml");
     let config = dir.to_string_lossy().to_string();
     info!("Config file path: {}", config);
-    run(Some(&config)).unwrap();
-
-
+    run(Some(&config), Some(shutdown_rx)).unwrap();
 
     info!("Service is stopping...");
-    status_handle.set_service_status(ServiceStatus {
-        process_id: None,
-        service_type: ServiceType::OWN_PROCESS,
-        current_state: ServiceState::Stopped,
-        controls_accepted: ServiceControlAccept::empty(),
-        exit_code: ServiceExitCode::Win32(0),
-        checkpoint: 0,
-        wait_hint: Duration::from_secs(0),
-    }).unwrap();
+    status_handle
+        .set_service_status(ServiceStatus {
+            process_id: None,
+            service_type: ServiceType::OWN_PROCESS,
+            current_state: ServiceState::Stopped,
+            controls_accepted: ServiceControlAccept::empty(),
+            exit_code: ServiceExitCode::Win32(0),
+            checkpoint: 0,
+            wait_hint: Duration::from_secs(0),
+        })
+        .unwrap();
 }
 
 // use oshome::
@@ -132,7 +133,6 @@ fn cli() -> Command {
         )
 }
 
-
 // Embed the default configuration file at compile time
 // const DEFAULT_CONFIG: &str = include_str!("../config.yaml");
 
@@ -144,7 +144,6 @@ fn read_full_config(path: Option<&String>) -> Result<Config, serde_yaml::Error> 
         if let Ok(content) = fs::read_to_string(config_file_path) {
             return serde_yaml::from_str(&content);
         } else {
-
             warn!(
                 "Failed to read the configuration file at '{}', falling back to default.",
                 path
@@ -175,25 +174,24 @@ fn read_base_config(path: Option<&String>) -> Result<oshome_core::CoreConfig, se
     panic!("oh no!");
 }
 
-
 fn main() {
-    let base_dirs = BaseDirs::new()
-        .expect("Failed to get base directories");
+    let base_dirs = BaseDirs::new().expect("Failed to get base directories");
     let log_directory = base_dirs.data_local_dir();
-    Logger::try_with_env_or_str("debug").unwrap()
-        .log_to_file(FileSpec::default().directory(&log_directory))         // write logs to file
+    Logger::try_with_env_or_str("debug")
+        .unwrap()
+        .log_to_file(FileSpec::default().directory(&log_directory)) // write logs to file
         // .write_mode(WriteMode::BufferAndFlush)
         .append()
         .duplicate_to_stderr(Duplicate::Error)
-        .duplicate_to_stdout(Duplicate::Debug) 
+        .duplicate_to_stdout(Duplicate::Debug)
         .rotate(
             Criterion::AgeOrSize(Age::Day, 10 * 1024 * 1024),
-            Naming::Timestamps, 
+            Naming::Timestamps,
             Cleanup::KeepLogFiles(7),
         )
-        .start().unwrap();
+        .start()
+        .unwrap();
     info!("LogDirectory: {}", log_directory.display());
-
 
     let matches = cli().get_matches();
     let config_file = matches.try_get_one::<String>("configuration_file").unwrap();
@@ -209,8 +207,9 @@ fn main() {
                 // Perform installation logic here
                 install(location);
             } else {
-
-                let location = Text::new("Where do you want to install OSHome?").with_default(default_installation_path).prompt();
+                let location = Text::new("Where do you want to install OSHome?")
+                    .with_default(default_installation_path)
+                    .prompt();
                 install(location.unwrap().as_str());
             }
         }
@@ -220,7 +219,6 @@ fn main() {
                 // Perform installation logic here
                 uninstall(location);
             } else {
-
                 let location = Text::new("OS Home is not installed under the default location. Where should the uninstall script run?").with_default(default_installation_path).prompt();
                 uninstall(location.unwrap().as_str());
             }
@@ -234,17 +232,20 @@ fn main() {
                 // Ok::<(), Box<dyn std::error::Error>>(());
             } else {
                 // Run normally
-                run(config_file.clone()).unwrap();
+                run(config_file.clone(), None).unwrap();
             }
         }
         _ => {
             println!("No subcommand was used");
         }
     }
+    std::process::exit(0);
 }
 
-fn run(config_file: Option<&String>) -> Result<(), Box<dyn std::error::Error>> {
-
+fn run(
+    config_file: Option<&String>,
+    shutdown_signal: Option<Receiver<()>>,
+) -> Result<(), Box<dyn std::error::Error>> {
     let rt = Runtime::new().unwrap();
 
     // Spawn the root task
@@ -256,27 +257,23 @@ fn run(config_file: Option<&String>) -> Result<(), Box<dyn std::error::Error>> {
 
         info!("Hello from RUN");
 
-    
         // Read the configuration file or use the embedded default
-        let config: Config =
-            read_full_config(config_file).unwrap_or_else(|err| {
-                warn!(
-                    "Failed to parse configuration: {}, using default configuration.",
-                    err
-                );
-                read_full_config(None).expect("Failed to load embedded default configuration")
-            });
+        let config: Config = read_full_config(config_file).unwrap_or_else(|err| {
+            warn!(
+                "Failed to parse configuration: {}, using default configuration.",
+                err
+            );
+            read_full_config(None).expect("Failed to load embedded default configuration")
+        });
 
-        let base_config: oshome_core::CoreConfig = read_base_config(config_file)
-            .unwrap_or_else(|err| {
+        let base_config: oshome_core::CoreConfig =
+            read_base_config(config_file).unwrap_or_else(|err| {
                 warn!(
                     "Failed to parse configuration: {}, using default configuration.",
                     err
                 );
                 read_base_config(None).expect("Failed to load embedded default configuration")
             });
-
-
 
         let (tx, mut _rx) = broadcast::channel(16);
 
@@ -337,19 +334,34 @@ fn run(config_file: Option<&String>) -> Result<(), Box<dyn std::error::Error>> {
         #[cfg(not(unix))]
         let terminate = std::future::pending::<()>();
 
-        tokio::select! {
-            _ = ctrl_c => {},
-            _ = terminate => {},
-        }
+        if let Some(some_shutdown_signal) = shutdown_signal {
+            let shutdown_event = async {
+                loop {
+                    // Poll shutdown event.
+                    match some_shutdown_signal.recv_timeout(Duration::from_secs(1)) {
+                        // Break the loop either upon stop or channel disconnect
+                        Ok(_) | Err(mpsc::RecvTimeoutError::Disconnected) => break,
 
+                        // Continue work if no events were received within the timeout
+                        Err(mpsc::RecvTimeoutError::Timeout) => ()
+                    };
+                }
+            };
+            tokio::select! {
+                _ = ctrl_c => {},
+                _ = terminate => {},
+                _ = shutdown_event => {},
+            }
+        } else {
+            tokio::select! {
+                _ = ctrl_c => {},
+                _ = terminate => {},
+            }
+        }
     });
     info!("Shutdown complete");
-
-    std::process::exit(0);
+    Ok(())
 }
-
-
-
 
 // Define the service name
 
@@ -361,7 +373,7 @@ fn run(config_file: Option<&String>) -> Result<(), Box<dyn std::error::Error>> {
 // }
 // fn run_service() -> Result<()> {
 //     // Define service status
-    
+
 //     // Main service loop
 //     info!("Service is running...");
 //     loop {

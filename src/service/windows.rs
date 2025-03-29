@@ -62,6 +62,10 @@ pub fn uninstall(location: &str) -> Result<(), Box<dyn std::error::Error>> {
 
     info!("Uninstalling OSHome to");
 
+    
+    info!(" - TODO: Cleanup Logs...");
+
+
     info!(" - Deleting Folder at {}", location);
     fs::remove_dir_all(location).expect("Unable to delete directory");
 
