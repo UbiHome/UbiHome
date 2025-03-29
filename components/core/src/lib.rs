@@ -1,4 +1,7 @@
 use std::collections::HashMap;
+use duration_str::deserialize_option_duration;
+use std::time::Duration;
+
 
 use serde::{Deserialize, Deserializer};
 
@@ -24,7 +27,8 @@ pub struct Sensor {
     pub device_class: Option<String>,
     pub unit_of_measurement: String,
     pub state_class: String,
-    pub update_interval: String,
+    #[serde(deserialize_with = "deserialize_option_duration")]
+    pub update_interval: Option<Duration>,
 
     #[serde(flatten)]
     pub kind: SensorKind,

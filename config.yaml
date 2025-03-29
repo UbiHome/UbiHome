@@ -1,8 +1,5 @@
-# TODO: Dynamic compilation based on configured options - currently everything is compiled.
 oshome:
   name: new_awesome
-os:
-  type: windows
 
 mqtt: 
   broker: 192.168.178.167
@@ -15,12 +12,8 @@ shell:
 button: 
  - platform: shell
    id: my_button
-   name: "Say Hello World"
-   command: "echo 'Hello World Daniel'"
-
-binary_sensor:
-  - platform: shell
-    device_class: motion
+   name: "Write Hello World"
+   command: "echo 'Hello World Daniel' >> test.log"
 
 sensor:
   - platform: shell
@@ -38,3 +31,27 @@ sensor:
     #   int limit = bluetooth_proxy::global_bluetooth_proxy->get_bluetooth_connections_limit();
     #   ESP_LOGD("bluetooth_proxy_sensor", "Current connections limit => %d", limit);
     #   return limit;
+
+
+# TODO: Things still to implement...
+# TODO: Dynamic compilation based on configured options - currently everything is compiled.
+os:
+  type: windows
+
+text_sensor:
+  - platform: version
+    name: "Firmware"
+
+binary_sensor:
+  - platform: shell
+    device_class: motion
+
+# Native Homeassistant API
+api:
+  encryption:
+    key: "F7KLwAYmqlV674MaKfqa5tBehkccYSqsTGtzKQwhAm4="
+
+# Enable Automatic updates
+ota:
+  - platform: oshome
+    password: "ea04d2dc1adb3b82edea4b97ced1cc7c"

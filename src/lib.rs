@@ -16,8 +16,3 @@ pub struct Config {
     pub button: Option<Vec<ButtonConfig>>
 }
 
-#[derive(Clone, Debug)]
-pub struct AppState {
-    pub custom_directory: String,
-    pub config: Config,
-}

@@ -6,9 +6,7 @@ edition = "2018"
 
 [dependencies]
 tokio = { version = "1", features = ["full"] }
-tower-http = { version = "0.6.1", features = ["timeout", "trace"] }
 clap = { version = "4.5.21", features = [ "derive" ] }
-axum = "0.7.9"
 rust-embed = "6.8"
 env_logger = "0.11.7"
 log = "0.4"
@@ -18,7 +16,8 @@ serde_yaml = "0.9"
 os-home-mqtt = { path = "components/mqtt" }
 os-home-shell = { path = "components/shell" }
 os-home-core = { path = "components/core" }
+os-home-web-server = { path = "components/web_server" }
 
 [workspace]
 resolver = "2"
-members = ["components/mqtt", "components/shell", "components/core" ]
+members = ["components/mqtt", "components/shell", "components/core", "components/web_server"]
