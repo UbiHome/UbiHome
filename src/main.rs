@@ -194,7 +194,7 @@ fn main() {
 
     let matches = cli().get_matches();
     let config_file = matches.try_get_one::<String>("configuration_file").unwrap();
-    #[cfg(target_os = "linux")]
+    #[cfg(any(target_os = "linux", target_os = "macos"))]
     let default_installation_path = "/usr/bin/oshome";
     #[cfg(target_os = "windows")]
     let default_installation_path = "C:\\Program Files\\oshome";

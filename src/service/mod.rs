@@ -10,7 +10,7 @@ pub fn install(location: &str) {
 
     // Spawn the root task
     rt.block_on(async {
-        #[cfg(target_os = "linux")]
+        #[cfg(any(target_os = "linux", target_os = "macos"))]
         linux::install(location).await;
 
         #[cfg(target_os = "windows")]
@@ -19,7 +19,7 @@ pub fn install(location: &str) {
 }
 
 pub fn uninstall(location: &str) {
-    #[cfg(target_os = "linux")]
+    #[cfg(any(target_os = "linux", target_os = "macos"))]
     linux::uninstall(location);
 
     #[cfg(target_os = "windows")]
