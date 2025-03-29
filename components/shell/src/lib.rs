@@ -6,6 +6,7 @@ use std::{str, time::Duration};
 use tokio::{sync::broadcast::{Receiver, Sender}, time};
 
 #[derive(Debug, Copy, Clone, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub enum CustomShell {
     Zsh,
     Bash,
@@ -17,7 +18,8 @@ pub enum CustomShell {
 
 #[derive(Clone, Deserialize, Debug)]
 pub struct ShellConfig {
-    pub _type: Option<CustomShell>,
+    #[serde(rename = "type")]
+    pub kind: Option<CustomShell>,
 }
 
 pub async fn start(sender: Sender<Option<Message>>, mut receiver: Receiver<Option<Message>>, config: &CoreConfig, shell_config: &ShellConfig) {
@@ -88,7 +90,7 @@ pub async fn start(sender: Sender<Option<Message>>, mut receiver: Receiver<Optio
 }
 
 async fn execute_command(shell_config: &ShellConfig, command: &str, timeout: &Duration) -> Result<String, ShellError> {
-    let shell = match shell_config._type {
+    let shell = match shell_config.kind {
         Some(CustomShell::Zsh) => Shell::Zsh,
         Some(CustomShell::Bash) => Shell::Bash,
         Some(CustomShell::Sh) => Shell::Sh,

@@ -3,18 +3,18 @@ mod linux;
 #[cfg(target_os = "windows")]
 mod windows;
 
-pub async fn install(location: &str) {
+pub fn install(location: &str) {
     #[cfg(target_os = "linux")]
-    linux::install(location).await;
+    linux::install(location);
 
     #[cfg(target_os = "windows")]
-    windows::install(location).await;
+    windows::install(location);
 }
 
-pub async fn uninstall(location: &str) {
+pub fn uninstall(location: &str) {
     #[cfg(target_os = "linux")]
-    linux::uninstall(location).await;
+    linux::uninstall(location);
 
     #[cfg(target_os = "windows")]
-    windows::uninstall(location).await;
+    windows::uninstall(location);
 }

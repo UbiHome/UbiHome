@@ -10,7 +10,6 @@ homepage = "https://github.com/DanielHabenicht/OSHome"
 tokio = { version = "1", features = ["full"] }
 clap = { version = "4.5.21", features = [ "derive" ] }
 rust-embed = "6.8"
-env_logger = "0.11.7"
 log = "0.4"
 rumqttc = "0.24.0"
 serde = { version = "1.0", features = ["derive"] }
@@ -21,10 +20,13 @@ oshome-core = { path = "components/core" }
 oshome-web_server = { path = "components/web_server" }
 inquire = "0.7.5"
 shell_exec = "0.2.0"
+flexi_logger = "0.29.8"
+directories = "6.0.0"
+sysinfo = "0.34.1"
 
 [target.'cfg(windows)'.dependencies]
 windows-service = "0.5"
-
+windows-sys = "0.59"
 
 [workspace]
 resolver = "2"
