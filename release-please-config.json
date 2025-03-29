@@ -2,7 +2,12 @@
     "$schema": "https://raw.githubusercontent.com/googleapis/release-please/main/schemas/config.json",
     "packages": {
         ".": {
-            "include-component-in-tag": false
+            "include-component-in-tag": false,
+            "exclude-paths": [
+                "components/*",
+                "examples/*",
+                "documentation/*"
+            ]
         },
         "components/core": {
             "skip-github-release": true
