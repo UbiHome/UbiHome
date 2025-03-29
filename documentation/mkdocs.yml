@@ -1,0 +1,52 @@
+site_name: OSHome
+repo_url: https://github.com/DanielHabenicht/OSHome
+extra:
+  homepage: https://example.com
+plugins:
+  - search
+  - social
+  - offline
+nav:
+  - Home: index.md
+  - Getting started: getting_started.md
+  - Feature: features.md
+theme:
+  name: material
+  language: en
+  palette:
+
+    # Palette toggle for automatic mode
+    - media: "(prefers-color-scheme)"
+      toggle:
+        icon: material/brightness-auto
+        name: Switch to light mode
+
+    # Palette toggle for light mode
+    - media: "(prefers-color-scheme: light)"
+      scheme: default 
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+
+    # Palette toggle for dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      toggle:
+        icon: material/brightness-4
+        name: Switch to system preference
+  # logo: assets/logo.png
+  # favicon: images/favicon.png
+
+  features:
+    - navigation.instant
+    - navigation.instant.progress
+    - navigation.tracking
+    - navigation.tabs
+    - toc.follow
+    - navigation.top
+    - search
+    - search.suggest
+    - search.highlight
+    - search.share
+
+

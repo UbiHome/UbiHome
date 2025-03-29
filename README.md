@@ -24,3 +24,18 @@ Analog to ESPHome OSHome is a system which allows you to integrate any device ru
 
 Rust clippy: 
 https://github.com/rust-lang/rust-clippy
+
+
+
+## Development
+
+## Windows
+
+```powershell
+
+winget install Rustlang.Rustup Rustlang.Rust.GNU Rustlang.Rust.MSVC
+```
+
+## Linux
+
+Just use the devcontainer setup.
