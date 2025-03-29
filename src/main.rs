@@ -1,11 +1,11 @@
-use os_home_shell::start;
+use oshome_shell::start;
 
 use clap::Parser;
 use env_logger;
 use env_logger::Env;
 use log::{info, warn};
-use os_home::Config;
-use os_home_mqtt::start_mqtt_client;
+use oshome::Config;
+use oshome_mqtt::start_mqtt_client;
 use std::fs;
 use tokio::signal;
 use tokio::sync::broadcast;
@@ -43,7 +43,7 @@ fn read_full_config(path: Option<&str>) -> Result<Config, serde_yaml::Error> {
     serde_yaml::from_str(DEFAULT_CONFIG)
 }
 
-fn read_base_config(path: Option<&str>) -> Result<os_home_core::CoreConfig, serde_yaml::Error> {
+fn read_base_config(path: Option<&str>) -> Result<oshome_core::CoreConfig, serde_yaml::Error> {
     if let Some(path) = path {
         if let Ok(content) = fs::read_to_string(path) {
             return serde_yaml::from_str(&content);
@@ -75,7 +75,7 @@ async fn main() {
             read_full_config(None).expect("Failed to load embedded default configuration")
         });
 
-    let base_config: os_home_core::CoreConfig = read_base_config(cli.configuration_override_file.as_deref())
+    let base_config: oshome_core::CoreConfig = read_base_config(cli.configuration_override_file.as_deref())
         .unwrap_or_else(|err| {
             warn!(
                 "Failed to parse configuration: {}, using default configuration.",

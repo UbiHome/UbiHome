@@ -1,5 +1,5 @@
 use log::debug;
-use os_home_core::{CoreConfig, Message, SensorKind};
+use oshome_core::{CoreConfig, Message, SensorKind};
 use serde::Deserialize;
 use shell_exec::{Execution, Shell, ShellError};
 use std::{str, time::Duration};

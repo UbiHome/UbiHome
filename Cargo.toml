@@ -1,5 +1,5 @@
 [package]
-name = "os-home"
+name = "oshome"
 version = "0.1.0"
 authors = ["Daniel Habenicht <daniel-habenicht@outlook.de>"]
 edition = "2018"
@@ -13,10 +13,10 @@ log = "0.4"
 rumqttc = "0.24.0"
 serde = { version = "1.0", features = ["derive"] }
 serde_yaml = "0.9"
-os-home-mqtt = { path = "components/mqtt" }
-os-home-shell = { path = "components/shell" }
-os-home-core = { path = "components/core" }
-os-home-web-server = { path = "components/web_server" }
+oshome-mqtt = { path = "components/mqtt" }
+oshome-shell = { path = "components/shell" }
+oshome-core = { path = "components/core" }
+oshome-web_server = { path = "components/web_server" }
 
 [workspace]
 resolver = "2"

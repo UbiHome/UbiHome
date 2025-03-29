@@ -1,5 +1,5 @@
 use log::debug;
-use os_home_core::{CoreConfig, Message};
+use oshome_core::{CoreConfig, Message};
 use serde::{Deserialize, Serialize};
 use rumqttc::{AsyncClient, Event, MqttOptions, QoS};
 use tokio::sync::broadcast::{Receiver, Sender};

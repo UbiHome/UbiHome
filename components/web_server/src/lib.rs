@@ -1,4 +1,5 @@
 use axum::{extract::State, http::StatusCode, response::IntoResponse, routing::get, Json, Router};
+use serde::Deserialize;
 use std::env;
 use std::time::Duration;
 
@@ -8,6 +9,11 @@ use tokio::signal;
 use tokio::net::TcpListener;
 use tower_http::timeout::TimeoutLayer;
 use tower_http::trace::TraceLayer;
+
+#[derive(Clone, Deserialize, Debug)]
+pub struct WebServerConfig {
+    pub port: u8,
+}
 
 #[derive(Clone, Debug)]
 struct AppState {

@@ -1,7 +1,8 @@
-use os_home_core::ButtonConfig;
+use oshome_core::ButtonConfig;
+use oshome_web_server::WebServerConfig;
 use serde::Deserialize;
-use os_home_mqtt::MqttConfig;
-use os_home_shell::ShellConfig;
+use oshome_mqtt::MqttConfig;
+use oshome_shell::ShellConfig;
 
 #[derive(Clone, Deserialize, Debug)]
 pub struct OSHome {
@@ -10,9 +11,11 @@ pub struct OSHome {
 
 #[derive(Clone, Deserialize, Debug)]
 pub struct Config {
+    pub oshome: OSHome,
+
     pub mqtt: Option<MqttConfig>,
     pub shell: Option<ShellConfig>,
-    pub oshome: OSHome,
-    pub button: Option<Vec<ButtonConfig>>
+    pub button: Option<Vec<ButtonConfig>>,
+    pub web_server: Option<WebServerConfig>,
 }
 

@@ -747,16 +747,16 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d05e27ee213611ffe7d6348b942e8f942b37114c00cc03cec254295a4a17852e"
 
 [[package]]
-name = "os-home"
+name = "oshome"
 version = "0.1.0"
 dependencies = [
  "clap",
  "env_logger",
  "log",
- "os-home-core",
- "os-home-mqtt",
- "os-home-shell",
- "os-home-web-server",
+ "oshome-core",
+ "oshome-mqtt",
+ "oshome-shell",
+ "oshome-web_server",
  "rumqttc",
  "rust-embed",
  "serde",
@@ -765,7 +765,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "os-home-core"
+name = "oshome-core"
 version = "0.1.0"
 dependencies = [
  "duration-str",
@@ -773,11 +773,11 @@ dependencies = [
 ]
 
 [[package]]
-name = "os-home-mqtt"
+name = "oshome-mqtt"
 version = "0.1.0"
 dependencies = [
  "log",
- "os-home-core",
+ "oshome-core",
  "rumqttc",
  "serde",
  "serde_json",
@@ -786,23 +786,23 @@ dependencies = [
 ]
 
 [[package]]
-name = "os-home-shell"
+name = "oshome-shell"
 version = "0.1.0"
 dependencies = [
  "log",
- "os-home-core",
+ "oshome-core",
  "serde",
  "shell_exec",
  "tokio",
 ]
 
 [[package]]
-name = "os-home-web-server"
+name = "oshome-web_server"
 version = "0.1.0"
 dependencies = [
  "axum",
  "log",
- "os-home-core",
+ "oshome-core",
  "serde",
  "tokio",
  "tower-http",
