@@ -1,0 +1,10 @@
+{
+    "packages": {
+        ".": {},
+        "components/core": {}
+    },
+    "plugins": [
+        "cargo-workspace"
+    ],
+    "release-type": "rust"
+}
