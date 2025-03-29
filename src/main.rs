@@ -2,12 +2,12 @@ mod constants;
 mod service;
 
 use directories::BaseDirs;
-use flexi_logger::{Age, Cleanup, Criterion, Duplicate, FileSpec, Logger, Naming, WriteMode};
+use flexi_logger::{Age, Cleanup, Criterion, Duplicate, FileSpec, Logger, Naming};
 use inquire::Text;
 use oshome_shell::start;
 
 use clap::{Arg, ArgAction, Command};
-use log::{debug, info, warn};
+use log::{info, warn};
 use oshome::Config;
 use oshome_mqtt::start_mqtt_client;
 use service::{install, uninstall};
@@ -124,7 +124,7 @@ fn cli() -> Command {
                     Arg::new("as-windows-service")
                         .long("as-windows-service")
                         .help("Flag to identify if run as windows service.")
-                        // .hide(true)
+                        .hide(true)
                         .action(ArgAction::SetTrue)
                         .num_args(0)
                         // .group("tests")
@@ -226,13 +226,13 @@ fn main() {
             let is_windows_service = sub_matches.get_one::<bool>("as-windows-service").unwrap();
             if *is_windows_service {
                 #[cfg(target_os = "linux")]
-                panic!("Running as a Windows service is not supported on Linux.");
                 // Run as a Windows service
                 info!("Running as Windows service");
                 #[cfg(target_os = "windows")]
                 use windows_service::service_dispatcher;
                 #[cfg(target_os = "windows")]
                 service_dispatcher::start(constants::SERVICE_NAME, ffi_service_main).unwrap();
+                panic!("Running as a Windows service is not supported on Linux.");
             } else {
                 // Run normally
                 run(config_file.clone(), None).unwrap();
@@ -256,7 +256,6 @@ fn run(
         // let mut listener = TcpListener::bind("127.0.0.1:8080").await?;
 
         // let cli = Args::parse();
-        use sysinfo::Users;
 
         info!("Hello from RUN");
 

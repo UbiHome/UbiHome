@@ -45,6 +45,9 @@ pub fn install(location: &str) -> Result<(), Box<dyn std::error::Error>> {
     };
     let service = service_manager.create_service(&service_info, ServiceAccess::CHANGE_CONFIG)?;
     service.set_description(constants::SERVICE_DESCRIPTION)?;
+
+    info!(" - TODO: Create Readme...");
+
     Ok(())
 }
 

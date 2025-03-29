@@ -7,6 +7,8 @@ use std::str;
 
 #[cfg(target_os = "linux")]
 pub async fn install(location: &str){
+    use crate::constants::{SERVICE_DESCRIPTION, SERVICE_NAME};
+
 
 
 
@@ -18,10 +20,10 @@ pub async fn install(location: &str){
     info!(" - Copying Binary to {}", new_path.display());
     fs::copy(env::current_exe().unwrap(), new_path).expect("Unable to copy file");
 
-    let systemd_file_path = "/etc/systemd/system/oshome";
-    info!(" - Creating Systemd Service at {}", systemd_file_path);
+    let systemd_file_path = Path::new("/etc/systemd/system/oshome").join(SERVICE_NAME);
+    info!(" - Creating Systemd Service at {}", systemd_file_path.to_string_lossy().to_string());
     let systemd_file: String = format!("[Unit]
-Description=my daemon
+Description={}
 After=network-online.target
 
 [Service]
@@ -32,7 +34,7 @@ ExecStart={}oshome
 StandardOutput=journal
 
 [Install]
-WantedBy=multi-user.target", location);
+WantedBy=multi-user.target", SERVICE_DESCRIPTION, location);
 
     fs::write(systemd_file_path, systemd_file).expect("Unable to write file");
     info!("- Running Commands for installation");
