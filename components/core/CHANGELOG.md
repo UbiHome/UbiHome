@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.2](https://github.com/DanielHabenicht/OSHome/compare/v0.2.1...oshome-core-v0.2.2) (2025-03-30)
+
+
+### Bug Fixes
+
+* better logging ([51a56f7](https://github.com/DanielHabenicht/OSHome/commit/51a56f73b71755448cc7774000d035057258f209))
+
 ## [0.2.1](https://github.com/DanielHabenicht/OSHome/compare/v0.2.0...oshome-core-v0.2.1) (2025-03-30)
 
 
