@@ -10,6 +10,8 @@ on:
 jobs:
   release:
     name: Release - ${{ matrix.platform.os-name }}
+    permissions:
+      contents: write
     strategy:
       matrix:
         platform:
