@@ -8,9 +8,6 @@ use std::str;
 pub async fn install(location: &str){
     use crate::constants::{SERVICE_DESCRIPTION, SERVICE_NAME};
 
-
-
-
     info!("Installing OSHome to {}", location);
     info!(" - Creating Folder at {}", location);
     fs::create_dir_all(location).expect("Unable to create directory");
@@ -19,7 +16,9 @@ pub async fn install(location: &str){
     info!(" - Copying Binary to {}", new_path.display());
     fs::copy(env::current_exe().unwrap(), new_path).expect("Unable to copy file");
 
-    let systemd_file_path = Path::new("/etc/systemd/system/oshome").join(SERVICE_NAME);
+    let service_file = format!("{}.service", SERVICE_NAME);
+
+    let systemd_file_path = Path::new("/etc/systemd/system").join(&service_file);
     info!(" - Creating Systemd Service at {}", systemd_file_path.to_string_lossy().to_string());
     let systemd_file: String = format!("[Unit]
 Description={}
@@ -38,8 +37,8 @@ WantedBy=multi-user.target", SERVICE_DESCRIPTION, location);
     fs::write(systemd_file_path, systemd_file).expect("Unable to write file");
     info!("- Running Commands for installation");
     execute_command("systemctl daemon-reload").await;
-    execute_command("systemctl enable oshome.service").await;
-    execute_command("systemctl start oshome.service").await;
+    execute_command(format!("systemctl enable {}", service_file).as_str()).await;
+    execute_command(format!("systemctl start {}", service_file).as_str()).await;
 
 }
 
