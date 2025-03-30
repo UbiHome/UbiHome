@@ -65,7 +65,7 @@ jobs:
           executable-name: oshome
           target: ${{ matrix.platform.target }}
           changes-file: null
-
+          extra-files: null
 
   # build:
   #   name: Build and Release
