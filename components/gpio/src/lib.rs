@@ -1,6 +1,5 @@
 use log::debug;
 use oshome_core::{binary_sensor::BinarySensorKind, sensor::SensorKind, CoreConfig, Message};
-use rppal::gpio::{Gpio, Trigger};
 use serde::Deserialize;
 use std::{str, time::Duration};
 use tokio::{sync::broadcast::{Receiver, Sender}, time};
@@ -17,6 +16,12 @@ pub struct GpioConfig {
 }
 
 pub async fn start(sender: Sender<Option<Message>>, mut receiver: Receiver<Option<Message>>, config: &CoreConfig, shell_config: &GpioConfig) {
+    #[cfg(target_os = "macos")]
+    {
+        panic!("GPIO is not supported on macOS.");
+    }
+    use rppal::gpio::{Gpio, Trigger};
+
     // Handle Button Presses
     let cloned_config = config.clone();
     let cloned_shell_config = shell_config.clone();
