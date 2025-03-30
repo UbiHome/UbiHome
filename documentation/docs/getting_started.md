@@ -14,20 +14,20 @@ For now[^1] a single executable is provided. You can download them from the rele
 <!-- x-release-please-start-version -->
 | Device         | Download                                                                                                          | Target                       |
 | -------------- | ----------------------------------------------------------------------------------------------------------------- | ---------------------------- | ---------------------------- |
-| Default         | [TAR Link](https://github.com/DanielHabenicht/OSHome/releases/download/v0.1.3/oshome-Linux-musl-x86_64.tar.gz) | arm-unknown-linux-musleabihf                                                                                                          |                              | arm-unknown-linux-musleabihf |
-| Raspberry Pi 3 | [TAR Link](https://github.com/DanielHabenicht/OSHome/releases/download/v0.1.3/oshome-Linux-musleabi-armv7.tar.gz) | arm-unknown-linux-musleabihf |
+| Default         | [TAR Link](https://github.com/DanielHabenicht/OSHome/releases/download/v0.2.0/oshome-Linux-musl-x86_64.tar.gz) | arm-unknown-linux-musleabihf                                                                                                          |                              | arm-unknown-linux-musleabihf |
+| Raspberry Pi 3 | [TAR Link](https://github.com/DanielHabenicht/OSHome/releases/download/v0.2.0/oshome-Linux-musleabi-armv7.tar.gz) | arm-unknown-linux-musleabihf |
 <!-- x-release-please-end -->
 
 ### Windows
 
 <!-- x-release-please-start-version -->
-[Download the ZIP](https://github.com/DanielHabenicht/OSHome/releases/download/v0.1.3/oshome-Windows-msvc-x86_64.zip).
+[Download the ZIP](https://github.com/DanielHabenicht/OSHome/releases/download/v0.2.0/oshome-Windows-msvc-x86_64.zip).
 <!-- x-release-please-end -->
 
 ### MacOS
 
 <!-- x-release-please-start-version -->
-[Download the TAR](https://github.com/DanielHabenicht/OSHome/releases/download/v0.1.3/oshome-macOS-x86_64.tar.gz)
+[Download the TAR](https://github.com/DanielHabenicht/OSHome/releases/download/v0.2.0/oshome-macOS-x86_64.tar.gz)
 <!-- x-release-please-end -->
 
 ## Installation
