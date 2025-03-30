@@ -18,11 +18,23 @@ For now[^1] a single executable is provided. You can download them from the [Git
     | Default        | [TAR Link](https://github.com/DanielHabenicht/OSHome/releases/download/v0.2.0/oshome-Linux-musl-x86_64.tar.gz)    | x86_64-unknown-linux-musl |
     | Raspberry Pi 3 | [TAR Link](https://github.com/DanielHabenicht/OSHome/releases/download/v0.2.0/oshome-Linux-musleabi-armv7.tar.gz) | armv7-unknown-linux-musleabi |
 
+    ```bash
+    curl -L -o oshome.tar.gz https://github.com/DanielHabenicht/OSHome/releases/download/v0.2.0/oshome-Linux-musleabi-armv7.tar.gz
+    tar xvzf ./oshome.tar.gz
+    ./oshome
+    ```
+
 === "Windows"
 
     | Device         | Download                                                                                                          | Target                       |
     | -------------- | ----------------------------------------------------------------------------------------------------------------- | ---------------------------- |
     | Windows 11        | [ZIP Link](https://github.com/DanielHabenicht/OSHome/releases/download/v0.2.0/oshome-Windows-msvc-x86_64.zip)    | x86_64-pc-windows-msvc |
+
+    ```powershell
+    Invoke-WebRequest -OutFile oshome.zip -Uri https://github.com/DanielHabenicht/OSHome/releases/download/v0.2.0/oshome-Windows-msvc-x86_64.zip
+    Expand-Archive -Force oshome.zip ./
+    ./oshome.exe
+    ```
 
 === "MacOS"
 

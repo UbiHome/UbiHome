@@ -13,19 +13,41 @@ It is designed to be lightweight and easy to use - similar to ESPHome.
 - Monitor the status of a device with a custom command. 
 - Integrate all of your _one off python scripts^TM^_ without thinking about connectivity or setting up yet another service.
 
-Future plans:
-- Monitor connected bluetooth devices and maybe even proxy them to home assistant.
+See the [getting started](getting_started.md) guide for installation instructions.
 
-## Examples
+Explore the [examples](examples/index.md) to see how to use OSHome.
 
-Monitor a device with a custom command:
-```yaml
+<!-- x-release-please-start-version -->
 
+```bash
+pi@raspberrypi:~/oshome $ ./oshome
+INFO [oshome] LogDirectory: /home/pi/.local/share
+OSHome - 0.2.0
+
+Analog to ESPHome OSHome is a system which allows you to integrate any device running an OS into your smart home.
+https://github.com/DanielHabenicht/OSHome
+
+Usage: oshome [OPTIONS] <COMMAND>
+
+Commands:
+  install    Insall OSHome
+  uninstall  Insall OSHome
+  run        Run OSHome manually.
+  help       Print this message or the help of the given subcommand(s)
+
+Options:
+  -c, --configuration <configuration_file>
+          Optional configuration file. If not provided, the default configuration will be used. [default: config.yaml]
+  -h, --help
+          Print help
+  -V, --version
+          Print version
 ```
-
+<!-- x-release-please-end -->
 
 ## Roadmap
 
+- Monitor connected bluetooth devices and maybe even proxy them to home assistant.
 - [ ] Auto installation
   - [ ] Windows (https://github.com/mullvad/windows-service-rs) https://medium.com/@aleksej.gudkov/rust-windows-service-example-building-a-windows-service-in-rust-907be67d2287
   - [ ] Linux Service

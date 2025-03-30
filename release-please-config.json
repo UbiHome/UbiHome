@@ -31,6 +31,10 @@
         {
             "type": "generic",
             "path": "documentation/docs/getting_started.md"
+        },
+        {
+            "type": "generic",
+            "path": "documentation/docs/index.md"
         }
     ]
 }

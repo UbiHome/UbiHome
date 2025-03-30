@@ -68,6 +68,7 @@ markdown_extensions:
   - pymdownx.superfences
   - pymdownx.betterem
   - pymdownx.details
+  - pymdownx.tasklist
   - pymdownx.highlight:
       anchor_linenums: true
       line_spans: __span
