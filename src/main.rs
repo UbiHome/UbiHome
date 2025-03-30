@@ -183,7 +183,6 @@ fn main() {
         .log_to_file(FileSpec::default().directory(&log_directory)) // write logs to file
         // .write_mode(WriteMode::BufferAndFlush)
         .append()
-        .duplicate_to_stderr(Duplicate::Error)
         .duplicate_to_stdout(Duplicate::Debug)
         .rotate(
             Criterion::AgeOrSize(Age::Day, 10 * 1024 * 1024),

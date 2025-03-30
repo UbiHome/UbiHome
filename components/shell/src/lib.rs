@@ -1,5 +1,5 @@
 use log::debug;
-use oshome_core::{CoreConfig, Message, SensorKind};
+use oshome_core::{binary_sensor::BinarySensorKind, sensor::SensorKind, CoreConfig, Message};
 use serde::Deserialize;
 use shell_exec::{Execution, Shell, ShellError};
 use std::{str, time::Duration};
@@ -71,6 +71,54 @@ pub async fn start(sender: Sender<Option<Message>>, mut receiver: Receiver<Optio
                                         _ = cloned_sender.send(Some(Message::SensorValueChange {
                                             key: key.clone(),
                                             value: output.clone(),
+                                        }));
+                                    },
+                                    Err(e) => {
+                                        debug!("Error executing command: {}", e);
+                                        continue;
+                                    }
+                                };
+                            }
+                        } else {
+                            debug!("Sensor {} has no update interval", key);
+                        }
+                    });
+                }
+            }
+        }
+    }
+
+    if let Some(binary_sensors) = config.binary_sensor.clone() {
+        for (key, binary_sensor) in binary_sensors {
+            let cloned_shell_config = shell_config.clone();
+            let cloned_sender = sender.clone();
+            let cloned_sensor = binary_sensor.clone();
+            match binary_sensor.kind {
+                BinarySensorKind::Shell(shell) => {
+                    debug!("BinarySensor {} is of type Shell", key);
+                    tokio::spawn(async move {
+                        if let Some(duration) = cloned_sensor.update_interval {
+                            let mut interval = time::interval(duration);
+                            debug!("Sensor {} has update interval: {:?}", key, interval);
+                            loop {
+                                interval.tick().await;
+                                let output = execute_command(&cloned_shell_config, shell.command.as_str(), &duration).await;
+                                // TODO: Handle long running commands (e.g. newline per value) and multivalued outputs (e.g. json)
+                                match output {
+                                    Ok(output) => {
+                                        debug!("Sensor {} output: {}", key, output);
+
+                                        let value = if output.trim().to_lowercase() == "true" {
+                                            true
+                                        } else if output.trim().to_lowercase() == "false" {
+                                            false
+                                        } else {
+                                            debug!("Invalid binary sensor output: {}", output);
+                                            continue;
+                                        };
+                                        _ = cloned_sender.send(Some(Message::BinarySensorValueChange {
+                                            key: key.clone(),
+                                            value: value.clone(),
                                         }));
                                     },
                                     Err(e) => {

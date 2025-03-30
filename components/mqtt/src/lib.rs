@@ -18,12 +18,14 @@ pub struct MqttConfig {
 #[serde(untagged)]
 enum Component {
     Button(HAButton),
-    Sensor(HASensor)
+    Sensor(HASensor),
+    BinarySensor(HABinarySensor),
 }
 
 #[derive(Clone, Serialize, Deserialize, Debug)]
 struct HAButton {
-    p: String,
+    #[serde(rename = "p")]
+    platform: String,
     unique_id: String,
     command_topic: String,
     name: String,
@@ -32,10 +34,27 @@ struct HAButton {
 
 #[derive(Clone, Serialize, Deserialize, Debug)]
 struct HASensor {
-    p: String,
+    #[serde(rename = "p")]
+    platform: String,
+    #[serde(rename = "ic")]
+    icon: Option<String>,
     name: String,
     device_class: Option<String>,
     unit_of_measurement: String,
+    unique_id: String,
+    object_id: String,
+    state_topic: String,
+}
+
+#[derive(Clone, Serialize, Deserialize, Debug)]
+struct HABinarySensor {
+    #[serde(rename = "p")]
+    platform: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "ic")]
+    icon: Option<String>,
+    name: String,
+    device_class: Option<String>,
     unique_id: String,
     object_id: String,
     state_topic: String,
@@ -93,7 +112,8 @@ pub async fn start_mqtt_client(sender: Sender<Option<Message>>, mut receiver: Re
                 key.clone(),
                 Component::Sensor(
                     HASensor {
-                        p: "sensor".to_string(),
+                        platform: "sensor".to_string(),
+                        icon: sensor.icon.clone(),
                         unique_id: id.clone(),
                         device_class: sensor.device_class.clone(),
                         unit_of_measurement: sensor.unit_of_measurement.clone(),
@@ -104,18 +124,42 @@ pub async fn start_mqtt_client(sender: Sender<Option<Message>>, mut receiver: Re
             );
         }
     }
+    if let Some(binary_sensors) = config.binary_sensor.clone() {
+        for (key, sensor) in binary_sensors {
+            let id = format!("{}_{}", config.oshome.name, key.clone());
+            components.insert(
+                key.clone(),
+                Component::BinarySensor(
+                    HABinarySensor {
+                        platform: "binary_sensor".to_string(),
+                        icon: sensor.icon.clone(),
+                        unique_id: id.clone(),
+                        device_class: sensor.device_class.clone(),
+                        name: sensor.name.clone(),
+                        state_topic: format!("{}/{}", base_topic.clone(), key.clone()),
+                        object_id: id.clone(),
+            })
+            );
+        }
+    }
+
+
+    let mut topics: Vec<String> = vec![];
 
     if let Some(buttons) = config.button.clone() {
         for (key, button) in buttons {
             let id = format!("{}_{}", config.oshome.name, key.clone());
+            let topic = format!("{}/{}", base_topic.clone(), key.clone());
+            topics.push(topic.clone());
+
             components.insert(
                 key.clone(),
                 Component::Button(
                     HAButton {
-                        p: "button".to_string(),
+                        platform: "button".to_string(),
                         unique_id: id.clone(),
                         name: button.name.clone(),
-                        command_topic: format!("{}/{}", base_topic.clone(), key.clone()),
+                        command_topic: topic,
                         object_id: id.clone(),
             })
             );
@@ -159,14 +203,24 @@ pub async fn start_mqtt_client(sender: Sender<Option<Message>>, mut receiver: Re
     debug!("Discovery message published successfully");
     
     // Subscribe to the discovery topic
-    client
-        .subscribe(
-            &format!("{}/#", base_topic.clone()),
-            QoS::AtLeastOnce,
-        )
-        .await
-        .unwrap();
-    debug!("Subscribed to topic: {}/#", base_topic.clone());
+    for topic in topics {
+        debug!("Subscribing to topic: {}", topic);
+        client
+            .subscribe(
+                &topic,
+                QoS::AtLeastOnce,
+            )
+            .await
+            .unwrap();
+    }
+    // client
+    //     .subscribe(
+    //         &format!("{}/#", base_topic.clone()),
+    //         QoS::AtLeastOnce,
+    //     )
+    //     .await
+    //     .unwrap();
+    // debug!("Subscribed to topic: {}/#", base_topic.clone());
 
     // Publish a test message
     client.publish(format!("{}/{}", base_topic.clone(), "test"), QoS::AtMostOnce, false, "Hello MQTT!").await.unwrap();
@@ -187,7 +241,7 @@ pub async fn start_mqtt_client(sender: Sender<Option<Message>>, mut receiver: Re
                             };
 
                             let _ = sender.send(Some(msg));
-                            info!("Button command received: {:?}", publish.payload);
+                            debug!("Received on '{}': {:?}", topic, publish.payload);
                         }
                     }
                 }
@@ -208,9 +262,22 @@ pub async fn start_mqtt_client(sender: Sender<Option<Message>>, mut receiver: Re
 
             match cmd {
                 SensorValueChange { key, value } => {
-                    debug!("Sensor value changed: {} = {}", key, value);
+                    debug!("Sensor value published: {} = {}", key, value);
                     // Handle sensor value change
                     if let Err(e) = client.publish(format!("{}/{}", base_topic2, key), QoS::AtMostOnce, false, value).await {
+                        error!("{}", e)
+                    }
+                }
+                BinarySensorValueChange { key, value } => {
+                    debug!("Binary Sensor value published: {} = {}", key, value);
+
+                    let payload = if value {
+                        "ON"
+                    } else {
+                        "OFF"
+                    };
+                    // Handle sensor value change
+                    if let Err(e) = client.publish(format!("{}/{}", base_topic2, key), QoS::AtMostOnce, false, payload).await {
                         error!("{}", e)
                     }
                 }

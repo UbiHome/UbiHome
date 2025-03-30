@@ -1,4 +1,4 @@
-use oshome_core::ButtonConfig;
+use oshome_core::{binary_sensor::BinarySensor, button::ButtonConfig};
 use oshome_web_server::WebServerConfig;
 use serde::Deserialize;
 use oshome_mqtt::MqttConfig;
@@ -16,6 +16,7 @@ pub struct Config {
     pub mqtt: Option<MqttConfig>,
     pub shell: Option<ShellConfig>,
     pub button: Option<Vec<ButtonConfig>>,
+    pub binary_sensor: Option<Vec<BinarySensor>>,
     pub web_server: Option<WebServerConfig>,
 }
 

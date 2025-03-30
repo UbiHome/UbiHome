@@ -5,7 +5,7 @@ sensor:
   - platform: shell
     name: "RAM Usage"
     id: ram_usage
-    icon: "mdi:bluetooth-settings"
+    icon: mdi:memory
     # device_class: "data_size"
     state_class: "measurement"
     unit_of_measurement: "%"
