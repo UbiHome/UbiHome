@@ -8,49 +8,105 @@ on:
       - 'v*'
 
 jobs:
-  build:
-    name: Build and Release
-    runs-on: ${{ matrix.os }}
-    permissions:
-      contents: write
-
+  release:
+    name: Release - ${{ matrix.platform.os-name }}
     strategy:
       matrix:
-        include:
-        - target: x86_64-unknown-linux-gnu # tested in a debian container on a mac
-          os: ubuntu-latest
-          fileending: ""
-        # Does not work with cross-rs
-        # - target: x86_64-apple-darwin # tested on a mac, is not properly signed so there are security warnings
-        #   os: macos-latest
-        #   fileending: ""
-        - target: x86_64-pc-windows-msvc # tested on a windows machine
-          os: windows-latest
-          fileending: ".exe"
-        - target: armv7-unknown-linux-musleabi # tested on a raspberry pi 3
-          os: ubuntu-latest
-          fileending: ""
+        platform:
+          - os-name: Linux-x86_64
+            runs-on: ubuntu-24.04
+            target: x86_64-unknown-linux-musl
+            fileending: ""
+            
+          - os-name: Windows-x86_64
+            runs-on: windows-latest
+            target: x86_64-pc-windows-msvc
+            fileending: ".exe"
+            
+          - os-name: macOS-x86_64
+            runs-on: macOS-latest
+            target: x86_64-apple-darwin
+            fileending: ""
 
+          - os-name: Linux-debian
+            target: armv7-unknown-linux-musleabi
+            runs-on: ubuntu-24.04
+            fileending: ""
+
+          # - os-name: Linux-riscv64
+          #   runs-on: ubuntu-24.04
+          #   target: riscv64gc-unknown-linux-gnu
+
+          # - os-name: FreeBSD-x86_64
+          #   runs-on: ubuntu-24.04
+          #   target: x86_64-unknown-freebsd
+
+          # - os-name: Linux-aarch64
+          #   runs-on: ubuntu-24.04
+          #   target: aarch64-unknown-linux-musl
+
+    runs-on: ${{ matrix.platform.runs-on }}
     steps:
-    - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Build binary
+        uses: houseabsolute/actions-rust-cross@v1
+        with:
+          command: ${{ matrix.platform.command }}
+          target: ${{ matrix.platform.target }}
+          args: "--locked --release"
+          strip: true
 
-    - name: Set up Rust
-      uses: actions-rs/toolchain@v1
-      with:
-        toolchain: stable
+      # - name: Publish artifacts and release
+      #   uses: houseabsolute/actions-rust-release@v0
+      #   with:
+      #     executable-name: ubi
+      #     target: ${{ matrix.platform.target }}
 
-    - name: Rust Cache
-      uses: Swatinem/rust-cache@v2.7.8
-      with:
-        key: release
 
-    - name: Install cross-rs
-      run: cargo install cross --git https://github.com/cross-rs/cross
+  # build:
+  #   name: Build and Release
+  #   runs-on: ${{ matrix.os }}
+  #   permissions:
+  #     contents: write
 
-    - name: Build
-      run: cross build --release --target ${{ matrix.target }}            
+  #   strategy:
+  #     matrix:
+  #       include:
+  #       - target: x86_64-unknown-linux-gnu # tested in a debian container on a mac
+  #         os: ubuntu-latest
+  #         fileending: ""
+  #       # Does not work with cross-rs
+  #       # - target: x86_64-apple-darwin # tested on a mac, is not properly signed so there are security warnings
+  #       #   os: macos-latest
+  #       #   fileending: ""
+  #       - target: x86_64-pc-windows-msvc # tested on a windows machine
+  #         os: windows-latest
+  #         fileending: ".exe"
+  #       - target: armv7-unknown-linux-musleabi # tested on a raspberry pi 3
+  #         os: ubuntu-latest
+  #         fileending: ""
 
-    # - name: Upload Release Artifact
-    #   env:
-    #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-    #   run: gh release upload ${{ github.ref_name }} target/${{ matrix.target }}/release/oshome${{ matrix.fileending }}
+  #   steps:
+  #   - uses: actions/checkout@v4
+
+  #   - name: Set up Rust
+  #     uses: actions-rs/toolchain@v1
+  #     with:
+  #       toolchain: stable
+
+  #   - name: Rust Cache
+  #     uses: Swatinem/rust-cache@v2.7.8
+  #     with:
+  #       key: release
+
+  #   - name: Install cross-rs
+  #     run: cargo install cross --git https://github.com/cross-rs/cross
+
+  #   - name: Build
+  #     run: cross build --release --target ${{ matrix.target }}            
+
+  #   # - name: Upload Release Artifact
+  #   #   env:
+  #   #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  #   #   run: gh release upload ${{ github.ref_name }} target/${{ matrix.target }}/release/oshome${{ matrix.fileending }}
