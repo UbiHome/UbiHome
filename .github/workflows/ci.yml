@@ -14,12 +14,12 @@ jobs:
         include:
         - target: x86_64-unknown-linux-gnu # tested in a debian container on a mac
           os: ubuntu-latest
-        - target: aarch64-unknown-linux-gnu # tested on aws t4g.nano
-          os: ubuntu-latest
-        - target: armv7-unknown-linux-gnueabihf # raspberry pi 2-3-4, not tested
-          os: ubuntu-latest
-        - target: arm-unknown-linux-gnueabihf # raspberry pi 0-1, not tested
-          os: ubuntu-latest
+        # - target: aarch64-unknown-linux-gnu # tested on aws t4g.nano
+        #   os: ubuntu-latest
+        # - target: armv7-unknown-linux-gnueabihf # raspberry pi 2-3-4, not tested
+        #   os: ubuntu-latest
+        # - target: arm-unknown-linux-gnueabihf # raspberry pi 0-1, not tested
+        #   os: ubuntu-latest
         - target: x86_64-apple-darwin # tested on a mac, is not properly signed so there are security warnings
           os: macos-latest
         - target: x86_64-pc-windows-msvc # tested on a windows machine
