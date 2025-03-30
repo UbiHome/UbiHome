@@ -1,5 +1,7 @@
 # Changelog
 
+## [0.3.5](https://github.com/DanielHabenicht/OSHome/compare/v0.3.2...oshome-web_server-v0.3.5) (2025-03-30)
+
 ## [0.2.4](https://github.com/DanielHabenicht/OSHome/compare/oshome-web_server-v0.2.3...oshome-web_server-v0.2.4) (2025-03-30)
 
 ## [0.2.3](https://github.com/DanielHabenicht/OSHome/compare/v0.2.2...oshome-web_server-v0.2.3) (2025-03-30)
