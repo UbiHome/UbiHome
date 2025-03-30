@@ -69,21 +69,36 @@ pub async fn start(
             for (key, binary_sensor) in binary_sensors {
                 let cloned_sender = sender.clone();
                 match binary_sensor.kind {
-                    BinarySensorKind::Gpio(gpio) => {
+                    BinarySensorKind::Gpio(gpio_config) => {
                         debug!("BinarySensor {} is of type Gpio", key);
 
                         let gpio = Gpio::new().unwrap();
                         let mut pin = gpio
-                            .get(23)
+                            .get(gpio_config.pin)
                             .expect("GPIO pin not found?")
                             .into_input_pullup();
 
                         pin.set_async_interrupt(
-                            Trigger::RisingEdge,             // TODO: configurable!
-                            Some(Duration::from_millis(50)), // TOOD: configurable!
+                            Trigger::Both,
+                            None,
                             move |event| {
                                 debug!("BinarySensor {} triggered.", key);
                                 println!("Binary Sensor '{}' triggered.", key);
+                                match event.trigger {
+                                    Trigger::RisingEdge => {
+                                        debug!("RisingEdge triggered.");
+                                    }
+                                    Trigger::FallingEdge => {
+                                        debug!("FallingEdge triggered.");
+                                    }
+                                    Trigger::Both => {
+                                        debug!("Both triggered.");
+                                    }
+                                    _ => {
+                                        debug!("Unknown trigger.");
+                                    }
+                                }
+
 
                                 _ = cloned_sender.send(Some(Message::BinarySensorValueChange {
                                     key: key.clone(),
