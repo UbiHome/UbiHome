@@ -1,0 +1,17 @@
+shell: 
+
+sensor:
+  - platform: shell
+    name: "RAM Usage"
+    id: ram_usage
+    icon: "mdi:bluetooth-settings"
+    # device_class: "data_size"
+    state_class: "measurement"
+    unit_of_measurement: "%"
+    update_interval: 30s # 0 only executes it once and assumes a long running processes.
+    command: |-
+      if hcitool con | grep -q "00:12:6F:F1:FF:61"; then
+          echo true
+      else
+          echo false
+      fi
