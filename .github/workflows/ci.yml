@@ -14,6 +14,7 @@ jobs:
         include:
         - target: x86_64-unknown-linux-gnu # tested in a debian container on a mac
           os: ubuntu-latest
+          fileending: ""
         # - target: aarch64-unknown-linux-gnu # tested on aws t4g.nano
         #   os: ubuntu-latest
         # - target: armv7-unknown-linux-gnueabihf # raspberry pi 2-3-4, not tested
@@ -22,8 +23,10 @@ jobs:
         #   os: ubuntu-latest
         - target: x86_64-apple-darwin # tested on a mac, is not properly signed so there are security warnings
           os: macos-latest
+          fileending: ""
         - target: x86_64-pc-windows-msvc # tested on a windows machine
           os: windows-latest
+          fileending: ".exe"
 
     steps:
       - uses: actions/checkout@v4
@@ -43,14 +46,6 @@ jobs:
 
       - name: Build
         run: cargo build --release --target ${{ matrix.target }}
-        
-      - name: Prepare artifacts tests
-        run: |
-          rm -r target/${{ matrix.target }}/release/deps
-          rm -r target/${{ matrix.target }}/release/build
-          rm -r target/${{ matrix.target }}/release/examples
-          rm -r target/${{ matrix.target }}/release/incremental
-
 
       - name: Prepare artifact
         run: |
@@ -64,7 +59,7 @@ jobs:
         with:
           name: release-${{ matrix.target }}
           path: |
-            artifact/${{ matrix.target }}-${{ github.ref_name }}.zip
+            target/${{ matrix.target }}/release/oshome${{ matrix.fileending }}
 
 
 
