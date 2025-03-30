@@ -47,12 +47,6 @@ jobs:
       - name: Build
         run: cargo build --release --target ${{ matrix.target }}
 
-      - name: Prepare artifact
-        run: |
-          mkdir -p artifact
-          cp target/${{ matrix.target }}/release/* artifact/
-          zip -j artifact/${{ matrix.target }}-${{ github.ref_name }}.zip artifact/*
-
       # Save executable
       - name: Archive artifacts
         uses: actions/upload-artifact@v4
