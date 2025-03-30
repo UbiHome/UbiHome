@@ -72,11 +72,17 @@ pub async fn start(
                     BinarySensorKind::Gpio(gpio_config) => {
                         debug!("BinarySensor {} is of type Gpio", key);
 
-                        let gpio = Gpio::new().unwrap();
-                        let mut pin = gpio
-                            .get(gpio_config.pin)
-                            .expect("GPIO pin not found?")
-                            .into_input_pullup();
+                        let gpio = Gpio::new().unwrap().get(gpio_config.pin).expect("GPIO pin not found?");
+                        let mut pin: rppal::gpio::InputPin;
+                        if let Some(pullup) = gpio_config.pull_up {
+                            if pullup {
+                                pin = gpio.into_input_pullup();
+                            } else {
+                                pin = gpio.into_input_pulldown();
+                            }
+                        } else {
+                            pin = gpio.into_input_pullup();
+                        }
 
                         pin.set_async_interrupt(
                             Trigger::Both,

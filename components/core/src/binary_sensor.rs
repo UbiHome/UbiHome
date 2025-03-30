@@ -34,5 +34,6 @@ pub struct ShellBinarySensorConfig {
 
 #[derive(Clone, Deserialize, Debug)]
 pub struct GpioBinarySensorConfig {
-    pub pin: u8 // TODO: Use GPIO types or library
+    pub pin: u8, // TODO: Use GPIO types or library
+    pub pull_up: Option<bool>,
 }
