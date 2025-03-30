@@ -1,7 +1,7 @@
 site_name: OSHome
 repo_url: https://github.com/DanielHabenicht/OSHome
 extra:
-  homepage: https://example.com
+  homepage: https://danielhabenicht.github.io/OSHome/
 plugins:
   - search
   - social
