@@ -2,6 +2,8 @@ name: Release
 
 on:
   push:
+    # Just for debugging
+    branches: [ main ]
     tags:
       - 'v*'
 
@@ -18,18 +20,15 @@ jobs:
         - target: x86_64-unknown-linux-gnu # tested in a debian container on a mac
           os: ubuntu-latest
           fileending: ""
-        # - target: aarch64-unknown-linux-gnu # tested on aws t4g.nano
-        #   os: ubuntu-latest
-        # - target: armv7-unknown-linux-gnueabihf # raspberry pi 2-3-4, not tested
-        #   os: ubuntu-latest
-        # - target: arm-unknown-linux-gnueabihf # raspberry pi 0-1, not tested
-        #   os: ubuntu-latest
         - target: x86_64-apple-darwin # tested on a mac, is not properly signed so there are security warnings
           os: macos-latest
           fileending: ""
         - target: x86_64-pc-windows-msvc # tested on a windows machine
           os: windows-latest
           fileending: ".exe"
+        - target: armv7-unknown-linux-musleabi # tested on a raspberry pi 3
+          os: ubuntu-latest
+          fileending: ""
 
     steps:
     - uses: actions/checkout@v4
@@ -44,13 +43,13 @@ jobs:
       with:
         key: release
 
-    - name: Install rust target
-      run: rustup target add ${{ matrix.target }}
+    - name: Install cross-rs
+      run: cargo install cross --git https://github.com/cross-rs/cross
 
     - name: Build
-      run: cargo build --release --target ${{ matrix.target }}            
+      run: cross build --release --target ${{ matrix.target }}            
 
-    - name: Upload Release Artifact
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      run: gh release upload ${{ github.ref_name }} target/${{ matrix.target }}/release/oshome${{ matrix.fileending }}
+    # - name: Upload Release Artifact
+    #   env:
+    #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    #   run: gh release upload ${{ github.ref_name }} target/${{ matrix.target }}/release/oshome${{ matrix.fileending }}
