@@ -13,7 +13,13 @@
         "components/core": {
             "skip-github-release": true
         },
+        "components/gpio": {
+            "skip-github-release": true
+        },
         "components/mqtt": {
+            "skip-github-release": true
+        },
+        "components/python": {
             "skip-github-release": true
         },
         "components/shell": {
