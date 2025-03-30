@@ -351,7 +351,9 @@ fn run(
         //     });
         // };
 
-
+        tokio::spawn(async move {
+            oshome_api::start().await.unwrap();
+        });
 
         let ctrl_c = async {
             signal::ctrl_c()

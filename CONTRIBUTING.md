@@ -17,6 +17,10 @@ winget install Rustlang.Rustup Rustlang.Rust.GNU Rustlang.Rust.MSVC
 
 Just use the devcontainer setup.
 
+```bash
+sudo apt install -y protobuf-compiler
+```
+
 
 ## Current Pitfalls
 
