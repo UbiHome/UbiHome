@@ -10,7 +10,7 @@ fn service_file() -> String {
     format!("{}.service", SERVICE_NAME)
 }
 
-pub const SYSTEMD_FILE_PATH: &str = "Service for OSHome";
+pub const SYSTEMD_FILE_PATH: &str = "/etc/systemd/system";
 
 
 pub async fn install(location: &str){
