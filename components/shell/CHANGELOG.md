@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.1](https://github.com/DanielHabenicht/OSHome/compare/v0.2.0...oshome-shell-v0.2.1) (2025-03-30)
+
+
+### Bug Fixes
+
+* better cli output ([4a24886](https://github.com/DanielHabenicht/OSHome/commit/4a24886e59bd7dc1a441d7f2e418bd700976d377))
+
 ## [0.2.0](https://github.com/DanielHabenicht/OSHome/compare/v0.1.3...oshome-shell-v0.2.0) (2025-03-30)
 
 
