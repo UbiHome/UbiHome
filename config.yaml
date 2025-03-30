@@ -2,12 +2,13 @@ oshome:
   name: new_awesome
 
 mqtt: 
-  broker: 192.168.178.167
-  username: test
-  password: a887aeda-7248-4b0f-a2e7-6f4ee0026f5e
+  broker: 127.0.0.1
+  port: 1883
+  username: user
+  password: password
 
 shell: 
-  type: powershell
+  type: bash
 
 button: 
  - platform: shell

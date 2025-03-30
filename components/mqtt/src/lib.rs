@@ -63,18 +63,19 @@ struct DiscoveryMessage {
     components: HashMap<String, Component>,
 }
 
-// TODO: Reconnect to MQTT broker if connection is lost
-
 pub async fn start_mqtt_client(sender: Sender<Option<Message>>, mut receiver: Receiver<Option<Message>>, config: &CoreConfig, mqtt_config: &MqttConfig) {
     let mut mqttoptions = MqttOptions::new(
         config.oshome.name.clone(),
         mqtt_config.broker.clone(),
         mqtt_config.port.unwrap_or(1883),
     );
+    info!("MQTT {}:{}", mqtt_config.broker, mqtt_config.port.unwrap_or(1883));
+
     mqttoptions.set_keep_alive(Duration::from_secs(5));
 
     if let Some(username) = mqtt_config.username.clone() {
         if let Some(password) = mqtt_config.password.clone() {
+            info!("Using MQTT username and password");
             mqttoptions.set_credentials(username, password);
         }
     }
@@ -209,7 +210,9 @@ pub async fn start_mqtt_client(sender: Sender<Option<Message>>, mut receiver: Re
                 SensorValueChange { key, value } => {
                     debug!("Sensor value changed: {} = {}", key, value);
                     // Handle sensor value change
-                    client.publish(format!("{}/{}", base_topic2, key), QoS::AtMostOnce, false, value).await.unwrap();
+                    if let Err(e) = client.publish(format!("{}/{}", base_topic2, key), QoS::AtMostOnce, false, value).await {
+                        error!("{}", e)
+                    }
                 }
                 _ => {
                     debug!("Ignored message type: {:?}", cmd);

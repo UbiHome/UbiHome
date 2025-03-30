@@ -7,7 +7,7 @@ use inquire::Text;
 use oshome_shell::start;
 
 use clap::{Arg, ArgAction, Command};
-use log::{info, warn};
+use log::{debug, info, warn};
 use oshome::Config;
 use oshome_mqtt::start_mqtt_client;
 use service::{install, uninstall};
@@ -66,7 +66,9 @@ fn windows_service_main(_arguments: Vec<std::ffi::OsString>) {
     dir.push("config.yaml");
     let config = dir.to_string_lossy().to_string();
     info!("Config file path: {}", config);
-    run(Some(&config), Some(shutdown_rx)).unwrap();
+    if let Err(e) = run(Some(&config), Some(shutdown_rx)) {
+        error!("{}", e)
+    }
 
     info!("Service is stopping...");
     status_handle
@@ -191,6 +193,7 @@ fn main() {
         .start()
         .unwrap();
     info!("LogDirectory: {}", log_directory.display());
+    debug!("test");
 
     let matches = cli().get_matches();
     let config_file = matches.try_get_one::<String>("configuration_file").unwrap();
@@ -256,9 +259,6 @@ fn run(
         // let mut listener = TcpListener::bind("127.0.0.1:8080").await?;
 
         // let cli = Args::parse();
-
-        info!("Hello from RUN");
-
         // Read the configuration file or use the embedded default
         let config: Config = read_full_config(config_file).unwrap_or_else(|err| {
             warn!(
@@ -296,27 +296,6 @@ fn run(
             tokio::spawn(async move {
                 let rx2 = tx2.subscribe();
                 start(tx2, rx2, &shell_base_config, &shell_config).await;
-
-                // while let Ok(Some(cmd)) = rx.recv().await {
-                //     use Message::*;
-
-                //     match cmd {
-                //         ButtonPress { key } => {
-                //             if let Some(button) = &base_config.button.as_ref().and_then(|b| b.get(&key))
-                //             {
-                //                 debug!("Button pressed: {}", key);
-                //                 debug!("Executing command: {}", button.command);
-                //             } else {
-                //                 debug!("Button pressed: {}", key);
-                //                 warn!("No Action found?!");
-                //             }
-                //         },
-                //         SensorValueChange { key, value } => {
-                //             debug!("Sensor value changed: {} = {}", key, value);
-                //             // Handle sensor value change
-                //         }
-                //     }
-                // }
             });
         };
         let ctrl_c = async {
@@ -365,27 +344,3 @@ fn run(
     Ok(())
 }
 
-// Define the service name
-
-// Main service entry point
-// fn service_main(_arguments: Vec<std::ffi::OsString>) {
-//     if let Err(e) = run_service() {
-//         error!("Service failed: {:?}", e);
-//     }
-// }
-// fn run_service() -> Result<()> {
-//     // Define service status
-
-//     // Main service loop
-//     info!("Service is running...");
-//     loop {
-//         if shutdown_rx.try_recv().is_ok() {
-//             info!("Shutdown signal received");
-//             break;
-//         }
-//         thread::sleep(Duration::from_secs(1));
-//     }
-//     info!("Service is stopping...");
-
-//     Ok(())
-// }
