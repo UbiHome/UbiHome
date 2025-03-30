@@ -20,9 +20,10 @@ jobs:
         - target: x86_64-unknown-linux-gnu # tested in a debian container on a mac
           os: ubuntu-latest
           fileending: ""
-        - target: x86_64-apple-darwin # tested on a mac, is not properly signed so there are security warnings
-          os: macos-latest
-          fileending: ""
+        # Does not work with cross-rs
+        # - target: x86_64-apple-darwin # tested on a mac, is not properly signed so there are security warnings
+        #   os: macos-latest
+        #   fileending: ""
         - target: x86_64-pc-windows-msvc # tested on a windows machine
           os: windows-latest
           fileending: ".exe"
