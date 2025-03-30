@@ -63,7 +63,9 @@ Options:
 - [ ] CLI for automatic generation of executables
 - [ ] Builder Component similar to ESP Home
 - [ ] Self update (https://github.com/jaemk/self_update)
+- [ ] GPIO https://github.com/golemparts/rppal
 
+... Control USB Devices?
 
 Rust clippy: 
 https://github.com/rust-lang/rust-clippy

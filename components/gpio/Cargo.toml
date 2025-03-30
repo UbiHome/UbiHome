@@ -1,0 +1,12 @@
+[package]
+name = "oshome-gpio"
+version = "0.2.2"
+authors = ["Daniel Habenicht <daniel-habenicht@outlook.de>"]
+edition = "2018"
+
+[dependencies]
+log = "0.4"
+serde = { version = "1.0", features = ["derive"] }
+tokio = { version = "1", features = ["full"] }
+oshome-core = { path = "../core" }
+rppal = "0.22.1"

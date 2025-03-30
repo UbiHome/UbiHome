@@ -1,4 +1,5 @@
 use oshome_core::{binary_sensor::BinarySensor, button::ButtonConfig};
+use oshome_gpio::GpioConfig;
 use oshome_web_server::WebServerConfig;
 use serde::Deserialize;
 use oshome_mqtt::MqttConfig;
@@ -34,5 +35,6 @@ pub struct Config {
     pub button: Option<Vec<ButtonConfig>>,
     pub binary_sensor: Option<Vec<BinarySensor>>,
     pub web_server: Option<WebServerConfig>,
+    pub gpio: Option<GpioConfig>,
 }
 

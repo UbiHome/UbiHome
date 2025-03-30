@@ -5,21 +5,29 @@ use log::debug;
 use shell_exec::{Execution, Shell};
 use std::str;
 
-pub async fn install(location: &str){
-    use crate::constants::{SERVICE_DESCRIPTION, SERVICE_NAME};
+fn service_file() -> String {
+    use crate::constants::SERVICE_NAME;
+    format!("{}.service", SERVICE_NAME)
+}
 
-    info!("Installing OSHome to {}", location);
-    info!(" - Creating Folder at {}", location);
+pub const SYSTEMD_FILE_PATH: &str = "Service for OSHome";
+
+
+pub async fn install(location: &str){
+    use crate::constants::SERVICE_DESCRIPTION;
+
+    println!("Installing OSHome to {}", location);
+    println!(" - Creating Folder at {}", location);
     fs::create_dir_all(location).expect("Unable to create directory");
 
     let new_path = Path::new(location).join("oshome");
-    info!(" - Copying Binary to {}", new_path.display());
+    println!(" - Copying Binary to {}", new_path.display());
     fs::copy(env::current_exe().unwrap(), new_path).expect("Unable to copy file");
 
-    let service_file = format!("{}.service", SERVICE_NAME);
+    let service_file = service_file();
 
-    let systemd_file_path = Path::new("/etc/systemd/system").join(&service_file);
-    info!(" - Creating Systemd Service at {}", systemd_file_path.to_string_lossy().to_string());
+    let systemd_file_path = Path::new(SYSTEMD_FILE_PATH).join(&service_file);
+    println!(" - Creating Systemd Service file {}", systemd_file_path.to_string_lossy().to_string());
     let systemd_file: String = format!("[Unit]
 Description={}
 After=network-online.target
@@ -28,17 +36,23 @@ After=network-online.target
 Type=simple
 Restart=always
 RestartSec=1
-ExecStart={}oshome
+ExecStart={}/oshome run
 StandardOutput=journal
+WorkingDirectory={}
+
 
 [Install]
-WantedBy=multi-user.target", SERVICE_DESCRIPTION, location);
+WantedBy=multi-user.target", SERVICE_DESCRIPTION, location, location);
 
     fs::write(systemd_file_path, systemd_file).expect("Unable to write file");
-    info!("- Running Commands for installation");
+    println!("- Installing Systemd Service");
     execute_command("systemctl daemon-reload").await;
     execute_command(format!("systemctl enable {}", service_file).as_str()).await;
     execute_command(format!("systemctl start {}", service_file).as_str()).await;
+
+    println!("Successfully installed!");
+    println!("Query the status via `systemctl status {}`", service_file);
+    println!("Or follow the log with `journalctl -u {}`", service_file);
 
 }
 
@@ -63,9 +77,24 @@ async fn execute_command(command: &str) {
 
 pub async fn uninstall(location: &str){
 
-    info!("Uninstalling OSHome at {}", location);
-    // "systemctl daemon-reload"
-    // "systemctl enable oshome.service"
-    // "systemctl start oshome.service"
+    if location.chars().filter(|c| *c == '/').count() < 2 {
+        println!("To not shoot yourself in the foot, please provide a longer path");
+        return;
+    }
+
+    println!("Uninstalling OSHome at {}", location);
+    println!(" - Remove Folder at {}", location);
+    fs::remove_dir(location).unwrap();
+
+    println!("- Removing Systemd Service");
+    let service_file = service_file();
+    execute_command(format!("systemctl stop {}", service_file).as_str()).await;
+    execute_command(format!("systemctl disable {}", service_file).as_str()).await;
+    let systemd_file_path = Path::new(SYSTEMD_FILE_PATH).join(&service_file);
+    fs::remove_file(systemd_file_path).expect("Unable to remove file");
+    
+    execute_command("systemctl daemon-reload").await;
+    println!("TODO: remove log files?");
+
 
 }

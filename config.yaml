@@ -12,6 +12,8 @@ mqtt:
   username: test
   password: a887aeda-7248-4b0f-a2e7-6f4ee0026f5e
 
+gpio:
+  device: raspberryPi
 
 shell: 
   type: bash
@@ -47,6 +49,11 @@ binary_sensor:
       else
           echo false
       fi
+  - platform: gpio
+    name: "Motion"
+    id: motion
+    device_class: presence
+    pin: 23
 
 
 # TODO: Things still to implement...

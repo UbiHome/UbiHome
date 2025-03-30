@@ -119,7 +119,7 @@ pub async fn start(sender: Sender<Option<Message>>, mut receiver: Receiver<Optio
                 BinarySensorKind::Shell(shell) => {
                     debug!("BinarySensor {} is of type Shell", key);
                     tokio::spawn(async move {
-                        if let Some(duration) = cloned_sensor.update_interval {
+                        if let Some(duration) = shell.update_interval {
                             let mut interval = time::interval(duration);
                             debug!("Sensor {} has update interval: {:?}", key, interval);
                             loop {
@@ -156,6 +156,7 @@ pub async fn start(sender: Sender<Option<Message>>, mut receiver: Receiver<Optio
                         }
                     });
                 }
+                _ => { }
             }
         }
     }

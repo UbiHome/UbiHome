@@ -42,10 +42,10 @@ Test it out:
 
 ```bash
 # Run once:
-oshome run
+./oshome run
 
 # Install directly as background service:
-oshome install
+./oshome install
 ```
 
 > Have a look at the [examples](https://danielhabenicht.github.io/OSHome/examples/index.html) to get started.

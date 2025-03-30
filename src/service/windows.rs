@@ -5,22 +5,22 @@ use log::{debug, info};
 use crate::constants;
 
 pub async fn install(location: &str) -> Result<(), Box<dyn std::error::Error>> {
-    info!("Installing OSHome to {}", location);
-    info!(" - Creating Folder at {}", location);
+    println!("Installing OSHome to {}", location);
+    println!(" - Creating Folder at {}", location);
     fs::create_dir_all(location).expect("Unable to create directory");
 
     let new_path = Path::new(location).join("oshome.exe");
-    info!(" - Copying Binary to {}", new_path.display());
+    println!(" - Copying Binary to {}", new_path.display());
     fs::copy(env::current_exe().unwrap(), &new_path).expect("Unable to copy file");
 
     let current_dir = env::current_dir().unwrap().to_string_lossy().to_string();
     let config_file_path = Path::new(&current_dir).join("config.yaml");
     let new_config_file_path = Path::new(location).join("config.yaml");
     
-    info!(" - Copying config.yml to {}", new_config_file_path.display());
+    println!(" - Copying config.yml to {}", new_config_file_path.display());
     fs::copy(config_file_path, &new_config_file_path).expect("Unable to copy file");
 
-    info!(" - Creating Windows Service");
+    println!(" - Creating Windows Service");
 
     use std::ffi::OsString;
     use windows_service::{
@@ -46,7 +46,7 @@ pub async fn install(location: &str) -> Result<(), Box<dyn std::error::Error>> {
     let service = service_manager.create_service(&service_info, ServiceAccess::CHANGE_CONFIG)?;
     service.set_description(constants::SERVICE_DESCRIPTION)?;
 
-    info!(" - TODO: Create Readme...");
+    println!(" - TODO: Create Readme...");
 
     Ok(())
 }
@@ -63,16 +63,16 @@ pub async fn uninstall(location: &str) -> Result<(), Box<dyn std::error::Error>>
     };
     use windows_sys::Win32::Foundation::ERROR_SERVICE_DOES_NOT_EXIST;
 
-    info!("Uninstalling OSHome to");
+    println!("Uninstalling OSHome to");
 
     
-    info!(" - TODO: Cleanup Logs...");
+    println!(" - TODO: Cleanup Logs...");
 
 
-    info!(" - Deleting Folder at {}", location);
+    println!(" - Deleting Folder at {}", location);
     fs::remove_dir_all(location).expect("Unable to delete directory");
 
-    info!(" - Removing Service");
+    println!(" - Removing Service");
 
     let manager_access = ServiceManagerAccess::CONNECT;
     let service_manager = ServiceManager::local_computer(None::<&str>, manager_access)?;
@@ -100,12 +100,12 @@ pub async fn uninstall(location: &str) -> Result<(), Box<dyn std::error::Error>>
             service_manager.open_service(constants::SERVICE_NAME, ServiceAccess::QUERY_STATUS)
         {
             if e.raw_os_error() == Some(ERROR_SERVICE_DOES_NOT_EXIST as i32) {
-                info!("service is deleted.");
+                println!("service is deleted.");
                 return Ok(());
             }
         }
         sleep(Duration::from_secs(1));
     }
-    info!("service is marked for deletion.");
+    println!("service is marked for deletion.");
     Ok(())
 }

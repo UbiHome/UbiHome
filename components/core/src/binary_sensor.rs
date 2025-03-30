@@ -10,8 +10,7 @@ pub struct BinarySensor {
     pub name: String,
     pub icon: Option<String>,
     pub device_class: Option<String>,
-    #[serde(deserialize_with = "deserialize_option_duration")]
-    pub update_interval: Option<Duration>,
+    
     pub filters: Option<Vec<String>>,
 
     #[serde(flatten)]
@@ -22,10 +21,18 @@ pub struct BinarySensor {
 #[serde(tag = "platform")]
 #[serde(rename_all = "camelCase")]
 pub enum BinarySensorKind {
-    Shell(ShellBinarySensorConfig)
+    Shell(ShellBinarySensorConfig),
+    Gpio(GpioBinarySensorConfig),
 }
 
 #[derive(Clone, Deserialize, Debug)]
 pub struct ShellBinarySensorConfig {
+    #[serde(deserialize_with = "deserialize_option_duration")]
+    pub update_interval: Option<Duration>,
     pub command: String
+}
+
+#[derive(Clone, Deserialize, Debug)]
+pub struct GpioBinarySensorConfig {
+    pub pin: u8 // TODO: Use GPIO types or library
 }
