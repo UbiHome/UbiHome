@@ -36,6 +36,5 @@
             "type": "generic",
             "path": "documentation/docs/index.md"
         }
-    ],
-    "pull-request-title-pattern": "chore${scope}: release${component} ${version} [skip ci]"
+    ]
 }
