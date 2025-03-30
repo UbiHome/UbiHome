@@ -52,7 +52,8 @@ jobs:
         with:
           command: build
           target: ${{ matrix.platform.target }}
-          args: "--locked --release"
+          # Add "--locked" again when release please is not updating all Cargo.toml files
+          args: "--release"
           strip: true
 
       - name: Publish artifacts and release
