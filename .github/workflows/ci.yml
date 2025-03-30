@@ -11,35 +11,49 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
+        include:
+        - target: x86_64-unknown-linux-gnu # tested in a debian container on a mac
+          os: ubuntu-latest
+          fileending: ""
+        # - target: aarch64-unknown-linux-gnu # tested on aws t4g.nano
+        #   os: ubuntu-latest
+        # - target: armv7-unknown-linux-gnueabihf # raspberry pi 2-3-4, not tested
+        #   os: ubuntu-latest
+        # - target: arm-unknown-linux-gnueabihf # raspberry pi 0-1, not tested
+        #   os: ubuntu-latest
+        - target: x86_64-apple-darwin # tested on a mac, is not properly signed so there are security warnings
+          os: macos-latest
+          fileending: ""
+        - target: x86_64-pc-windows-msvc # tested on a windows machine
+          os: windows-latest
+          fileending: ".exe"
 
     steps:
-    - uses: actions/checkout@v4
-    - name: Set up Rust
-      uses: actions-rs/toolchain@v1
-      with:
-        toolchain: stable
+      - uses: actions/checkout@v4
 
-    - name: Rust Cache
-      uses: Swatinem/rust-cache@v2.7.8
-      with:
-        key: release
+      - name: Set up Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+  
+      - name: Rust Cache
+        uses: Swatinem/rust-cache@v2.7.8
+        with:
+          key: release
+  
+      - name: Install rust target
+        run: rustup target add ${{ matrix.target }}
 
-    - name: Build
-      run: cargo build --release
-      
-    - name: Prepare artifacts tests
-      run: |
-        rm -r target/release/deps
-        rm -r target/release/build
+      - name: Build
+        run: cargo build --release --target ${{ matrix.target }}
 
-    # Save executable
-    - name: Archive artifacts
-      uses: actions/upload-artifact@v4
-      with:
-        name: release-${{ matrix.os }}
-        path: |
-          target/release
+      # Save executable
+      - name: Archive artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-${{ matrix.target }}
+          path: |
+            target/${{ matrix.target }}/release/oshome${{ matrix.fileending }}
 
 
 

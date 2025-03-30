@@ -7,7 +7,7 @@ use inquire::Text;
 use oshome_shell::start;
 
 use clap::{Arg, ArgAction, Command};
-use log::{debug, info, warn};
+use log::{debug, info, warn, error};
 use oshome::Config;
 use oshome_mqtt::start_mqtt_client;
 use service::{install, uninstall};
@@ -32,7 +32,7 @@ define_windows_service!(ffi_service_main, windows_service_main);
 #[cfg(target_os = "windows")]
 fn windows_service_main(_arguments: Vec<std::ffi::OsString>) {
     use std::time::Duration;
-
+    
     use constants::SERVICE_NAME;
     info!("Starting Windows service...");
 
