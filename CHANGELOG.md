@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.3.3](https://github.com/DanielHabenicht/OSHome/compare/v0.3.2...v0.3.3) (2025-03-30)
+
+
+### Bug Fixes
+
+* configurable pin ([55e32cd](https://github.com/DanielHabenicht/OSHome/commit/55e32cd78c3710fb5d1519665b7e2308d7637541))
+* release build failing ([8900ae5](https://github.com/DanielHabenicht/OSHome/commit/8900ae51cc1fe8c74b3719595b68901440d66f12))
+* systemd path ([1c2e396](https://github.com/DanielHabenicht/OSHome/commit/1c2e396d6fb272491acbaa3f80d81a049a63410c))
+
 ## [0.3.2](https://github.com/DanielHabenicht/OSHome/compare/0.3.1...v0.3.2) (2025-03-30)
 
 
