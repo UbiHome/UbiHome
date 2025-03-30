@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.3.2](https://github.com/DanielHabenicht/OSHome/compare/0.3.1...v0.3.2) (2025-03-30)
+
+
+### Bug Fixes
+
+* ignore rppal on windows too ([f98f79b](https://github.com/DanielHabenicht/OSHome/commit/f98f79bd915a814edb787343ad0dba22d1b8b532))
+* release please? ([1ac4808](https://github.com/DanielHabenicht/OSHome/commit/1ac4808b7ab87c9e9d21c3e1e5e3d37df31cd821))
+* update cargo versions ([9be0901](https://github.com/DanielHabenicht/OSHome/commit/9be09016ac8ada8fb0d628b8d5c149f6ed0b43a9))
+* wrong include ([fc7cd03](https://github.com/DanielHabenicht/OSHome/commit/fc7cd0351817de8ec6c7f686874f3a5f04651135))
+
 ## [0.3.1](https://github.com/DanielHabenicht/OSHome/compare/v0.3.0...v0.3.1) (2025-03-30)
 
 
