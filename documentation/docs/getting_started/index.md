@@ -17,8 +17,8 @@ For now[^1] a single executable is provided. You can download them from the [Git
 
     | Device         | Download                                                                                                          | Target                       |
     | -------------- | ----------------------------------------------------------------------------------------------------------------- | ---------------------------- |
-    | Default        | [TAR Link](https://github.com/DanielHabenicht/OSHome/releases/download/v0.3.3/oshome-Linux-musl-x86_64.tar.gz)    | x86_64-unknown-linux-musl |
-    | Raspberry Pi 3 | [TAR Link](https://github.com/DanielHabenicht/OSHome/releases/download/v0.3.3/oshome-Linux-musleabi-armv7.tar.gz) | armv7-unknown-linux-musleabi |
+    | Default        | [TAR Link](https://github.com/DanielHabenicht/OSHome/releases/download/v0.3.4/oshome-Linux-musl-x86_64.tar.gz)    | x86_64-unknown-linux-musl |
+    | Raspberry Pi 3 | [TAR Link](https://github.com/DanielHabenicht/OSHome/releases/download/v0.3.4/oshome-Linux-musleabi-armv7.tar.gz) | armv7-unknown-linux-musleabi |
 
     ## Installation
 
@@ -26,7 +26,7 @@ For now[^1] a single executable is provided. You can download them from the [Git
     1. Download and extract the archive and place the oshome executable in a directory of your choice.
 
         ```bash
-        curl -L -o oshome.tar.gz https://github.com/DanielHabenicht/OSHome/releases/download/v0.3.3/oshome-Linux-musleabi-armv7.tar.gz
+        curl -L -o oshome.tar.gz https://github.com/DanielHabenicht/OSHome/releases/download/v0.3.4/oshome-Linux-musleabi-armv7.tar.gz
         tar xvzf ./oshome.tar.gz
         ./oshome
         ```
@@ -41,7 +41,7 @@ For now[^1] a single executable is provided. You can download them from the [Git
 
         ``` bash
         ./oshome run
-        Starting OSHome - 0.3.3
+        Starting OSHome - 0.3.4
         LogDirectory: /home/codespace/.local/share
         Config file path: /workspaces/OSHome/config.yaml
         Binary Sensor 'bluetooth_connected' output: false
@@ -77,14 +77,14 @@ For now[^1] a single executable is provided. You can download them from the [Git
 
     | Device         | Download                                                                                                          | Target                       |
     | -------------- | ----------------------------------------------------------------------------------------------------------------- | ---------------------------- |
-    | Windows 11        | [ZIP Link](https://github.com/DanielHabenicht/OSHome/releases/download/v0.3.3/oshome-Windows-msvc-x86_64.zip)    | x86_64-pc-windows-msvc |
+    | Windows 11        | [ZIP Link](https://github.com/DanielHabenicht/OSHome/releases/download/v0.3.4/oshome-Windows-msvc-x86_64.zip)    | x86_64-pc-windows-msvc |
 
     ## Installation
 
     1. Download and extract the archive and place the oshome executable in a directory of your choice.
 
     ```powershell
-    Invoke-WebRequest -OutFile oshome.zip -Uri https://github.com/DanielHabenicht/OSHome/releases/download/v0.3.3/oshome-Windows-msvc-x86_64.zip
+    Invoke-WebRequest -OutFile oshome.zip -Uri https://github.com/DanielHabenicht/OSHome/releases/download/v0.3.4/oshome-Windows-msvc-x86_64.zip
     Expand-Archive -Force oshome.zip ./
     ./oshome.exe
     ```
@@ -99,7 +99,7 @@ For now[^1] a single executable is provided. You can download them from the [Git
 
         ``` bash
         ./oshome.exe run
-        Starting OSHome - 0.3.3
+        Starting OSHome - 0.3.4
         LogDirectory: /home/codespace/.local/share
         Config file path: /workspaces/OSHome/config.yaml
         Binary Sensor 'bluetooth_connected' output: false
@@ -137,7 +137,7 @@ For now[^1] a single executable is provided. You can download them from the [Git
 
     | Device         | Download                                                                                                          | Target                       |
     | -------------- | ----------------------------------------------------------------------------------------------------------------- | ---------------------------- |
-    | MacOS        | [TAR Link](https://github.com/DanielHabenicht/OSHome/releases/download/v0.3.3/oshome-macOS-x86_64.tar.gz)    | x86_64-apple-darwin |
+    | MacOS        | [TAR Link](https://github.com/DanielHabenicht/OSHome/releases/download/v0.3.4/oshome-macOS-x86_64.tar.gz)    | x86_64-apple-darwin |
 
 
     3.  Run the executable with the following command:

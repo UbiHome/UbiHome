@@ -1,9 +1,9 @@
 {
-    ".": "0.3.3",
+    ".": "0.3.4",
     "components/core": "0.3.2",
     "components/mqtt": "0.3.2",
     "components/python": "0.3.2",
     "components/shell": "0.3.2",
     "components/web_server": "0.3.2",
-    "components/gpio": "0.3.2"
+    "components/gpio": "0.3.3"
 }
