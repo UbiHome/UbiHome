@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.3.1](https://github.com/DanielHabenicht/OSHome/compare/v0.3.0...v0.3.1) (2025-03-30)
+
+
+### Bug Fixes
+
+* macos build ([#9](https://github.com/DanielHabenicht/OSHome/issues/9)) ([97c3815](https://github.com/DanielHabenicht/OSHome/commit/97c3815e12fbf72cbf4c225b1bdc5a06d640316f))
+* no ci for release please ([04966b6](https://github.com/DanielHabenicht/OSHome/commit/04966b6656ea29072d1ae829409eecd7b1687d71))
+
 ## [0.3.0](https://github.com/DanielHabenicht/OSHome/compare/v0.2.3...v0.3.0) (2025-03-30)
 
 

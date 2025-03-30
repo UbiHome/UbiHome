@@ -1,6 +1,6 @@
 [package]
 name = "oshome"
-version = "0.3.0"
+version = "0.3.1"
 authors = ["Daniel Habenicht <daniel-habenicht@outlook.de>"]
 edition = "2018"
 description = "OSHome is a system which allows you to integrate any device running an OS into your smart home."
