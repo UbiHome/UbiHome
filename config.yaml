@@ -63,7 +63,7 @@ text_sensor:
 # Native Homeassistant API
 api:
   encryption:
-    key: "F7KLwAYmqlV674MaKfqa5tBehkccYSqsTGtzKQwhAm4="
+    key: "token"
 
 # Enable Automatic updates
 ota:

@@ -61,3 +61,6 @@ jobs:
           executable-name: oshome
           target: ${{ matrix.platform.target }}
           changes-file: null
+          extra-files: |
+            README.md
+            config.yaml
