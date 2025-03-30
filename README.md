@@ -1,7 +1,7 @@
 # OSHome
 
 
-[Documentation](https://github.com/DanielHabenicht/OSHome) -- [Issues](https://github.com/DanielHabenicht/OSHome/issues)
+[Repository](https://github.com/DanielHabenicht/OSHome) -- [Documentation](https://danielhabenicht.github.io/OSHome/) -- [Issues](https://github.com/DanielHabenicht/OSHome/issues)
 
 ---
 
@@ -27,10 +27,17 @@ sensor:
     command: |-
       free | grep Mem | awk '{print $3/$2 * 100.0}'
 
-# You can add many more sensors: 
+# You can add many more sensors...
+```
 
+Test it out:
+
+```bash
+# Run once:
+oshome run
+
+# Install directly as background service:
+oshome install
 ```
 
 > Have a look at the [examples](https://danielhabenicht.github.io/OSHome/examples/index.html) to get started.
-
-Run it with `oshome run` or install it as a service `oshome install`.
