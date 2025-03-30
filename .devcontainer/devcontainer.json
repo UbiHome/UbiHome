@@ -15,7 +15,8 @@
 			"GitHub.copilot-chat",
 			"GitHub.copilot-labs",
 			"ms-azuretools.vscode-docker",
-			"github.vscode-github-actions"
+			"github.vscode-github-actions",
+			"streetsidesoftware.code-spell-checker"
 		]
 		},
 		"settings": {

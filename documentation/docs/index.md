@@ -20,8 +20,7 @@ Explore the [examples](examples/index.md) to see how to use OSHome.
 <!-- x-release-please-start-version -->
 
 ```bash
-pi@raspberrypi:~/oshome $ ./oshome
-INFO [oshome] LogDirectory: /home/pi/.local/share
+pi@raspberrypi:~/ $ oshome
 OSHome - 0.2.0
 
 Analog to ESPHome OSHome is a system which allows you to integrate any device running an OS into your smart home.
@@ -30,8 +29,8 @@ https://github.com/DanielHabenicht/OSHome
 Usage: oshome [OPTIONS] <COMMAND>
 
 Commands:
-  install    Insall OSHome
-  uninstall  Insall OSHome
+  install    Install OSHome
+  uninstall  Uninstall OSHome
   run        Run OSHome manually.
   help       Print this message or the help of the given subcommand(s)
 

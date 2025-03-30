@@ -105,7 +105,7 @@ fn cli() -> Command {
         ])
         .subcommand(
             Command::new("install")
-                    .about("Insall OSHome")
+                    .about("Install OSHome")
                     .arg(
                         Arg::new("location")
                         .help( "The location to install OSHome.")
@@ -113,7 +113,7 @@ fn cli() -> Command {
         )
         .subcommand(
             Command::new("uninstall")
-                    .about("Insall OSHome")
+                    .about("Uninstall OSHome")
                     .arg(
                         Arg::new("location")
                         .help( "The location where OSHome is installed.")

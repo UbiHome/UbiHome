@@ -213,17 +213,6 @@ pub async fn start_mqtt_client(sender: Sender<Option<Message>>, mut receiver: Re
             .await
             .unwrap();
     }
-    // client
-    //     .subscribe(
-    //         &format!("{}/#", base_topic.clone()),
-    //         QoS::AtLeastOnce,
-    //     )
-    //     .await
-    //     .unwrap();
-    // debug!("Subscribed to topic: {}/#", base_topic.clone());
-
-    // Publish a test message
-    client.publish(format!("{}/{}", base_topic.clone(), "test"), QoS::AtMostOnce, false, "Hello MQTT!").await.unwrap();
 
     // Handle incoming messages
     let base_topic1 = base_topic.clone();
