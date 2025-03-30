@@ -1,46 +1,36 @@
 # OSHome
-Analog to ESPHome OSHome is a system which allows you to integrate any device running an OS into your smart home.
 
 
+[Documentation](https://github.com/DanielHabenicht/OSHome) -- [Issues](https://github.com/DanielHabenicht/OSHome/issues)
 
-# Roadmap
-- [] Templates and Services
-- [ ] CLI for automatic generation of executables
-- [ ] Builder Component similar to ESP Home
-- [ ] Self update (https://github.com/jaemk/self_update)
-- [ ] Auto installation
-  - [ ] Windows (https://github.com/mullvad/windows-service-rs) https://medium.com/@aleksej.gudkov/rust-windows-service-example-building-a-windows-service-in-rust-907be67d2287
-  - [ ] Linux Service
-    - debian (https://github.com/kornelski/cargo-deb/blob/fc34c45fafc3904cadf652473ff7e9e0344c605c/systemd.md)
-  - [ ] MacOS?
+---
 
-- [ ] Additional Components:
-  - [ ] HTTP and Web Enpoint
-  - [ ] BLE (https://github.com/deviceplug/btleplug)
-  - [ ] Bluetooth Proxy (https://esphome.io/components/bluetooth_proxy.html)
+Analog to ESPHome `OSHome` is a system which allows you to integrate any device running an OS into your smart home.
 
-- [ ] Homeassistant Native API
+Simply [download](https://danielhabenicht.github.io/OSHome/getting_started.html) the executable and configure it.
 
+```yaml
+# Example configuration
 
-Rust clippy: 
-https://github.com/rust-lang/rust-clippy
+oshome:
+  name: "Raspberry Pi behind the TV"
 
+sensor:
+  - platform: shell
+    name: "RAM Usage"
+    id: ram_usage
+    icon: mdi:memory
+    # device_class: "data_size"
+    state_class: "measurement"
+    unit_of_measurement: "%"
+    update_interval: 30s # 0 only executes it once and assumes a long running processes.
+    command: |-
+      free | grep Mem | awk '{print $3/$2 * 100.0}'
 
+# You can add many more sensors: 
 
-## Development
-
-## Windows
-
-```powershell
-
-winget install Rustlang.Rustup Rustlang.Rust.GNU Rustlang.Rust.MSVC
 ```
 
-## Linux
+> Have a look at the [examples](https://danielhabenicht.github.io/OSHome/examples/index.html) to get started.
 
-Just use the devcontainer setup.
-
-
-## Current Pitfalls
-
-Logs are in `C:\Windows\System32\config\systemprofile\AppData\Local` as the service is running as `SYSTEM` user.
+Run it with `oshome run` or install it as a service `oshome install`.

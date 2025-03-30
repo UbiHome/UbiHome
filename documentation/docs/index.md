@@ -25,4 +25,27 @@ Monitor a device with a custom command:
 
 
 ## Roadmap
+
+- [ ] Auto installation
+  - [ ] Windows (https://github.com/mullvad/windows-service-rs) https://medium.com/@aleksej.gudkov/rust-windows-service-example-building-a-windows-service-in-rust-907be67d2287
+  - [ ] Linux Service
+    - debian (https://github.com/kornelski/cargo-deb/blob/fc34c45fafc3904cadf652473ff7e9e0344c605c/systemd.md)
+  - [ ] MacOS?
+- [ ] Templates and Services
+- [ ] Additional Components:
+  - [ ] HTTP and Web Enpoint
+  - [ ] BLE (https://github.com/deviceplug/btleplug)
+  - [ ] Bluetooth Proxy (https://esphome.io/components/bluetooth_proxy.html)
+
 - [ ] Custom compilation for modular builds and custom extensions.
+- [ ] Homeassistant Native API
+- [ ] CLI for automatic generation of executables
+- [ ] Builder Component similar to ESP Home
+- [ ] Self update (https://github.com/jaemk/self_update)
+
+
+Rust clippy: 
+https://github.com/rust-lang/rust-clippy
+
+
+

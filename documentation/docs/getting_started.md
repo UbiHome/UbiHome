@@ -5,29 +5,31 @@ hide:
 
 # Getting Started
 
-For now[^1] a single executable is provided. You can download them from the releases page.
+For now[^1] a single executable is provided. You can download them from the [GitHub Releases page](https://github.com/DanielHabenicht/OSHome/releases) or use the direct links below.
 
-## Donwload
-
-### Linux Based
+## Download
 
 <!-- x-release-please-start-version -->
-| Device         | Download                                                                                                          | Target                       |
-| -------------- | ----------------------------------------------------------------------------------------------------------------- | ---------------------------- | ---------------------------- |
-| Default         | [TAR Link](https://github.com/DanielHabenicht/OSHome/releases/download/v0.2.0/oshome-Linux-musl-x86_64.tar.gz) | arm-unknown-linux-musleabihf                                                                                                          |                              | arm-unknown-linux-musleabihf |
-| Raspberry Pi 3 | [TAR Link](https://github.com/DanielHabenicht/OSHome/releases/download/v0.2.0/oshome-Linux-musleabi-armv7.tar.gz) | arm-unknown-linux-musleabihf |
-<!-- x-release-please-end -->
 
-### Windows
+=== "Linux"
 
-<!-- x-release-please-start-version -->
-[Download the ZIP](https://github.com/DanielHabenicht/OSHome/releases/download/v0.2.0/oshome-Windows-msvc-x86_64.zip).
-<!-- x-release-please-end -->
+    | Device         | Download                                                                                                          | Target                       |
+    | -------------- | ----------------------------------------------------------------------------------------------------------------- | ---------------------------- |
+    | Default        | [TAR Link](https://github.com/DanielHabenicht/OSHome/releases/download/v0.2.0/oshome-Linux-musl-x86_64.tar.gz)    | x86_64-unknown-linux-musl |
+    | Raspberry Pi 3 | [TAR Link](https://github.com/DanielHabenicht/OSHome/releases/download/v0.2.0/oshome-Linux-musleabi-armv7.tar.gz) | armv7-unknown-linux-musleabi |
 
-### MacOS
+=== "Windows"
 
-<!-- x-release-please-start-version -->
-[Download the TAR](https://github.com/DanielHabenicht/OSHome/releases/download/v0.2.0/oshome-macOS-x86_64.tar.gz)
+    | Device         | Download                                                                                                          | Target                       |
+    | -------------- | ----------------------------------------------------------------------------------------------------------------- | ---------------------------- |
+    | Windows 11        | [ZIP Link](https://github.com/DanielHabenicht/OSHome/releases/download/v0.2.0/oshome-Windows-msvc-x86_64.zip)    | x86_64-pc-windows-msvc |
+
+=== "MacOS"
+
+    | Device         | Download                                                                                                          | Target                       |
+    | -------------- | ----------------------------------------------------------------------------------------------------------------- | ---------------------------- |
+    | MacOS        | [TAR Link](https://github.com/DanielHabenicht/OSHome/releases/download/v0.2.0/oshome-macOS-x86_64.tar.gz)    | x86_64-apple-darwin |
+
 <!-- x-release-please-end -->
 
 ## Installation
