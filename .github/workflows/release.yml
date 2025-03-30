@@ -57,11 +57,11 @@ jobs:
           args: "--locked --release"
           strip: true
 
-      # - name: Publish artifacts and release
-      #   uses: houseabsolute/actions-rust-release@v0
-      #   with:
-      #     executable-name: ubi
-      #     target: ${{ matrix.platform.target }}
+      - name: Publish artifacts and release
+        uses: houseabsolute/actions-rust-release@v0
+        with:
+          executable-name: oshome
+          target: ${{ matrix.platform.target }}
 
 
   # build:
