@@ -1,7 +1,8 @@
 {
-    ".": "0.2.3",
-    "components/core": "0.2.2",
-    "components/mqtt": "0.2.3",
-    "components/shell": "0.2.3",
-    "components/web_server": "0.2.3"
+    ".": "0.3.0",
+    "components/core": "0.3.0",
+    "components/mqtt": "0.3.0",
+    "components/shell": "0.3.0",
+    "components/web_server": "0.2.4",
+    "components/gpio": "0.2.3"
 }

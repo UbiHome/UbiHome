@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.0](https://github.com/DanielHabenicht/OSHome/compare/v0.2.2...oshome-core-v0.3.0) (2025-03-30)
+
+
+### Features
+
+* add rpi gpio ([0fe5532](https://github.com/DanielHabenicht/OSHome/commit/0fe5532bcf50964675ff09a075954f4d3475a892))
+
 ## [0.2.2](https://github.com/DanielHabenicht/OSHome/compare/v0.2.1...oshome-core-v0.2.2) (2025-03-30)
 
 
