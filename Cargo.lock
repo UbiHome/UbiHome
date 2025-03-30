@@ -1370,10 +1370,10 @@ dependencies = [
  "log",
  "oshome-core",
  "prost",
+ "prost-build",
  "serde",
  "tokio",
  "tonic",
- "tonic-build",
  "tower",
 ]
 
@@ -2471,20 +2471,6 @@ dependencies = [
  "tower-layer",
  "tower-service",
  "tracing",
-]
-
-[[package]]
-name = "tonic-build"
-version = "0.13.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d85f0383fadd15609306383a90e85eaed44169f931a5d2be1b42c76ceff1825e"
-dependencies = [
- "prettyplease",
- "proc-macro2",
- "prost-build",
- "prost-types",
- "quote",
- "syn 2.0.100",
 ]
 
 [[package]]
