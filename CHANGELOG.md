@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.4](https://github.com/DanielHabenicht/OSHome/compare/v0.3.3...v0.3.4) (2025-03-30)
+
+
+### Bug Fixes
+
+* add missing version ([d915fa7](https://github.com/DanielHabenicht/OSHome/commit/d915fa7e834278666e0b3aa96b1accbdee3c4887))
+
 ## [0.3.3](https://github.com/DanielHabenicht/OSHome/compare/v0.3.2...v0.3.3) (2025-03-30)
 
 
