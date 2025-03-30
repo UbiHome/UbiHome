@@ -26,5 +26,11 @@
     "plugins": [
         "cargo-workspace"
     ],
-    "release-type": "rust"
+    "release-type": "rust",
+    "extra-files": [
+        {
+            "type": "generic",
+            "path": "documentation/docs/getting_started.md"
+        }
+    ]
 }
