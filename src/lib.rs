@@ -17,7 +17,6 @@ pub struct Logger {
 #[derive(Clone, Deserialize, Debug)]
 #[serde(rename_all = "UPPERCASE")]
 pub enum LogLevel {
-    Off,
     Error,
     Warn,
     Info,

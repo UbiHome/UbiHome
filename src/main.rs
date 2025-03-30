@@ -2,7 +2,7 @@ mod constants;
 mod service;
 
 use directories::BaseDirs;
-use flexi_logger::{Age, Cleanup, Criterion, Duplicate, FileSpec, Logger, Naming};
+use flexi_logger::{detailed_format, Age, Cleanup, Criterion, Duplicate, FileSpec, Logger, Naming};
 use inquire::Text;
 use oshome_shell::start;
 
@@ -192,19 +192,29 @@ fn main() {
     #[cfg(debug_assertions)]
     let log_level = "debug";
 
-    Logger::try_with_env_or_str(log_level)
-        .unwrap()
+    let mut logger_builder = Logger::try_with_env_or_str(log_level).unwrap();
+
+    logger_builder = logger_builder.format_for_files(detailed_format)
         .log_to_file(FileSpec::default().directory(&log_directory)) // write logs to file
         // .write_mode(WriteMode::BufferAndFlush)
         .append()
-        .duplicate_to_stdout(Duplicate::Debug)
         .rotate(
             Criterion::AgeOrSize(Age::Day, 10 * 1024 * 1024),
             Naming::Timestamps,
             Cleanup::KeepLogFiles(7),
-        )
+        );
+    
+    if cfg!(debug_assertions) {
+        logger_builder = logger_builder.duplicate_to_stdout(Duplicate::Debug);
+    }
+
+    let mut logger = logger_builder
         .start()
         .unwrap();
+
+    // TODO: Implement logger entry
+    // logger.parse_and_push_temp_spec("info, critical_mod = trace");
+    // logger.pop_temp_spec();
     println!("LogDirectory: {}", log_directory.display());
 
     let matches = cli().get_matches();

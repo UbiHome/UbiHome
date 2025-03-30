@@ -14,13 +14,6 @@ pub struct OSHome {
     pub name: String
 }
 
-
-
-
-
-
-
-
 #[derive(Clone, Deserialize, Debug)]
 pub struct CoreConfig {
     pub oshome: OSHome,
@@ -131,18 +124,6 @@ where
 
         fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
             formatter.write_str("a sequence of items")
-        }
-
-        fn visit_none<E>(self) -> Result<Self::Value, E>
-            where
-                E: serde::de::Error, {
-            Ok(None)
-        }
-
-        fn visit_some<D>(self, deserializer: D) -> Result<Self::Value, D::Error>
-            where
-                D: Deserializer<'de>, {
-            Ok(None)
         }
 
         fn visit_seq<V>(self, mut seq: V) -> Result<Option<HashMap<String, BinarySensor>>, V::Error>
