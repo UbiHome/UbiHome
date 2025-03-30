@@ -939,7 +939,7 @@ dependencies = [
 
 [[package]]
 name = "oshome-core"
-version = "0.3.1"
+version = "0.3.2"
 dependencies = [
  "duration-str",
  "serde",
@@ -947,7 +947,7 @@ dependencies = [
 
 [[package]]
 name = "oshome-gpio"
-version = "0.3.1"
+version = "0.3.2"
 dependencies = [
  "log",
  "oshome-core",
@@ -958,7 +958,7 @@ dependencies = [
 
 [[package]]
 name = "oshome-mqtt"
-version = "0.3.1"
+version = "0.3.2"
 dependencies = [
  "log",
  "oshome-core",
@@ -971,7 +971,7 @@ dependencies = [
 
 [[package]]
 name = "oshome-shell"
-version = "0.3.1"
+version = "0.3.2"
 dependencies = [
  "duration-str",
  "log",
@@ -983,7 +983,7 @@ dependencies = [
 
 [[package]]
 name = "oshome-web_server"
-version = "0.3.1"
+version = "0.3.2"
 dependencies = [
  "axum",
  "log",
