@@ -4,6 +4,7 @@ use serde::Deserialize;
 use shell_exec::{Execution, Shell, ShellError};
 use std::{str, time::Duration};
 use tokio::{sync::broadcast::{Receiver, Sender}, time};
+use duration_str::deserialize_duration;
 
 #[derive(Debug, Copy, Clone, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -20,11 +21,20 @@ pub enum CustomShell {
 pub struct ShellConfig {
     #[serde(rename = "type")]
     pub kind: Option<CustomShell>,
+
+    #[serde(default = "default_timeout")]
+    #[serde(deserialize_with = "deserialize_duration")]
+    pub timeout: Duration,
+}
+
+fn default_timeout() -> Duration {
+    Duration::from_secs(5)
 }
 
 pub async fn start(sender: Sender<Option<Message>>, mut receiver: Receiver<Option<Message>>, config: &CoreConfig, shell_config: &ShellConfig) {
     // Handle Button Presses
     let cloned_config = config.clone();
+    let cloned_shell_config = shell_config.clone();
     tokio::spawn(async move {
         while let Ok(Some(cmd)) = receiver.recv().await {
             use Message::*;
@@ -35,7 +45,15 @@ pub async fn start(sender: Sender<Option<Message>>, mut receiver: Receiver<Optio
                         {
                             debug!("Button pressed: {}", key);
                             debug!("Executing command: {}", button.command);
-                            // execute_command(&shell_config, &button.command).await.unwrap();
+                            println!("Button '{}' pressed.", key);
+                            
+                            let output = execute_command(&cloned_shell_config, &button.command, &cloned_shell_config.timeout).await.unwrap();
+                            // If output is empty report status code
+                            if output.is_empty() {
+                                println!("Command executed successfully with no output.");
+                            } else {
+                                println!("Command executed successfully with output: {}", output);
+                            }
                         } else {
                             debug!("Button pressed: {}", key);
                         }
@@ -67,10 +85,14 @@ pub async fn start(sender: Sender<Option<Message>>, mut receiver: Receiver<Optio
                                 // TODO: Handle long running commands (e.g. newline per value) and multivalued outputs (e.g. json)
                                 match output {
                                     Ok(output) => {
-                                        debug!("Sensor {} output: {}", key, output);
+                                        debug!("Sensor {} output: {}", key, &output);
+
+                                        let value = output;
+                                        println!("Sensor '{}' output: {}", key, &value);
+
                                         _ = cloned_sender.send(Some(Message::SensorValueChange {
                                             key: key.clone(),
-                                            value: output.clone(),
+                                            value: value,
                                         }));
                                     },
                                     Err(e) => {
@@ -116,6 +138,8 @@ pub async fn start(sender: Sender<Option<Message>>, mut receiver: Receiver<Optio
                                             debug!("Invalid binary sensor output: {}", output);
                                             continue;
                                         };
+                                        println!("Binary Sensor '{}' output: {}", key, value);
+
                                         _ = cloned_sender.send(Some(Message::BinarySensorValueChange {
                                             key: key.clone(),
                                             value: value.clone(),

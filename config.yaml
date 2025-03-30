@@ -20,7 +20,7 @@ button:
  - platform: shell
    id: my_button
    name: "Write Hello World"
-   command: "echo 'Hello World Daniel' >> test.log"
+   command: "echo 'Hello World!' >> test.log"
 
 sensor:
   - platform: shell

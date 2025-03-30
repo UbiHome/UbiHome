@@ -13,7 +13,7 @@ It is designed to be lightweight and easy to use - similar to ESPHome.
 - Monitor the status of a device with a custom command. 
 - Integrate all of your _one off python scripts^TM^_ without thinking about connectivity or setting up yet another service.
 
-See the [getting started](getting_started.md) guide for installation instructions.
+See the [getting started](getting_started/index.md) guide for installation instructions.
 
 Explore the [examples](examples/index.md) to see how to use OSHome.
 

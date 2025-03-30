@@ -961,6 +961,7 @@ dependencies = [
 name = "oshome-shell"
 version = "0.2.0"
 dependencies = [
+ "duration-str",
  "log",
  "oshome-core",
  "serde",

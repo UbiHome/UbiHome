@@ -11,6 +11,7 @@ use log::{debug, info, warn, error};
 use oshome::Config;
 use oshome_mqtt::start_mqtt_client;
 use service::{install, uninstall};
+use std::path::Path;
 use std::sync::mpsc::{self, Receiver};
 use std::time::Duration;
 use std::{env, fs};
@@ -58,8 +59,6 @@ fn windows_service_main(_arguments: Vec<std::ffi::OsString>) {
             wait_hint: Duration::from_secs(0),
         })
         .unwrap();
-
-    info!("Run run");
 
     let mut dir = env::current_exe().unwrap();
     dir.pop();
@@ -141,7 +140,7 @@ fn cli() -> Command {
 fn read_full_config(path: Option<&String>) -> Result<Config, serde_yaml::Error> {
     if let Some(path) = path {
         let config_file_path = fs::canonicalize(path).unwrap();
-        info!("Config file path: {}", config_file_path.display());
+        println!("Config file path: {}", config_file_path.display());
         if let Ok(content) = fs::read_to_string(config_file_path) {
             return serde_yaml::from_str(&content);
         } else {
@@ -176,9 +175,24 @@ fn read_base_config(path: Option<&String>) -> Result<oshome_core::CoreConfig, se
 }
 
 fn main() {
+    println!("Starting OSHome - {}", VERSION);
+
+    
+    #[cfg(not(debug_assertions))]
     let base_dirs = BaseDirs::new().expect("Failed to get base directories");
+    #[cfg(not(debug_assertions))]
     let log_directory = base_dirs.data_local_dir();
-    Logger::try_with_env_or_str("debug")
+
+    #[cfg(debug_assertions)]
+    let log_directory = Path::new("./");
+    
+    #[cfg(not(debug_assertions))]
+    let log_level = "info";
+
+    #[cfg(debug_assertions)]
+    let log_level = "debug";
+
+    Logger::try_with_env_or_str(log_level)
         .unwrap()
         .log_to_file(FileSpec::default().directory(&log_directory)) // write logs to file
         // .write_mode(WriteMode::BufferAndFlush)
@@ -191,8 +205,7 @@ fn main() {
         )
         .start()
         .unwrap();
-    info!("LogDirectory: {}", log_directory.display());
-    debug!("test");
+    println!("LogDirectory: {}", log_directory.display());
 
     let matches = cli().get_matches();
     let config_file = matches.try_get_one::<String>("configuration_file").unwrap();

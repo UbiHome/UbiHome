@@ -30,7 +30,7 @@
     "extra-files": [
         {
             "type": "generic",
-            "path": "documentation/docs/getting_started.md"
+            "path": "documentation/docs/getting_started/index.md"
         },
         {
             "type": "generic",
