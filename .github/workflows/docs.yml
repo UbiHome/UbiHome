@@ -24,7 +24,7 @@ jobs:
           path: .cache 
           restore-keys: |
             mkdocs-material-
-      - run: pip install mkdocs-material[imaging] pillow cairosvg
+      - run: pip install mkdocs-material[imaging] pillow cairosvg mkdocs-awesome-nav mkdocs-macros-plugin
       - run: | 
           cd documentation
           mkdocs gh-deploy --force
