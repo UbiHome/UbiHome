@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.1](https://github.com/DanielHabenicht/OSHome/compare/v0.2.0...v0.2.1) (2025-03-30)
+
+
+### Bug Fixes
+
+* better cli output ([4a24886](https://github.com/DanielHabenicht/OSHome/commit/4a24886e59bd7dc1a441d7f2e418bd700976d377))
+* path issue ([15cccf0](https://github.com/DanielHabenicht/OSHome/commit/15cccf04202a4c83d87cfcaaa174e800d14cea72))
+
 ## [0.2.0](https://github.com/DanielHabenicht/OSHome/compare/v0.1.3...v0.2.0) (2025-03-30)
 
 
