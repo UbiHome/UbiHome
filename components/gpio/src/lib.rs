@@ -24,11 +24,11 @@ pub async fn start(
     config: &CoreConfig,
     shell_config: &GpioConfig,
 ) {
-    #[cfg(target_os = "macos")]
+    #[cfg(any(target_os = "macos", target_os = "windows"))]
     {
         panic!("GPIO is not supported on macOS.");
     }
-    #[cfg(not(target_os = "macos"))]
+    #[cfg(target_os = "linux")]
     {
         use rppal::gpio::{Gpio, Trigger};
 
