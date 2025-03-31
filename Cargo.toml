@@ -24,6 +24,7 @@ inquire = "0.7.5"
 shell_exec = "0.2.0"
 flexi_logger = "0.29.8"
 directories = "6.0.0"
+libmdns = "0.9"
 
 
 [build-dependencies]
