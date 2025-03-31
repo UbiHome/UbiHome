@@ -7,7 +7,7 @@
 From: https://github.com/esphome/aioesphomeapi/blob/main/aioesphomeapi/connection.py#L700
 https://github.com/esphome/aioesphomeapi/blob/main/aioesphomeapi/_frame_helper/plain_text.py#L41
 
-| Byte | Description         | Example                                                  |
+| Part | Description         | Example                                                  |
 | ---- | ------------------- | -------------------------------------------------------- |
 | 0    | Preamble (always zero byte) | `0x00`                                                   |
 | 1    | Message Length      | `0x00`                                                   |
@@ -15,3 +15,15 @@ https://github.com/esphome/aioesphomeapi/blob/main/aioesphomeapi/_frame_helper/p
 | 3-X  | Content             |
 
 Message Types: (https://github.com/esphome/aioesphomeapi/blob/main/aioesphomeapi/core.py#L290)
+
+
+``` mermaid
+---
+title: "Native API Packet"
+---
+packet-beta
+  0-0: "Marker"
+  1-1: "Length"
+  2-2: "Type"
+  3-31: "Protobuf Content"
+```
