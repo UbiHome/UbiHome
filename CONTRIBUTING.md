@@ -10,7 +10,7 @@ Please follow the semantic commit message format for all commits.
 
 ```powershell
 
-winget install Rustlang.Rustup Rustlang.Rust.GNU Rustlang.Rust.MSVC
+winget install Rustlang.Rustup Rustlang.Rust.GNU Rustlang.Rust.MSVC Google.Protobuf
 ```
 
 ## Linux

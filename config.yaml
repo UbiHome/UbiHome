@@ -18,11 +18,11 @@ gpio:
 shell: 
   type: bash
 
-button: 
- - platform: shell
-   id: my_button
-   name: "Write Hello World"
-   command: "echo 'Hello World!' >> test.log"
+# button: 
+#  - platform: shell
+#    id: my_button
+#    name: "Write Hello World"
+#    command: "echo 'Hello World!' >> test.log"
 
 sensor:
   # - platform: dht22
@@ -38,24 +38,24 @@ sensor:
     command: |-
       free | grep Mem | awk '{print $3/$2 * 100.0}'
 
-binary_sensor:
-  - platform: shell
-    name: "Bluetooth Device connected"
-    id: bluetooth_connected
-    icon: "mdi:bluetooth-settings"
-    device_class: presence
-    update_interval: 10s
-    command: |-
-      if hcitool con | grep -q "00:12:6F:F1:FF:61"; then
-          echo true
-      else
-          echo false
-      fi
-  - platform: gpio
-    name: "Motion"
-    id: motion
-    device_class: presence
-    pin: 23
+# binary_sensor:
+#   - platform: shell
+#     name: "Bluetooth Device connected"
+#     id: bluetooth_connected
+#     icon: "mdi:bluetooth-settings"
+#     device_class: presence
+#     update_interval: 10s
+#     command: |-
+#       if hcitool con | grep -q "00:12:6F:F1:FF:61"; then
+#           echo true
+#       else
+#           echo false
+#       fi
+#   - platform: gpio
+#     name: "Motion"
+#     id: motion
+#     device_class: presence
+#     pin: 23
 
 
 # TODO: Things still to implement...
