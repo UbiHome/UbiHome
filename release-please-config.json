@@ -16,6 +16,9 @@
         "components/gpio": {
             "skip-github-release": true
         },
+        "components/mdns": {
+            "skip-github-release": true
+        },
         "components/mqtt": {
             "skip-github-release": true
         },

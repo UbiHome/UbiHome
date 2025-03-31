@@ -825,6 +825,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "if-addrs"
+version = "0.13.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "69b2eeee38fef3aa9b4cc5f1beea8a2444fc00e7377cafae396de3f5c2065e24"
+dependencies = [
+ "libc",
+ "windows-sys 0.59.0",
+]
+
+[[package]]
 name = "indexmap"
 version = "2.8.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -898,7 +908,7 @@ dependencies = [
  "byteorder",
  "futures-util",
  "hostname",
- "if-addrs",
+ "if-addrs 0.12.0",
  "log",
  "multimap",
  "rand",
@@ -1010,6 +1020,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "mdns-sd"
+version = "0.13.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "589676ad876426b5a7b7974c4bf7913c162e86e306f9f855f71dab4656c8832a"
+dependencies = [
+ "fastrand",
+ "flume",
+ "if-addrs 0.13.4",
+ "log",
+ "mio 1.0.3",
+ "socket2",
+]
+
+[[package]]
 name = "memchr"
 version = "2.7.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1067,6 +1091,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2886843bf800fba2e3377cff24abf6379b4c4d5c6681eaf9ea5b0d15090450bd"
 dependencies = [
  "libc",
+ "log",
  "wasi 0.11.0+wasi-snapshot-preview1",
  "windows-sys 0.52.0",
 ]
@@ -1192,11 +1217,11 @@ dependencies = [
  "directories",
  "flexi_logger",
  "inquire",
- "libmdns",
  "log",
  "oshome-bme280",
  "oshome-core",
  "oshome-gpio",
+ "oshome-mdns",
  "oshome-mqtt",
  "oshome-shell",
  "oshome-web_server",
@@ -1244,6 +1269,18 @@ dependencies = [
  "rppal",
  "serde",
  "serde_yaml",
+ "tokio",
+]
+
+[[package]]
+name = "oshome-mdns"
+version = "0.3.4"
+dependencies = [
+ "libmdns",
+ "log",
+ "mdns-sd",
+ "oshome-core",
+ "serde",
  "tokio",
 ]
 

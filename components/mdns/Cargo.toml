@@ -1,0 +1,13 @@
+[package]
+name = "oshome-mdns"
+version = "0.3.4"
+authors = ["Daniel Habenicht <daniel-habenicht@outlook.de>"]
+edition = "2018"
+
+[dependencies]
+log = "0.4"
+serde = { version = "1.0", features = ["derive"] }
+tokio = { version = "1", features = ["full"] }
+oshome-core = { path = "../core" }
+libmdns = "0.9"
+mdns-sd = "0.13.5"
