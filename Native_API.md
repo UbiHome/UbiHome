@@ -27,3 +27,37 @@ packet-beta
   2-2: "Type"
   3-31: "Protobuf Content"
 ```
+
+
+## Example Communication
+
+```mermaid
+sequenceDiagram
+    Client->>Api: HelloRequest
+    Api->>Client: HelloResponse
+    Client->>Api: DisconnectRequest
+
+    
+    Client->>Api: ConnectRequest
+    Api->>Client: ConnectResponse
+    Client->>Api: DeviceInfoRequest
+    Api->>Client: DeviceInfoResponse
+    Client->>+Api: ListEntitiesRequest
+    Api->>Client: ListEntitiesSensorResponse
+    Api->>Client: ListEntitiesBinarySensorResponse
+    Api->>-Client: ListEntitiesDoneResponse
+
+    loop Keep Alive Messaging
+        Client->>Api: PingRequest
+        Api->>Client: PingResponse
+    end
+
+    Client->>Api: DisconnectRequest
+    Api->>Client: DisconnectResponse
+
+```
+
+## Entities
+
+- Sensor
+https://github.com/esphome/aioesphomeapi/blob/e14b6ec9315695ba13e7cf6b750bc892b77a0a2e/aioesphomeapi/model.py#L433

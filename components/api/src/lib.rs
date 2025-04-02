@@ -1,4 +1,4 @@
-use greeter::{ConnectRequest, HelloRequest, HelloResponse};
+use greeter::{ConnectRequest, EntityCategory, HelloRequest, HelloResponse, SensorLastResetType, SensorStateClass};
 use log::info;
 use parser::ProtoMessage;
 use prost::Message;
@@ -15,11 +15,18 @@ pub mod greeter {
     include!(concat!(env!("OUT_DIR"), "/greeter.rs"));
 }
 
-fn some_other_interceptor(request: Request<()>) -> Result<Request<()>, Status> {
-    info!("test");
-    println!("A Request");
-    Ok(request)
-}
+
+pub fn to_packet(obj: ProtoMessage) -> Result<Vec<u8>, Box<dyn std::error::Error>> {
+    let response_content = parser::proto_to_vec(&obj)?;
+    let message_type = parser::message_to_num(&obj)?;
+    let zero: Vec<u8> = vec![0];
+    let length: Vec<u8> = vec![response_content.len().try_into().unwrap()];
+    let message_bit: Vec<u8> = vec![message_type];
+
+    let answer_buf: Vec<u8> =
+        [zero, length, message_bit, response_content].concat();
+    Ok(answer_buf)
+ }
 
 pub async fn start() -> Result<(), Box<dyn std::error::Error>> {
     let addr = "0.0.0.0:6053".to_string();
@@ -69,8 +76,7 @@ pub async fn start() -> Result<(), Box<dyn std::error::Error>> {
 
                     let message = parser::parse_proto_message(message_type, packet_content).unwrap();
 
-                    let response_type: ProtoMessage;
-                    let response_content: Vec<u8>;
+                    let mut answer_buf: Vec<u8> = vec![];
                     match message {
                         ProtoMessage::HelloRequest(hello_request) => {
                             println!(
@@ -86,9 +92,8 @@ pub async fn start() -> Result<(), Box<dyn std::error::Error>> {
                                 server_info: "Hello from Rust gRPC server".to_string(),
                                 name: "Coool".to_string(),
                             };
-                            response_content = response_message.encode_to_vec();
 
-                            response_type = ProtoMessage::HelloResponse(response_message);
+                            answer_buf = [answer_buf, to_packet(ProtoMessage::HelloResponse(response_message)).unwrap()].concat();
                         }
                         ProtoMessage::DeviceInfoRequest(device_info_request) => {
                             println!("DeviceInfoRequest: {:?}", device_info_request);
@@ -112,47 +117,61 @@ pub async fn start() -> Result<(), Box<dyn std::error::Error>> {
                                 suggested_area: "Hello".to_owned(),
                                 bluetooth_mac_address: "Hello".to_owned(),
                             };
-                            response_content = response_message.encode_to_vec();
+                            answer_buf = [answer_buf, to_packet(ProtoMessage::DeviceInfoResponse(response_message)).unwrap()].concat();
 
-                            response_type = ProtoMessage::DeviceInfoResponse(response_message);
                         }
                         ProtoMessage::ConnectRequest(connect_request) => {
                             println!("ConnectRequest: {:?}", connect_request);
                             let response_message = greeter::ConnectResponse {
                                 invalid_password: false,
                             };
-                            response_content = response_message.encode_to_vec();
+                            answer_buf = [answer_buf, to_packet(ProtoMessage::ConnectResponse(response_message)).unwrap()].concat();
 
-                            response_type = ProtoMessage::ConnectResponse(response_message);
                         }
 
                         ProtoMessage::DisconnectRequest(disconnect_request) => {
                             println!("DisconnectRequest: {:?}", disconnect_request);
                             let response_message = greeter::DisconnectResponse {};
-                            response_content = response_message.encode_to_vec();
-
-                            response_type = ProtoMessage::DisconnectResponse(response_message);
+                            answer_buf = [answer_buf, to_packet(ProtoMessage::DisconnectResponse(response_message)).unwrap()].concat();
                         }
                         ProtoMessage::ListEntitiesRequest(list_entities_request) => {
                             println!("ListEntitiesRequest: {:?}", list_entities_request);
-                            let response_message = greeter::ListEntitiesDoneResponse {};
-                            response_content = response_message.encode_to_vec();
 
-                            response_type = ProtoMessage::ListEntitiesDoneResponse(response_message);
+                            let sensor = greeter::ListEntitiesSensorResponse {
+                                object_id: "sensor_1".to_string(),
+                                key: 1,
+                                name: "Example Sensor".to_string(),
+                                unique_id: "unique_sensor_1".to_string(),
+                                icon: "mdi:thermometer".to_string(),
+                                unit_of_measurement: "°C".to_string(),
+                                accuracy_decimals: 2,
+                                force_update: false,
+                                device_class: "temperature".to_string(),
+                                state_class: SensorStateClass::StateClassMeasurement as i32,
+                                last_reset_type: SensorLastResetType::LastResetNone as i32,
+                                disabled_by_default: false,
+                                entity_category: EntityCategory::Config as i32,
+                            };
+
+
+
+                            let response_message = greeter::ListEntitiesDoneResponse {};
+                            answer_buf = [
+                                answer_buf, 
+                                to_packet(ProtoMessage::ListEntitiesSensorResponse(sensor)).unwrap(),
+                                to_packet(ProtoMessage::ListEntitiesDoneResponse(response_message)).unwrap()
+                            ].concat();
+                        }
+                        ProtoMessage::PingRequest(ping_request) => {
+                            println!("PingRequest: {:?}", ping_request);
+                            let response_message = greeter::PingResponse {};
+                            answer_buf = [answer_buf, to_packet(ProtoMessage::PingResponse(response_message)).unwrap()].concat();
                         }
                         _ => {
                             println!("Ignore message type: {:?}", message);
                             return;
                         }
                     }
-
-                    let message_type = parser::message_to_num(response_type).unwrap();
-                    let zero: Vec<u8> = vec![0];
-                    let length: Vec<u8> = vec![response_content.len().try_into().unwrap()];
-                    let message_bit: Vec<u8> = vec![message_type];
-
-                    let answer_buf: Vec<u8> =
-                        [zero, length, message_bit, response_content].concat();
 
                     socket
                         .write_all(&answer_buf)

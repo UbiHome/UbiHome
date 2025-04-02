@@ -144,8 +144,19 @@ macro_rules! proto_message_mappings {
             }
         }
 
+        pub fn proto_to_vec(message: &ProtoMessage) -> Result<Vec<u8>, &'static str> {
+            match message {
+                $(
+                    ProtoMessage::$struct(msg) => {
+                        Ok(msg.encode_to_vec())
+                    }
+                )*
+                _ => Err("Unknown message type"),
+            }
+        }
+
         // Generate the parse_proto_message function
-        pub fn message_to_num(message_type: ProtoMessage) -> Result<u8, &'static str> {
+        pub fn message_to_num(message_type: &ProtoMessage) -> Result<u8, &'static str> {
             match message_type {
                 $(
                     ProtoMessage::$struct(_) => Ok($type_id),
@@ -155,6 +166,9 @@ macro_rules! proto_message_mappings {
         }
     };
 }
+
+
+
 
 // Message types as in 
 // https://github.com/esphome/aioesphomeapi/blob/main/aioesphomeapi/core.py#L290
