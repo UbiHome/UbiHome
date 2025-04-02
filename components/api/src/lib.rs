@@ -1,5 +1,6 @@
 use greeter::{ConnectRequest, EntityCategory, HelloRequest, HelloResponse, SensorLastResetType, SensorStateClass};
 use log::info;
+use log::debug;
 use parser::ProtoMessage;
 use prost::Message;
 use std::{default, str};
@@ -77,6 +78,7 @@ pub async fn start() -> Result<(), Box<dyn std::error::Error>> {
                     let message = parser::parse_proto_message(message_type, packet_content).unwrap();
 
                     let mut answer_buf: Vec<u8> = vec![];
+                    let mut disconnect: bool = false;
                     match message {
                         ProtoMessage::HelloRequest(hello_request) => {
                             println!(
@@ -133,6 +135,7 @@ pub async fn start() -> Result<(), Box<dyn std::error::Error>> {
                             println!("DisconnectRequest: {:?}", disconnect_request);
                             let response_message = greeter::DisconnectResponse {};
                             answer_buf = [answer_buf, to_packet(ProtoMessage::DisconnectResponse(response_message)).unwrap()].concat();
+                            disconnect = true;
                         }
                         ProtoMessage::ListEntitiesRequest(list_entities_request) => {
                             println!("ListEntitiesRequest: {:?}", list_entities_request);
@@ -177,6 +180,13 @@ pub async fn start() -> Result<(), Box<dyn std::error::Error>> {
                         .write_all(&answer_buf)
                         .await
                         .expect("failed to write data to socket");
+
+                    if disconnect {
+                        debug!("Disconnecting");
+                        socket.shutdown().await.expect("failed to shutdown socket");
+                        break;
+                    }
+                    // Close the socket
 
                     cursor += 3 + len;
                 }

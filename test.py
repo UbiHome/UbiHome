@@ -20,8 +20,11 @@ async def main():
     print(device_info)
 
     # List all entities of the device
-    # entities = await api.list_entities_services()
-    # print(entities)
+    entities = await api.list_entities_services()
+    print(entities)
 
+    await api.disconnect()
+
+    
 loop = asyncio.get_event_loop()
 loop.run_until_complete(main())
