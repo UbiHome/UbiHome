@@ -1,7 +1,7 @@
 use log::debug;
 use oshome_core::{binary_sensor::BinarySensorKind, sensor::SensorKind, CoreConfig, Message};
 use serde::Deserialize;
-use std::{str, time::Duration};
+use std::{thread, str, time::Duration};
 use tokio::{
     sync::broadcast::{Receiver, Sender},
     time,
@@ -76,34 +76,38 @@ pub async fn start(
                         let mut pin: rppal::gpio::InputPin;
                         if let Some(pullup) = gpio_config.pull_up {
                             if pullup {
+                                debug!("pullup");
                                 pin = gpio.into_input_pullup();
                             } else {
+                                debug!("pulldown");
                                 pin = gpio.into_input_pulldown();
                             }
                         } else {
+                            debug!("pullup");
                             pin = gpio.into_input_pullup();
                         }
 
-                        pin.set_async_interrupt(
+//                        pin.set_reset_on_drop(false);
+                        pin.set_interrupt(
                             Trigger::Both,
-                            None,
-                            move |event| {
+                            None);
+                        pin.poll_interrupt(true, None);
                                 debug!("BinarySensor {} triggered.", key);
                                 println!("Binary Sensor '{}' triggered.", key);
-                                match event.trigger {
-                                    Trigger::RisingEdge => {
-                                        debug!("RisingEdge triggered.");
-                                    }
-                                    Trigger::FallingEdge => {
-                                        debug!("FallingEdge triggered.");
-                                    }
-                                    Trigger::Both => {
-                                        debug!("Both triggered.");
-                                    }
-                                    _ => {
-                                        debug!("Unknown trigger.");
-                                    }
-                                }
+//                                match event.trigger {
+//                                    Trigger::RisingEdge => {
+//                                        debug!("RisingEdge triggered.");
+//                                    }
+//                                    Trigger::FallingEdge => {
+//                                        debug!("FallingEdge triggered.");
+//                                    }
+//                                    Trigger::Both => {
+//                                        debug!("Both triggered.");
+//                                    }
+//                                    _ => {
+//                                        debug!("Unknown trigger.");
+//                                    }
+//                                }
 
 
                                 _ = cloned_sender.send(Some(Message::BinarySensorValueChange {
@@ -114,7 +118,7 @@ pub async fn start(
 
                                 let cloned_key = key.clone();
                                 _ = tokio::spawn(async move {
-                                    tokio::time::sleep(Duration::from_secs(5)).await;
+                                    time::sleep(Duration::from_secs(5)).await;
                                     _ = &cloned_sender2.send(Some(
                                         Message::BinarySensorValueChange {
                                             key: cloned_key,
@@ -122,9 +126,19 @@ pub async fn start(
                                         },
                                     ));
                                 });
-                            },
-                        )
-                        .unwrap();
+//                            }
+//                        )
+//                        .unwrap();
+//                        let hundred_millis = Duration::from_millis(500);
+//                        loop {
+//                            if pin.is_high() {
+//                                debug!("HIGH")
+//                            } else {
+//                                debug!("LOW")
+//                            }
+//                            thread::sleep(hundred_millis);
+//                        }
+
                     }
                     _ => {}
                 }
