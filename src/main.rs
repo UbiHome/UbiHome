@@ -1,21 +1,21 @@
 mod constants;
 mod service;
 
-use directories::BaseDirs;
 use flexi_logger::{detailed_format, Age, Cleanup, Criterion, Duplicate, FileSpec, Logger, Naming};
 use inquire::Text;
+use oshome_core::home_assistant::sensors::Component;
+use oshome_core::{CoreConfig, Message, Module};
 use oshome_shell::start;
 
 use clap::{Arg, ArgAction, Command};
-use log::{debug, info, warn, error};
+use log::{info, warn, error};
 use oshome::Config;
-use oshome_mqtt::start_mqtt_client;
 use service::{install, uninstall};
 use std::path::Path;
 use std::sync::mpsc::{self, Receiver};
 use std::time::Duration;
 use std::{env, fs};
-use tokio::sync::broadcast;
+use tokio::sync::broadcast::{self, Sender};
 use tokio::{runtime::Runtime, signal};
 
 #[cfg(target_os = "windows")]
@@ -208,10 +208,11 @@ fn main() {
         logger_builder = logger_builder.duplicate_to_stdout(Duplicate::Debug);
     }
 
-    let mut logger = logger_builder
+    //let mut logger = 
+    logger_builder
         .start()
         .unwrap();
-
+    
     // TODO: Implement logger entry
     // logger.parse_and_push_temp_spec("info, critical_mod = trace");
     // logger.pop_temp_spec();
@@ -270,6 +271,43 @@ fn main() {
     std::process::exit(0);
 }
 
+fn get_all_modules() -> Vec<dyn Module> {
+    return vec![
+        oshome_bme280::Default {},
+        oshome_gpio::Default {},
+    ]
+}
+
+async fn initialize_modules(modules: &mut Vec<Box<Module>>, config: &CoreConfig) -> Result<Vec<Component>, String> {
+    let mut all_components: Vec<Component> = Vec::new();
+    for module in modules.iter_mut() {
+        let mut components = module.init(config).unwrap();
+        all_components.append(&mut components);
+        // module.run().await
+    }
+    Ok(all_components)
+}
+
+async fn run_modules(modules: &Vec<Box<dyn Module>>,
+    sender: Sender<Option<Message>>,
+    receiver: Receiver<Option<Message>>) {
+    for module in modules.iter_mut() {
+        // Start MQTT client in a separate task
+        // if let Some(mqtt_config) = config.mqtt {
+        let tx2 = sender.clone();
+        let mut module = module.clone();
+        tokio::spawn({
+            let tx2 = tx2.clone();
+            async move {
+                let rx2 = tx2.subscribe();
+                let mut components = module.run(tx2, rx2).await.unwrap();
+            }
+        });
+        // }
+    }
+    // Ok(all_components)
+}
+
 fn run(
     config_file: Option<&String>,
     shutdown_signal: Option<Receiver<()>>,
@@ -299,17 +337,21 @@ fn run(
                 read_base_config(None).expect("Failed to load embedded default configuration")
             });
 
+        let modules = get_all_modules();
+
+        let _ = initialize_modules(modules, &base_config).await.unwrap();
+
         let (tx, mut _rx) = broadcast::channel(16);
 
         let mqtt_base_config = base_config.clone();
         // Start MQTT client in a separate task
-        if let Some(mqtt_config) = config.mqtt {
-            let tx2 = tx.clone();
-            tokio::spawn(async move {
-                let rx2 = tx2.subscribe();
-                start_mqtt_client(tx2, rx2, &mqtt_base_config, &mqtt_config).await;
-            });
-        }
+        // if let Some(mqtt_config) = config.mqtt {
+        //     let tx2 = tx.clone();
+        //     tokio::spawn(async move {
+        //         let rx2 = tx2.subscribe();
+        //         start_mqtt_client(tx2, rx2, &mqtt_base_config, &mqtt_config).await;
+        //     });
+        // }
 
         if let Some(shell_config) = config.shell {
             let tx2 = tx.clone();
@@ -322,15 +364,15 @@ fn run(
         };
 
         
-        if let Some(gpio_config) = config.gpio {
-            let tx2 = tx.clone();
-            let shell_base_config = base_config.clone();
+        // if let Some(gpio_config) = config.gpio {
+        //     let tx2 = tx.clone();
+        //     let shell_base_config = base_config.clone();
 
-            tokio::spawn(async move {
-                let rx2 = tx2.subscribe();
-                oshome_gpio::start(tx2, rx2, &shell_base_config, &gpio_config).await;
-            });
-        };
+        //     tokio::spawn(async move {
+        //         let rx2 = tx2.subscribe();
+        //         oshome_gpio::start(tx2, rx2, &shell_base_config, &gpio_config).await;
+        //     });
+        // };
 
         let ctrl_c = async {
             signal::ctrl_c()

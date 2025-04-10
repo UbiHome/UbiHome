@@ -1,5 +1,6 @@
 {
     ".": "0.3.5",
+    "components/bme280": "0.3.5",
     "components/core": "0.3.3",
     "components/mqtt": "0.3.5",
     "components/python": "0.3.2",

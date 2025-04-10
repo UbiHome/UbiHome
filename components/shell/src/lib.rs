@@ -106,6 +106,7 @@ pub async fn start(sender: Sender<Option<Message>>, mut receiver: Receiver<Optio
                         }
                     });
                 }
+                _ => { }
             }
         }
     }

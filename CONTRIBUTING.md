@@ -21,3 +21,10 @@ Just use the devcontainer setup.
 ## Current Pitfalls
 
 Logs are in `C:\Windows\System32\config\systemprofile\AppData\Local` as the service is running as `SYSTEM` user.
+
+
+## Process
+
+- Validate config.yaml
+  - Before Build (not yet implemented)
+  - During Runtime

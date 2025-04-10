@@ -1,29 +1,50 @@
-pub mod sensor;
-pub mod button;
 pub mod binary_sensor;
+pub mod button;
+pub mod home_assistant;
+pub mod sensor;
 
-use std::collections::HashMap;
 use binary_sensor::BinarySensor;
 use button::ButtonConfig;
+use home_assistant::sensors::Component;
+use saphyr::Yaml;
 use sensor::Sensor;
-
+use std::{collections::HashMap, pin::Pin};
+use tokio::sync::broadcast::{Receiver, Sender};
 use serde::{Deserialize, Deserializer};
+
+pub type BoxFuture<'a, T> = Pin<Box<dyn Future<Output = T> + Send + 'a>>;
+
+// pub trait UninitializedModule {
+//     fn new(config: &CoreConfig, config: &Yaml) -> Module;
+// }
+
+
+pub trait Module where Self: Clone + Sized {
+    // fn validate(&mut self, config: &Yaml) -> Result<(), String>;
+
+    fn init(&mut self, config: &CoreConfig) -> Result<Vec<Component>, String>;
+    fn run(
+        &self,
+        sender: Sender<Option<Message>>,
+        receiver: Receiver<Option<Message>>,
+    ) -> Pin<Box<dyn Future<Output = Result<(), Box<dyn std::error::Error>>> + Send + 'static>>;
+}
 
 #[derive(Clone, Deserialize, Debug)]
 pub struct OSHome {
-    pub name: String
+    pub name: String,
 }
 
 #[derive(Clone, Deserialize, Debug)]
 pub struct CoreConfig {
     pub oshome: OSHome,
-    #[serde(default, deserialize_with = "map_button")] 
+    #[serde(default, deserialize_with = "map_button")]
     pub button: Option<HashMap<String, ButtonConfig>>,
 
-    #[serde(default, deserialize_with = "map_sensor")] 
+    #[serde(default, deserialize_with = "map_sensor")]
     pub sensor: Option<HashMap<String, Sensor>>,
 
-    #[serde(default, deserialize_with = "map_binary_sensor")] 
+    #[serde(default, deserialize_with = "map_binary_sensor")]
     pub binary_sensor: Option<HashMap<String, BinarySensor>>,
 }
 
@@ -59,10 +80,15 @@ where
                         return Err(serde::de::Error::custom(format!(
                             "Duplicate entry {}",
                             entry.key()
-                        )))
+                        )));
                     }
                     std::collections::hash_map::Entry::Vacant(entry) => {
-                        entry.insert(ButtonConfig { platform, id, name, command })
+                        entry.insert(ButtonConfig {
+                            platform,
+                            id,
+                            name,
+                            command,
+                        })
                     }
                 };
             }
@@ -99,11 +125,9 @@ where
                         return Err(serde::de::Error::custom(format!(
                             "Duplicate entry {}",
                             entry.key()
-                        )))
+                        )));
                     }
-                    std::collections::hash_map::Entry::Vacant(entry) => {
-                        entry.insert(item)
-                    }
+                    std::collections::hash_map::Entry::Vacant(entry) => entry.insert(item),
                 };
             }
             Ok(Some(map))
@@ -139,11 +163,9 @@ where
                         return Err(serde::de::Error::custom(format!(
                             "Duplicate entry {}",
                             entry.key()
-                        )))
+                        )));
                     }
-                    std::collections::hash_map::Entry::Vacant(entry) => {
-                        entry.insert(item)
-                    }
+                    std::collections::hash_map::Entry::Vacant(entry) => entry.insert(item),
                 };
             }
             Ok(Some(map))
@@ -155,15 +177,7 @@ where
 
 #[derive(Debug, Clone)]
 pub enum Message {
-    ButtonPress {
-        key: String,
-    },
-    SensorValueChange {
-        key: String,
-        value: String,
-    },
-    BinarySensorValueChange {
-        key: String,
-        value: bool,
-    },
+    ButtonPress { key: String },
+    SensorValueChange { key: String, value: String },
+    BinarySensorValueChange { key: String, value: bool },
 }
