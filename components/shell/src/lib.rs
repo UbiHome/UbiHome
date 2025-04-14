@@ -41,10 +41,16 @@ pub struct ShellBinarySensorConfig {
 }
 
 #[derive(Clone, Deserialize, Debug)]
-pub struct NoConfig {
+pub struct ShellSensorConfig {
+    pub command: String
 }
 
-config_template!(shell, ShellConfig, NoConfig, ShellBinarySensorConfig, ShellBinarySensorConfig);
+#[derive(Clone, Deserialize, Debug)]
+pub struct ShellButtonConfig {
+    pub command: String,
+}
+
+config_template!(shell, ShellConfig, ShellButtonConfig, ShellBinarySensorConfig, ShellBinarySensorConfig);
 
 
 pub struct Default {
@@ -92,18 +98,23 @@ impl Module for Default {
 
                     match cmd {
                         ButtonPress { key } => {
-                            if let Some(button) = &cloned_config.button.as_ref().and_then(|b| b.get(&key))
+                            if let Some(button) = cloned_config.button.as_ref().and_then(|b| b.get(&key))
                                 {
-                                    debug!("Button pressed: {}", key);
-                                    debug!("Executing command: {}", button.command);
-                                    println!("Button '{}' pressed.", key);
-                                    
-                                    let output = execute_command(&cloned_config.shell, &button.command, &cloned_config.shell.timeout).await.unwrap();
-                                    // If output is empty report status code
-                                    if output.is_empty() {
-                                        println!("Command executed successfully with no output.");
-                                    } else {
-                                        println!("Command executed successfully with output: {}", output);
+                                    match &button.extra {
+                                        ButtonKind::shell(shell_button) => {
+                                            debug!("Button pressed: {}", key);
+                                            debug!("Executing command: {}", shell_button.command);
+                                            println!("Button '{}' pressed.", key);
+                                            
+                                            let output = execute_command(&cloned_config.shell, &shell_button.command, &cloned_config.shell.timeout).await.unwrap();
+                                            // If output is empty report status code
+                                            if output.is_empty() {
+                                                println!("Command executed successfully with no output.");
+                                            } else {
+                                                println!("Command executed successfully with output: {}", output);
+                                            }
+                                        }
+                                        _ => {}
                                     }
                                 } else {
                                     debug!("Button pressed: {}", key);

@@ -87,7 +87,6 @@ macro_rules! config_template {
                             platform,
                             id,
                             name,
-                            command,
                             extra,
                         } = item;
                         let key = id.clone().unwrap_or(name.clone());
@@ -103,7 +102,6 @@ macro_rules! config_template {
                                     platform,
                                     id,
                                     name,
-                                    command,
                                     extra,
                                 })
                             }

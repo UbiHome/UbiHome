@@ -30,24 +30,3 @@ macro_rules! template_sensor {
         }
     }
 }
-
-
-
-
-// #[derive(Clone, Deserialize, Debug)]
-// #[serde(tag = "platform")]
-// #[serde(rename_all = "camelCase")]
-// pub enum SensorKind {
-//     Shell(ShellSensorConfig),
-//     BME280(BME280SensorConfig)
-// }
-
-// #[derive(Clone, Deserialize, Debug)]
-// pub struct ShellSensorConfig {
-//     pub command: String
-// }
-
-// #[derive(Clone, Deserialize, Debug)]
-// pub struct BME280SensorConfig {
-//     pub bla: String
-// }
