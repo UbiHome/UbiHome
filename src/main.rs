@@ -1,21 +1,20 @@
 mod constants;
 mod service;
 
+use directories::BaseDirs;
 use flexi_logger::{detailed_format, Age, Cleanup, Criterion, Duplicate, FileSpec, Logger, Naming};
 use inquire::Text;
 use oshome_core::home_assistant::sensors::Component;
-use oshome_core::{CoreConfig, Message, Module};
-use oshome_shell::start;
+use oshome_core::{Message, Module};
 
 use clap::{Arg, ArgAction, Command};
 use log::{info, warn, error};
-use oshome::Config;
 use service::{install, uninstall};
 use std::path::Path;
-use std::sync::mpsc::{self, Receiver};
+use std::sync::mpsc;
 use std::time::Duration;
 use std::{env, fs};
-use tokio::sync::broadcast::{self, Sender};
+use tokio::sync::broadcast::{self, Receiver, Sender};
 use tokio::{runtime::Runtime, signal};
 
 #[cfg(target_os = "windows")]
@@ -137,33 +136,33 @@ fn cli() -> Command {
 // const DEFAULT_CONFIG: &str = include_str!("../config.yaml");
 
 // Function to read the YAML configuration file
-fn read_full_config(path: Option<&String>) -> Result<Config, serde_yaml::Error> {
+// fn read_full_config(path: Option<&String>) -> Result<Config, serde_yaml::Error> {
+//     if let Some(path) = path {
+//         let config_file_path = fs::canonicalize(path).unwrap();
+//         println!("Config file path: {}", config_file_path.display());
+//         if let Ok(content) = fs::read_to_string(config_file_path) {
+//             return serde_yaml::from_str(&content);
+//         } else {
+//             warn!(
+//                 "Failed to read the configuration file at '{}', falling back to default.",
+//                 path
+//             );
+//         }
+//     }
+
+//     // Fallback to the embedded default configuration
+//     // serde_yaml::from_str(DEFAULT_CONFIG)
+//     panic!("oh no!");
+// }
+
+fn read_base_config(path: Option<&String>) -> Result<String, String> {
     if let Some(path) = path {
         let config_file_path = fs::canonicalize(path).unwrap();
-        println!("Config file path: {}", config_file_path.display());
         if let Ok(content) = fs::read_to_string(config_file_path) {
-            return serde_yaml::from_str(&content);
+            return Ok(content)
         } else {
             warn!(
-                "Failed to read the configuration file at '{}', falling back to default.",
-                path
-            );
-        }
-    }
-
-    // Fallback to the embedded default configuration
-    // serde_yaml::from_str(DEFAULT_CONFIG)
-    panic!("oh no!");
-}
-
-fn read_base_config(path: Option<&String>) -> Result<oshome_core::CoreConfig, serde_yaml::Error> {
-    if let Some(path) = path {
-        let config_file_path = fs::canonicalize(path).unwrap();
-        if let Ok(content) = fs::read_to_string(config_file_path) {
-            return serde_yaml::from_str(&content);
-        } else {
-            warn!(
-                "Failed to read the configuration file at '{}', falling back to default.",
+                "Failed to read the configuration file at '{}'.", //, falling back to default.",
                 path
             );
         }
@@ -271,36 +270,55 @@ fn main() {
     std::process::exit(0);
 }
 
-fn get_all_modules() -> Vec<dyn Module> {
-    return vec![
-        oshome_bme280::Default {},
-        oshome_gpio::Default {},
-    ]
+
+fn get_all_modules(yaml: &String) -> Vec<Box<dyn Module>> {
+    let mut modules: Vec<Box<dyn Module>> = Vec::new();
+    // modules.push(Box::new(oshome_bme280::Default {}));
+    // modules.push(Box::new(oshome_gpio::Default {}));
+    modules.push(Box::new(oshome_shell::Default::new(&yaml)));
+    modules.push(Box::new(oshome_mqtt::Default::new(&yaml)));
+    modules
 }
 
-async fn initialize_modules(modules: &mut Vec<Box<Module>>, config: &CoreConfig) -> Result<Vec<Component>, String> {
+async fn initialize_modules(modules: &mut Vec<Box<dyn Module>>, config: &String) -> Result<Vec<Component>, String> {
     let mut all_components: Vec<Component> = Vec::new();
     for module in modules.iter_mut() {
         let mut components = module.init(config).unwrap();
         all_components.append(&mut components);
-        // module.run().await
     }
     Ok(all_components)
 }
 
-async fn run_modules(modules: &Vec<Box<dyn Module>>,
+// async fn run_modules(
+//     modules: Vec<Box<dyn Module>>,
+//     sender: Sender<Option<Message>>,
+//     receiver: Receiver<Option<Message>>,
+// ) {
+//     for module in modules {
+//         let tx2 = sender.clone();
+//         tokio::spawn({
+//             let tx2 = tx2.clone();
+//             async move {
+//                 let rx2 = tx2.subscribe();
+//                 let _ = module.run(tx2, rx2).await.unwrap();
+//             }
+//         });
+//     }
+// }
+
+async fn run_modules(modules: Vec<Box<dyn Module>>,
     sender: Sender<Option<Message>>,
-    receiver: Receiver<Option<Message>>) {
-    for module in modules.iter_mut() {
+    _receiver: Receiver<Option<Message>>) {
+    for module in modules {
         // Start MQTT client in a separate task
         // if let Some(mqtt_config) = config.mqtt {
         let tx2 = sender.clone();
-        let mut module = module.clone();
+        // let mut module = module.clone();
         tokio::spawn({
             let tx2 = tx2.clone();
             async move {
                 let rx2 = tx2.subscribe();
-                let mut components = module.run(tx2, rx2).await.unwrap();
+                module.run(tx2, rx2).await.unwrap();
             }
         });
         // }
@@ -310,7 +328,7 @@ async fn run_modules(modules: &Vec<Box<dyn Module>>,
 
 fn run(
     config_file: Option<&String>,
-    shutdown_signal: Option<Receiver<()>>,
+    shutdown_signal: Option<mpsc::Receiver<()>>,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let rt = Runtime::new().unwrap();
 
@@ -320,30 +338,25 @@ fn run(
 
         // let cli = Args::parse();
         // Read the configuration file or use the embedded default
-        let config: Config = read_full_config(config_file).unwrap_or_else(|err| {
-            warn!(
-                "Failed to parse configuration: {}, using default configuration.",
-                err
-            );
-            read_full_config(None).expect("Failed to load embedded default configuration")
-        });
+        // let config: Config = read_full_config(config_file).unwrap_or_else(|err| {
+        //     warn!(
+        //         "Failed to parse configuration: {}, using default configuration.",
+        //         err
+        //     );
+        //     read_full_config(None).expect("Failed to load embedded default configuration")
+        // });
 
-        let base_config: oshome_core::CoreConfig =
-            read_base_config(config_file).unwrap_or_else(|err| {
-                warn!(
-                    "Failed to parse configuration: {}, using default configuration.",
-                    err
-                );
-                read_base_config(None).expect("Failed to load embedded default configuration")
-            });
+        let config: String = read_base_config(config_file).expect("Failed to load base configuration");
 
-        let modules = get_all_modules();
+        let mut modules = get_all_modules(&config);
 
-        let _ = initialize_modules(modules, &base_config).await.unwrap();
+        let _ = initialize_modules(&mut modules, &config).await.unwrap();
 
-        let (tx, mut _rx) = broadcast::channel(16);
+        let (tx, rx) = broadcast::channel(16);
 
-        let mqtt_base_config = base_config.clone();
+        run_modules(modules, tx, rx).await;
+
+        // let mqtt_base_config = base_config.clone();
         // Start MQTT client in a separate task
         // if let Some(mqtt_config) = config.mqtt {
         //     let tx2 = tx.clone();
@@ -353,15 +366,15 @@ fn run(
         //     });
         // }
 
-        if let Some(shell_config) = config.shell {
-            let tx2 = tx.clone();
-            let shell_base_config = base_config.clone();
+        // if let Some(shell_config) = config.shell {
+        //     let tx2 = tx.clone();
+        //     let shell_base_config = base_config.clone();
 
-            tokio::spawn(async move {
-                let rx2 = tx2.subscribe();
-                start(tx2, rx2, &shell_base_config, &shell_config).await;
-            });
-        };
+        //     tokio::spawn(async move {
+        //         let rx2 = tx2.subscribe();
+        //         start(tx2, rx2, &shell_base_config, &shell_config).await;
+        //     });
+        // };
 
         
         // if let Some(gpio_config) = config.gpio {
@@ -420,3 +433,84 @@ fn run(
     Ok(())
 }
 
+// use std::{future::Future, pin::Pin};
+
+// use oshome_core::{home_assistant::sensors::Component, CoreConfig, Message};
+// use tokio::sync::broadcast::{Receiver, Sender};
+// use saphyr::Yaml;
+
+// trait Module {
+//     fn new(&mut self, config: Box<&Yaml>) -> &Self;
+
+//     fn validate(&mut self, config: Box<&Yaml>); //-> Result<(), String>;
+
+//     fn init(&self, config: &CoreConfig) -> Result<Vec<Component>, String>;
+//     fn run(
+//         &self,
+//         sender: Sender<Option<Message>>,
+//         receiver: Receiver<Option<Message>>,
+//     ) -> Pin<Box<dyn Future<Output = Result<(), Box<dyn std::error::Error>>> + Send + 'static>>;
+// }
+
+// // #[derive(Si)]
+// struct ModuleA;
+// struct ModuleB;
+
+// impl Module for ModuleA {
+//     fn new(&mut self, config: Box<&Yaml>) -> &Self{
+//         return &ModuleA;
+//     }
+//     fn validate(&mut self, config: Box<&Yaml>){} //-> Result<(), String>;
+//     fn init(&self, config: &CoreConfig) -> Result<Vec<Component>, String> {
+//         let mut components: Vec<Component> = Vec::new();
+
+//         Ok(components)
+//     }
+//     fn run(
+//         &self,
+//         sender: Sender<Option<Message>>,
+//         mut receiver: Receiver<Option<Message>>,
+//     ) -> Pin<Box<dyn Future<Output = Result<(), Box<dyn std::error::Error>>> + Send + 'static>>
+//     {
+//         Box::pin(async move {
+//             Ok(())
+//         })
+//     }
+// }
+
+// impl Module for ModuleB {
+//     fn new(&mut self, config: Box<&Yaml>) -> &Self{
+//         return &ModuleB;
+//     }
+//     fn validate(&mut self, config: Box<&Yaml>){} //-> Result<(), String>;
+//     fn init(&self, config: &CoreConfig) -> Result<Vec<Component>, String> {
+//         let mut components: Vec<Component> = Vec::new();
+
+//         Ok(components)
+//     }
+//     fn run(
+//         &self,
+//         sender: Sender<Option<Message>>,
+//         mut receiver: Receiver<Option<Message>>,
+//     ) -> Pin<Box<dyn Future<Output = Result<(), Box<dyn std::error::Error>>> + Send + 'static>>
+//     {
+//         Box::pin(async move {
+//             Ok(())
+//         })
+//     }
+// }
+
+// fn get_all_modules() -> Vec<Box<dyn Module>> {
+//     let mut modules: Vec<Box<dyn Module>> = Vec::new();
+//     modules.push(Box::new(ModuleA::new()));
+//     // modules.push(Box::new(ModuleB));
+//     modules
+// }
+
+// fn main() {
+//     let modules = get_all_modules();
+//     for module in modules.iter() {
+//         // module.init();
+//         // module.run();
+//     }
+// }

@@ -1,12 +1,11 @@
 use log::debug;
-use oshome_core::{binary_sensor::BinarySensorKind, home_assistant::sensors::{Component, HASensor}, sensor::SensorKind, CoreConfig, Message, Module};
+use oshome_core::{home_assistant::sensors::{Component, HASensor}, Message, Module};
 use serde::Deserialize;
 use std::{collections::HashMap, future::Future, pin::Pin, str, thread, time::Duration};
 use tokio::{
     sync::broadcast::{Receiver, Sender},
     time,
 };
-use saphyr::Yaml;
 
 
 // #[derive(Debug, Copy, Clone, Deserialize)]
@@ -28,75 +27,82 @@ pub struct BME280Config {
 }
 
 #[derive(Clone, Debug)]
-pub struct Default {
+pub struct Default{
     // bme280: BME280Config,
 
 } 
 
+impl Default {
+    fn new(&mut self, config: Box<&String>) -> Self {
+        Default {
+            // config: None,
+            // core_config: None,
+            // mqtt_config: MqttConfig,
+        }
+    }
+}
+
 impl Module for Default {
-
-
-
-    fn validate(&mut self, config: &Yaml) -> Result<(), String> {
+    fn validate(&mut self) -> Result<(), String> {
         Ok(())
     }
 
 
 
-    fn init(&mut self, config: &CoreConfig) -> Result<Vec<Component>, String> {
+    fn init(&mut self, config: &String) -> Result<Vec<Component>, String> {
         let mut components: Vec<Component> = Vec::new();
 
-        if let Some(sensors) = config.sensor.clone() {
-            for (key, sensor) in sensors {
-                match sensor.kind {
-                    SensorKind::BME280(_) => {
-                        let id = format!("{}_{}_{}", config.oshome.name, key.clone(), "temperature");
-                        components.push(
-                            Component::Sensor(
-                                HASensor {
-                                    platform: "sensor".to_string(),
-                                    icon: sensor.icon.clone(),
-                                    unique_id: id.clone(),
-                                    device_class: sensor.device_class.clone(),
-                                    unit_of_measurement: sensor.unit_of_measurement.clone(),
-                                    name: sensor.name.clone(),
-                                    object_id: id.clone(),
-                                }
-                            )
-                        );
-                        let id = format!("{}_{}_{}", config.oshome.name, key.clone(), "pressure");
-                        components.push(
-                            Component::Sensor(
-                                HASensor {
-                                    platform: "sensor".to_string(),
-                                    icon: sensor.icon.clone(),
-                                    unique_id: id.clone(),
-                                    device_class: sensor.device_class.clone(),
-                                    unit_of_measurement: sensor.unit_of_measurement.clone(),
-                                    name: sensor.name.clone(),
-                                    object_id: id.clone(),
-                                }
-                            )
-                        );
-                        let id = format!("{}_{}_{}", config.oshome.name, key.clone(), "pressure");
-                        components.push(
-                            Component::Sensor(
-                                HASensor {
-                                    platform: "sensor".to_string(),
-                                    icon: sensor.icon.clone(),
-                                    unique_id: id.clone(),
-                                    device_class: sensor.device_class.clone(),
-                                    unit_of_measurement: sensor.unit_of_measurement.clone(),
-                                    name: sensor.name.clone(),
-                                    object_id: id.clone(),
-                                }
-                            )
-                        );
-                    },
-                    _ => {}
-                }
-            }
-        }
+        // if let Some(sensors) = config.sensor.clone() {
+        //     for (key, sensor) in sensors {
+        //         match sensor.kind {
+        //             SensorKind::BME280(_) => {
+        //                 let id = format!("{}_{}_{}", config.oshome.name, key.clone(), "temperature");
+        //                 components.push(
+        //                     Component::Sensor(
+        //                         HASensor {
+        //                             platform: "sensor".to_string(),
+        //                             icon: sensor.icon.clone(),
+        //                             unique_id: id.clone(),
+        //                             device_class: sensor.device_class.clone(),
+        //                             unit_of_measurement: sensor.unit_of_measurement.clone(),
+        //                             name: sensor.name.clone(),
+        //                             object_id: id.clone(),
+        //                         }
+        //                     )
+        //                 );
+        //                 let id = format!("{}_{}_{}", config.oshome.name, key.clone(), "pressure");
+        //                 components.push(
+        //                     Component::Sensor(
+        //                         HASensor {
+        //                             platform: "sensor".to_string(),
+        //                             icon: sensor.icon.clone(),
+        //                             unique_id: id.clone(),
+        //                             device_class: sensor.device_class.clone(),
+        //                             unit_of_measurement: sensor.unit_of_measurement.clone(),
+        //                             name: sensor.name.clone(),
+        //                             object_id: id.clone(),
+        //                         }
+        //                     )
+        //                 );
+        //                 let id = format!("{}_{}_{}", config.oshome.name, key.clone(), "pressure");
+        //                 components.push(
+        //                     Component::Sensor(
+        //                         HASensor {
+        //                             platform: "sensor".to_string(),
+        //                             icon: sensor.icon.clone(),
+        //                             unique_id: id.clone(),
+        //                             device_class: sensor.device_class.clone(),
+        //                             unit_of_measurement: sensor.unit_of_measurement.clone(),
+        //                             name: sensor.name.clone(),
+        //                             object_id: id.clone(),
+        //                         }
+        //                     )
+        //                 );
+        //             },
+        //             _ => {}
+        //         }
+        //     }
+        // }
         Ok(components)
     }
 
@@ -119,12 +125,11 @@ impl Module for Default {
 pub async fn start(
     sender: Sender<Option<Message>>,
     mut receiver: Receiver<Option<Message>>,
-    config: &CoreConfig,
     shell_config: &BME280Config,
 ) {
     #[cfg(any(target_os = "macos", target_os = "windows"))]
     {
-        panic!("GPIO is not supported on macOS.");
+        panic!("GPIO is not supported.");
     }
     #[cfg(target_os = "linux")]
     {

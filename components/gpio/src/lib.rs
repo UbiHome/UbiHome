@@ -1,6 +1,5 @@
 use log::debug;
-use oshome_core::{binary_sensor::BinarySensorKind, home_assistant::sensors::Component, sensor::SensorKind, CoreConfig, Message, Module};
-use saphyr::Yaml;
+use oshome_core::{home_assistant::sensors::Component, Message, Module};
 use serde::Deserialize;
 use std::{future::Future, pin::Pin, str, time::Duration};
 use tokio::{
@@ -25,14 +24,21 @@ pub struct Default {
 
 } 
 
-impl Module for Default {
+impl Default {
+    fn new(&mut self, config: Box<&String>) -> Self {
+        Default {
+            // config: None,
+        }
+    }
+}
 
-    fn validate(&mut self, config: &Yaml) -> Result<(), String> {
+impl Module for Default {
+    fn validate(&mut self) -> Result<(), String> {
         Ok(())
     }
 
 
-    fn init(&mut self, config: &CoreConfig) -> Result<Vec<Component>, String> {
+    fn init(&mut self, config: &String) -> Result<Vec<Component>, String> {
         let mut components: Vec<Component> = Vec::new();
 
         Ok(components)
@@ -45,7 +51,7 @@ impl Module for Default {
         Box::pin(async { 
             #[cfg(any(target_os = "macos", target_os = "windows"))]
             {
-                panic!("GPIO is not supported on macOS.");
+                panic!("GPIO is not supported.");
             }
             #[cfg(target_os = "linux")]
             {

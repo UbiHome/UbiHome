@@ -1,8 +1,7 @@
 use log::{debug, error, info};
-use oshome_core::{home_assistant::sensors::Component, CoreConfig, Message, Module};
+use oshome_core::{config_template, home_assistant::sensors::Component, Message, Module};
 use rumqttc::{AsyncClient, Event, MqttOptions, QoS};
-use saphyr::Yaml;
-use serde::{Deserialize, Serialize};
+use serde::{Deserialize, Deserializer, Serialize};
 use std::{collections::HashMap, future::Future, pin::Pin, str, time::Duration};
 use tokio::sync::broadcast::{Receiver, Sender};
 
@@ -84,20 +83,52 @@ struct MqttDiscoveryMessage {
 }
 
 #[derive(Clone, Debug)]
-struct Default {
-    core_config: CoreConfig,
-    mqtt_config: MqttConfig,
+pub struct Default {
+    config: Config,
+    core: CoreConfig
+}
+
+#[derive(Clone, Deserialize, Debug)]
+pub struct Config {
+    pub mqtt: MqttConfig,
+}
+
+#[derive(Clone, Deserialize, Debug)]
+pub struct MqttSensorConfig {
+    // pub bla: String
+}
+
+#[derive(Clone, Deserialize, Debug)]
+pub struct MqttButtonConfig {
+    // pub bla: String
+}
+
+
+config_template!(mqtt, MqttConfig, MqttButtonConfig, MqttSensorConfig, MqttSensorConfig);
+
+impl Default {
+    pub fn new(config_string: &String) -> Self {
+
+        let config = serde_yaml::from_str::<Config>(config_string).unwrap();
+        let core_config = serde_yaml::from_str::<CoreConfig>(config_string).unwrap();
+
+        Default {
+            config: config,
+            core: core_config,
+        }
+    }
 }
 
 impl Module for Default {
 
-    fn validate(&mut self, config: &Yaml) -> Result<(), String> {
+
+    fn validate(&mut self) -> Result<(), String> {
         Ok(())
     }
 
     
-    fn init(&mut self, config: &CoreConfig) -> Result<Vec<Component>, String> {
-        self.core_config = config.clone();
+    fn init(&mut self, config: &String) -> Result<Vec<Component>, String> {
+        // self.core_config = config.clone();
         let mut components: Vec<Component> = Vec::new();
 
         Ok(components)
@@ -109,24 +140,24 @@ impl Module for Default {
         mut receiver: Receiver<Option<Message>>,
     ) -> Pin<Box<dyn Future<Output = Result<(), Box<dyn std::error::Error>>> + Send + 'static>>
     {
-        let mqtt_config = self.mqtt_config.clone();
-        let config = self.core_config.clone();
+        let config = self.config.clone();
+        let core_config = self.core.clone();
         Box::pin(async move {
             let mut mqttoptions = MqttOptions::new(
-                config.oshome.name.clone(),
-                mqtt_config.broker.clone(),
-                mqtt_config.port.unwrap_or(1883),
+                core_config.oshome.name.clone(),
+                config.mqtt.broker.clone(),
+                config.mqtt.port.unwrap_or(1883),
             );
             info!(
                 "MQTT {}:{}",
-                mqtt_config.broker,
-                mqtt_config.port.unwrap_or(1883)
+                config.mqtt.broker,
+                config.mqtt.port.unwrap_or(1883)
             );
 
             mqttoptions.set_keep_alive(Duration::from_secs(5));
 
-            if let Some(username) = mqtt_config.username.clone() {
-                if let Some(password) = mqtt_config.password.clone() {
+            if let Some(username) = config.mqtt.username.clone() {
+                if let Some(password) = config.mqtt.password.clone() {
                     info!("Using MQTT username and password");
                     mqttoptions.set_credentials(username, password);
                 }
@@ -135,19 +166,19 @@ impl Module for Default {
 
             let base_topic = format!(
                 "{}/{}",
-                mqtt_config
+                config.mqtt
                     .discovery_prefix
                     .clone()
                     .unwrap_or("os-home".to_string()),
-                config.oshome.name
+                    core_config.oshome.name
             );
-            let discovery_topic = format!("homeassistant/device/{}/config", config.oshome.name);
+            let discovery_topic = format!("homeassistant/device/{}/config", core_config.oshome.name);
 
             let mut components: HashMap<String, MqttComponent> = HashMap::new();
 
-            if let Some(sensors) = config.sensor.clone() {
+            if let Some(sensors) = core_config.sensor.clone() {
                 for (key, sensor) in sensors {
-                    let id = format!("{}_{}", config.oshome.name, key.clone());
+                    let id = format!("{}_{}", core_config.oshome.name, key.clone());
                     components.insert(
                         key.clone(),
                         MqttComponent::Sensor(HAMqttSensor {
@@ -163,9 +194,9 @@ impl Module for Default {
                     );
                 }
             }
-            if let Some(binary_sensors) = config.binary_sensor.clone() {
+            if let Some(binary_sensors) = core_config.binary_sensor.clone() {
                 for (key, sensor) in binary_sensors {
-                    let id = format!("{}_{}", config.oshome.name, key.clone());
+                    let id = format!("{}_{}", core_config.oshome.name, key.clone());
                     components.insert(
                         key.clone(),
                         MqttComponent::BinarySensor(HAMqttBinarySensor {
@@ -183,9 +214,9 @@ impl Module for Default {
 
             let mut topics: Vec<String> = vec![];
 
-            if let Some(buttons) = config.button.clone() {
+            if let Some(buttons) = core_config.button.clone() {
                 for (key, button) in buttons {
-                    let id = format!("{}_{}", config.oshome.name, key.clone());
+                    let id = format!("{}_{}", core_config.oshome.name, key.clone());
                     let topic = format!("{}/{}", base_topic.clone(), key.clone());
                     topics.push(topic.clone());
 
@@ -203,14 +234,14 @@ impl Module for Default {
             }
 
             let device = Device {
-                identifiers: vec![config.oshome.name.clone()],
+                identifiers: vec![core_config.oshome.name.clone()],
                 manufacturer: format!(
                     "{} {} {}",
                     whoami::platform(),
                     whoami::distro(),
                     whoami::arch()
                 ),
-                name: config.oshome.name.clone(),
+                name: core_config.oshome.name.clone(),
                 model: whoami::devicename(),
             };
 

@@ -4,25 +4,25 @@ use std::fs;
 use std::path::Path;
 
 use cargo_toml::Manifest;
-use saphyr::Yaml;
+// use saphyr::Yaml;
 
 
-const RESERVED_KEYWORDS: [&str; 5] = ["oshome", "button", "sensor", "binary_sensor", "text_sensor"];
+// const RESERVED_KEYWORDS: [&str; 5] = ["oshome", "button", "sensor", "binary_sensor", "text_sensor"];
 
 fn main() {
     // println!("cargo:rerun-if-changed=NULL");
 
     println!("cargo::rerun-if-changed=build.rs");
     println!("cargo::rerun-if-changed=Cargo.toml");
-    let yaml_path =  Path::join(Path::new(&env::var_os("CARGO_MANIFEST_DIR").unwrap()), "config.yaml");
-        if let Ok(content) = fs::read_to_string(yaml_path) {
-            let config = Yaml::load_from_str(&content).unwrap();
-        let yaml = &config[0]; // select the first YAML document
+    // let yaml_path =  Path::join(Path::new(&env::var_os("CARGO_MANIFEST_DIR").unwrap()), "config.yaml");
+        // if let Ok(content) = fs::read_to_string(yaml_path) {
+            // let config = Yaml::load_from_str(&content).unwrap();
+        // let yaml = &config[0]; // select the first YAML document
 
         // let modules = &yaml.as_hash().map(|h| h.raw_entry().).iter().skip_while(|y| RESERVED_KEYWORDS.iter().any(y)).unwrap();
         // println!("cargo::error=HELLO: {:?}", &yaml.as_hash().map(|h| h.keys()).unwrap()); 
         // assert_eq!(yaml[0].as_a().unwrap(), 1); // access elements by index
-    } 
+    // } 
 
 
     let toml_path =  Path::join(Path::new(&env::var_os("CARGO_MANIFEST_DIR").unwrap()), "Cargo.toml");

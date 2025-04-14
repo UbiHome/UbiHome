@@ -11,3 +11,4 @@ shell_exec = "0.2.0"
 oshome-core = { path = "../core" }
 tokio = { version = "1", features = ["full"] }
 duration-str = "0.16.1"
+serde_yaml = "0.9.34"

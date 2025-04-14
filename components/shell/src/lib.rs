@@ -1,10 +1,12 @@
 use log::debug;
-use oshome_core::{binary_sensor::BinarySensorKind, sensor::SensorKind, CoreConfig, Message};
-use serde::Deserialize;
+use oshome_core::{config_template, home_assistant::sensors::Component,Message, Module};
+use serde::{Deserialize, Deserializer};
 use shell_exec::{Execution, Shell, ShellError};
-use std::{str, time::Duration};
+use std::{future::Future, pin::Pin, ptr::null, str, time::Duration};
 use tokio::{sync::broadcast::{Receiver, Sender}, time};
 use duration_str::deserialize_duration;
+use std::collections::HashMap;
+
 
 #[derive(Debug, Copy, Clone, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -31,137 +33,191 @@ fn default_timeout() -> Duration {
     Duration::from_secs(5)
 }
 
-pub async fn start(sender: Sender<Option<Message>>, mut receiver: Receiver<Option<Message>>, config: &CoreConfig, shell_config: &ShellConfig) {
-    // Handle Button Presses
-    let cloned_config = config.clone();
-    let cloned_shell_config = shell_config.clone();
-    tokio::spawn(async move {
-        while let Ok(Some(cmd)) = receiver.recv().await {
-            use Message::*;
+#[derive(Clone, Deserialize, Debug)]
+pub struct ShellBinarySensorConfig {
+    #[serde(deserialize_with = "deserialize_option_duration")]
+    pub update_interval: Option<Duration>,
+    pub command: String
+}
 
-            match cmd {
-                ButtonPress { key } => {
-                    if let Some(button) = &cloned_config.button.as_ref().and_then(|b| b.get(&key))
-                        {
-                            debug!("Button pressed: {}", key);
-                            debug!("Executing command: {}", button.command);
-                            println!("Button '{}' pressed.", key);
-                            
-                            let output = execute_command(&cloned_shell_config, &button.command, &cloned_shell_config.timeout).await.unwrap();
-                            // If output is empty report status code
-                            if output.is_empty() {
-                                println!("Command executed successfully with no output.");
-                            } else {
-                                println!("Command executed successfully with output: {}", output);
-                            }
-                        } else {
-                            debug!("Button pressed: {}", key);
-                        }
-                }
-                _ => {
-                    debug!("Ignored message type: {:?}", cmd);
-                }
-            }
-        }
-    });
+#[derive(Clone, Deserialize, Debug)]
+pub struct NoConfig {
+}
+
+config_template!(shell, ShellConfig, NoConfig, ShellBinarySensorConfig, ShellBinarySensorConfig);
 
 
+pub struct Default {
+    config: CoreConfig
     
-    if let Some(sensors) = config.sensor.clone() {
-        for (key, sensor) in sensors {
-            let cloned_shell_config = shell_config.clone();
-            let cloned_sender = sender.clone();
-            let cloned_sensor = sensor.clone();
-            match sensor.kind {
-                SensorKind::Shell(shell) => {
-                    debug!("Sensor {} is of type Shell", key);
-                    tokio::spawn(async move {
-                        if let Some(duration) = cloned_sensor.update_interval {
-                            let mut interval = time::interval(duration);
-                            debug!("Sensor {} has update interval: {:?}", key, interval);
-                            loop {
-                                interval.tick().await;
-                                let output = execute_command(&cloned_shell_config, shell.command.as_str(), &duration).await;
-                                // TODO: Handle long running commands (e.g. newline per value) and multivalued outputs (e.g. json)
-                                match output {
-                                    Ok(output) => {
-                                        debug!("Sensor {} output: {}", key, &output);
+}
 
-                                        let value = output;
-                                        println!("Sensor '{}' output: {}", key, &value);
+impl Default {
+    pub fn new(config_string: &String) -> Self {
+        let config = serde_yaml::from_str::<CoreConfig>(config_string).unwrap();
 
-                                        _ = cloned_sender.send(Some(Message::SensorValueChange {
-                                            key: key.clone(),
-                                            value: value,
-                                        }));
-                                    },
-                                    Err(e) => {
-                                        debug!("Error executing command: {}", e);
-                                        continue;
-                                    }
-                                };
-                            }
-                        } else {
-                            debug!("Sensor {} has no update interval", key);
-                        }
-                    });
-                }
-                _ => { }
-            }
-        }
-    }
-
-    if let Some(binary_sensors) = config.binary_sensor.clone() {
-        for (key, binary_sensor) in binary_sensors {
-            let cloned_shell_config = shell_config.clone();
-            let cloned_sender = sender.clone();
-            let cloned_sensor = binary_sensor.clone();
-            match binary_sensor.kind {
-                BinarySensorKind::Shell(shell) => {
-                    debug!("BinarySensor {} is of type Shell", key);
-                    tokio::spawn(async move {
-                        if let Some(duration) = shell.update_interval {
-                            let mut interval = time::interval(duration);
-                            debug!("Sensor {} has update interval: {:?}", key, interval);
-                            loop {
-                                interval.tick().await;
-                                let output = execute_command(&cloned_shell_config, shell.command.as_str(), &duration).await;
-                                // TODO: Handle long running commands (e.g. newline per value) and multivalued outputs (e.g. json)
-                                match output {
-                                    Ok(output) => {
-                                        debug!("Sensor {} output: {}", key, output);
-
-                                        let value = if output.trim().to_lowercase() == "true" {
-                                            true
-                                        } else if output.trim().to_lowercase() == "false" {
-                                            false
-                                        } else {
-                                            debug!("Invalid binary sensor output: {}", output);
-                                            continue;
-                                        };
-                                        println!("Binary Sensor '{}' output: {}", key, value);
-
-                                        _ = cloned_sender.send(Some(Message::BinarySensorValueChange {
-                                            key: key.clone(),
-                                            value: value.clone(),
-                                        }));
-                                    },
-                                    Err(e) => {
-                                        debug!("Error executing command: {}", e);
-                                        continue;
-                                    }
-                                };
-                            }
-                        } else {
-                            debug!("Sensor {} has no update interval", key);
-                        }
-                    });
-                }
-                _ => { }
-            }
+        Default {
+            config
         }
     }
 }
+
+impl Module for Default {
+
+
+    fn validate(&mut self) -> Result<(), String> {
+        Ok(())
+    }
+
+    
+    fn init(&mut self, config: &String) -> Result<Vec<Component>, String> {
+        let mut components: Vec<Component> = Vec::new();
+
+        Ok(components)
+    }
+
+    fn run(
+        &self,
+        sender: Sender<Option<Message>>,
+        mut receiver: Receiver<Option<Message>>,
+    ) -> Pin<Box<dyn Future<Output = Result<(), Box<dyn std::error::Error>>> + Send + 'static>>
+    {
+        let config = self.config.clone();
+        Box::pin(async move {
+             // Handle Button Presses
+            let cloned_config = config.clone();
+            tokio::spawn(async move {
+                while let Ok(Some(cmd)) = receiver.recv().await {
+                    use Message::*;
+
+                    match cmd {
+                        ButtonPress { key } => {
+                            if let Some(button) = &cloned_config.button.as_ref().and_then(|b| b.get(&key))
+                                {
+                                    debug!("Button pressed: {}", key);
+                                    debug!("Executing command: {}", button.command);
+                                    println!("Button '{}' pressed.", key);
+                                    
+                                    let output = execute_command(&cloned_config.shell, &button.command, &cloned_config.shell.timeout).await.unwrap();
+                                    // If output is empty report status code
+                                    if output.is_empty() {
+                                        println!("Command executed successfully with no output.");
+                                    } else {
+                                        println!("Command executed successfully with output: {}", output);
+                                    }
+                                } else {
+                                    debug!("Button pressed: {}", key);
+                                }
+                        }
+                        _ => {
+                            debug!("Ignored message type: {:?}", cmd);
+                        }
+                    }
+                }
+            });
+
+
+            
+            if let Some(sensors) = config.sensor.clone() {
+                for (key, any_sensor) in sensors {
+                    let cloned_config = config.clone();
+                    let cloned_sender = sender.clone();
+                    let cloned_sensor = any_sensor.clone();
+                    debug!("Sensor {} is of type Shell", key);
+                    match any_sensor.extra {
+                        SensorKind::shell(sensor) => {
+                            tokio::spawn(async move {
+                                if let Some(duration) = cloned_sensor.update_interval {
+                                    let mut interval = time::interval(duration);
+                                    debug!("Sensor {} has update interval: {:?}", key, interval);
+                                    loop {
+                                        interval.tick().await;
+                                        let output = execute_command(&cloned_config.shell, sensor.command.as_str(), &duration).await;
+                                        // TODO: Handle long running commands (e.g. newline per value) and multivalued outputs (e.g. json)
+                                        match output {
+                                            Ok(output) => {
+                                                debug!("Sensor {} output: {}", key, &output);
+
+                                                let value = output;
+                                                println!("Sensor '{}' output: {}", key, &value);
+
+                                                _ = cloned_sender.send(Some(Message::SensorValueChange {
+                                                    key: key.clone(),
+                                                    value: value,
+                                                }));
+                                            },
+                                            Err(e) => {
+                                                debug!("Error executing command: {}", e);
+                                                continue;
+                                            }
+                                        };
+                                    }
+                                } else {
+                                    debug!("Sensor {} has no update interval", key);
+                                }
+                            });
+                        }
+                        _ => {}
+                    }
+                }
+            }
+
+            if let Some(binary_sensors) = config.binary_sensor.clone() {
+                for (key, binary_sensor) in binary_sensors {
+                    let cloned_config = config.clone();
+                    let cloned_sender = sender.clone();
+
+                    match binary_sensor.extra {
+                        BinarySensorKind::shell(sensor) => {
+
+                            debug!("BinarySensor {} is of type Shell", key);
+                            tokio::spawn(async move {
+                                if let Some(duration) = sensor.update_interval {
+                                    let mut interval = time::interval(duration);
+                                    debug!("Sensor {} has update interval: {:?}", key, interval);
+                                    loop {
+                                        interval.tick().await;
+                                        let output = execute_command(&cloned_config.shell, sensor.command.as_str(), &duration).await;
+                                        // TODO: Handle long running commands (e.g. newline per value) and multivalued outputs (e.g. json)
+                                        match output {
+                                            Ok(output) => {
+                                                debug!("Sensor {} output: {}", key, output);
+
+                                                let value = if output.trim().to_lowercase() == "true" {
+                                                    true
+                                                } else if output.trim().to_lowercase() == "false" {
+                                                    false
+                                                } else {
+                                                    debug!("Invalid binary sensor output: {}", output);
+                                                    continue;
+                                                };
+                                                println!("Binary Sensor '{}' output: {}", key, value);
+
+                                                _ = cloned_sender.send(Some(Message::BinarySensorValueChange {
+                                                    key: key.clone(),
+                                                    value: value.clone(),
+                                                }));
+                                            },
+                                            Err(e) => {
+                                                debug!("Error executing command: {}", e);
+                                                continue;
+                                            }
+                                        };
+                                    }
+                                } else {
+                                    debug!("Sensor {} has no update interval", key);
+                                }
+                            });
+                        }
+                        _ => {}
+                    }
+                    }
+                }
+            Ok(())
+        })
+    }
+}
+
 
 async fn execute_command(shell_config: &ShellConfig, command: &str, timeout: &Duration) -> Result<String, ShellError> {
     let shell = match shell_config.kind {
