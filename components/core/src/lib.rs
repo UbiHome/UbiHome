@@ -16,7 +16,7 @@ where
 {
     fn validate(&mut self) -> Result<(), String>;
 
-    fn init(&mut self, config: &String) -> Result<Vec<Component>, String>;
+    fn init(&mut self) -> Result<Vec<Component>, String>;
     fn run(
         &self,
         sender: Sender<Option<Message>>,

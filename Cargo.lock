@@ -1154,10 +1154,12 @@ name = "oshome-bme280"
 version = "0.3.4"
 dependencies = [
  "bme280",
+ "duration-str",
  "linux-embedded-hal",
  "log",
  "oshome-core",
  "serde",
+ "serde_yaml",
  "tokio",
 ]
 

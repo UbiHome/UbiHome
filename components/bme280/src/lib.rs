@@ -1,18 +1,12 @@
 use log::debug;
-use oshome_core::{home_assistant::sensors::{Component, HASensor}, Message, Module};
-use serde::Deserialize;
+use oshome_core::{config_template, home_assistant::sensors::{Component, HASensor}, Message, Module};
 use std::{collections::HashMap, future::Future, pin::Pin, str, thread, time::Duration};
 use tokio::{
     sync::broadcast::{Receiver, Sender},
     time,
 };
-
-
-// #[derive(Debug, Copy, Clone, Deserialize)]
-// #[serde(rename_all = "camelCase")]
-// pub enum Device {
-//     RaspberryPi,
-// }
+use duration_str::deserialize_duration;
+use serde::{Deserialize, Deserializer, Serialize};
 
 #[derive(Clone, Deserialize, Debug)]
 pub struct BME280InternalConfig {
@@ -20,24 +14,35 @@ pub struct BME280InternalConfig {
 }
 
 #[derive(Clone, Deserialize, Debug)]
-pub struct BME280Config {
+pub struct BME280SensorConfig {
     pub temperature: BME280InternalConfig,
     pub pressure: BME280InternalConfig,
     pub humidity: BME280InternalConfig,
 }
 
+
+#[derive(Clone, Deserialize, Debug)]
+pub struct NoConfig {
+    // pub bla: String
+}
+
+
+config_template!(bme280, NoConfig, NoConfig, NoConfig, BME280SensorConfig);
+
+
 #[derive(Clone, Debug)]
 pub struct Default{
-    // bme280: BME280Config,
+    config: CoreConfig,
 
 } 
 
 impl Default {
-    fn new(&mut self, config: Box<&String>) -> Self {
+    fn new(&mut self, config_string: &String) -> Self {
+
+        let core_config = serde_yaml::from_str::<CoreConfig>(config_string).unwrap();
+
         Default {
-            // config: None,
-            // core_config: None,
-            // mqtt_config: MqttConfig,
+            config: core_config,
         }
     }
 }
@@ -49,60 +54,60 @@ impl Module for Default {
 
 
 
-    fn init(&mut self, config: &String) -> Result<Vec<Component>, String> {
+    fn init(&mut self) -> Result<Vec<Component>, String> {
         let mut components: Vec<Component> = Vec::new();
 
-        // if let Some(sensors) = config.sensor.clone() {
-        //     for (key, sensor) in sensors {
-        //         match sensor.kind {
-        //             SensorKind::BME280(_) => {
-        //                 let id = format!("{}_{}_{}", config.oshome.name, key.clone(), "temperature");
-        //                 components.push(
-        //                     Component::Sensor(
-        //                         HASensor {
-        //                             platform: "sensor".to_string(),
-        //                             icon: sensor.icon.clone(),
-        //                             unique_id: id.clone(),
-        //                             device_class: sensor.device_class.clone(),
-        //                             unit_of_measurement: sensor.unit_of_measurement.clone(),
-        //                             name: sensor.name.clone(),
-        //                             object_id: id.clone(),
-        //                         }
-        //                     )
-        //                 );
-        //                 let id = format!("{}_{}_{}", config.oshome.name, key.clone(), "pressure");
-        //                 components.push(
-        //                     Component::Sensor(
-        //                         HASensor {
-        //                             platform: "sensor".to_string(),
-        //                             icon: sensor.icon.clone(),
-        //                             unique_id: id.clone(),
-        //                             device_class: sensor.device_class.clone(),
-        //                             unit_of_measurement: sensor.unit_of_measurement.clone(),
-        //                             name: sensor.name.clone(),
-        //                             object_id: id.clone(),
-        //                         }
-        //                     )
-        //                 );
-        //                 let id = format!("{}_{}_{}", config.oshome.name, key.clone(), "pressure");
-        //                 components.push(
-        //                     Component::Sensor(
-        //                         HASensor {
-        //                             platform: "sensor".to_string(),
-        //                             icon: sensor.icon.clone(),
-        //                             unique_id: id.clone(),
-        //                             device_class: sensor.device_class.clone(),
-        //                             unit_of_measurement: sensor.unit_of_measurement.clone(),
-        //                             name: sensor.name.clone(),
-        //                             object_id: id.clone(),
-        //                         }
-        //                     )
-        //                 );
-        //             },
-        //             _ => {}
-        //         }
-        //     }
-        // }
+        if let Some(sensors) = self.config.sensor.clone() {
+            for (key, sensor) in sensors {
+                match sensor.extra {
+                    SensorKind::bme280(_) => {
+                        let id = format!("{}_{}_{}", self.config.oshome.name, key.clone(), "temperature");
+                        components.push(
+                            Component::Sensor(
+                                HASensor {
+                                    platform: "sensor".to_string(),
+                                    icon: sensor.icon.clone(),
+                                    unique_id: id.clone(),
+                                    device_class: sensor.device_class.clone(),
+                                    unit_of_measurement: sensor.unit_of_measurement.clone(),
+                                    name: sensor.name.clone(),
+                                    object_id: id.clone(),
+                                }
+                            )
+                        );
+                        let id = format!("{}_{}_{}", self.config.oshome.name, key.clone(), "pressure");
+                        components.push(
+                            Component::Sensor(
+                                HASensor {
+                                    platform: "sensor".to_string(),
+                                    icon: sensor.icon.clone(),
+                                    unique_id: id.clone(),
+                                    device_class: sensor.device_class.clone(),
+                                    unit_of_measurement: sensor.unit_of_measurement.clone(),
+                                    name: sensor.name.clone(),
+                                    object_id: id.clone(),
+                                }
+                            )
+                        );
+                        let id = format!("{}_{}_{}", self.config.oshome.name, key.clone(), "pressure");
+                        components.push(
+                            Component::Sensor(
+                                HASensor {
+                                    platform: "sensor".to_string(),
+                                    icon: sensor.icon.clone(),
+                                    unique_id: id.clone(),
+                                    device_class: sensor.device_class.clone(),
+                                    unit_of_measurement: sensor.unit_of_measurement.clone(),
+                                    name: sensor.name.clone(),
+                                    object_id: id.clone(),
+                                }
+                            )
+                        );
+                    },
+                    _ => {}
+                }
+            }
+        }
         Ok(components)
     }
 
@@ -125,7 +130,7 @@ impl Module for Default {
 pub async fn start(
     sender: Sender<Option<Message>>,
     mut receiver: Receiver<Option<Message>>,
-    shell_config: &BME280Config,
+    shell_config: &BME280SensorConfig,
 ) {
     #[cfg(any(target_os = "macos", target_os = "windows"))]
     {

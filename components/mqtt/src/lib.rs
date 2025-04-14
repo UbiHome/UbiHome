@@ -127,7 +127,7 @@ impl Module for Default {
     }
 
     
-    fn init(&mut self, config: &String) -> Result<Vec<Component>, String> {
+    fn init(&mut self) -> Result<Vec<Component>, String> {
         // self.core_config = config.clone();
         let mut components: Vec<Component> = Vec::new();
 

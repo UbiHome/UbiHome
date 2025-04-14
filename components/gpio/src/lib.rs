@@ -38,7 +38,7 @@ impl Module for Default {
     }
 
 
-    fn init(&mut self, config: &String) -> Result<Vec<Component>, String> {
+    fn init(&mut self) -> Result<Vec<Component>, String> {
         let mut components: Vec<Component> = Vec::new();
 
         Ok(components)
