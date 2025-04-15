@@ -39,8 +39,8 @@ pub enum Message {
 #[macro_export]
 macro_rules! config_template {
     (
-        $component_config:ty, 
         $component_name:ident, 
+        $component_config:ty, 
         $button_extension:ident, 
         $binary_sensor_extension:ident, 
         $sensor_extension:ident) => {
