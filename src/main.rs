@@ -260,8 +260,8 @@ fn get_all_modules(yaml: &String) -> Vec<Box<dyn Module>> {
     }
     #[cfg(target_os = "linux")]
     {
-        modules.push(Box::new(oshome_bme280::Default {}));
-        modules.push(Box::new(oshome_gpio::Default {}));
+        modules.push(Box::new(oshome_bme280::Default::new(&yaml)));
+        modules.push(Box::new(oshome_gpio::Default::new(&yaml)));
     }
     modules.push(Box::new(oshome_shell::Default::new(&yaml)));
     modules.push(Box::new(oshome_mqtt::Default::new(&yaml)));

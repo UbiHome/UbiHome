@@ -1,4 +1,4 @@
-use log::debug;
+use log::{debug, warn};
 use oshome_core::{config_template, home_assistant::sensors::{Component, HASensor}, Message, Module};
 use std::{collections::HashMap, future::Future, pin::Pin, str, thread, time::Duration};
 use tokio::{
@@ -27,7 +27,7 @@ pub struct NoConfig {
 }
 
 
-config_template!(bme280, NoConfig, NoConfig, NoConfig, BME280SensorConfig);
+config_template!(bme280, Option<NoConfig>, NoConfig, NoConfig, BME280SensorConfig);
 
 
 #[derive(Clone, Debug)]
@@ -37,7 +37,7 @@ pub struct Default{
 } 
 
 impl Default {
-    fn new(&mut self, config_string: &String) -> Self {
+    pub fn new(config_string: &String) -> Self {
 
         let core_config = serde_yaml::from_str::<CoreConfig>(config_string).unwrap();
 
@@ -120,54 +120,59 @@ impl Module for Default {
         // let mqtt_config = self.mqtt_config.clone();
         // let config = config.clone();
         Box::pin(async move {
+            #[cfg(any(target_os = "macos", target_os = "windows"))]
+            {
+                panic!("GPIO is not supported.");
+            }
+            #[cfg(target_os = "linux")]
+            {
+                use linux_embedded_hal::{Delay, I2cdev};
+                use bme280::i2c::BME280;
+
+                
+                let result = I2cdev::new("/dev/i2c-1");
+                match result {
+                    Err(e) => {
+                        warn!("Error initializing I2C: {}", e);
+                        return Ok(())
+                    }
+                    _ => {}
+                }
+
+                // using Linux I2C Bus #1 in this example
+                let i2c_bus = I2cdev::new("/dev/i2c-1").unwrap();
+
+                // initialize the BME280 using the primary I2C address 0x76
+                let mut bme280 = BME280::new_primary(i2c_bus);
+
+                // or, initialize the BME280 using the secondary I2C address 0x77
+                // let mut bme280 = BME280::new_secondary(i2c_bus, Delay);
+
+                // or, initialize the BME280 using a custom I2C address
+                // let bme280_i2c_addr = 0x88;
+                // let mut bme280 = BME280::new(i2c_bus, bme280_i2c_addr, Delay);
+
+                // initialize the sensor
+                let mut delay = Delay;
+                bme280.init(&mut delay).unwrap();
+
+                // measure temperature, pressure, and humidity
+                let measurements = bme280.measure(&mut delay).unwrap();
+
+                println!("Relative Humidity = {}%", measurements.humidity);
+                println!("Temperature = {} deg C", measurements.temperature);
+                println!("Pressure = {} pascals", measurements.pressure);
+
+
+                // Handle Button Presses
+                // let cloned_config = config.clone();
+                // let cloned_shell_config = shell_config.clone();
+            }
+
+
+
             Ok(())
         })
     }
 
 } 
-
-
-pub async fn start(
-    sender: Sender<Option<Message>>,
-    mut receiver: Receiver<Option<Message>>,
-    shell_config: &BME280SensorConfig,
-) {
-    #[cfg(any(target_os = "macos", target_os = "windows"))]
-    {
-        panic!("GPIO is not supported.");
-    }
-    #[cfg(target_os = "linux")]
-    {
-        use linux_embedded_hal::{Delay, I2cdev};
-        use bme280::i2c::BME280;
-
-        // using Linux I2C Bus #1 in this example
-        let i2c_bus = I2cdev::new("/dev/i2c-1").unwrap();
-
-        // initialize the BME280 using the primary I2C address 0x76
-        let mut bme280 = Default::new_primary(i2c_bus);
-
-        // or, initialize the BME280 using the secondary I2C address 0x77
-        // let mut bme280 = BME280::new_secondary(i2c_bus, Delay);
-
-        // or, initialize the BME280 using a custom I2C address
-        // let bme280_i2c_addr = 0x88;
-        // let mut bme280 = BME280::new(i2c_bus, bme280_i2c_addr, Delay);
-
-        // initialize the sensor
-        let mut delay = Delay;
-        bme280.init(&mut delay).unwrap();
-
-        // measure temperature, pressure, and humidity
-        let measurements = bme280.measure(&mut delay).unwrap();
-
-        println!("Relative Humidity = {}%", measurements.humidity);
-        println!("Temperature = {} deg C", measurements.temperature);
-        println!("Pressure = {} pascals", measurements.pressure);
-
-
-        // Handle Button Presses
-        let cloned_config = config.clone();
-        let cloned_shell_config = shell_config.clone();
-    }
-}

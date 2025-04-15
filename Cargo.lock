@@ -1177,10 +1177,12 @@ name = "oshome-gpio"
 version = "0.3.4"
 dependencies = [
  "async-trait",
+ "duration-str",
  "log",
  "oshome-core",
  "rppal",
  "serde",
+ "serde_yaml",
  "tokio",
 ]
 

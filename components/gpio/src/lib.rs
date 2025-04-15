@@ -1,11 +1,13 @@
-use log::debug;
-use oshome_core::{home_assistant::sensors::Component, Message, Module};
-use serde::Deserialize;
-use std::{future::Future, pin::Pin, str, time::Duration};
+use log::{debug, warn};
+use oshome_core::{config_template, home_assistant::sensors::Component, Message, Module};
+use std::{env, future::Future, pin::Pin, str, time::Duration};
 use tokio::{
     sync::broadcast::{Receiver, Sender},
     time,
 };
+use serde::{Deserialize, Deserializer, Serialize};
+use std::collections::HashMap;
+
 
 
 #[derive(Debug, Copy, Clone, Deserialize)]
@@ -19,15 +21,32 @@ pub struct GpioConfig {
     pub device: GpioDevice,
 }
 
+#[derive(Clone, Deserialize, Debug)]
+pub struct NoConfig {
+    // pub bla: String
+}
+
+#[derive(Clone, Deserialize, Debug)]
+pub struct GpioBinarySensorConfig {
+    pub pin: u8, // TODO: Use GPIO types or library
+    pub pull_up: Option<bool>,
+}
+
+config_template!(gpio, GpioConfig, NoConfig, GpioBinarySensorConfig, NoConfig);
+
+
 #[derive(Clone, Debug)]
 pub struct Default {
-
+    config: CoreConfig
 } 
 
+
 impl Default {
-    fn new(&mut self, config: Box<&String>) -> Self {
+    pub fn new(config_string: &String) -> Self {
+        let config = serde_yaml::from_str::<CoreConfig>(config_string).unwrap();
+
         Default {
-            // config: None,
+            config: config,
         }
     }
 }
@@ -48,7 +67,9 @@ impl Module for Default {
     sender: Sender<Option<Message>>,
     mut receiver: Receiver<Option<Message>>,
 ) -> Pin<Box<dyn Future<Output = Result<(), Box<dyn std::error::Error>>> + Send + 'static>>{
-        Box::pin(async { 
+        let config = self.config.clone();
+        Box::pin(async move {
+
             #[cfg(any(target_os = "macos", target_os = "windows"))]
             {
                 panic!("GPIO is not supported.");
@@ -56,10 +77,18 @@ impl Module for Default {
             #[cfg(target_os = "linux")]
             {
                 use rppal::gpio::{Gpio, Trigger};
+
+                let result = Gpio::new();
+                match result {
+                    Err(e) => {
+                        warn!("Error initializing GPIO: {}", e);
+                        return Ok(())
+                    }
+                    _ => {}
+                }
         
                 // Handle Button Presses
-                let cloned_config = config.clone();
-                let cloned_shell_config = shell_config.clone();
+                // let cloned_config = self.config.clone();
                 // tokio::spawn(async move {
                 //     while let Ok(Some(cmd)) = receiver.recv().await {
                 //         use Message::*;
@@ -93,8 +122,8 @@ impl Module for Default {
                 if let Some(binary_sensors) = config.binary_sensor.clone() {
                     for (key, binary_sensor) in binary_sensors {
                         let cloned_sender = sender.clone();
-                        match binary_sensor.kind {
-                            BinarySensorKind::Gpio(gpio_config) => {
+                        match binary_sensor.extra {
+                            BinarySensorKind::gpio(gpio_config) => {
                                 debug!("BinarySensor {} is of type Gpio", key);
         
                                 let gpio = Gpio::new().unwrap().get(gpio_config.pin).expect("GPIO pin not found?");

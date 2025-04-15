@@ -35,8 +35,3 @@ macro_rules! template_binary_sensor {
 
 
 
-// #[derive(Clone, Deserialize, Debug)]
-// pub struct GpioBinarySensorConfig {
-//     pub pin: u8, // TODO: Use GPIO types or library
-//     pub pull_up: Option<bool>,
-// }
