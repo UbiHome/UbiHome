@@ -4,6 +4,7 @@ pub mod sensor;
 pub mod button;
 
 use home_assistant::sensors::Component;
+use serde::Deserialize;
 use std::pin::Pin;
 use tokio::sync::broadcast::{Receiver, Sender};
 
@@ -31,6 +32,9 @@ pub enum Message {
     SensorValueChange { key: String, value: String },
     BinarySensorValueChange { key: String, value: bool },
 }
+
+#[derive(Clone, Deserialize, Debug)]
+pub struct NoConfig {}
 
 
 

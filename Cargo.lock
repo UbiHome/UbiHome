@@ -1276,11 +1276,13 @@ dependencies = [
 name = "oshome-mdns"
 version = "0.3.4"
 dependencies = [
+ "duration-str",
  "libmdns",
  "log",
  "mdns-sd",
  "oshome-core",
  "serde",
+ "serde_yaml",
  "tokio",
 ]
 
