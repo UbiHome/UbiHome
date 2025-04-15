@@ -11,7 +11,7 @@
             <!-- <li><a href="/{{ nav2.url }}">{{ nav2.title }} </a></li> -->
             {% endif %}
             {% else %}
-            <li><a href="/{{ nav2.children[0].url }}">{{ nav2.title }} </a></li>
+            <li><a href="{{ config.site_url }}{{ nav2.children[0].url }}">{{ nav2.title }} </a></li>
             {% endif %}
 
             {% if nav2.children and nav2.children | length > 1 %}
@@ -19,7 +19,7 @@
             {% for nav3 in nav2.children %}
                 {% if nav3.url %}
                 {% if nav3.title %}
-                <li><a href="/{{ nav3.url }}">{{ nav3.title }} </a></li>
+                <li><a href="{{ config.site_url }}{{ nav3.url }}">{{ nav3.title }} </a></li>
                 {% endif %}
                 {% else %}
                 {% endif %}
