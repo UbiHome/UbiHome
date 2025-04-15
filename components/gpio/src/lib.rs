@@ -135,47 +135,27 @@ impl Module for Default {
                                     pin = gpio.into_input_pullup();
                                 }
         
-                                pin.set_async_interrupt(
-                                    Trigger::Both,
-                                    None,
-                                    move |event| {
-                                        debug!("BinarySensor {} triggered.", key);
-                                        println!("Binary Sensor '{}' triggered.", key);
-                                        match event.trigger {
-                                            Trigger::RisingEdge => {
-                                                debug!("RisingEdge triggered.");
-                                            }
-                                            Trigger::FallingEdge => {
-                                                debug!("FallingEdge triggered.");
-                                            }
-                                            Trigger::Both => {
-                                                debug!("Both triggered.");
-                                            }
-                                            _ => {
-                                                debug!("Unknown trigger.");
-                                            }
-                                        }
+                                pin.set_interrupt(Trigger::Both,None);
+                                pin.poll_interrupt(true, None);
+                                debug!("BinarySensor {} triggered.", key);
+                                println!("Binary Sensor '{}' triggered.", key);
         
-        
-                                        _ = cloned_sender.send(Some(Message::BinarySensorValueChange {
-                                            key: key.clone(),
-                                            value: true,
-                                        }));
-                                        let cloned_sender2 = cloned_sender.clone();
-        
-                                        let cloned_key = key.clone();
-                                        _ = tokio::spawn(async move {
-                                            tokio::time::sleep(Duration::from_secs(5)).await;
-                                            _ = &cloned_sender2.send(Some(
-                                                Message::BinarySensorValueChange {
-                                                    key: cloned_key,
-                                                    value: false,
-                                                },
-                                            ));
-                                        });
-                                    },
-                                )
-                                .unwrap();
+                                _ = cloned_sender.send(Some(Message::BinarySensorValueChange {
+                                    key: key.clone(),
+                                    value: true,
+                                }));
+                                let cloned_sender2 = cloned_sender.clone();
+
+                                let cloned_key = key.clone();
+                                _ = tokio::spawn(async move {
+                                    tokio::time::sleep(Duration::from_secs(5)).await;
+                                    _ = &cloned_sender2.send(Some(
+                                        Message::BinarySensorValueChange {
+                                            key: cloned_key,
+                                            value: false,
+                                        },
+                                    ));
+                                });
                             }
                             _ => {}
                         }
