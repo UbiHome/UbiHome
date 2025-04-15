@@ -14,7 +14,7 @@ macro_rules! template_sensor {
             Unknown(UnknownSensor),
         }
 
-        #[derive(Clone, Debug, Deserialize)]
+        #[derive(Clone, Deserialize, Debug)]
         pub struct Sensor {
             pub id: Option<String>,
             pub name: String,

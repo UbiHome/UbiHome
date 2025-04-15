@@ -1,5 +1,5 @@
 use log::{debug, error, info};
-use oshome_core::{config_template, home_assistant::sensors::Component, Message, Module};
+use oshome_core::{config_template, home_assistant::sensors::Component, ChangedMessage, Module, PublishedMessage};
 use rumqttc::{AsyncClient, Event, MqttOptions, QoS};
 use serde::{Deserialize, Deserializer, Serialize};
 use std::{collections::HashMap, future::Future, pin::Pin, str, time::Duration};
@@ -135,8 +135,8 @@ impl Module for Default {
 
     fn run(
         &self,
-        sender: Sender<Option<Message>>,
-        mut receiver: Receiver<Option<Message>>,
+        sender: Sender<ChangedMessage>,
+        mut receiver: Receiver<PublishedMessage>,
     ) -> Pin<Box<dyn Future<Output = Result<(), Box<dyn std::error::Error>>> + Send + 'static>>
     {
         let config = self.config.clone();
@@ -287,11 +287,11 @@ impl Module for Default {
                                 debug!("Received message on topic: {}", topic);
                                 if components.contains_key(&topic) {
                                     // let payload = str::from_utf8(&publish.payload).unwrap_or("");
-                                    let msg = Message::ButtonPress {
+                                    let msg = ChangedMessage::ButtonPress {
                                         key: topic.to_string(),
                                     };
 
-                                    let _ = sender.send(Some(msg));
+                                    sender.send(msg).unwrap();
                                     debug!("Received on '{}': {:?}", topic, publish.payload);
                                 }
                             }
@@ -308,11 +308,10 @@ impl Module for Default {
             // Handle Sensor Updates
             let base_topic2 = base_topic.clone();
             tokio::spawn(async move {
-                while let Ok(Some(cmd)) = receiver.recv().await {
-                    use Message::*;
+                while let Ok(cmd) = receiver.recv().await {
 
                     match cmd {
-                        SensorValueChange { key, value } => {
+                        PublishedMessage::SensorValueChanged { key, value } => {
                             debug!("Sensor value published: {} = {}", key, value);
                             // Handle sensor value change
                             if let Err(e) = client
@@ -327,7 +326,7 @@ impl Module for Default {
                                 error!("{}", e)
                             }
                         }
-                        BinarySensorValueChange { key, value } => {
+                        PublishedMessage::BinarySensorValueChanged { key, value } => {
                             debug!("Binary Sensor value published: {} = {}", key, value);
 
                             let payload = if value { "ON" } else { "OFF" };

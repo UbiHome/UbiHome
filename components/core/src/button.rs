@@ -16,7 +16,6 @@ macro_rules! template_button {
 
         #[derive(Clone, Deserialize, Debug)]
         pub struct ButtonConfig {
-            pub platform: String,
             pub id: Option<String>,
             pub name: String,
 

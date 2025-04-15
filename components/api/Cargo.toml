@@ -12,6 +12,8 @@ oshome-core = { path = "../core" }
 prost = "0.13.5"
 tonic = "0.13"
 tower = "0.5.2"
+serde_yaml = "0.9.34"
+duration-str = "0.16.1"
 
 [build-dependencies]
 prost-build = "0.13"

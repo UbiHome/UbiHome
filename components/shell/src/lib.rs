@@ -1,5 +1,5 @@
 use log::debug;
-use oshome_core::{config_template, home_assistant::sensors::Component,Message, Module};
+use oshome_core::{config_template, home_assistant::sensors::Component, ChangedMessage, Module, PublishedMessage};
 use serde::{Deserialize, Deserializer};
 use shell_exec::{Execution, Shell, ShellError};
 use std::{future::Future, pin::Pin, str, time::Duration};
@@ -42,7 +42,9 @@ pub struct ShellBinarySensorConfig {
 
 #[derive(Clone, Deserialize, Debug)]
 pub struct ShellSensorConfig {
-    pub command: String
+    pub command: String,
+    // #[serde(deserialize_with = "deserialize_option_duration")]
+    // pub update_interval: Option<Duration>,
 }
 
 #[derive(Clone, Deserialize, Debug)]
@@ -50,7 +52,7 @@ pub struct ShellButtonConfig {
     pub command: String,
 }
 
-config_template!(shell, ShellConfig, ShellButtonConfig, ShellBinarySensorConfig, ShellBinarySensorConfig);
+config_template!(shell, ShellConfig, ShellButtonConfig, ShellBinarySensorConfig, ShellSensorConfig);
 
 
 pub struct Default {
@@ -61,7 +63,7 @@ pub struct Default {
 impl Default {
     pub fn new(config_string: &String) -> Self {
         let config = serde_yaml::from_str::<CoreConfig>(config_string).unwrap();
-
+        println!("Config: {:?}", config);
         Default {
             config
         }
@@ -84,8 +86,8 @@ impl Module for Default {
 
     fn run(
         &self,
-        sender: Sender<Option<Message>>,
-        mut receiver: Receiver<Option<Message>>,
+        sender: Sender<ChangedMessage>,
+        mut receiver: Receiver<PublishedMessage>,
     ) -> Pin<Box<dyn Future<Output = Result<(), Box<dyn std::error::Error>>> + Send + 'static>>
     {
         let config = self.config.clone();
@@ -93,32 +95,37 @@ impl Module for Default {
              // Handle Button Presses
             let cloned_config = config.clone();
             tokio::spawn(async move {
-                while let Ok(Some(cmd)) = receiver.recv().await {
-                    use Message::*;
+                while let Ok(cmd) = receiver.recv().await {
+
+                    println!("Received message in shell {:?}", cmd);
 
                     match cmd {
-                        ButtonPress { key } => {
+                        PublishedMessage::ButtonPressed { key } => {
+                            debug!("Button pressed1: {}", key);
                             if let Some(button) = cloned_config.button.as_ref().and_then(|b| b.get(&key))
-                                {
-                                    match &button.extra {
-                                        ButtonKind::shell(shell_button) => {
-                                            debug!("Button pressed: {}", key);
-                                            debug!("Executing command: {}", shell_button.command);
-                                            println!("Button '{}' pressed.", key);
-                                            
-                                            let output = execute_command(&cloned_config.shell, &shell_button.command, &cloned_config.shell.timeout).await.unwrap();
-                                            // If output is empty report status code
-                                            if output.is_empty() {
-                                                println!("Command executed successfully with no output.");
-                                            } else {
-                                                println!("Command executed successfully with output: {}", output);
-                                            }
+                            {
+                                debug!("Button: {:?}", button);
+                                match &button.extra {
+                                    ButtonKind::shell(shell_button) => {
+                                        debug!("Button pressed: {}", key);
+                                        debug!("Executing command: {}", shell_button.command);
+                                        println!("Button '{}' pressed.", key);
+                                        
+                                        let output = execute_command(&cloned_config.shell, &shell_button.command, &cloned_config.shell.timeout).await.unwrap();
+                                        // If output is empty report status code
+                                        if output.is_empty() {
+                                            println!("Command executed successfully with no output.");
+                                        } else {
+                                            println!("Command executed successfully with output: {}", output);
                                         }
-                                        _ => {}
                                     }
-                                } else {
-                                    debug!("Button pressed: {}", key);
+                                    b => {
+                                        debug!("Unknown Button: {:?}", b);
+                                    }
                                 }
+                            } else {
+                                debug!("Button pressed2: {}", key);
+                            }
                         }
                         _ => {
                             debug!("Ignored message type: {:?}", cmd);
@@ -134,9 +141,9 @@ impl Module for Default {
                     let cloned_config = config.clone();
                     let cloned_sender = sender.clone();
                     let cloned_sensor = any_sensor.clone();
-                    debug!("Sensor {} is of type Shell", key);
                     match any_sensor.extra {
                         SensorKind::shell(sensor) => {
+                            debug!("Sensor {} is of type Shell", key);
                             tokio::spawn(async move {
                                 if let Some(duration) = cloned_sensor.update_interval {
                                     let mut interval = time::interval(duration);
@@ -152,10 +159,10 @@ impl Module for Default {
                                                 let value = output;
                                                 println!("Sensor '{}' output: {}", key, &value);
 
-                                                _ = cloned_sender.send(Some(Message::SensorValueChange {
+                                                _ = cloned_sender.send(ChangedMessage::SensorValueChange {
                                                     key: key.clone(),
                                                     value: value,
-                                                }));
+                                                });
                                             },
                                             Err(e) => {
                                                 debug!("Error executing command: {}", e);
@@ -204,10 +211,10 @@ impl Module for Default {
                                                 };
                                                 println!("Binary Sensor '{}' output: {}", key, value);
 
-                                                _ = cloned_sender.send(Some(Message::BinarySensorValueChange {
+                                                _ = cloned_sender.send(ChangedMessage::BinarySensorValueChange {
                                                     key: key.clone(),
                                                     value: value.clone(),
-                                                }));
+                                                });
                                             },
                                             Err(e) => {
                                                 debug!("Error executing command: {}", e);

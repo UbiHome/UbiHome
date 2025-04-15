@@ -4,7 +4,7 @@ mod service;
 use flexi_logger::{detailed_format, Age, Cleanup, Criterion, Duplicate, FileSpec, Logger, Naming};
 use inquire::Text;
 use oshome_core::home_assistant::sensors::Component;
-use oshome_core::{Message, Module};
+use oshome_core::{ChangedMessage, Module, PublishedMessage};
 
 use clap::{Arg, ArgAction, Command};
 use log::{info, warn};
@@ -271,6 +271,7 @@ fn get_all_modules(yaml: &String) -> Vec<Box<dyn Module>> {
     modules.push(Box::new(oshome_shell::Default::new(&yaml)));
     modules.push(Box::new(oshome_mqtt::Default::new(&yaml)));
     modules.push(Box::new(oshome_mdns::Default::new(&yaml)));
+    modules.push(Box::new(oshome_api::Default::new(&yaml)));
     modules
 }
 
@@ -283,41 +284,19 @@ async fn initialize_modules(modules: &mut Vec<Box<dyn Module>>) -> Result<Vec<Co
     Ok(all_components)
 }
 
-// async fn run_modules(
-//     modules: Vec<Box<dyn Module>>,
-//     sender: Sender<Option<Message>>,
-//     receiver: Receiver<Option<Message>>,
-// ) {
-//     for module in modules {
-//         let tx2 = sender.clone();
-//         tokio::spawn({
-//             let tx2 = tx2.clone();
-//             async move {
-//                 let rx2 = tx2.subscribe();
-//                 let _ = module.run(tx2, rx2).await.unwrap();
-//             }
-//         });
-//     }
-// }
-
 async fn run_modules(modules: Vec<Box<dyn Module>>,
-    sender: Sender<Option<Message>>,
-    _receiver: Receiver<Option<Message>>) {
+    sender: Sender<ChangedMessage>,
+    receiver: Receiver<PublishedMessage>) {
     for module in modules {
         // Start MQTT client in a separate task
-        // if let Some(mqtt_config) = config.mqtt {
-        let tx2 = sender.clone();
-        // let mut module = module.clone();
+        let tx = sender.clone();
+        let rx = receiver.resubscribe();
         tokio::spawn({
-            let tx2 = tx2.clone();
             async move {
-                let rx2 = tx2.subscribe();
-                module.run(tx2, rx2).await.unwrap();
+                module.run(tx, rx).await.unwrap();
             }
         });
-        // }
     }
-    // Ok(all_components)
 }
 
 fn run(
@@ -334,26 +313,35 @@ fn run(
 
         let _ = initialize_modules(&mut modules).await.unwrap();
 
-        let (tx, rx) = broadcast::channel(16);
-
-        run_modules(modules, tx, rx).await;
-
-
-
-        
-        // if let Some(gpio_config) = config.gpio {
-        //     let tx2 = tx.clone();
-        //     let shell_base_config = base_config.clone();
-
-        //     tokio::spawn(async move {
-        //         let rx2 = tx2.subscribe();
-        //         oshome_gpio::start(tx2, rx2, &shell_base_config, &gpio_config).await;
-        //     });
-        // };
-
-        tokio::spawn(async move {
-            oshome_api::start().await.unwrap();
+        let (internal_tx, modules_rx) = broadcast::channel::<PublishedMessage>(16);
+        let (modules_tx, mut internal_rx) = broadcast::channel::<ChangedMessage>(16);
+        tokio::spawn({
+            async move {
+                while let Ok(cmd) = internal_rx.recv().await {
+                    println!("Received command: {:?}", cmd);
+                    let mut publish_cmd: Option<PublishedMessage> = None;
+                    match cmd {
+                        ChangedMessage::ButtonPress { key }=> {
+                            publish_cmd = Some(PublishedMessage::ButtonPressed { key });
+                        }
+                        ChangedMessage::SensorValueChange { key, value } => {
+                            publish_cmd = Some(PublishedMessage::SensorValueChanged { key, value });
+                        }
+                        ChangedMessage::BinarySensorValueChange { key, value } => {
+                            publish_cmd = Some(PublishedMessage::BinarySensorValueChanged { key, value });
+                        }
+                    }
+                    if let Some(pcmd) = publish_cmd {
+                        println!("Publishing command: {:?}", pcmd);
+                        internal_tx.send(pcmd).unwrap();
+                    }
+                }
+            }
         });
+
+        run_modules(modules, modules_tx.clone(), modules_rx).await;
+        // internal_tx.send(msg).unwrap();
+
 
         let ctrl_c = async {
             signal::ctrl_c()

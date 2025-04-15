@@ -1,5 +1,5 @@
 use log::warn;
-use oshome_core::{config_template, home_assistant::sensors::{Component, HASensor}, Message, Module};
+use oshome_core::{config_template, home_assistant::sensors::{Component, HASensor}, ChangedMessage, Module, NoConfig, PublishedMessage};
 use std::{collections::HashMap, future::Future, pin::Pin, str, time::Duration};
 use tokio::sync::broadcast::{Receiver, Sender};
 use serde::{Deserialize, Deserializer};
@@ -15,13 +15,6 @@ pub struct BME280SensorConfig {
     pub pressure: BME280InternalConfig,
     pub humidity: BME280InternalConfig,
 }
-
-
-#[derive(Clone, Deserialize, Debug)]
-pub struct NoConfig {
-    // pub bla: String
-}
-
 
 config_template!(bme280, Option<NoConfig>, NoConfig, NoConfig, BME280SensorConfig);
 
@@ -109,8 +102,8 @@ impl Module for Default {
 
     fn run(
         &self,
-        sender: Sender<Option<Message>>,
-        _: Receiver<Option<Message>>,
+        sender: Sender<ChangedMessage>,
+        _: Receiver<PublishedMessage>,
     ) -> Pin<Box<dyn Future<Output = Result<(), Box<dyn std::error::Error>>> + Send + 'static>>
     {
         // let mqtt_config = self.mqtt_config.clone();
@@ -159,10 +152,10 @@ impl Module for Default {
                 println!("Temperature = {} deg C", measurements.temperature);
                 println!("Pressure = {} pascals", measurements.pressure);
 
-                let msg = Some(Message::SensorValueChange {
+                let msg = ChangedMessage::SensorValueChange {
                     key: "bme280.temperature".to_string(),
                     value: measurements.temperature.to_string(),
-                });
+                };
 
                 sender.send(msg).unwrap();
 

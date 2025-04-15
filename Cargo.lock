@@ -1367,11 +1367,13 @@ dependencies = [
 name = "oshome-api"
 version = "0.3.1"
 dependencies = [
+ "duration-str",
  "log",
  "oshome-core",
  "prost",
  "prost-build",
  "serde",
+ "serde_yaml",
  "tokio",
  "tonic",
  "tower",

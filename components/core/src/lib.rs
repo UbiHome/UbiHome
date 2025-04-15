@@ -19,18 +19,26 @@ where
     fn init(&mut self) -> Result<Vec<Component>, String>;
     fn run(
         &self,
-        sender: Sender<Option<Message>>,
-        receiver: Receiver<Option<Message>>,
+        sender: Sender<ChangedMessage>,
+        receiver: Receiver<PublishedMessage>,
     ) -> Pin<Box<dyn Future<Output = Result<(), Box<dyn std::error::Error>>> + Send + 'static>>;
 }
 
 
 
 #[derive(Debug, Clone)]
-pub enum Message {
+pub enum ChangedMessage {
     ButtonPress { key: String },
     SensorValueChange { key: String, value: String },
     BinarySensorValueChange { key: String, value: bool },
+}
+
+
+#[derive(Debug, Clone)]
+pub enum PublishedMessage {
+    ButtonPressed { key: String },
+    SensorValueChanged { key: String, value: String },
+    BinarySensorValueChanged { key: String, value: bool },
 }
 
 #[derive(Clone, Deserialize, Debug)]
@@ -102,13 +110,7 @@ macro_rules! config_template {
                     let mut map = HashMap::with_capacity(seq.size_hint().unwrap_or(0));
 
                     while let Some(item) = seq.next_element::<ButtonConfig>()? {
-                        let ButtonConfig {
-                            platform,
-                            id,
-                            name,
-                            extra,
-                        } = item;
-                        let key = id.clone().unwrap_or(name.clone());
+                        let key = item.id.clone().unwrap_or(item.name.clone());
                         match map.entry(key) {
                             std::collections::hash_map::Entry::Occupied(entry) => {
                                 return Err(serde::de::Error::custom(format!(
@@ -116,14 +118,7 @@ macro_rules! config_template {
                                     entry.key()
                                 )));
                             }
-                            std::collections::hash_map::Entry::Vacant(entry) => {
-                                entry.insert(ButtonConfig {
-                                    platform,
-                                    id,
-                                    name,
-                                    extra,
-                                })
-                            }
+                            std::collections::hash_map::Entry::Vacant(entry) => entry.insert(item),
                         };
                     }
                     Ok(Some(map))

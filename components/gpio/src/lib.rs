@@ -1,5 +1,5 @@
 use log::{debug, warn};
-use oshome_core::{config_template, home_assistant::sensors::Component, Message, Module};
+use oshome_core::{config_template, home_assistant::sensors::Component, ChangedMessage, Module, PublishedMessage};
 use std::{future::Future, pin::Pin, str, time::Duration};
 use tokio::sync::broadcast::{Receiver, Sender};
 use serde::{Deserialize, Deserializer};
@@ -61,8 +61,8 @@ impl Module for Default {
     }
 
     fn run(&self,
-    sender: Sender<Option<Message>>,
-    _: Receiver<Option<Message>>,
+        sender: Sender<ChangedMessage>,
+        _: Receiver<PublishedMessage>,
 ) -> Pin<Box<dyn Future<Output = Result<(), Box<dyn std::error::Error>>> + Send + 'static>>{
         let config = self.config.clone();
         Box::pin(async move {
@@ -140,21 +140,21 @@ impl Module for Default {
                                 debug!("BinarySensor {} triggered.", key);
                                 println!("Binary Sensor '{}' triggered.", key);
         
-                                _ = cloned_sender.send(Some(Message::BinarySensorValueChange {
+                                _ = cloned_sender.send(ChangedMessage::BinarySensorValueChange {
                                     key: key.clone(),
                                     value: true,
-                                }));
+                                });
                                 let cloned_sender2 = cloned_sender.clone();
 
                                 let cloned_key = key.clone();
                                 _ = tokio::spawn(async move {
                                     tokio::time::sleep(Duration::from_secs(5)).await;
-                                    _ = &cloned_sender2.send(Some(
-                                        Message::BinarySensorValueChange {
+                                    _ = &cloned_sender2.send(
+                                        ChangedMessage::BinarySensorValueChange {
                                             key: cloned_key,
                                             value: false,
                                         },
-                                    ));
+                                    );
                                 });
                             }
                             _ => {}
