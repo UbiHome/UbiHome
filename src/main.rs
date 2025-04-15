@@ -7,7 +7,7 @@ use oshome_core::home_assistant::sensors::Component;
 use oshome_core::{ChangedMessage, Module, PublishedMessage};
 
 use clap::{Arg, ArgAction, Command};
-use log::{info, warn};
+use log::{debug, info, warn};
 use service::{install, uninstall};
 use std::path::Path;
 use std::sync::mpsc;
@@ -279,6 +279,7 @@ async fn initialize_modules(modules: &mut Vec<Box<dyn Module>>) -> Result<Vec<Co
     let mut all_components: Vec<Component> = Vec::new();
     for module in modules.iter_mut() {
         let mut components = module.init().unwrap();
+        println!("Module: {:?}", components);
         all_components.append(&mut components);
     }
     Ok(all_components)
@@ -311,14 +312,15 @@ fn run(
 
         let mut modules = get_all_modules(&config);
 
-        let _ = initialize_modules(&mut modules).await.unwrap();
+        let components = initialize_modules(&mut modules).await.unwrap();
 
         let (internal_tx, modules_rx) = broadcast::channel::<PublishedMessage>(16);
         let (modules_tx, mut internal_rx) = broadcast::channel::<ChangedMessage>(16);
+        let internal_tx_clone = internal_tx.clone();
         tokio::spawn({
             async move {
                 while let Ok(cmd) = internal_rx.recv().await {
-                    println!("Received command: {:?}", cmd);
+                    debug!("Received command: {:?}", cmd);
                     let mut publish_cmd: Option<PublishedMessage> = None;
                     match cmd {
                         ChangedMessage::ButtonPress { key }=> {
@@ -332,15 +334,17 @@ fn run(
                         }
                     }
                     if let Some(pcmd) = publish_cmd {
-                        println!("Publishing command: {:?}", pcmd);
-                        internal_tx.send(pcmd).unwrap();
+                        debug!("Publishing command: {:?}", pcmd);
+                        internal_tx_clone.send(pcmd).unwrap();
                     }
                 }
             }
         });
 
         run_modules(modules, modules_tx.clone(), modules_rx).await;
-        // internal_tx.send(msg).unwrap();
+
+        println!("Components: {:?}", components);
+        internal_tx.send(PublishedMessage::Components { components: components }).unwrap();
 
 
         let ctrl_c = async {

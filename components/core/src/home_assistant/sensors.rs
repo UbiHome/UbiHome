@@ -23,7 +23,7 @@ pub struct HASensor {
     pub icon: Option<String>,
     pub name: String,
     pub device_class: Option<String>,
-    pub unit_of_measurement: String,
+    pub unit_of_measurement: Option<String>,
     pub unique_id: String,
     pub object_id: String,
 }

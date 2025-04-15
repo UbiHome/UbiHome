@@ -35,7 +35,17 @@ sensor:
     command: |-
       free | grep Mem | awk '{print $3/$2 * 100.0}'
     # device_class: "data_size"
-  # - platform: dht22
+  - platform: bme280
+    name: "bla"
+    temperature:
+      name: "test"
+      icon: mdi:memory
+    pressure:
+      name: "test2"
+      icon: mdi:memory
+    humidity:
+      name: "test3"
+      icon: mdi:memory
 
 binary_sensor:
   - platform: shell

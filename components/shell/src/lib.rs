@@ -37,14 +37,14 @@ fn default_timeout() -> Duration {
 pub struct ShellBinarySensorConfig {
     #[serde(deserialize_with = "deserialize_option_duration")]
     pub update_interval: Option<Duration>,
-    pub command: String
+    pub command: String,
 }
 
 #[derive(Clone, Deserialize, Debug)]
 pub struct ShellSensorConfig {
     pub command: String,
-    // #[serde(deserialize_with = "deserialize_option_duration")]
-    // pub update_interval: Option<Duration>,
+    #[serde(deserialize_with = "deserialize_option_duration")]
+    pub update_interval: Option<Duration>,
 }
 
 #[derive(Clone, Deserialize, Debug)]
@@ -145,7 +145,7 @@ impl Module for Default {
                         SensorKind::shell(sensor) => {
                             debug!("Sensor {} is of type Shell", key);
                             tokio::spawn(async move {
-                                if let Some(duration) = cloned_sensor.update_interval {
+                                if let Some(duration) = sensor.update_interval {
                                     let mut interval = time::interval(duration);
                                     debug!("Sensor {} has update interval: {:?}", key, interval);
                                     loop {
