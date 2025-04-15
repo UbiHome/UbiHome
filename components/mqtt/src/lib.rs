@@ -128,8 +128,7 @@ impl Module for Default {
 
     
     fn init(&mut self) -> Result<Vec<Component>, String> {
-        // self.core_config = config.clone();
-        let mut components: Vec<Component> = Vec::new();
+        let components: Vec<Component> = Vec::new();
 
         Ok(components)
     }

@@ -3,9 +3,8 @@ pub mod home_assistant;
 pub mod sensor;
 pub mod button;
 
-use serde::{Deserialize, Deserializer};
 use home_assistant::sensors::Component;
-use std::{collections::HashMap, pin::Pin};
+use std::pin::Pin;
 use tokio::sync::broadcast::{Receiver, Sender};
 
 pub type BoxFuture<'a, T> = Pin<Box<dyn Future<Output = T> + Send + 'a>>;
@@ -39,8 +38,9 @@ pub enum Message {
 
 #[macro_export]
 macro_rules! config_template {
-    ($component_name:ident, 
+    (
         $component_config:ty, 
+        $component_name:ident, 
         $button_extension:ident, 
         $binary_sensor_extension:ident, 
         $sensor_extension:ident) => {
@@ -54,6 +54,21 @@ macro_rules! config_template {
         template_button!($component_name, $button_extension);
         template_binary_sensor!($component_name, $binary_sensor_extension);
         template_sensor!($component_name, $sensor_extension);
+        
+        #[derive(Clone, Deserialize, Debug)]
+        pub struct Logger {
+            pub level: LogLevel
+        }
+        
+        #[derive(Clone, Deserialize, Debug)]
+        #[serde(rename_all = "UPPERCASE")]
+        pub enum LogLevel {
+            Error,
+            Warn,
+            Info,
+            Debug,
+            Trace
+        }
 
         #[derive(Clone, Deserialize, Debug)]
         pub struct OSHome {
@@ -201,6 +216,7 @@ macro_rules! config_template {
         #[derive(Clone, Deserialize, Debug)]
         pub struct CoreConfig {
             pub oshome: OSHome,
+            pub logger: Option<Logger>,
 
             pub $component_name: $component_config,
 

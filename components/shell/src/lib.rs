@@ -2,7 +2,7 @@ use log::debug;
 use oshome_core::{config_template, home_assistant::sensors::Component,Message, Module};
 use serde::{Deserialize, Deserializer};
 use shell_exec::{Execution, Shell, ShellError};
-use std::{future::Future, pin::Pin, ptr::null, str, time::Duration};
+use std::{future::Future, pin::Pin, str, time::Duration};
 use tokio::{sync::broadcast::{Receiver, Sender}, time};
 use duration_str::deserialize_duration;
 use std::collections::HashMap;
@@ -77,7 +77,7 @@ impl Module for Default {
 
     
     fn init(&mut self) -> Result<Vec<Component>, String> {
-        let mut components: Vec<Component> = Vec::new();
+        let components: Vec<Component> = Vec::new();
 
         Ok(components)
     }

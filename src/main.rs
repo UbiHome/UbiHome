@@ -1,14 +1,13 @@
 mod constants;
 mod service;
 
-use directories::BaseDirs;
 use flexi_logger::{detailed_format, Age, Cleanup, Criterion, Duplicate, FileSpec, Logger, Naming};
 use inquire::Text;
 use oshome_core::home_assistant::sensors::Component;
 use oshome_core::{Message, Module};
 
 use clap::{Arg, ArgAction, Command};
-use log::{info, warn, error};
+use log::{info, warn};
 use service::{install, uninstall};
 use std::path::Path;
 use std::sync::mpsc;
@@ -16,6 +15,8 @@ use std::time::Duration;
 use std::{env, fs};
 use tokio::sync::broadcast::{self, Receiver, Sender};
 use tokio::{runtime::Runtime, signal};
+
+
 
 #[cfg(target_os = "windows")]
 use windows_service::{
@@ -32,6 +33,8 @@ define_windows_service!(ffi_service_main, windows_service_main);
 #[cfg(target_os = "windows")]
 fn windows_service_main(_arguments: Vec<std::ffi::OsString>) {
     use std::time::Duration;
+    use log::error;
+
     
     use constants::SERVICE_NAME;
     info!("Starting Windows service...");
@@ -158,6 +161,8 @@ fn main() {
     println!("Starting OSHome - {}", VERSION);
 
     
+    #[cfg(not(debug_assertions))]
+    use directories::BaseDirs;
     #[cfg(not(debug_assertions))]
     let base_dirs = BaseDirs::new().expect("Failed to get base directories");
     #[cfg(not(debug_assertions))]

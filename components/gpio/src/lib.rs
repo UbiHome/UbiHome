@@ -1,11 +1,8 @@
 use log::{debug, warn};
 use oshome_core::{config_template, home_assistant::sensors::Component, Message, Module};
-use std::{env, future::Future, pin::Pin, str, time::Duration};
-use tokio::{
-    sync::broadcast::{Receiver, Sender},
-    time,
-};
-use serde::{Deserialize, Deserializer, Serialize};
+use std::{future::Future, pin::Pin, str, time::Duration};
+use tokio::sync::broadcast::{Receiver, Sender};
+use serde::{Deserialize, Deserializer};
 use std::collections::HashMap;
 
 
@@ -32,7 +29,7 @@ pub struct GpioBinarySensorConfig {
     pub pull_up: Option<bool>,
 }
 
-config_template!(gpio, GpioConfig, NoConfig, GpioBinarySensorConfig, NoConfig);
+config_template!(GpioConfig, Gpio, NoConfig, GpioBinarySensorConfig, NoConfig);
 
 
 #[derive(Clone, Debug)]
@@ -58,14 +55,14 @@ impl Module for Default {
 
 
     fn init(&mut self) -> Result<Vec<Component>, String> {
-        let mut components: Vec<Component> = Vec::new();
+        let components: Vec<Component> = Vec::new();
 
         Ok(components)
     }
 
     fn run(&self,
     sender: Sender<Option<Message>>,
-    mut receiver: Receiver<Option<Message>>,
+    _: Receiver<Option<Message>>,
 ) -> Pin<Box<dyn Future<Output = Result<(), Box<dyn std::error::Error>>> + Send + 'static>>{
         let config = self.config.clone();
         Box::pin(async move {
