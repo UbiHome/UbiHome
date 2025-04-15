@@ -1,4 +1,3 @@
-use log::info;
 use std::{env, fs};
 use std::{path::Path, time::Duration};
 use log::debug;

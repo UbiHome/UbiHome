@@ -14,15 +14,23 @@ log = "0.4"
 rumqttc = "0.24.0"
 serde = { version = "1.0", features = ["derive"] }
 serde_yaml = "0.9"
+oshome-bme280 = { path = "components/bme280" }
+oshome-core = { path = "components/core" }
+oshome-gpio = { path = "components/gpio" }
 oshome-mqtt = { path = "components/mqtt" }
 oshome-shell = { path = "components/shell" }
-oshome-core = { path = "components/core" }
 oshome-web_server = { path = "components/web_server" }
-oshome-gpio = { path = "components/gpio" }
 inquire = "0.7.5"
 shell_exec = "0.2.0"
 flexi_logger = "0.29.8"
 directories = "6.0.0"
+
+
+[build-dependencies]
+cargo_toml = "0.22.1"
+
+
+
 
 [target.'cfg(windows)'.dependencies]
 windows-service = "0.5"
@@ -30,4 +38,4 @@ windows-sys = "0.59"
 
 [workspace]
 resolver = "2"
-members = ["components/mqtt", "components/shell", "components/core", "components/web_server", "components/gpio"]
+members = ["components/mqtt", "components/shell", "components/core", "components/web_server", "components/gpio", "components/bme280"]

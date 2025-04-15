@@ -25,6 +25,8 @@ button:
    command: "echo 'Hello World!' >> test.log"
 
 sensor:
+  # - platform: dht22
+
   - platform: shell
     name: "RAM Usage"
     id: ram_usage

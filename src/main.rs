@@ -1,22 +1,22 @@
 mod constants;
 mod service;
 
-use directories::BaseDirs;
 use flexi_logger::{detailed_format, Age, Cleanup, Criterion, Duplicate, FileSpec, Logger, Naming};
 use inquire::Text;
-use oshome_shell::start;
+use oshome_core::home_assistant::sensors::Component;
+use oshome_core::{Message, Module};
 
 use clap::{Arg, ArgAction, Command};
-use log::{debug, info, warn, error};
-use oshome::Config;
-use oshome_mqtt::start_mqtt_client;
+use log::{info, warn};
 use service::{install, uninstall};
 use std::path::Path;
-use std::sync::mpsc::{self, Receiver};
+use std::sync::mpsc;
 use std::time::Duration;
 use std::{env, fs};
-use tokio::sync::broadcast;
+use tokio::sync::broadcast::{self, Receiver, Sender};
 use tokio::{runtime::Runtime, signal};
+
+
 
 #[cfg(target_os = "windows")]
 use windows_service::{
@@ -33,6 +33,8 @@ define_windows_service!(ffi_service_main, windows_service_main);
 #[cfg(target_os = "windows")]
 fn windows_service_main(_arguments: Vec<std::ffi::OsString>) {
     use std::time::Duration;
+    use log::error;
+
     
     use constants::SERVICE_NAME;
     info!("Starting Windows service...");
@@ -136,41 +138,22 @@ fn cli() -> Command {
 // Embed the default configuration file at compile time
 // const DEFAULT_CONFIG: &str = include_str!("../config.yaml");
 
-// Function to read the YAML configuration file
-fn read_full_config(path: Option<&String>) -> Result<Config, serde_yaml::Error> {
+
+fn read_base_config(path: Option<&String>) -> Result<String, String> {
     if let Some(path) = path {
         let config_file_path = fs::canonicalize(path).unwrap();
-        println!("Config file path: {}", config_file_path.display());
         if let Ok(content) = fs::read_to_string(config_file_path) {
-            return serde_yaml::from_str(&content);
+            return Ok(content)
         } else {
             warn!(
-                "Failed to read the configuration file at '{}', falling back to default.",
+                "Failed to read the configuration file at '{}'.", //, falling back to default.",
                 path
             );
         }
     }
 
     // Fallback to the embedded default configuration
-    // serde_yaml::from_str(DEFAULT_CONFIG)
-    panic!("oh no!");
-}
-
-fn read_base_config(path: Option<&String>) -> Result<oshome_core::CoreConfig, serde_yaml::Error> {
-    if let Some(path) = path {
-        let config_file_path = fs::canonicalize(path).unwrap();
-        if let Ok(content) = fs::read_to_string(config_file_path) {
-            return serde_yaml::from_str(&content);
-        } else {
-            warn!(
-                "Failed to read the configuration file at '{}', falling back to default.",
-                path
-            );
-        }
-    }
-
-    // Fallback to the embedded default configuration
-    // serde_yaml::from_str(DEFAULT_CONFIG)
+    // DEFAULT_CONFIG
     panic!("oh no!");
 }
 
@@ -178,6 +161,8 @@ fn main() {
     println!("Starting OSHome - {}", VERSION);
 
     
+    #[cfg(not(debug_assertions))]
+    use directories::BaseDirs;
     #[cfg(not(debug_assertions))]
     let base_dirs = BaseDirs::new().expect("Failed to get base directories");
     #[cfg(not(debug_assertions))]
@@ -208,10 +193,11 @@ fn main() {
         logger_builder = logger_builder.duplicate_to_stdout(Duplicate::Debug);
     }
 
-    let mut logger = logger_builder
+    //let mut logger = 
+    logger_builder
         .start()
         .unwrap();
-
+    
     // TODO: Implement logger entry
     // logger.parse_and_push_temp_spec("info, critical_mod = trace");
     // logger.pop_temp_spec();
@@ -270,67 +256,89 @@ fn main() {
     std::process::exit(0);
 }
 
+
+fn get_all_modules(yaml: &String) -> Vec<Box<dyn Module>> {
+    let mut modules: Vec<Box<dyn Module>> = Vec::new();
+    #[cfg(target_os = "windows")]
+    {
+        // TODO: Windows module
+    }
+    #[cfg(target_os = "linux")]
+    {
+        modules.push(Box::new(oshome_bme280::Default::new(&yaml)));
+        modules.push(Box::new(oshome_gpio::Default::new(&yaml)));
+    }
+    modules.push(Box::new(oshome_shell::Default::new(&yaml)));
+    modules.push(Box::new(oshome_mqtt::Default::new(&yaml)));
+    modules
+}
+
+async fn initialize_modules(modules: &mut Vec<Box<dyn Module>>) -> Result<Vec<Component>, String> {
+    let mut all_components: Vec<Component> = Vec::new();
+    for module in modules.iter_mut() {
+        let mut components = module.init().unwrap();
+        all_components.append(&mut components);
+    }
+    Ok(all_components)
+}
+
+// async fn run_modules(
+//     modules: Vec<Box<dyn Module>>,
+//     sender: Sender<Option<Message>>,
+//     receiver: Receiver<Option<Message>>,
+// ) {
+//     for module in modules {
+//         let tx2 = sender.clone();
+//         tokio::spawn({
+//             let tx2 = tx2.clone();
+//             async move {
+//                 let rx2 = tx2.subscribe();
+//                 let _ = module.run(tx2, rx2).await.unwrap();
+//             }
+//         });
+//     }
+// }
+
+async fn run_modules(modules: Vec<Box<dyn Module>>,
+    sender: Sender<Option<Message>>,
+    _receiver: Receiver<Option<Message>>) {
+    for module in modules {
+        // Start MQTT client in a separate task
+        // if let Some(mqtt_config) = config.mqtt {
+        let tx2 = sender.clone();
+        // let mut module = module.clone();
+        tokio::spawn({
+            let tx2 = tx2.clone();
+            async move {
+                let rx2 = tx2.subscribe();
+                module.run(tx2, rx2).await.unwrap();
+            }
+        });
+        // }
+    }
+    // Ok(all_components)
+}
+
 fn run(
     config_file: Option<&String>,
-    shutdown_signal: Option<Receiver<()>>,
+    shutdown_signal: Option<mpsc::Receiver<()>>,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let rt = Runtime::new().unwrap();
 
     // Spawn the root task
     rt.block_on(async {
-        // let mut listener = TcpListener::bind("127.0.0.1:8080").await?;
+        let config: String = read_base_config(config_file).expect("Failed to load base configuration");
 
-        // let cli = Args::parse();
-        // Read the configuration file or use the embedded default
-        let config: Config = read_full_config(config_file).unwrap_or_else(|err| {
-            warn!(
-                "Failed to parse configuration: {}, using default configuration.",
-                err
-            );
-            read_full_config(None).expect("Failed to load embedded default configuration")
-        });
+        let mut modules = get_all_modules(&config);
 
-        let base_config: oshome_core::CoreConfig =
-            read_base_config(config_file).unwrap_or_else(|err| {
-                warn!(
-                    "Failed to parse configuration: {}, using default configuration.",
-                    err
-                );
-                read_base_config(None).expect("Failed to load embedded default configuration")
-            });
+        let _ = initialize_modules(&mut modules).await.unwrap();
 
-        let (tx, mut _rx) = broadcast::channel(16);
+        let (tx, rx) = broadcast::channel(16);
 
-        let mqtt_base_config = base_config.clone();
-        // Start MQTT client in a separate task
-        if let Some(mqtt_config) = config.mqtt {
-            let tx2 = tx.clone();
-            tokio::spawn(async move {
-                let rx2 = tx2.subscribe();
-                start_mqtt_client(tx2, rx2, &mqtt_base_config, &mqtt_config).await;
-            });
-        }
+        run_modules(modules, tx, rx).await;
 
-        if let Some(shell_config) = config.shell {
-            let tx2 = tx.clone();
-            let shell_base_config = base_config.clone();
 
-            tokio::spawn(async move {
-                let rx2 = tx2.subscribe();
-                start(tx2, rx2, &shell_base_config, &shell_config).await;
-            });
-        };
 
-        
-        if let Some(gpio_config) = config.gpio {
-            let tx2 = tx.clone();
-            let shell_base_config = base_config.clone();
-
-            tokio::spawn(async move {
-                let rx2 = tx2.subscribe();
-                oshome_gpio::start(tx2, rx2, &shell_base_config, &gpio_config).await;
-            });
-        };
 
         let ctrl_c = async {
             signal::ctrl_c()
@@ -377,4 +385,3 @@ fn run(
     info!("Shutdown complete");
     Ok(())
 }
-
