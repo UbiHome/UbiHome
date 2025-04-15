@@ -56,7 +56,7 @@ Options:
 - [ ] Additional Components:
   - [ ] HTTP and Web Enpoint
   - [ ] BLE (https://github.com/deviceplug/btleplug)
-  - [ ] Bluetooth Proxy (https://esphome.io/components/bluetooth_proxy.html)
+  - [ ] Bluetooth Proxy (https://esphome.io/components/bluetooth_proxy.html)     https://docs.rs/bluer/latest/bluer/
 
 - [ ] Custom compilation for modular builds and custom extensions.
 - [ ] Homeassistant Native API

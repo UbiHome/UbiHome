@@ -270,6 +270,7 @@ fn get_all_modules(yaml: &String) -> Vec<Box<dyn Module>> {
     }
     modules.push(Box::new(oshome_shell::Default::new(&yaml)));
     modules.push(Box::new(oshome_mqtt::Default::new(&yaml)));
+    modules.push(Box::new(oshome_mdns::Default::new(&yaml)));
     modules
 }
 
@@ -337,6 +338,18 @@ fn run(
 
         run_modules(modules, tx, rx).await;
 
+
+
+        
+        // if let Some(gpio_config) = config.gpio {
+        //     let tx2 = tx.clone();
+        //     let shell_base_config = base_config.clone();
+
+        //     tokio::spawn(async move {
+        //         let rx2 = tx2.subscribe();
+        //         oshome_gpio::start(tx2, rx2, &shell_base_config, &gpio_config).await;
+        //     });
+        // };
 
 
 
