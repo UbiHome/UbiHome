@@ -42,7 +42,7 @@ windows-sys = "0.59"
 resolver = "2"
 members = ["components/api", "components/mdns", "components/mqtt", "components/shell", "components/core", "components/web_server", "components/gpio", "components/bme280"]
 
-[workspace.metadata.cross.target.x86_64-unknown-linux-musl]
+[workspace.metadata.cross.target.armv7-unknown-linux-musleabi]
 pre-build = [
     "sudo apt install -y protobuf-compiler",
 ]
