@@ -44,6 +44,6 @@ members = ["components/api", "components/mdns", "components/mqtt", "components/s
 
 [workspace.metadata.cross.target.armv7-unknown-linux-musleabi]
 pre-build = [
-    "sudo apt install -y protobuf-compiler",
+    "apt-get install protobuf-compiler",
 ]
 
