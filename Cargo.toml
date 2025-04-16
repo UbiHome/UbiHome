@@ -43,7 +43,13 @@ resolver = "2"
 members = ["components/api", "components/mdns", "components/mqtt", "components/shell", "components/core", "components/web_server", "components/gpio", "components/bme280"]
 
 [workspace.metadata.cross.target.x86_64-apple-darwin]
-# Install libssl-dev:arm64, see <https://github.com/cross-rs/cross/blob/main/docs/custom_images.md#adding-dependencies-to-existing-images>
 pre-build = [
     "brew install protobuf",
 ]
+
+[workspace.metadata.cross.target.x86_64-unknown-linux-musl]
+# Install libssl-dev:arm64, see <https://github.com/cross-rs/cross/blob/main/docs/custom_images.md#adding-dependencies-to-existing-images>
+pre-build = [
+    "sudo apt install -y protobuf-compiler",
+]
+
