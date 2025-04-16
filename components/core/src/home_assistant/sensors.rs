@@ -8,6 +8,8 @@ pub enum Component {
     BinarySensor(HABinarySensor),
 }
 
+// Icons: https://pictogrammers.com/library/mdi/
+
 #[derive(Clone, Serialize, Deserialize, Debug)]
 pub struct HAButton {
     pub name: String,
