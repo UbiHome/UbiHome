@@ -1,4 +1,4 @@
 [target.armv7-unknown-linux-musleabi]
 pre-build = [
-    "apt-get install protobuf-compiler",
+    "apt-get install protobuf-compiler -y",
 ]
