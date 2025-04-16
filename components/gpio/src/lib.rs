@@ -1,5 +1,5 @@
 use log::{debug, warn};
-use oshome_core::{config_template, home_assistant::sensors::Component, ChangedMessage, Module, PublishedMessage};
+use oshome_core::{config_template, home_assistant::sensors::{Component, HABinarySensor}, ChangedMessage, Module, NoConfig, PublishedMessage};
 use std::{future::Future, pin::Pin, str, time::Duration};
 use tokio::sync::broadcast::{Receiver, Sender};
 use serde::{Deserialize, Deserializer};
@@ -16,11 +16,6 @@ pub enum GpioDevice {
 #[derive(Clone, Deserialize, Debug)]
 pub struct GpioConfig {
     pub device: GpioDevice,
-}
-
-#[derive(Clone, Deserialize, Debug)]
-pub struct NoConfig {
-    // pub bla: String
 }
 
 #[derive(Clone, Deserialize, Debug)]
@@ -55,8 +50,28 @@ impl Module for Default {
 
 
     fn init(&mut self) -> Result<Vec<Component>, String> {
-        let components: Vec<Component> = Vec::new();
+        let mut components: Vec<Component> = Vec::new();
 
+        for (_, any_sensor) in self.config.binary_sensor.clone().unwrap_or_default() {
+            match any_sensor.extra {
+                BinarySensorKind::gpio(_) => {
+                    let object_id = format!("{}_{}", self.config.oshome.name, any_sensor.default.name.clone());
+                    let id = any_sensor.default.id.unwrap_or(object_id.clone());
+                    components.push(Component::BinarySensor(
+                        HABinarySensor {
+                            platform: "sensor".to_string(),
+                            icon: any_sensor.default.icon.clone(),
+                            unique_id: Some(id),
+                            device_class: any_sensor.default.device_class.clone(),
+                            name: any_sensor.default.name.clone(),
+                            object_id: object_id.clone(),
+                        }
+                    )
+                    );
+                }
+                _ => {}
+            }
+        }
         Ok(components)
     }
 

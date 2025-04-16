@@ -1,5 +1,5 @@
 use log::debug;
-use oshome_core::{config_template, home_assistant::sensors::Component, ChangedMessage, Module, PublishedMessage};
+use oshome_core::{config_template, home_assistant::sensors::{Component, HAButton, HASensor}, ChangedMessage, Module, PublishedMessage};
 use serde::{Deserialize, Deserializer};
 use shell_exec::{Execution, Shell, ShellError};
 use std::{future::Future, pin::Pin, str, time::Duration};
@@ -63,7 +63,6 @@ pub struct Default {
 impl Default {
     pub fn new(config_string: &String) -> Self {
         let config = serde_yaml::from_str::<CoreConfig>(config_string).unwrap();
-        println!("Config: {:?}", config);
         Default {
             config
         }
@@ -79,8 +78,47 @@ impl Module for Default {
 
     
     fn init(&mut self) -> Result<Vec<Component>, String> {
-        let components: Vec<Component> = Vec::new();
+        let mut components: Vec<Component> = Vec::new();
 
+        for (_, any_sensor) in self.config.sensor.clone().unwrap_or_default() {
+            match any_sensor.extra {
+                SensorKind::shell(_) => {
+                    let id = any_sensor.default.id.unwrap_or(any_sensor.default.name.clone());
+                    components.push(Component::Sensor(
+                        HASensor {
+                            platform: "sensor".to_string(),
+                            icon: any_sensor.default.icon.clone(),
+                            unique_id: None,
+                            device_class: any_sensor.default.device_class.clone(),
+                            unit_of_measurement: Some("°C".to_string()), //sensor.temperature.unit_of_measurement.clone(),
+                            name: any_sensor.default.name.clone(),
+                            object_id: id.clone(),
+                        }
+                    )
+                    );
+                }
+                _ => {}
+            }
+        }
+
+        for (_, any_sensor) in self.config.button.clone().unwrap_or_default() {
+            match any_sensor.extra {
+                ButtonKind::shell(_) => {
+                    let id = any_sensor.default.id.unwrap_or(any_sensor.default.name.clone());
+                    components.push(Component::Button(
+                        HAButton {
+                            platform: "sensor".to_string(),
+                            icon: any_sensor.default.icon.clone(),
+                            unique_id: Some(id.clone()),
+                            name: any_sensor.default.name.clone(),
+                            object_id: id.clone(),
+                        }
+                    )
+                    );
+                }
+                _ => {}
+            }
+        }
         Ok(components)
     }
 
@@ -96,9 +134,6 @@ impl Module for Default {
             let cloned_config = config.clone();
             tokio::spawn(async move {
                 while let Ok(cmd) = receiver.recv().await {
-
-                    println!("Received message in shell {:?}", cmd);
-
                     match cmd {
                         PublishedMessage::ButtonPressed { key } => {
                             debug!("Button pressed1: {}", key);
@@ -155,9 +190,7 @@ impl Module for Default {
                                         match output {
                                             Ok(output) => {
                                                 debug!("Sensor {} output: {}", key, &output);
-
                                                 let value = output;
-                                                println!("Sensor '{}' output: {}", key, &value);
 
                                                 _ = cloned_sender.send(ChangedMessage::SensorValueChange {
                                                     key: key.clone(),
@@ -247,8 +280,6 @@ async fn execute_command(shell_config: &ShellConfig, command: &str, timeout: &Du
         Some(CustomShell::Wsl) => Shell::Wsl,
         None => Shell::default(),
     };
-    debug!("config: {:?}", shell);
-
         
     let execution = Execution::builder()
         .shell(shell)
@@ -258,7 +289,7 @@ async fn execute_command(shell_config: &ShellConfig, command: &str, timeout: &Du
 
     let output = execution.execute(b"").await?;
     let output_string = str::from_utf8(&output).unwrap_or(""); 
-    debug!("Command executed successfully: {}", output_string);
+    debug!("Command '{}' executed: {}", command, output_string);
     Ok(output_string.to_string())
 
 }

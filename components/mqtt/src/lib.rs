@@ -223,7 +223,7 @@ impl Module for Default {
                             for component in components {
                                 match component {
                                     Component::Button(button) => {
-                                        let id = format!("{}_{}", core_config.oshome.name, button.name);
+                                        let id = button.unique_id.unwrap_or(format!("{}_{}", core_config.oshome.name, button.name));
                                         let topic = format!("{}/{}", base_topic.clone(), id.clone());
                                         topics.push(topic.clone());
                                         mqtt_components.insert(
@@ -238,7 +238,7 @@ impl Module for Default {
                                         );
                                     }
                                     Component::Sensor(sensor) => {
-                                        let id = format!("{}_{}", core_config.oshome.name, sensor.name);
+                                        let id = sensor.unique_id.unwrap_or(format!("{}_{}", core_config.oshome.name, sensor.name));
                                         mqtt_components.insert(
                                             sensor.name.clone(),
                                             MqttComponent::Sensor(HAMqttSensor {
@@ -254,7 +254,7 @@ impl Module for Default {
                                         );
                                     }
                                     Component::BinarySensor(sensor) => {
-                                        let id = format!("{}_{}", core_config.oshome.name, sensor.name);
+                                        let id = sensor.unique_id.unwrap_or(format!("{}_{}", core_config.oshome.name, sensor.name));
                                         mqtt_components.insert(
                                             sensor.name.clone(),
                                             MqttComponent::BinarySensor(HAMqttBinarySensor {
@@ -270,62 +270,6 @@ impl Module for Default {
                                     }
                                 }
                             }
-
-                            // if let Some(sensors) = core_config.sensor.clone() {
-                            //     for (key, sensor) in sensors {
-                            //         let id = format!("{}_{}", core_config.oshome.name, key.clone());
-                            //         components.insert(
-                            //             key.clone(),
-                            //             MqttComponent::Sensor(HAMqttSensor {
-                            //                 platform: "sensor".to_string(),
-                            //                 icon: sensor.default.icon.clone(),
-                            //                 unique_id: id.clone(),
-                            //                 device_class: sensor.default.device_class.clone(),
-                            //                 unit_of_measurement: sensor.default.unit_of_measurement.clone(),
-                            //                 name: sensor.default.name.clone(),
-                            //                 state_topic: format!("{}/{}", base_topic.clone(), key.clone()),
-                            //                 object_id: id.clone(),
-                            //             }),
-                            //         );
-                            //     }
-                            // }
-                            // if let Some(binary_sensors) = core_config.binary_sensor.clone() {
-                            //     for (key, sensor) in binary_sensors {
-                            //         let id = format!("{}_{}", core_config.oshome.name, key.clone());
-                            //         components.insert(
-                            //             key.clone(),
-                            //             MqttComponent::BinarySensor(HAMqttBinarySensor {
-                            //                 platform: "binary_sensor".to_string(),
-                            //                 icon: sensor.default.icon.clone(),
-                            //                 unique_id: id.clone(),
-                            //                 device_class: sensor.default.device_class.clone(),
-                            //                 name: sensor.default.name.clone(),
-                            //                 state_topic: format!("{}/{}", base_topic.clone(), key.clone()),
-                            //                 object_id: id.clone(),
-                            //             }),
-                            //         );
-                            //     }
-                            // }
-                
-                
-                            // if let Some(buttons) = core_config.button.clone() {
-                            //     for (key, button) in buttons {
-                            //         let id = format!("{}_{}", core_config.oshome.name, key.clone());
-                            //         let topic = format!("{}/{}", base_topic.clone(), key.clone());
-                            //         topics.push(topic.clone());
-                
-                            //         components.insert(
-                            //             key.clone(),
-                            //             MqttComponent::Button(HAMqttButton {
-                            //                 platform: "button".to_string(),
-                            //                 unique_id: id.clone(),
-                            //                 name: button.default.name.clone(),
-                            //                 command_topic: topic,
-                            //                 object_id: id.clone(),
-                            //             }),
-                            //         );
-                            //     }
-                            // }
                 
                             let device = Device {
                                 identifiers: vec![core_config.oshome.name.clone()],

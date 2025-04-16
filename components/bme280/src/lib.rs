@@ -29,9 +29,9 @@ pub struct ButtonConfig {
 #[derive(Clone, Deserialize, Debug)]
 pub struct BME280SensorConfig {
     // pub platform: String,
-    pub temperature: SensorBase,
-    pub pressure: SensorBase,
-    pub humidity: SensorBase,
+    pub temperature: Option<SensorBase>,
+    pub pressure: Option<SensorBase>,
+    pub humidity: Option<SensorBase>,
 }
 
 // template_sensor!(bme280, BME280SensorConfig);
@@ -73,48 +73,74 @@ impl Module for Default {
     fn init(&mut self) -> Result<Vec<Component>, String> {
         let mut components: Vec<Component> = Vec::new();
 
-        // if let Some(sensors) = self.config.sensor.clone() {
             for (n_sensor) in self.config.sensor.clone() {
                 match n_sensor.extra {
                     ButtonKind::bme280(sensor) => {
-                        let id = format!("{}_{}_{}", self.config.oshome.name, sensor.temperature.name, "temperature");
+                        let temperature = sensor.temperature.unwrap_or(SensorBase {
+                            id: None,
+                            name: format!("{} Temperature", self.config.oshome.name),
+                            icon: None,
+                            state_class: None,
+                            device_class: None,
+                            unit_of_measurement: None,
+                        });
+                        let object_id = format!("{}_{}", self.config.oshome.name, "temperature");
+                        let id = temperature.id.unwrap_or(object_id.clone());
                         components.push(
                             Component::Sensor(
                                 HASensor {
                                     platform: "sensor".to_string(),
-                                    icon: sensor.temperature.icon.clone(),
-                                    unique_id: id.clone(),
-                                    device_class: sensor.temperature.device_class.clone(),
-                                    unit_of_measurement: Some("°C".to_string()), //sensor.temperature.unit_of_measurement.clone(),
-                                    name: sensor.temperature.name.clone(),
+                                    icon: Some(temperature.icon.unwrap_or("mdi:thermometer".to_string()).clone()),
+                                    unique_id: Some(id.clone()),
+                                    device_class: temperature.device_class.clone(),
+                                    unit_of_measurement: Some(temperature.unit_of_measurement.unwrap_or("°C".to_string()).clone()),
+                                    name: temperature.name.clone(),
+                                    object_id: object_id.clone(),
+                                }
+                            )
+                        );
+                        let pressure = sensor.pressure.unwrap_or(SensorBase {
+                            id: None,
+                            name: format!("{} Pressure", self.config.oshome.name),
+                            icon: None,
+                            state_class: None,
+                            device_class: None,
+                            unit_of_measurement: None,
+                        });
+                        let object_id = format!("{}_{}", self.config.oshome.name, "pressure");
+                        let id = pressure.id.unwrap_or(object_id.clone());
+                        components.push(
+                            Component::Sensor(
+                                HASensor {
+                                    platform: "sensor".to_string(),
+                                    icon: Some(pressure.icon.unwrap_or("mdi:umbrella".to_string()).clone()),
+                                    unique_id: Some(id.clone()),
+                                    device_class: pressure.device_class.clone(),
+                                    unit_of_measurement: Some(pressure.unit_of_measurement.unwrap_or("Pa".to_string()).clone()),
+                                    name: pressure.name.clone(),
                                     object_id: id.clone(),
                                 }
                             )
                         );
-                        let id = format!("{}_{}_{}", self.config.oshome.name, sensor.pressure.name, "pressure");
+                        let humidity = sensor.humidity.unwrap_or(SensorBase {
+                            id: None,
+                            name: format!("{} Humidity", self.config.oshome.name),
+                            icon: None,
+                            state_class: None,
+                            device_class: None,
+                            unit_of_measurement: None,
+                        });
+                        let object_id = format!("{}_{}", self.config.oshome.name, "humidity");
+                        let id = humidity.id.unwrap_or(object_id.clone());
                         components.push(
                             Component::Sensor(
                                 HASensor {
                                     platform: "sensor".to_string(),
-                                    icon: sensor.pressure.icon.clone(),
-                                    unique_id: id.clone(),
-                                    device_class: sensor.pressure.device_class.clone(),
-                                    unit_of_measurement: Some("Pa".to_string()), //sensor.pressure.unit_of_measurement.clone(),
-                                    name: sensor.pressure.name.clone(),
-                                    object_id: id.clone(),
-                                }
-                            )
-                        );
-                        let id = format!("{}_{}_{}", self.config.oshome.name, sensor.humidity.name, "humidity");
-                        components.push(
-                            Component::Sensor(
-                                HASensor {
-                                    platform: "sensor".to_string(),
-                                    icon: sensor.humidity.icon.clone(),
-                                    unique_id: id.clone(),
-                                    device_class: sensor.humidity.device_class.clone(),
-                                    unit_of_measurement: Some("%".to_string()), //sensor.humidity.unit_of_measurement.clone(),
-                                    name: sensor.humidity.name.clone(),
+                                    icon: Some(humidity.icon.unwrap_or("mdi:water-percent".to_string()).clone()),
+                                    unique_id: Some(id.clone()),
+                                    device_class: humidity.device_class.clone(),
+                                    unit_of_measurement: Some(humidity.unit_of_measurement.unwrap_or("%".to_string()).clone()), 
+                                    name: humidity.name.clone(),
                                     object_id: id.clone(),
                                 }
                             )
@@ -122,7 +148,6 @@ impl Module for Default {
                     },
                     _ => {}
                 }
-            // }
         }
         Ok(components)
     }

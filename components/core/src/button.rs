@@ -3,6 +3,7 @@ use serde::Deserialize;
 #[derive(Clone, Deserialize, Debug)]
 pub struct ButtonBase {
     pub id: Option<String>,
+    pub icon: Option<String>,
     pub name: String,
 }
 
