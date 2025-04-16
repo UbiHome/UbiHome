@@ -1,9 +1,8 @@
 use log::warn;
-use oshome_core::{button::UnknownButton, config_template, home_assistant::sensors::{Component, HASensor}, sensor::SensorBase, template_mapper, template_sensor, ChangedMessage, Module, NoConfig, OSHome, PublishedMessage};
-use std::{collections::HashMap, future::Future, pin::Pin, str, time::Duration};
+use oshome_core::{button::UnknownButton, home_assistant::sensors::{Component, HASensor}, sensor::SensorBase, ChangedMessage, Module, OSHome, PublishedMessage};
+use std::{future::Future, pin::Pin, str};
 use tokio::sync::broadcast::{Receiver, Sender};
-use serde::{Deserialize, Deserializer};
-use duration_str::deserialize_option_duration;
+use serde::Deserialize;
 
 
 #[derive(Clone, Deserialize, Debug)]
@@ -15,7 +14,7 @@ pub struct BME280InternalConfig {
 #[serde(tag = "platform")]
 #[serde(rename_all = "camelCase")]
 pub enum ButtonKind {
-    bme280(BME280SensorConfig),
+    Bme280(BME280SensorConfig),
     #[serde(untagged)]
     Unknown(UnknownButton),
 }
@@ -39,7 +38,7 @@ pub struct BME280SensorConfig {
 #[derive(Clone, Deserialize, Debug)]
 struct CoreConfig {
     pub oshome: OSHome,
-    pub bme280: Option<BME280InternalConfig>,
+    // pub bme280: Option<BME280InternalConfig>,
 
     pub sensor: Vec<ButtonConfig>,
 }
@@ -73,9 +72,9 @@ impl Module for Default {
     fn init(&mut self) -> Result<Vec<Component>, String> {
         let mut components: Vec<Component> = Vec::new();
 
-            for (n_sensor) in self.config.sensor.clone() {
+            for n_sensor in self.config.sensor.clone() {
                 match n_sensor.extra {
-                    ButtonKind::bme280(sensor) => {
+                    ButtonKind::Bme280(sensor) => {
                         let temperature = sensor.temperature.unwrap_or(SensorBase {
                             id: None,
                             name: format!("{} Temperature", self.config.oshome.name),

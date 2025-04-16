@@ -1,4 +1,4 @@
-use greeter::{ConnectRequest, EntityCategory, HelloRequest, HelloResponse, SensorLastResetType, SensorStateClass};
+use greeter::{EntityCategory, SensorLastResetType, SensorStateClass};
 use log::info;
 use log::debug;
 use oshome_core::NoConfig;
@@ -19,7 +19,6 @@ pub mod greeter {
 
 use serde::{Deserialize, Deserializer};
 use std::collections::HashMap;
-use std::time::Duration;
 
 
 #[derive(Clone, Deserialize, Debug)]
@@ -58,7 +57,7 @@ impl Module for Default {
     }
 
     fn run(&self,
-        sender: Sender<ChangedMessage>,
+        _sender: Sender<ChangedMessage>,
         _: Receiver<PublishedMessage>,
 ) -> Pin<Box<dyn Future<Output = Result<(), Box<dyn std::error::Error>>> + Send + 'static>>{
         let config = self.config.clone();
@@ -227,7 +226,6 @@ impl Module for Default {
                     }
                 });
             }
-            Ok(()) 
         })
      }
 

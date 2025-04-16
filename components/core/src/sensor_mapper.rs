@@ -6,6 +6,7 @@ macro_rules! template_sensor {
         use $crate::sensor::SensorBase;
         use $crate::sensor::UnknownSensor;
 
+        #[allow(non_camel_case_types)]
         #[derive(Clone, Deserialize, Debug)]
         #[serde(tag = "platform")]
         #[serde(rename_all = "camelCase")]

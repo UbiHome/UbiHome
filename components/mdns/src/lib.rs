@@ -5,7 +5,6 @@ use std::{future::Future, pin::Pin, str};
 use tokio::sync::broadcast::{Receiver, Sender};
 use serde::{Deserialize, Deserializer};
 use std::collections::HashMap;
-use std::time::Duration;
 
 
 #[derive(Clone, Deserialize, Debug)]
@@ -44,7 +43,7 @@ impl Module for Default {
     }
 
     fn run(&self,
-        sender: Sender<ChangedMessage>,
+        _sender: Sender<ChangedMessage>,
         _: Receiver<PublishedMessage>,
 ) -> Pin<Box<dyn Future<Output = Result<(), Box<dyn std::error::Error>>> + Send + 'static>>{
         let config = self.config.clone();
@@ -70,7 +69,6 @@ impl Module for Default {
 
 
             use mdns_sd::{ServiceDaemon, ServiceInfo};
-            use std::collections::HashMap;
 
             // Create a daemon
             let mdns = ServiceDaemon::new().expect("Failed to create daemon");

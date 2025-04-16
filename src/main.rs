@@ -321,7 +321,7 @@ fn run(
             async move {
                 while let Ok(cmd) = internal_rx.recv().await {
                     debug!("Received command: {:?}", cmd);
-                    let mut publish_cmd: Option<PublishedMessage> = None;
+                    let publish_cmd: Option<PublishedMessage>;
                     match cmd {
                         ChangedMessage::ButtonPress { key }=> {
                             publish_cmd = Some(PublishedMessage::ButtonPressed { key });

@@ -22,6 +22,7 @@ macro_rules! template_binary_sensor {
         use $crate::binary_sensor::BinarySensorBase;
         use $crate::binary_sensor::UnknownBinarySensor;
 
+        #[allow(non_camel_case_types)]
         #[derive(Clone, Deserialize, Debug)]
         #[serde(tag = "platform")]
         #[serde(rename_all = "camelCase")]

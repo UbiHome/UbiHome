@@ -151,7 +151,6 @@ macro_rules! proto_message_mappings {
                         Ok(msg.encode_to_vec())
                     }
                 )*
-                _ => Err("Unknown message type"),
             }
         }
 
@@ -161,7 +160,6 @@ macro_rules! proto_message_mappings {
                 $(
                     ProtoMessage::$struct(_) => Ok($type_id),
                 )*
-                _ => Err("Unknown ProtoMessage"),
             }
         }
     };

@@ -150,8 +150,8 @@ impl Module for Default {
                                     pin = gpio.into_input_pullup();
                                 }
         
-                                pin.set_interrupt(Trigger::Both,None);
-                                pin.poll_interrupt(true, None);
+                                _ = pin.set_interrupt(Trigger::Both,None);
+                                _ = pin.poll_interrupt(true, None);
                                 debug!("BinarySensor {} triggered.", key);
                                 println!("Binary Sensor '{}' triggered.", key);
         

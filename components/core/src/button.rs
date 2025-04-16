@@ -17,6 +17,7 @@ macro_rules! template_button {
         use $crate::button::ButtonBase;
         use $crate::button::UnknownButton;
 
+        #[allow(non_camel_case_types)]
         #[derive(Clone, Deserialize, Debug)]
         #[serde(tag = "platform")]
         #[serde(rename_all = "camelCase")]

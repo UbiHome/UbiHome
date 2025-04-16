@@ -175,7 +175,6 @@ impl Module for Default {
                 for (key, any_sensor) in sensors {
                     let cloned_config = config.clone();
                     let cloned_sender = sender.clone();
-                    let cloned_sensor = any_sensor.clone();
                     match any_sensor.extra {
                         SensorKind::shell(sensor) => {
                             debug!("Sensor {} is of type Shell", key);

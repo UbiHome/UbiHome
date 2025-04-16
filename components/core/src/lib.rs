@@ -9,7 +9,7 @@ pub extern crate paste;
 use home_assistant::sensors::Component;
 use std::pin::Pin;
 use tokio::sync::broadcast::{Receiver, Sender};
-use serde::{Deserialize, Deserializer};
+use serde::{Deserialize};
 
 
 pub type BoxFuture<'a, T> = Pin<Box<dyn Future<Output = T> + Send + 'a>>;
