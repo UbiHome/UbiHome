@@ -2,8 +2,8 @@ name: Release
 
 on:
   push:
-    # # Just for debugging
-    # branches: [ main ]
+    # Just for debugging
+    branches: [ main ]
     tags:
       - 'v*'
 
@@ -56,12 +56,12 @@ jobs:
           args: "--release"
           strip: true
 
-      - name: Publish artifacts and release
-        uses: houseabsolute/actions-rust-release@v0
-        with:
-          executable-name: oshome
-          target: ${{ matrix.platform.target }}
-          changes-file: null
-          extra-files: |
-            README.md
-            config.yaml
+      # - name: Publish artifacts and release
+      #   uses: houseabsolute/actions-rust-release@v0
+      #   with:
+      #     executable-name: oshome
+      #     target: ${{ matrix.platform.target }}
+      #     changes-file: null
+      #     extra-files: |
+      #       README.md
+      #       config.yaml
