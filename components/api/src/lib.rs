@@ -1,9 +1,9 @@
-use greeter::{EntityCategory, SensorLastResetType, SensorStateClass};
+// use greeter::{EntityCategory, SensorLastResetType, SensorStateClass};
 use log::info;
 use log::debug;
 use oshome_core::NoConfig;
 use oshome_core::{config_template, home_assistant::sensors::Component, ChangedMessage, Module, PublishedMessage};
-use parser::ProtoMessage;
+// use parser::ProtoMessage;
 use tokio::sync::broadcast::Receiver;
 use tokio::sync::broadcast::Sender;
 use std::{future::Future, pin::Pin, str};
@@ -11,10 +11,10 @@ use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::TcpListener;
 mod parser;
 
-include!(concat!(env!("OUT_DIR"), "/_.rs"));
-pub mod greeter {
-    include!(concat!(env!("OUT_DIR"), "/greeter.rs"));
-}
+// include!(concat!(env!("OUT_DIR"), "/_.rs"));
+// pub mod greeter {
+//     include!(concat!(env!("OUT_DIR"), "/greeter.rs"));
+// }
 
 
 use serde::{Deserialize, Deserializer};
@@ -235,15 +235,15 @@ impl Module for Default {
 
 
 
-pub fn to_packet(obj: ProtoMessage) -> Result<Vec<u8>, Box<dyn std::error::Error>> {
-    let response_content = parser::proto_to_vec(&obj)?;
-    let message_type = parser::message_to_num(&obj)?;
-    let zero: Vec<u8> = vec![0];
-    let length: Vec<u8> = vec![response_content.len().try_into().unwrap()];
-    let message_bit: Vec<u8> = vec![message_type];
+// pub fn to_packet(obj: ProtoMessage) -> Result<Vec<u8>, Box<dyn std::error::Error>> {
+//     let response_content = parser::proto_to_vec(&obj)?;
+//     let message_type = parser::message_to_num(&obj)?;
+//     let zero: Vec<u8> = vec![0];
+//     let length: Vec<u8> = vec![response_content.len().try_into().unwrap()];
+//     let message_bit: Vec<u8> = vec![message_type];
 
-    let answer_buf: Vec<u8> =
-        [zero, length, message_bit, response_content].concat();
-    Ok(answer_buf)
- }
+//     let answer_buf: Vec<u8> =
+//         [zero, length, message_bit, response_content].concat();
+//     Ok(answer_buf)
+//  }
 
