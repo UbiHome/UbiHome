@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.6](https://github.com/DanielHabenicht/OSHome/compare/v0.3.5...v0.3.6) (2025-04-16)
+
+
+### Bug Fixes
+
+* release please ([80a165c](https://github.com/DanielHabenicht/OSHome/commit/80a165c9392a406bb7757d5e3bc1f58f5dfefdfa))
+
 ## [0.3.5](https://github.com/DanielHabenicht/OSHome/compare/v0.3.4...v0.3.5) (2025-03-30)
 
 
