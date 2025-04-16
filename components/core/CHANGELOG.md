@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.5](https://github.com/DanielHabenicht/OSHome/compare/v0.3.4...oshome-core-v0.3.5) (2025-04-16)
+
+
+### Bug Fixes
+
+* add pullup ([462bf9b](https://github.com/DanielHabenicht/OSHome/commit/462bf9baeddde638843278d623356b3b73a4feb1))
+
 ## [0.3.4](https://github.com/DanielHabenicht/OSHome/compare/v0.3.3...oshome-core-v0.3.4) (2025-04-16)
 
 

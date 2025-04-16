@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.7](https://github.com/DanielHabenicht/OSHome/compare/v0.3.6...v0.3.7) (2025-04-16)
+
+
+### Bug Fixes
+
+* docs ([f746b73](https://github.com/DanielHabenicht/OSHome/commit/f746b73e3fb37176793c313bef1470f9d6eda848))
+
 ## [0.3.6](https://github.com/DanielHabenicht/OSHome/compare/v0.3.5...v0.3.6) (2025-04-16)
 
 
