@@ -1,5 +1,5 @@
 use log::debug;
-use oshome_core::{config_template, home_assistant::sensors::Component,Message, Module};
+use oshome_core::{config_template, home_assistant::sensors::{Component, HAButton, HASensor}, ChangedMessage, Module, PublishedMessage};
 use serde::{Deserialize, Deserializer};
 use shell_exec::{Execution, Shell, ShellError};
 use std::{future::Future, pin::Pin, str, time::Duration};
@@ -37,12 +37,14 @@ fn default_timeout() -> Duration {
 pub struct ShellBinarySensorConfig {
     #[serde(deserialize_with = "deserialize_option_duration")]
     pub update_interval: Option<Duration>,
-    pub command: String
+    pub command: String,
 }
 
 #[derive(Clone, Deserialize, Debug)]
 pub struct ShellSensorConfig {
-    pub command: String
+    pub command: String,
+    #[serde(deserialize_with = "deserialize_option_duration")]
+    pub update_interval: Option<Duration>,
 }
 
 #[derive(Clone, Deserialize, Debug)]
@@ -50,7 +52,7 @@ pub struct ShellButtonConfig {
     pub command: String,
 }
 
-config_template!(shell, ShellConfig, ShellButtonConfig, ShellBinarySensorConfig, ShellBinarySensorConfig);
+config_template!(shell, ShellConfig, ShellButtonConfig, ShellBinarySensorConfig, ShellSensorConfig);
 
 
 pub struct Default {
@@ -61,7 +63,6 @@ pub struct Default {
 impl Default {
     pub fn new(config_string: &String) -> Self {
         let config = serde_yaml::from_str::<CoreConfig>(config_string).unwrap();
-
         Default {
             config
         }
@@ -77,15 +78,54 @@ impl Module for Default {
 
     
     fn init(&mut self) -> Result<Vec<Component>, String> {
-        let components: Vec<Component> = Vec::new();
+        let mut components: Vec<Component> = Vec::new();
 
+        for (_, any_sensor) in self.config.sensor.clone().unwrap_or_default() {
+            match any_sensor.extra {
+                SensorKind::shell(_) => {
+                    let id = any_sensor.default.id.unwrap_or(any_sensor.default.name.clone());
+                    components.push(Component::Sensor(
+                        HASensor {
+                            platform: "sensor".to_string(),
+                            icon: any_sensor.default.icon.clone(),
+                            unique_id: None,
+                            device_class: any_sensor.default.device_class.clone(),
+                            unit_of_measurement: Some("°C".to_string()), //sensor.temperature.unit_of_measurement.clone(),
+                            name: any_sensor.default.name.clone(),
+                            object_id: id.clone(),
+                        }
+                    )
+                    );
+                }
+                _ => {}
+            }
+        }
+
+        for (_, any_sensor) in self.config.button.clone().unwrap_or_default() {
+            match any_sensor.extra {
+                ButtonKind::shell(_) => {
+                    let id = any_sensor.default.id.unwrap_or(any_sensor.default.name.clone());
+                    components.push(Component::Button(
+                        HAButton {
+                            platform: "sensor".to_string(),
+                            icon: any_sensor.default.icon.clone(),
+                            unique_id: Some(id.clone()),
+                            name: any_sensor.default.name.clone(),
+                            object_id: id.clone(),
+                        }
+                    )
+                    );
+                }
+                _ => {}
+            }
+        }
         Ok(components)
     }
 
     fn run(
         &self,
-        sender: Sender<Option<Message>>,
-        mut receiver: Receiver<Option<Message>>,
+        sender: Sender<ChangedMessage>,
+        mut receiver: Receiver<PublishedMessage>,
     ) -> Pin<Box<dyn Future<Output = Result<(), Box<dyn std::error::Error>>> + Send + 'static>>
     {
         let config = self.config.clone();
@@ -93,32 +133,34 @@ impl Module for Default {
              // Handle Button Presses
             let cloned_config = config.clone();
             tokio::spawn(async move {
-                while let Ok(Some(cmd)) = receiver.recv().await {
-                    use Message::*;
-
+                while let Ok(cmd) = receiver.recv().await {
                     match cmd {
-                        ButtonPress { key } => {
+                        PublishedMessage::ButtonPressed { key } => {
+                            debug!("Button pressed1: {}", key);
                             if let Some(button) = cloned_config.button.as_ref().and_then(|b| b.get(&key))
-                                {
-                                    match &button.extra {
-                                        ButtonKind::shell(shell_button) => {
-                                            debug!("Button pressed: {}", key);
-                                            debug!("Executing command: {}", shell_button.command);
-                                            println!("Button '{}' pressed.", key);
-                                            
-                                            let output = execute_command(&cloned_config.shell, &shell_button.command, &cloned_config.shell.timeout).await.unwrap();
-                                            // If output is empty report status code
-                                            if output.is_empty() {
-                                                println!("Command executed successfully with no output.");
-                                            } else {
-                                                println!("Command executed successfully with output: {}", output);
-                                            }
+                            {
+                                debug!("Button: {:?}", button);
+                                match &button.extra {
+                                    ButtonKind::shell(shell_button) => {
+                                        debug!("Button pressed: {}", key);
+                                        debug!("Executing command: {}", shell_button.command);
+                                        println!("Button '{}' pressed.", key);
+                                        
+                                        let output = execute_command(&cloned_config.shell, &shell_button.command, &cloned_config.shell.timeout).await.unwrap();
+                                        // If output is empty report status code
+                                        if output.is_empty() {
+                                            println!("Command executed successfully with no output.");
+                                        } else {
+                                            println!("Command executed successfully with output: {}", output);
                                         }
-                                        _ => {}
                                     }
-                                } else {
-                                    debug!("Button pressed: {}", key);
+                                    b => {
+                                        debug!("Unknown Button: {:?}", b);
+                                    }
                                 }
+                            } else {
+                                debug!("Button pressed2: {}", key);
+                            }
                         }
                         _ => {
                             debug!("Ignored message type: {:?}", cmd);
@@ -133,12 +175,11 @@ impl Module for Default {
                 for (key, any_sensor) in sensors {
                     let cloned_config = config.clone();
                     let cloned_sender = sender.clone();
-                    let cloned_sensor = any_sensor.clone();
-                    debug!("Sensor {} is of type Shell", key);
                     match any_sensor.extra {
                         SensorKind::shell(sensor) => {
+                            debug!("Sensor {} is of type Shell", key);
                             tokio::spawn(async move {
-                                if let Some(duration) = cloned_sensor.update_interval {
+                                if let Some(duration) = sensor.update_interval {
                                     let mut interval = time::interval(duration);
                                     debug!("Sensor {} has update interval: {:?}", key, interval);
                                     loop {
@@ -148,14 +189,12 @@ impl Module for Default {
                                         match output {
                                             Ok(output) => {
                                                 debug!("Sensor {} output: {}", key, &output);
-
                                                 let value = output;
-                                                println!("Sensor '{}' output: {}", key, &value);
 
-                                                _ = cloned_sender.send(Some(Message::SensorValueChange {
+                                                _ = cloned_sender.send(ChangedMessage::SensorValueChange {
                                                     key: key.clone(),
                                                     value: value,
-                                                }));
+                                                });
                                             },
                                             Err(e) => {
                                                 debug!("Error executing command: {}", e);
@@ -204,10 +243,10 @@ impl Module for Default {
                                                 };
                                                 println!("Binary Sensor '{}' output: {}", key, value);
 
-                                                _ = cloned_sender.send(Some(Message::BinarySensorValueChange {
+                                                _ = cloned_sender.send(ChangedMessage::BinarySensorValueChange {
                                                     key: key.clone(),
                                                     value: value.clone(),
-                                                }));
+                                                });
                                             },
                                             Err(e) => {
                                                 debug!("Error executing command: {}", e);
@@ -240,8 +279,6 @@ async fn execute_command(shell_config: &ShellConfig, command: &str, timeout: &Du
         Some(CustomShell::Wsl) => Shell::Wsl,
         None => Shell::default(),
     };
-    debug!("config: {:?}", shell);
-
         
     let execution = Execution::builder()
         .shell(shell)
@@ -251,7 +288,7 @@ async fn execute_command(shell_config: &ShellConfig, command: &str, timeout: &Du
 
     let output = execution.execute(b"").await?;
     let output_string = str::from_utf8(&output).unwrap_or(""); 
-    debug!("Command executed successfully: {}", output_string);
+    debug!("Command '{}' executed: {}", command, output_string);
     Ok(output_string.to_string())
 
 }

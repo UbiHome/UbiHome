@@ -1,11 +1,10 @@
 use log::info;
 use oshome_core::NoConfig;
-use oshome_core::{config_template, home_assistant::sensors::Component, Message, Module};
+use oshome_core::{config_template, home_assistant::sensors::Component, ChangedMessage, Module, PublishedMessage};
 use std::{future::Future, pin::Pin, str};
 use tokio::sync::broadcast::{Receiver, Sender};
 use serde::{Deserialize, Deserializer};
 use std::collections::HashMap;
-use std::time::Duration;
 
 
 #[derive(Clone, Deserialize, Debug)]
@@ -44,8 +43,8 @@ impl Module for Default {
     }
 
     fn run(&self,
-    sender: Sender<Option<Message>>,
-    _: Receiver<Option<Message>>,
+        _sender: Sender<ChangedMessage>,
+        _: Receiver<PublishedMessage>,
 ) -> Pin<Box<dyn Future<Output = Result<(), Box<dyn std::error::Error>>> + Send + 'static>>{
         let config = self.config.clone();
         info!("Starting MDNS with config: {:?}", config.mdns);
@@ -70,7 +69,6 @@ impl Module for Default {
 
 
             use mdns_sd::{ServiceDaemon, ServiceInfo};
-            use std::collections::HashMap;
 
             // Create a daemon
             let mdns = ServiceDaemon::new().expect("Failed to create daemon");
