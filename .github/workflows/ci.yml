@@ -34,6 +34,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Install Protoc
+        uses: arduino/setup-protoc@v3
+
       - name: Set up Rust
         uses: actions-rs/toolchain@v1
         with:
