@@ -5,16 +5,12 @@ nav:
     - features/index.md
     - Connectivity:
       - features/connectivity/index.md
-      - MQTT: features/connectivity/mqtt.md
-      - HTTP: features/connectivity/http.md
-      - Web Server: features/connectivity/web_server.md
+      - features/connectivity/*
     - Components:
       - features/components/index.md
-      - Button: features/components/button.md
-      - Sensor: features/components/sensor.md
-      - Binary Sensor: features/components/binary_sensor.md
+      - features/components/*
     - Platforms:
       - features/platforms/index.md
-      - Shell: features/platforms/shell.md
+      - features/platforms/*
   - Examples:
     - "examples/*"

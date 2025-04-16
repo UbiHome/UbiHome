@@ -71,4 +71,5 @@ Rust clippy:
 https://github.com/rust-lang/rust-clippy
 
 
-
+Add Badges? 
+https://github.com/squidfunk/mkdocs-material/discussions/7137
