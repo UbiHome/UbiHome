@@ -52,6 +52,10 @@ jobs:
         if: matrix.platform.runs-on == 'macOS-latest'
         run: brew install protobuf
 
+      - name: Add Protobug (Linux)
+        if: matrix.platform.runs-on == 'ubuntu-24.04'
+        run: sudo apt install -y protobuf-compiler
+
       - name: Build binary
         uses: houseabsolute/actions-rust-cross@v1
         with:
