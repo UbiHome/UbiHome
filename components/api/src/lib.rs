@@ -69,7 +69,7 @@ impl Module for Default {
             // connections. This TCP listener is bound to the address we determined
             // above and must be associated with an event loop.
             let listener = TcpListener::bind(&addr).await?;
-            println!("Listening on: {}", addr);
+            debug!("Listening on: {}", addr);
         
             loop {
                 // Asynchronously wait for an inbound socket.
@@ -79,7 +79,7 @@ impl Module for Default {
                     let mut buf = vec![0; 1024];
         
                     loop {
-                        let n = socket
+                        let n = socket   
                             .read(&mut buf)
                             .await
                             .expect("failed to read data from socket");
@@ -88,7 +88,7 @@ impl Module for Default {
                             return;
                         }
         
-                        println!("TCP: {:02X?}", &buf[0..n]);
+                        debug!("TCP: {:02X?}", &buf[0..n]);
         
                         let mut cursor = 0;
         
@@ -100,8 +100,8 @@ impl Module for Default {
                             let message_type = buf[cursor + 2];
                             let packet_content = &buf[cursor + 3..cursor + 3 + len];
         
-                            println!("Message type: {}", message_type);
-                            println!("Message: {:?}", packet_content);
+                            debug!("Message type: {}", message_type);
+                            debug!("Message: {:?}", packet_content);
         
                             // TODO: Parse Frames
         
