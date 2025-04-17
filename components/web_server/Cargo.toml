@@ -1,6 +1,6 @@
 [package]
 name = "oshome-web_server"
-version = "0.3.7"
+version = "0.3.8"
 authors = ["Daniel Habenicht <daniel-habenicht@outlook.de>"]
 edition = "2021"
 
