@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.9](https://github.com/DanielHabenicht/OSHome/compare/v0.3.8...v0.3.9) (2025-04-17)
+
+
+### Bug Fixes
+
+* unwrap results ([fd8aba6](https://github.com/DanielHabenicht/OSHome/commit/fd8aba628a188c037fb8793e5a763885e0af7c61))
+
 ## [0.3.8](https://github.com/DanielHabenicht/OSHome/compare/v0.3.7...v0.3.8) (2025-04-17)
 
 
