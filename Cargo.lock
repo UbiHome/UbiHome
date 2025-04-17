@@ -1237,7 +1237,7 @@ checksum = "04744f49eae99ab78e0d5c0b603ab218f515ea8cfe5a456d7629ad883a3b6e7d"
 
 [[package]]
 name = "oshome"
-version = "0.3.7"
+version = "0.3.8"
 dependencies = [
  "cargo_toml",
  "clap",
@@ -1303,7 +1303,7 @@ dependencies = [
 
 [[package]]
 name = "oshome-gpio"
-version = "0.3.6"
+version = "0.3.7"
 dependencies = [
  "async-trait",
  "duration-str",
