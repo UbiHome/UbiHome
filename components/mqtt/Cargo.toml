@@ -1,6 +1,6 @@
 [package]
 name = "oshome-mqtt"
-version = "0.3.8"
+version = "0.3.9"
 authors = ["Daniel Habenicht <daniel-habenicht@outlook.de>"]
 edition = "2021"
 
