@@ -64,6 +64,7 @@ Options:
 - [ ] Builder Component similar to ESP Home
 - [ ] Self update (https://github.com/jaemk/self_update)
 - [ ] GPIO https://github.com/golemparts/rppal
+- [ ] Kernel evens (e.g. Keyboard press) https://docs.rs/evdev/latest/evdev/
 
 ... Control USB Devices?
 
