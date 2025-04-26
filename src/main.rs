@@ -64,9 +64,10 @@ fn windows_service_main(_arguments: Vec<std::ffi::OsString>) {
     let mut dir = env::current_exe().unwrap();
     dir.pop();
     dir.push("config.yaml");
-    let config = dir.to_string_lossy().to_string();
-    info!("Config file path: {}", config);
-    if let Err(e) = run(Some(&config), Some(shutdown_rx)) {
+    let config_file = dir.to_string_lossy().to_string();
+    let config_string: String = read_base_config(Some(&config_file)).expect("Failed to load base configuration");
+
+    if let Err(e) = run(&config_string, Some(shutdown_rx)) {
         error!("{}", e)
     }
 
@@ -139,6 +140,7 @@ fn cli() -> Command {
 
 fn read_base_config(path: Option<&String>) -> Result<String, String> {
     if let Some(path) = path {
+        info!("Config file path: {}", path);
         let config_file_path = fs::canonicalize(path).unwrap();
         if let Ok(content) = fs::read_to_string(config_file_path) {
             return Ok(content);
@@ -151,12 +153,14 @@ fn read_base_config(path: Option<&String>) -> Result<String, String> {
     }
 
     // Fallback to the embedded default configuration
+    // info!("Config file path: BUILTIN");
+    // info!(DEFAULT_CONFIG);
     // DEFAULT_CONFIG
     panic!("oh no!");
 }
 
 fn main() {
-    println!("Starting OSHome - {}", VERSION);
+    println!("OSHome - {}", VERSION);
 
     #[cfg(not(debug_assertions))]
     use directories::BaseDirs;
@@ -194,11 +198,11 @@ fn main() {
     let mut logger = logger_builder.start().unwrap();
 
     println!("LogDirectory: {}", log_directory.display());
-
+    
     let matches = cli().get_matches();
     let config_file = matches.try_get_one::<String>("configuration_file").unwrap();
+    let config_string: String = read_base_config(config_file).expect("Failed to load base configuration");
 
-    let config_string = read_base_config(config_file).expect("Failed to load base configuration");
     let config = serde_yaml::from_str::<CoreConfig>(&config_string).unwrap();
     if let Some(logger_config) = config.logger {
         logger.reset_flw(&FileLogWriter::builder(
@@ -256,7 +260,7 @@ fn main() {
                 panic!("Running as a Windows service is not supported on Linux.");
             } else {
                 // Run normally
-                run(config_file.clone(), None).unwrap();
+                run(&config_string, None).unwrap();
             }
         }
         _ => {
@@ -268,17 +272,14 @@ fn main() {
 
 fn get_all_modules(yaml: &String) -> Vec<Box<dyn Module>> {
     let mut modules: Vec<Box<dyn Module>> = Vec::new();
-    #[cfg(target_os = "windows")]
-    {
-        // TODO: Windows module
-    }
+
     modules.push(Box::new(oshome_bme280::Default::new(&yaml)));
     modules.push(Box::new(oshome_gpio::Default::new(&yaml)));
     modules.push(Box::new(oshome_shell::Default::new(&yaml)));
     modules.push(Box::new(oshome_mqtt::Default::new(&yaml)));
     modules.push(Box::new(oshome_mdns::Default::new(&yaml)));
     modules.push(Box::new(oshome_api::Default::new(&yaml)));
-    modules
+    return modules
 }
 
 async fn initialize_modules(modules: &mut Vec<Box<dyn Module>>) -> Result<Vec<Component>, String> {
@@ -309,18 +310,15 @@ async fn run_modules(
 }
 
 fn run(
-    config_file: Option<&String>,
+    config: &String,
     shutdown_signal: Option<mpsc::Receiver<()>>,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    let rt = Runtime::new().unwrap();
 
     // Spawn the root task
+    let rt = Runtime::new().unwrap();
     rt.block_on(async {
-        let config: String =
-            read_base_config(config_file).expect("Failed to load base configuration");
-
         let mut modules = get_all_modules(&config);
-
+        log::info!("Loaded {} modules", modules.len());
         let components = initialize_modules(&mut modules).await.unwrap();
 
         let (internal_tx, modules_rx) = broadcast::channel::<PublishedMessage>(16);

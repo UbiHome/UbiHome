@@ -41,7 +41,7 @@ For now[^1] a single executable is provided. You can download them from the [Git
 
         ``` bash
         ./oshome run
-        Starting OSHome - 0.3.13
+        OSHome - 0.3.13
         LogDirectory: /home/codespace/.local/share
         Config file path: /workspaces/OSHome/config.yaml
         Binary Sensor 'bluetooth_connected' output: false
@@ -99,7 +99,7 @@ For now[^1] a single executable is provided. You can download them from the [Git
 
         ``` bash
         ./oshome.exe run
-        Starting OSHome - 0.3.13
+        OSHome - 0.3.13
         LogDirectory: /home/codespace/.local/share
         Config file path: /workspaces/OSHome/config.yaml
         Binary Sensor 'bluetooth_connected' output: false
