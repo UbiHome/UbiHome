@@ -1294,7 +1294,7 @@ checksum = "04744f49eae99ab78e0d5c0b603ab218f515ea8cfe5a456d7629ad883a3b6e7d"
 
 [[package]]
 name = "oshome"
-version = "0.3.18"
+version = "0.3.19"
 dependencies = [
  "cargo_toml",
  "clap",
@@ -1322,7 +1322,7 @@ dependencies = [
 
 [[package]]
 name = "oshome-api"
-version = "0.3.18"
+version = "0.3.19"
 dependencies = [
  "duration-str",
  "log",
@@ -1336,7 +1336,7 @@ dependencies = [
 
 [[package]]
 name = "oshome-bme280"
-version = "0.3.18"
+version = "0.3.19"
 dependencies = [
  "bme280",
  "duration-str",
@@ -1350,7 +1350,7 @@ dependencies = [
 
 [[package]]
 name = "oshome-core"
-version = "0.3.14"
+version = "0.3.15"
 dependencies = [
  "convert_case",
  "duration-str",
@@ -1361,7 +1361,7 @@ dependencies = [
 
 [[package]]
 name = "oshome-evdev"
-version = "0.3.16"
+version = "0.3.17"
 dependencies = [
  "async-trait",
  "duration-str",
@@ -1375,7 +1375,7 @@ dependencies = [
 
 [[package]]
 name = "oshome-gpio"
-version = "0.3.17"
+version = "0.3.18"
 dependencies = [
  "async-trait",
  "duration-str",
@@ -1389,7 +1389,7 @@ dependencies = [
 
 [[package]]
 name = "oshome-mdns"
-version = "0.3.18"
+version = "0.3.19"
 dependencies = [
  "duration-str",
  "libmdns",
@@ -1403,7 +1403,7 @@ dependencies = [
 
 [[package]]
 name = "oshome-mqtt"
-version = "0.3.18"
+version = "0.3.19"
 dependencies = [
  "duration-str",
  "log",
@@ -1418,7 +1418,7 @@ dependencies = [
 
 [[package]]
 name = "oshome-shell"
-version = "0.3.16"
+version = "0.3.17"
 dependencies = [
  "duration-str",
  "log",
@@ -1431,7 +1431,7 @@ dependencies = [
 
 [[package]]
 name = "oshome-web_server"
-version = "0.3.18"
+version = "0.3.19"
 dependencies = [
  "axum",
  "log",

@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.3.19](https://github.com/DanielHabenicht/OSHome/compare/v0.3.18...v0.3.19) (2025-04-26)
+
+
+### Bug Fixes
+
+* keys of shell component ([5772f9e](https://github.com/DanielHabenicht/OSHome/commit/5772f9ed32b0d1c965dcffe7035b3ecefc202354))
+* switch to libmdns ([8462d4f](https://github.com/DanielHabenicht/OSHome/commit/8462d4fd1f628593ea0525cd46d73f7a75e7c3e9))
+
 ## [0.3.18](https://github.com/DanielHabenicht/OSHome/compare/v0.3.17...v0.3.18) (2025-04-26)
 
 

@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.19](https://github.com/DanielHabenicht/OSHome/compare/v0.3.18...oshome-mdns-v0.3.19) (2025-04-26)
+
+
+### Bug Fixes
+
+* switch to libmdns ([8462d4f](https://github.com/DanielHabenicht/OSHome/commit/8462d4fd1f628593ea0525cd46d73f7a75e7c3e9))
+
 ## [0.3.18](https://github.com/DanielHabenicht/OSHome/compare/v0.3.17...oshome-mdns-v0.3.18) (2025-04-26)
 
 ## [0.3.17](https://github.com/DanielHabenicht/OSHome/compare/v0.3.16...oshome-mdns-v0.3.17) (2025-04-26)
