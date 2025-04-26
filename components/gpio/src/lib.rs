@@ -1,4 +1,4 @@
-use log::{debug, info, warn};
+use log::{debug, warn};
 use oshome_core::{
     config_template,
     home_assistant::sensors::{Component, HABinarySensor},
@@ -7,7 +7,7 @@ use oshome_core::{
 use serde::{Deserialize, Deserializer};
 use std::collections::HashMap;
 use std::{future::Future, pin::Pin, str, time::Duration};
-use tokio::{sync::broadcast::{Receiver, Sender}, time};
+use tokio::sync::broadcast::{Receiver, Sender};
 
 #[derive(Debug, Copy, Clone, Deserialize)]
 #[serde(rename_all = "camelCase")]

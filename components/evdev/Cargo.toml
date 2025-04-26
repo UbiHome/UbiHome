@@ -14,5 +14,5 @@ serde_yaml = "0.9.34"
 duration-str = "0.16.1"
 
 
-[target.'cfg(linux)'.dependencies]
+[target.'cfg(target_os="linux")'.dependencies]
 evdev = "0.13.1"

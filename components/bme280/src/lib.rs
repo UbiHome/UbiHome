@@ -66,7 +66,7 @@ pub struct InternalSensor {
 
 #[derive(Clone, Debug)]
 pub struct Default {
-    config: CoreConfig,
+    // config: CoreConfig,
     components: Vec<Component>,
     sensors: Vec<InternalSensor>,
 }
@@ -178,7 +178,7 @@ impl Default {
             }
         }
         Default {
-            config,
+            // config,
             components,
             sensors,
         }
