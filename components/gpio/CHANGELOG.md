@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.3.16](https://github.com/DanielHabenicht/OSHome/compare/v0.3.15...oshome-gpio-v0.3.16) (2025-04-26)
+
+
+### Bug Fixes
+
+* gpio sensor keys ([1764340](https://github.com/DanielHabenicht/OSHome/commit/176434007824a82871cb3d2b9616dc79dee5d06a))
+* try async interrupt ([65810ad](https://github.com/DanielHabenicht/OSHome/commit/65810adb2986ff3b6c842e91eba8fcecd375ef5c))
+
 ## [0.3.15](https://github.com/DanielHabenicht/OSHome/compare/v0.3.14...oshome-gpio-v0.3.15) (2025-04-26)
 
 

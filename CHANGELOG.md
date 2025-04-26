@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.17](https://github.com/DanielHabenicht/OSHome/compare/v0.3.16...v0.3.17) (2025-04-26)
+
+
+### Bug Fixes
+
+* try async interrupt ([65810ad](https://github.com/DanielHabenicht/OSHome/commit/65810adb2986ff3b6c842e91eba8fcecd375ef5c))
+
 ## [0.3.16](https://github.com/DanielHabenicht/OSHome/compare/v0.3.15...v0.3.16) (2025-04-26)
 
 
