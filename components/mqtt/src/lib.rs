@@ -227,11 +227,11 @@ impl Module for Default {
                                         let topic = format!("{}/{}", base_topic.clone(), id.clone());
                                         topics.push(topic.clone());
                                         mqtt_components.insert(
-                                            button.name.clone(),
+                                            id.clone(),
                                             MqttComponent::Button(HAMqttButton {
                                                 platform: "button".to_string(),
                                                 unique_id: id.clone(),
-                                                command_topic: format!("{}/{}", base_topic.clone(), button.name),
+                                                command_topic: format!("{}/{}", base_topic.clone(), id),
                                                 name: button.name.clone(),
                                                 object_id: id.clone(),
                                             }),
@@ -240,7 +240,7 @@ impl Module for Default {
                                     Component::Sensor(sensor) => {
                                         let id = sensor.unique_id.unwrap_or(format!("{}_{}", core_config.oshome.name, sensor.name));
                                         mqtt_components.insert(
-                                            sensor.name.clone(),
+                                            id.clone(),
                                             MqttComponent::Sensor(HAMqttSensor {
                                                 platform: "sensor".to_string(),
                                                 icon: sensor.icon.clone(),
@@ -248,7 +248,7 @@ impl Module for Default {
                                                 device_class: sensor.device_class.clone(),
                                                 unit_of_measurement: sensor.unit_of_measurement.clone(),
                                                 name: sensor.name.clone(),
-                                                state_topic: format!("{}/{}", base_topic.clone(), sensor.name),
+                                                state_topic: format!("{}/{}", base_topic.clone(), id),
                                                 object_id: id.clone(),
                                             }),
                                         );
@@ -256,14 +256,14 @@ impl Module for Default {
                                     Component::BinarySensor(sensor) => {
                                         let id = sensor.unique_id.unwrap_or(format!("{}_{}", core_config.oshome.name, sensor.name));
                                         mqtt_components.insert(
-                                            sensor.name.clone(),
+                                            id.clone(),
                                             MqttComponent::BinarySensor(HAMqttBinarySensor {
                                                 platform: "binary_sensor".to_string(),
                                                 icon: sensor.icon.clone(),
                                                 unique_id: id.clone(),
                                                 device_class: sensor.device_class.clone(),
                                                 name: sensor.name.clone(),
-                                                state_topic: format!("{}/{}", base_topic.clone(), sensor.name),
+                                                state_topic: format!("{}/{}", base_topic.clone(), id),
                                                 object_id: id.clone(),
                                             }),
                                         );

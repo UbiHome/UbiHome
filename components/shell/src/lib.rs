@@ -89,9 +89,9 @@ impl Module for Default {
                         HASensor {
                             platform: "sensor".to_string(),
                             icon: any_sensor.default.icon.clone(),
-                            unique_id: None,
+                            unique_id: Some(id.clone()),
                             device_class: any_sensor.default.device_class.clone(),
-                            unit_of_measurement: Some("°C".to_string()), //sensor.temperature.unit_of_measurement.clone(),
+                            unit_of_measurement: any_sensor.default.unit_of_measurement.clone(),
                             name: any_sensor.default.name.clone(),
                             object_id: id.clone(),
                         }
@@ -110,7 +110,7 @@ impl Module for Default {
                         HABinarySensor {
                             platform: "sensor".to_string(),
                             icon: any_sensor.default.icon.clone(),
-                            unique_id: None,
+                            unique_id: Some(id.clone()),
                             device_class: any_sensor.default.device_class.clone(),
                             name: any_sensor.default.name.clone(),
                             object_id: id.clone(),
