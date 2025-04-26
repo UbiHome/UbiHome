@@ -1,5 +1,7 @@
 use serde::Deserialize;
 
+use crate::utils::format_id;
+
 #[derive(Clone, Deserialize, Debug)]
 pub struct BinarySensorBase {
     pub id: Option<String>,
@@ -10,14 +12,10 @@ pub struct BinarySensorBase {
     pub filters: Option<Vec<String>>,
 }
 
+// TODO implement as procedural macro
 impl BinarySensorBase {
     pub fn get_object_id(&self, base_name: &String) -> String {
-        format!(
-            "{}_{}",
-            base_name,
-            // TODO: convert to snake case
-            self.id.clone().unwrap_or(self.name.clone())
-        )
+        format_id(base_name, &self.id, &self.name)
     }
 }
 

@@ -1,10 +1,18 @@
 use serde::Deserialize;
 
+use crate::utils::format_id;
+
 #[derive(Clone, Deserialize, Debug)]
 pub struct ButtonBase {
     pub id: Option<String>,
     pub icon: Option<String>,
     pub name: String,
+}
+
+impl ButtonBase {
+    pub fn get_object_id(&self, base_name: &String) -> String {
+        format_id(base_name, &self.id, &self.name)
+    }
 }
 
 

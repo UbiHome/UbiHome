@@ -4,6 +4,7 @@ pub mod sensor;
 pub mod sensor_mapper;
 pub mod button;
 pub mod mapper;
+pub mod utils;
 pub extern crate paste;
 
 use home_assistant::sensors::Component;

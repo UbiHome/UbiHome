@@ -84,7 +84,7 @@ impl Module for Default {
         for (_, any_sensor) in self.config.sensor.clone().unwrap_or_default() {
             match any_sensor.extra {
                 SensorKind::shell(_) => {
-                    let id = any_sensor.default.id.unwrap_or(any_sensor.default.name.clone());
+                    let id = any_sensor.default.get_object_id(&self.config.oshome.name);
                     components.push(Component::Sensor(
                         HASensor {
                             platform: "sensor".to_string(),
@@ -105,7 +105,7 @@ impl Module for Default {
         for (_, any_sensor) in self.config.binary_sensor.clone().unwrap_or_default() {
             match any_sensor.extra {
                 BinarySensorKind::shell(_) => {
-                    let id = any_sensor.default.id.unwrap_or(any_sensor.default.name.clone());
+                    let id = any_sensor.default.get_object_id(&self.config.oshome.name);
                     components.push(Component::BinarySensor(
                         HABinarySensor {
                             platform: "sensor".to_string(),
@@ -125,7 +125,7 @@ impl Module for Default {
         for (_, any_sensor) in self.config.button.clone().unwrap_or_default() {
             match any_sensor.extra {
                 ButtonKind::shell(_) => {
-                    let id = any_sensor.default.id.unwrap_or(any_sensor.default.name.clone());
+                    let id = any_sensor.default.get_object_id(&self.config.oshome.name);
                     components.push(Component::Button(
                         HAButton {
                             platform: "sensor".to_string(),
@@ -160,6 +160,7 @@ impl Module for Default {
                             debug!("Button pressed1: {}", key);
                             if let Some(button) = cloned_config.button.as_ref().and_then(|b| b.get(&key))
                             {
+                                // let key = button.default.get_object_id(&config.oshome.name);
                                 debug!("Button: {:?}", button);
                                 match &button.extra {
                                     ButtonKind::shell(shell_button) => {

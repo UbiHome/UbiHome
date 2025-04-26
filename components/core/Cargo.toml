@@ -8,5 +8,6 @@ description = "Core package"
 [dependencies]
 serde = { version = "1.0", features = ["derive"] }
 duration-str = "0.16.1"
-tokio = { version = "1" }
+tokio = { version = "1", features = ["full"] }
 paste = "1.0.15"
+convert_case = "0.8.0"

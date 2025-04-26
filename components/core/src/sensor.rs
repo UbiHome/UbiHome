@@ -1,5 +1,6 @@
 use serde::Deserialize;
 
+use crate::utils::format_id;
 
 #[derive(Clone, Deserialize, Debug)]
 pub struct SensorBase {
@@ -12,15 +13,10 @@ pub struct SensorBase {
 
 }
 
-// TODO implement as trait for all sensors
+// TODO implement as procedural macro
 impl SensorBase {
     pub fn get_object_id(&self, base_name: &String) -> String {
-        format!(
-            "{}_{}",
-            base_name,
-            // TODO: convert to snake case
-            self.id.clone().unwrap_or(self.name.clone())
-        )
+        format_id(base_name, &self.id, &self.name)
     }
 }
 

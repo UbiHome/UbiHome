@@ -84,13 +84,13 @@ impl Default {
                     let mut sensor_entries: HashMap<Measurement, String> = HashMap::new();
                     let temperature = sensor.temperature.unwrap_or(SensorBase {
                         id: None,
-                        name: format!("{} Temperature", config.oshome.name),
+                        name: "Temperature".to_string(),
                         icon: None,
                         state_class: None,
                         device_class: None,
                         unit_of_measurement: None,
                     });
-                    let object_id = format!("{}_{}", config.oshome.name, "temperature");
+                    let object_id = temperature.get_object_id(&config.oshome.name);
                     let id = temperature.id.unwrap_or(object_id.clone());
                     sensor_entries.insert(Measurement::Temperature, id.clone());
                     components.push(Component::Sensor(HASensor {
@@ -114,13 +114,13 @@ impl Default {
                     }));
                     let pressure = sensor.pressure.unwrap_or(SensorBase {
                         id: None,
-                        name: format!("{} Pressure", config.oshome.name),
+                        name: "Pressure".to_string(),
                         icon: None,
                         state_class: None,
                         device_class: None,
                         unit_of_measurement: None,
                     });
-                    let object_id = format!("{}_{}", config.oshome.name, "pressure");
+                    let object_id = pressure.get_object_id(&config.oshome.name);
                     let id = pressure.id.unwrap_or(object_id.clone());
                     sensor_entries.insert(Measurement::Pressure, id.clone());
                     components.push(Component::Sensor(HASensor {
@@ -139,13 +139,13 @@ impl Default {
                     }));
                     let humidity = sensor.humidity.unwrap_or(SensorBase {
                         id: None,
-                        name: format!("{} Humidity", config.oshome.name),
+                        name: "Humidity".to_string(),
                         icon: None,
                         state_class: None,
                         device_class: None,
                         unit_of_measurement: None,
                     });
-                    let object_id = format!("{}_{}", config.oshome.name, "humidity");
+                    let object_id = humidity.get_object_id(&config.oshome.name);
                     let id = humidity.id.unwrap_or(object_id.clone());
                     sensor_entries.insert(Measurement::Humidity, id.clone());
                     components.push(Component::Sensor(HASensor {
@@ -254,7 +254,6 @@ impl Module for Default {
                             cloned_sensor.address, interval
                         );
                         loop {
-                            interval.tick().await;
                             // measure temperature, pressure, and humidity
                             let measurements = bme280.measure(&mut delay).unwrap();
 
@@ -286,6 +285,9 @@ impl Module for Default {
                                     }
                                 }
                             }
+
+                            // wait for the next interval
+                            interval.tick().await;
                         }
                     });
                 }

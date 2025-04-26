@@ -25,6 +25,11 @@ button:
    id: my_button
    name: "Write Hello World"
    command: "echo 'Hello World!' >> test.log"
+   
+ - platform: shell
+   id: disconnect_speaker
+   name: "Disconnect Speaker"
+   command: bluetoothctl -- disconnect 00:12:6F:F1:FF:61
 
 sensor:
   - platform: shell
@@ -43,7 +48,7 @@ sensor:
 
 binary_sensor:
   - platform: shell
-    name: "Bluetooth Device connected"
+    name: "Bluetooth Speaker connected"
     id: bluetooth_connected
     icon: "mdi:bluetooth-settings"
     device_class: presence

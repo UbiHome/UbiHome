@@ -1,5 +1,5 @@
 use log::{debug, error, info};
-use oshome_core::{config_template, home_assistant::sensors::Component, ChangedMessage, Module, PublishedMessage};
+use oshome_core::{binary_sensor, config_template, home_assistant::sensors::Component, ChangedMessage, Module, PublishedMessage};
 use rumqttc::{AsyncClient, Event, MqttOptions, QoS};
 use serde::{Deserialize, Deserializer, Serialize};
 use std::{collections::HashMap, future::Future, pin::Pin, str, time::Duration};
@@ -231,9 +231,9 @@ impl Module for Default {
                                             MqttComponent::Button(HAMqttButton {
                                                 platform: "button".to_string(),
                                                 unique_id: id.clone(),
-                                                command_topic: format!("{}/{}", base_topic.clone(), id),
+                                                command_topic: format!("{}/{}", base_topic.clone(), button.object_id.clone()),
                                                 name: button.name.clone(),
-                                                object_id: id.clone(),
+                                                object_id: button.object_id.clone(),
                                             }),
                                         );
                                     }
@@ -248,8 +248,8 @@ impl Module for Default {
                                                 device_class: sensor.device_class.clone(),
                                                 unit_of_measurement: sensor.unit_of_measurement.clone(),
                                                 name: sensor.name.clone(),
-                                                state_topic: format!("{}/{}", base_topic.clone(), id),
-                                                object_id: id.clone(),
+                                                state_topic: format!("{}/{}", base_topic.clone(), sensor.object_id.clone()),
+                                                object_id: sensor.object_id.clone(),
                                             }),
                                         );
                                     }
@@ -263,8 +263,8 @@ impl Module for Default {
                                                 unique_id: id.clone(),
                                                 device_class: sensor.device_class.clone(),
                                                 name: sensor.name.clone(),
-                                                state_topic: format!("{}/{}", base_topic.clone(), id),
-                                                object_id: id.clone(),
+                                                state_topic: format!("{}/{}", base_topic.clone(), sensor.object_id.clone()),
+                                                object_id: sensor.object_id.clone(),
                                             }),
                                         );
                                     }

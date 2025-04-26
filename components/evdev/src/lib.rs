@@ -79,6 +79,15 @@ impl Module for Default {
             }
             #[cfg(target_os = "linux")]
             {
+                // use evdev::{Device, KeyCode};
+                // let device = Device::open("/dev/input/event0")?;
+                // // check if the device has an ENTER key
+                // if device.supported_keys().map_or(false, |keys| keys.contains(KeyCode::KEY_ENTER)) {
+                //     println!("are you prepared to ENTER the world of evdev?");
+                // } else {
+                //     println!(":(");
+                // }
+
                 if let Some(binary_sensors) = config.binary_sensor.clone() {
                     for (key, binary_sensor) in binary_sensors {
                         let cloned_sender = sender.clone();
