@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.18](https://github.com/DanielHabenicht/OSHome/compare/v0.3.17...v0.3.18) (2025-04-26)
+
+
+### Bug Fixes
+
+* panic ([574f0b6](https://github.com/DanielHabenicht/OSHome/commit/574f0b6a65ba8b68d9f9bb1974bba2ebfc67380c))
+
 ## [0.3.17](https://github.com/DanielHabenicht/OSHome/compare/v0.3.16...v0.3.17) (2025-04-26)
 
 

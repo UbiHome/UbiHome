@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.3.17](https://github.com/DanielHabenicht/OSHome/compare/v0.3.16...oshome-gpio-v0.3.17) (2025-04-26)
+
+
+### Bug Fixes
+
+* future finished to early ([3d7e7f1](https://github.com/DanielHabenicht/OSHome/commit/3d7e7f19bb9798c2d3fe6696b88d56708456963d))
+* panic ([574f0b6](https://github.com/DanielHabenicht/OSHome/commit/574f0b6a65ba8b68d9f9bb1974bba2ebfc67380c))
+* try async interrupt ([65810ad](https://github.com/DanielHabenicht/OSHome/commit/65810adb2986ff3b6c842e91eba8fcecd375ef5c))
+
 ## [0.3.16](https://github.com/DanielHabenicht/OSHome/compare/v0.3.15...oshome-gpio-v0.3.16) (2025-04-26)
 
 
