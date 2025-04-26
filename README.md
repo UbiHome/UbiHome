@@ -5,7 +5,7 @@
 
 ---
 
-Analog to ESPHome `OSHome` is a system which allows you to integrate any device running any OS (Linux, Windows, MacOS) into your smart home.
+`OSHome` is a system which allows you to integrate any device running any OS (Linux, Windows, MacOS) into your smart home (similar to ESPHome for Microcontrollers).
 
 > Attention: This is a work in progress. The documentation is not complete and the project is still in development.
 > Still many things already work - so feel free to try it out.
