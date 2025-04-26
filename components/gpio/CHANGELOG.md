@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.3.10](https://github.com/DanielHabenicht/OSHome/compare/v0.3.9...oshome-gpio-v0.3.10) (2025-04-26)
+
+
+### Bug Fixes
+
+* build ([f914990](https://github.com/DanielHabenicht/OSHome/commit/f914990df4ad52429deeff08b674d60323adcec1))
+* try async gpio interrupt ([a79cb53](https://github.com/DanielHabenicht/OSHome/commit/a79cb53acf85b6b9e04e3e7769741978e295c652))
+
 ## [0.3.9](https://github.com/DanielHabenicht/OSHome/compare/v0.3.8...oshome-gpio-v0.3.9) (2025-04-26)
 
 
