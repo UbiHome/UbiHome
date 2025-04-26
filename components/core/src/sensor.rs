@@ -9,8 +9,7 @@ pub struct SensorBase {
     pub device_class: Option<String>,
     pub unit_of_measurement: Option<String>,
     pub state_class: Option<String>,
-    // #[serde(deserialize_with = "deserialize_option_duration")]
-    // pub update_interval: Option<Duration>,
+
 }
 
 #[derive(Clone, Deserialize, Debug)]

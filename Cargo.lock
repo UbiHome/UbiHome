@@ -1265,7 +1265,7 @@ dependencies = [
 
 [[package]]
 name = "oshome-api"
-version = "0.3.8"
+version = "0.3.9"
 dependencies = [
  "duration-str",
  "log",
@@ -1279,7 +1279,7 @@ dependencies = [
 
 [[package]]
 name = "oshome-bme280"
-version = "0.3.8"
+version = "0.3.9"
 dependencies = [
  "bme280",
  "duration-str",
@@ -1293,7 +1293,7 @@ dependencies = [
 
 [[package]]
 name = "oshome-core"
-version = "0.3.8"
+version = "0.3.9"
 dependencies = [
  "duration-str",
  "paste",
@@ -1317,7 +1317,7 @@ dependencies = [
 
 [[package]]
 name = "oshome-mdns"
-version = "0.3.8"
+version = "0.3.9"
 dependencies = [
  "duration-str",
  "libmdns",
@@ -1331,7 +1331,7 @@ dependencies = [
 
 [[package]]
 name = "oshome-mqtt"
-version = "0.3.8"
+version = "0.3.9"
 dependencies = [
  "duration-str",
  "log",
@@ -1346,7 +1346,7 @@ dependencies = [
 
 [[package]]
 name = "oshome-shell"
-version = "0.3.8"
+version = "0.3.9"
 dependencies = [
  "duration-str",
  "log",
@@ -1359,7 +1359,7 @@ dependencies = [
 
 [[package]]
 name = "oshome-web_server"
-version = "0.3.8"
+version = "0.3.9"
 dependencies = [
  "axum",
  "log",

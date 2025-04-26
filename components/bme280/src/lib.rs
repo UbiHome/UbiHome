@@ -1,3 +1,4 @@
+use duration_str::deserialize_option_duration;
 use log::{debug, warn};
 use oshome_core::{
     button::UnknownButton,
@@ -6,8 +7,11 @@ use oshome_core::{
     ChangedMessage, Module, OSHome, PublishedMessage,
 };
 use serde::Deserialize;
-use std::{collections::HashMap, future::Future, pin::Pin, str};
-use tokio::sync::broadcast::{Receiver, Sender};
+use std::{collections::HashMap, future::Future, pin::Pin, str, time::Duration};
+use tokio::{
+    sync::broadcast::{Receiver, Sender},
+    time,
+};
 
 #[derive(Clone, Deserialize, Debug)]
 pub struct BME280InternalConfig {
@@ -35,6 +39,9 @@ pub struct BME280SensorConfig {
     pub temperature: Option<SensorBase>,
     pub pressure: Option<SensorBase>,
     pub humidity: Option<SensorBase>,
+    #[serde(deserialize_with = "deserialize_option_duration")]
+    pub update_interval: Option<Duration>,
+    pub address: Option<String>,
 }
 
 // template_sensor!(bme280, BME280SensorConfig);
@@ -53,25 +60,32 @@ pub enum Measurement {
     Humidity,
 }
 
+#[derive(Clone, Debug)]
+pub struct InternalSensor {
+    pub entries: HashMap<Measurement, String>,
+    pub address: Option<String>,
+    pub update_interval: Option<Duration>,
+}
+
 // config_template!(bme280, Option<NoConfig>, NoConfig, NoConfig, BME280SensorConfig);
 
 #[derive(Clone, Debug)]
 pub struct Default {
     config: CoreConfig,
     components: Vec<Component>,
-    sensors: Vec<HashMap<Measurement, String>>
+    sensors: Vec<InternalSensor>,
 }
 
 impl Default {
     pub fn new(config_string: &String) -> Self {
         let config = serde_yaml::from_str::<CoreConfig>(config_string).unwrap();
         let mut components: Vec<Component> = Vec::new();
-        let mut sensors: Vec<HashMap<Measurement, String>> = Vec::new();
+        let mut sensors: Vec<InternalSensor> = Vec::new();
 
         for n_sensor in config.sensor.clone() {
-            let mut sensor_entries: HashMap<Measurement, String> = HashMap::new();
             match n_sensor.extra {
                 SensorKind::Bme280(sensor) => {
+                    let mut sensor_entries: HashMap<Measurement, String> = HashMap::new();
                     let temperature = sensor.temperature.unwrap_or(SensorBase {
                         id: None,
                         name: format!("{} Temperature", config.oshome.name),
@@ -157,10 +171,15 @@ impl Default {
                         name: humidity.name.clone(),
                         object_id: id.clone(),
                     }));
+                    let sensor_entry = InternalSensor {
+                        address: sensor.address.clone(),
+                        update_interval: sensor.update_interval.clone(),
+                        entries: sensor_entries,
+                    };
+                    sensors.push(sensor_entry);
                 }
                 _ => {}
             }
-            sensors.push(sensor_entries);
         }
         Default {
             config,
@@ -188,6 +207,7 @@ impl Module for Default {
         // let mqtt_config = self.mqtt_config.clone();
         // let config = self.config.clone();
         let sensors = self.sensors.clone();
+        let c_sender = sender.clone();
         Box::pin(async move {
             #[cfg(any(target_os = "macos", target_os = "windows"))]
             {
@@ -207,56 +227,70 @@ impl Module for Default {
                     _ => {}
                 }
 
-                // using Linux I2C Bus #1 in this example
-                let i2c_bus = I2cdev::new("/dev/i2c-1").unwrap();
-
-                // initialize the BME280 using the primary I2C address 0x76
-                let mut bme280 = BME280::new_primary(i2c_bus);
-
-                // or, initialize the BME280 using the secondary I2C address 0x77
-                // let mut bme280 = BME280::new_secondary(i2c_bus, Delay);
-
-                // or, initialize the BME280 using a custom I2C address
-                // let bme280_i2c_addr = 0x88;
-                // let mut bme280 = BME280::new(i2c_bus, bme280_i2c_addr, Delay);
-
-                // initialize the sensor
-                let mut delay = Delay;
-                bme280.init(&mut delay).unwrap();
-
-                // measure temperature, pressure, and humidity
-                let measurements = bme280.measure(&mut delay).unwrap();
-
                 for sensor in sensors {
-                    for (sensor_type, id) in sensor {
-                        match sensor_type {
-                            Measurement::Temperature => {
-                                debug!("Temperature: {}", measurements.temperature);
-                                let msg = ChangedMessage::SensorValueChange {
-                                    key: id.clone(),
-                                    value: measurements.temperature.to_string(),
-                                };
-                                sender.send(msg).unwrap();
+                    // using Linux I2C Bus #1 in this example
+                    let i2c_bus = I2cdev::new("/dev/i2c-1").unwrap();
+
+                    // initialize the BME280 using the primary I2C address 0x76
+                    let mut bme280 = BME280::new_primary(i2c_bus);
+
+                    // or, initialize the BME280 using the secondary I2C address 0x77
+                    // let mut bme280 = BME280::new_secondary(i2c_bus, Delay);
+
+                    // or, initialize the BME280 using a custom I2C address
+                    // let bme280_i2c_addr = 0x88;
+                    // let mut bme280 = BME280::new(i2c_bus, bme280_i2c_addr, Delay);
+
+                    // initialize the sensor
+                    let mut delay = Delay;
+                    bme280.init(&mut delay).unwrap();
+
+                    let cloned_sensor = sensor.clone();
+                    let cloned_sender = c_sender.clone();
+                    tokio::spawn(async move {
+                        let duration = cloned_sensor
+                            .update_interval
+                            .unwrap_or(Duration::from_secs(30));
+                        let mut interval = time::interval(duration);
+                        debug!(
+                            "Address {:?} has update interval: {:?}",
+                            cloned_sensor.address, interval
+                        );
+                        loop {
+                            interval.tick().await;
+                            // measure temperature, pressure, and humidity
+                            let measurements = bme280.measure(&mut delay).unwrap();
+
+                            for (sensor_type, id) in cloned_sensor.entries.clone() {
+                                match sensor_type {
+                                    Measurement::Temperature => {
+                                        debug!("Temperature: {}", measurements.temperature);
+                                        let msg = ChangedMessage::SensorValueChange {
+                                            key: id.clone(),
+                                            value: measurements.temperature.to_string(),
+                                        };
+                                        cloned_sender.send(msg).unwrap();
+                                    }
+                                    Measurement::Pressure => {
+                                        debug!("Pressure: {}", measurements.pressure);
+                                        let msg = ChangedMessage::SensorValueChange {
+                                            key: id.clone(),
+                                            value: measurements.pressure.to_string(),
+                                        };
+                                        cloned_sender.send(msg).unwrap();
+                                    }
+                                    Measurement::Humidity => {
+                                        debug!("Humidity: {}", measurements.humidity);
+                                        let msg = ChangedMessage::SensorValueChange {
+                                            key: id.clone(),
+                                            value: measurements.humidity.to_string(),
+                                        };
+                                        cloned_sender.send(msg).unwrap();
+                                    }
+                                }
                             }
-                            Measurement::Pressure => {
-                                debug!("Pressure: {}", measurements.pressure);
-                                let msg = ChangedMessage::SensorValueChange {
-                                    key: id.clone(),
-                                    value: measurements.pressure.to_string(),
-                                };
-                                sender.send(msg).unwrap();
-                            }
-                            Measurement::Humidity => {
-                                debug!("Humidity: {}", measurements.humidity);
-                                let msg = ChangedMessage::SensorValueChange {
-                                    key: id.clone(),
-                                    value: measurements.humidity.to_string(),
-                                };
-                                sender.send(msg).unwrap();
-                            }
-                        }                        
-                       
-                    }
+                        }
+                    });
                 }
             }
             Ok(())
