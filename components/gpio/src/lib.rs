@@ -38,7 +38,6 @@ pub struct Default {
 impl Default {
     pub fn new(config_string: &String) -> Self {
         let config = serde_yaml::from_str::<CoreConfig>(config_string).unwrap();
-        info!("GPIO config: {:?}", config);
         Default { config: config }
     }
 }

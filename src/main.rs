@@ -140,7 +140,7 @@ fn cli() -> Command {
 
 fn read_base_config(path: Option<&String>) -> Result<String, String> {
     if let Some(path) = path {
-        info!("Config file path: {}", path);
+        println!("Config: {}", path);
         let config_file_path = fs::canonicalize(path).unwrap();
         if let Ok(content) = fs::read_to_string(config_file_path) {
             return Ok(content);
@@ -153,8 +153,8 @@ fn read_base_config(path: Option<&String>) -> Result<String, String> {
     }
 
     // Fallback to the embedded default configuration
-    // info!("Config file path: BUILTIN");
-    // info!(DEFAULT_CONFIG);
+    // println!("Config file path: BUILTIN");
+    // printlm!(DEFAULT_CONFIG);
     // DEFAULT_CONFIG
     panic!("oh no!");
 }
@@ -285,9 +285,16 @@ fn get_all_modules(yaml: &String) -> Vec<Box<dyn Module>> {
 async fn initialize_modules(modules: &mut Vec<Box<dyn Module>>) -> Result<Vec<Component>, String> {
     let mut all_components: Vec<Component> = Vec::new();
     for module in modules.iter_mut() {
-        let mut components = module.init().unwrap();
-        println!("Module: {:?}", components);
-        all_components.append(&mut components);
+        let components = module.init();
+        match components {
+            Ok(mut components) => {
+                println!("Module: {:?}", components);
+                all_components.append(&mut components);
+            }
+            Err(e) => {
+                debug!("Error loading component: {}", e);
+            }
+        }
     }
     Ok(all_components)
 }
