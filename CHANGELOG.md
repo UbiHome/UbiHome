@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.3.13](https://github.com/DanielHabenicht/OSHome/compare/v0.3.12...v0.3.13) (2025-04-26)
+
+
+### Bug Fixes
+
+* better warnings ([0a28ec2](https://github.com/DanielHabenicht/OSHome/commit/0a28ec2247e82adfa04eb997528b82d4d30dab0b))
+* include all modules ([45ab530](https://github.com/DanielHabenicht/OSHome/commit/45ab5305e44ec453f4f77accc2871fabd1857ac6))
+
 ## [0.3.12](https://github.com/DanielHabenicht/OSHome/compare/v0.3.11...v0.3.12) (2025-04-26)
 
 
