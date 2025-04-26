@@ -212,7 +212,8 @@ impl Module for Default {
         Box::pin(async move {
             #[cfg(any(target_os = "macos", target_os = "windows"))]
             {
-                panic!("GPIO is not supported.");
+                warn!("BME280 is not supported on this platform.");
+                return Ok(());
             }
             #[cfg(target_os = "linux")]
             {
