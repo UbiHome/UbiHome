@@ -24,23 +24,14 @@ pub struct GpioConfig {
 pub struct GpioBinarySensorConfig {
     pub pin: u8, // TODO: Use GPIO types or library
     pub pull_up: Option<bool>,
-    #[serde(deserialize_with = "deserialize_option_duration")]
-    pub update_interval: Option<Duration>,
 }
 
 config_template!(gpio, GpioConfig, NoConfig, GpioBinarySensorConfig, NoConfig);
 
 #[derive(Clone, Debug)]
-pub struct InternalBinarySensor {
-    pub key: String,
-    pub pin: u8,
-    pub pull_up: Option<bool>,
-}
-
-#[derive(Clone, Debug)]
 pub struct Default {
     components: Vec<Component>,
-    binary_sensors: Vec<InternalBinarySensor>,
+    binary_sensors: HashMap<String, GpioBinarySensorConfig>,
 }
 
 impl Default {
@@ -48,7 +39,7 @@ impl Default {
         let config = serde_yaml::from_str::<CoreConfig>(config_string).unwrap();
         // info!("GPIO config: {:?}", config);
         let mut components: Vec<Component> = Vec::new();
-        let mut binary_sensors: Vec<InternalBinarySensor> = Vec::new();
+        let mut binary_sensors: HashMap<String, GpioBinarySensorConfig> = HashMap::new();
 
         for (_, any_sensor) in config.binary_sensor.clone().unwrap_or_default() {
             match any_sensor.extra {
@@ -63,8 +54,7 @@ impl Default {
                         name: any_sensor.default.name.clone(),
                         object_id: object_id.clone(),
                     }));
-                    binary_sensors.push(InternalBinarySensor {
-                        key: id.clone(),
+                    binary_sensors.insert(id, GpioBinarySensorConfig {
                         pin: binary_sensor.pin,
                         pull_up: binary_sensor.pull_up,
                     });
@@ -146,19 +136,8 @@ impl Module for Default {
                         //     }
                         // });
 
-                        for binary_sensor in binary_sensors {
+                        for (key, binary_sensor) in binary_sensors {
                             let cloned_sender = sender.clone();
-                            // tokio::spawn(async move {
-                            //     let duration = gpio_config
-                            //         .update_interval
-                            //         .unwrap_or(Duration::from_secs(30));
-                            //     let mut interval = time::interval(duration);
-
-                            //     loop {
-                            //         interval.tick().await;
-
-                            //     }
-                            // });
                             let gpio_pin =
                                 gpio.get(binary_sensor.pin).expect("GPIO pin not found?");
                             let mut pin: rppal::gpio::InputPin;
@@ -180,14 +159,14 @@ impl Module for Default {
 
                             pin.set_async_interrupt(Trigger::Both, None, move |event| {
                                 println!("Event: {:?}", event);
-                                debug!("BinarySensor {} triggered.", binary_sensor.key);
+                                debug!("BinarySensor {} triggered.", key);
                                 _ = cloned_sender.send(ChangedMessage::BinarySensorValueChange {
-                                    key: binary_sensor.key.clone(),
+                                    key: key.clone(),
                                     value: true,
                                 });
                                 let cloned_sender2 = cloned_sender.clone();
 
-                                let cloned_key = binary_sensor.key.clone();
+                                let cloned_key = key.clone();
                                 sleep(Duration::from_secs(5));
                                 debug!("BinarySensor {} reset.", cloned_key);
                                 cloned_sender2.send(
