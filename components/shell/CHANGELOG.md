@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.9](https://github.com/DanielHabenicht/OSHome/compare/v0.3.8...oshome-shell-v0.3.9) (2025-04-26)
+
+
+### Bug Fixes
+
+* shell binary sensor not published ([2caa712](https://github.com/DanielHabenicht/OSHome/commit/2caa7126f9f244ece6a57ebc670574b69a27b6a3))
+
 ## [0.3.8](https://github.com/DanielHabenicht/OSHome/compare/v0.3.7...oshome-shell-v0.3.8) (2025-04-26)
 
 
