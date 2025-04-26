@@ -1,5 +1,5 @@
 use log::debug;
-use oshome_core::{config_template, home_assistant::sensors::{Component, HAButton, HASensor}, ChangedMessage, Module, PublishedMessage};
+use oshome_core::{config_template, home_assistant::sensors::{Component, HABinarySensor, HAButton, HASensor}, ChangedMessage, Module, PublishedMessage};
 use serde::{Deserialize, Deserializer};
 use shell_exec::{Execution, Shell, ShellError};
 use std::{future::Future, pin::Pin, str, time::Duration};
@@ -91,6 +91,26 @@ impl Module for Default {
                             unique_id: None,
                             device_class: any_sensor.default.device_class.clone(),
                             unit_of_measurement: Some("°C".to_string()), //sensor.temperature.unit_of_measurement.clone(),
+                            name: any_sensor.default.name.clone(),
+                            object_id: id.clone(),
+                        }
+                    )
+                    );
+                }
+                _ => {}
+            }
+        }
+
+        for (_, any_sensor) in self.config.binary_sensor.clone().unwrap_or_default() {
+            match any_sensor.extra {
+                BinarySensorKind::shell(_) => {
+                    let id = any_sensor.default.id.unwrap_or(any_sensor.default.name.clone());
+                    components.push(Component::BinarySensor(
+                        HABinarySensor {
+                            platform: "sensor".to_string(),
+                            icon: any_sensor.default.icon.clone(),
+                            unique_id: None,
+                            device_class: any_sensor.default.device_class.clone(),
                             name: any_sensor.default.name.clone(),
                             object_id: id.clone(),
                         }
