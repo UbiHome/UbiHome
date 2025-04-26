@@ -1,8 +1,10 @@
 mod constants;
 mod service;
 
+use flexi_logger::writers::FileLogWriter;
 use flexi_logger::{detailed_format, Age, Cleanup, Criterion, Duplicate, FileSpec, Logger, Naming};
 use inquire::Text;
+use oshome::CoreConfig;
 use oshome_core::home_assistant::sensors::Component;
 use oshome_core::{ChangedMessage, Module, PublishedMessage};
 
@@ -15,8 +17,6 @@ use std::time::Duration;
 use std::{env, fs};
 use tokio::sync::broadcast::{self, Receiver, Sender};
 use tokio::{runtime::Runtime, signal};
-
-
 
 #[cfg(target_os = "windows")]
 use windows_service::{
@@ -32,10 +32,9 @@ define_windows_service!(ffi_service_main, windows_service_main);
 
 #[cfg(target_os = "windows")]
 fn windows_service_main(_arguments: Vec<std::ffi::OsString>) {
-    use std::time::Duration;
     use log::error;
+    use std::time::Duration;
 
-    
     use constants::SERVICE_NAME;
     info!("Starting Windows service...");
 
@@ -138,12 +137,11 @@ fn cli() -> Command {
 // Embed the default configuration file at compile time
 // const DEFAULT_CONFIG: &str = include_str!("../config.yaml");
 
-
 fn read_base_config(path: Option<&String>) -> Result<String, String> {
     if let Some(path) = path {
         let config_file_path = fs::canonicalize(path).unwrap();
         if let Ok(content) = fs::read_to_string(config_file_path) {
-            return Ok(content)
+            return Ok(content);
         } else {
             warn!(
                 "Failed to read the configuration file at '{}'.", //, falling back to default.",
@@ -160,7 +158,6 @@ fn read_base_config(path: Option<&String>) -> Result<String, String> {
 fn main() {
     println!("Starting OSHome - {}", VERSION);
 
-    
     #[cfg(not(debug_assertions))]
     use directories::BaseDirs;
     #[cfg(not(debug_assertions))]
@@ -170,7 +167,7 @@ fn main() {
 
     #[cfg(debug_assertions)]
     let log_directory = Path::new("./");
-    
+
     #[cfg(not(debug_assertions))]
     let log_level = "info";
 
@@ -179,7 +176,8 @@ fn main() {
 
     let mut logger_builder = Logger::try_with_env_or_str(log_level).unwrap();
 
-    logger_builder = logger_builder.format_for_files(detailed_format)
+    logger_builder = logger_builder
+        .format_for_files(detailed_format)
         .log_to_file(FileSpec::default().directory(&log_directory)) // write logs to file
         // .write_mode(WriteMode::BufferAndFlush)
         .append()
@@ -188,23 +186,36 @@ fn main() {
             Naming::Timestamps,
             Cleanup::KeepLogFiles(7),
         );
-    
+
     if cfg!(debug_assertions) {
         logger_builder = logger_builder.duplicate_to_stdout(Duplicate::Debug);
     }
 
-    //let mut logger = 
-    logger_builder
-        .start()
-        .unwrap();
-    
-    // TODO: Implement logger entry
-    // logger.parse_and_push_temp_spec("info, critical_mod = trace");
-    // logger.pop_temp_spec();
+    //let mut logger =
+    let mut logger = logger_builder.start().unwrap();
+
     println!("LogDirectory: {}", log_directory.display());
 
     let matches = cli().get_matches();
     let config_file = matches.try_get_one::<String>("configuration_file").unwrap();
+
+    let config_string = read_base_config(config_file).expect("Failed to load base configuration");
+    let config = serde_yaml::from_str::<CoreConfig>(&config_string).unwrap();
+    if let Some(logger_config) = config.logger {
+        logger.reset_flw(&FileLogWriter::builder(
+            FileSpec::default().directory(
+                logger_config
+                    .clone()
+                    .directory
+                    .unwrap_or(log_directory.to_string_lossy().to_string()),
+            ),
+        )).unwrap();
+
+        logger
+            .parse_and_push_temp_spec(logger_config.get_flexi_logger_spec())
+            .unwrap();
+    };
+
     #[cfg(any(target_os = "linux", target_os = "macos"))]
     let default_installation_path = "/usr/bin/oshome";
     #[cfg(target_os = "windows")]
@@ -256,7 +267,6 @@ fn main() {
     std::process::exit(0);
 }
 
-
 fn get_all_modules(yaml: &String) -> Vec<Box<dyn Module>> {
     let mut modules: Vec<Box<dyn Module>> = Vec::new();
     #[cfg(target_os = "windows")]
@@ -285,9 +295,11 @@ async fn initialize_modules(modules: &mut Vec<Box<dyn Module>>) -> Result<Vec<Co
     Ok(all_components)
 }
 
-async fn run_modules(modules: Vec<Box<dyn Module>>,
+async fn run_modules(
+    modules: Vec<Box<dyn Module>>,
     sender: Sender<ChangedMessage>,
-    receiver: Receiver<PublishedMessage>) {
+    receiver: Receiver<PublishedMessage>,
+) {
     for module in modules {
         // Start MQTT client in a separate task
         let tx = sender.clone();
@@ -308,7 +320,8 @@ fn run(
 
     // Spawn the root task
     rt.block_on(async {
-        let config: String = read_base_config(config_file).expect("Failed to load base configuration");
+        let config: String =
+            read_base_config(config_file).expect("Failed to load base configuration");
 
         let mut modules = get_all_modules(&config);
 
@@ -323,14 +336,15 @@ fn run(
                     debug!("Received command: {:?}", cmd);
                     let publish_cmd: Option<PublishedMessage>;
                     match cmd {
-                        ChangedMessage::ButtonPress { key }=> {
+                        ChangedMessage::ButtonPress { key } => {
                             publish_cmd = Some(PublishedMessage::ButtonPressed { key });
                         }
                         ChangedMessage::SensorValueChange { key, value } => {
                             publish_cmd = Some(PublishedMessage::SensorValueChanged { key, value });
                         }
                         ChangedMessage::BinarySensorValueChange { key, value } => {
-                            publish_cmd = Some(PublishedMessage::BinarySensorValueChanged { key, value });
+                            publish_cmd =
+                                Some(PublishedMessage::BinarySensorValueChanged { key, value });
                         }
                     }
                     if let Some(pcmd) = publish_cmd {
@@ -344,8 +358,11 @@ fn run(
         run_modules(modules, modules_tx.clone(), modules_rx).await;
 
         println!("Components: {:?}", components);
-        internal_tx.send(PublishedMessage::Components { components: components }).unwrap();
-
+        internal_tx
+            .send(PublishedMessage::Components {
+                components: components,
+            })
+            .unwrap();
 
         let ctrl_c = async {
             signal::ctrl_c()
@@ -373,7 +390,7 @@ fn run(
                         Ok(_) | Err(mpsc::RecvTimeoutError::Disconnected) => break,
 
                         // Continue work if no events were received within the timeout
-                        Err(mpsc::RecvTimeoutError::Timeout) => ()
+                        Err(mpsc::RecvTimeoutError::Timeout) => (),
                     };
                 }
             };

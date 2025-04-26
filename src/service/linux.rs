@@ -15,6 +15,7 @@ pub const SYSTEMD_FILE_PATH: &str = "/etc/systemd/system";
 pub async fn install(location: &str){
     use crate::constants::SERVICE_DESCRIPTION;
 
+    // TODO: Run update logic if already installed (e.g. stop service before copy)
     println!("Installing OSHome to {}", location);
     println!(" - Creating Folder at {}", location);
     fs::create_dir_all(location).expect("Unable to create directory");
@@ -46,10 +47,12 @@ WantedBy=multi-user.target", SERVICE_DESCRIPTION, location, location);
     fs::write(systemd_file_path, systemd_file).expect("Unable to write file");
     println!("- Installing Systemd Service");
     execute_command("systemctl daemon-reload").await;
+    println!("  - Enabling Service");
     execute_command(format!("systemctl enable {}", service_file).as_str()).await;
+    println!("  - Starting Service");
     execute_command(format!("systemctl start {}", service_file).as_str()).await;
 
-    println!("Successfully installed!");
+    println!("Successfully installed and started!");
     println!("Query the status via `systemctl status {}`", service_file);
     println!("Or follow the log with `journalctl -u {}`", service_file);
 

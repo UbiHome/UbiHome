@@ -49,7 +49,8 @@ pub struct BME280SensorConfig {
 #[derive(Clone, Deserialize, Debug)]
 struct CoreConfig {
     pub oshome: OSHome,
-    // pub bme280: Option<BME280InternalConfig>,
+    
+
     pub sensor: Vec<ButtonConfig>,
 }
 

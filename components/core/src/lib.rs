@@ -77,20 +77,7 @@ macro_rules! config_template {
         template_binary_sensor!($component_name, $binary_sensor_extension);
         template_sensor!($component_name, $sensor_extension);
         
-        #[derive(Clone, Deserialize, Debug)]
-        pub struct Logger {
-            pub level: LogLevel
-        }
-        
-        #[derive(Clone, Deserialize, Debug)]
-        #[serde(rename_all = "UPPERCASE")]
-        pub enum LogLevel {
-            Error,
-            Warn,
-            Info,
-            Debug,
-            Trace
-        }
+
 
 
 
@@ -102,7 +89,6 @@ macro_rules! config_template {
         #[derive(Clone, Deserialize, Debug)]
         pub struct CoreConfig {
             pub oshome: OSHome,
-            pub logger: Option<Logger>,
 
             pub $component_name: $component_config,
 

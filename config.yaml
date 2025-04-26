@@ -1,6 +1,8 @@
 oshome:
   name: new_awesome
 
+logger:
+  level: info
 # mqtt: 
 #   broker: 127.0.0.1
 #   port: 1883
