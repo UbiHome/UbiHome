@@ -1,13 +1,13 @@
 {
-    ".": "0.3.17",
-    "components/api": "0.3.17",
-    "components/bme280": "0.3.17",
-    "components/core": "0.3.13",
-    "components/evdev": "0.3.15",
-    "components/mqtt": "0.3.17",
+    ".": "0.3.18",
+    "components/api": "0.3.18",
+    "components/bme280": "0.3.18",
+    "components/core": "0.3.14",
+    "components/evdev": "0.3.16",
+    "components/mqtt": "0.3.18",
     "components/python": "0.3.2",
-    "components/shell": "0.3.15",
-    "components/web_server": "0.3.17",
-    "components/gpio": "0.3.16",
-    "components/mdns": "0.3.17"
+    "components/shell": "0.3.16",
+    "components/web_server": "0.3.18",
+    "components/gpio": "0.3.17",
+    "components/mdns": "0.3.18"
 }
