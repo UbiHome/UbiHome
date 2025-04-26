@@ -2,7 +2,7 @@ oshome:
   name: new_awesome
 
 logger:
-  level: info
+  level: debug
 # mqtt: 
 #   broker: 127.0.0.1
 #   port: 1883
@@ -56,12 +56,12 @@ binary_sensor:
       fi
       
   - platform: gpio
-    name: "Motion"
+    name: "motion"
     icon: "mdi:motion-sensor"
     device_class: presence
     pin: 23 # 17
     pull_up: true
-    update_interval: 0
+    update_interval: "0s"
 
 
 

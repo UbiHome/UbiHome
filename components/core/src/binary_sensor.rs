@@ -10,6 +10,17 @@ pub struct BinarySensorBase {
     pub filters: Option<Vec<String>>,
 }
 
+impl BinarySensorBase {
+    pub fn get_object_id(&self, base_name: &String) -> String {
+        format!(
+            "{}_{}",
+            base_name,
+            // TODO: convert to snake case
+            self.id.clone().unwrap_or(self.name.clone())
+        )
+    }
+}
+
 #[derive(Clone, Deserialize, Debug)]
 pub struct UnknownBinarySensor{}
 
