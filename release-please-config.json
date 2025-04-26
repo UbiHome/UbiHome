@@ -10,7 +10,16 @@
                 "documentation/*"
             ]
         },
+        "components/api": {
+            "skip-github-release": true
+        },
+        "components/bme280": {
+            "skip-github-release": true
+        },
         "components/core": {
+            "skip-github-release": true
+        },
+        "components/evdev": {
             "skip-github-release": true
         },
         "components/gpio": {

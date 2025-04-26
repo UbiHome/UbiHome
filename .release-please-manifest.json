@@ -3,6 +3,7 @@
     "components/api": "0.3.11",
     "components/bme280": "0.3.11",
     "components/core": "0.3.7",
+    "components/evdev": "0.3.10",
     "components/mqtt": "0.3.11",
     "components/python": "0.3.2",
     "components/shell": "0.3.9",

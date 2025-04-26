@@ -1,0 +1,18 @@
+[package]
+name = "oshome-evdev"
+version = "0.3.9"
+authors = ["Daniel Habenicht <daniel-habenicht@outlook.de>"]
+edition = "2021"
+
+[dependencies]
+log = "0.4"
+serde = { version = "1.0", features = ["derive"] }
+tokio = { version = "1", features = ["full"] }
+oshome-core = { path = "../core" }
+async-trait = "0.1.88"
+serde_yaml = "0.9.34"
+duration-str = "0.16.1"
+
+
+[target.'cfg(linux)'.dependencies]
+evdev = "0.13.1"
