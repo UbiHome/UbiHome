@@ -4,7 +4,6 @@ use oshome_core::{
     home_assistant::sensors::{Component, HABinarySensor},
     ChangedMessage, Module, NoConfig, PublishedMessage,
 };
-use rppal::gpio::Event;
 use serde::{Deserialize, Deserializer};
 use std::collections::HashMap;
 use std::{future::Future, pin::Pin, str, time::Duration};
@@ -91,6 +90,8 @@ impl Module for Default {
             #[cfg(target_os = "linux")]
             {
                 use rppal::gpio::{Gpio, Trigger};
+                use rppal::gpio::Event;
+
 
                 let gpio = Gpio::new();
                 match gpio {
@@ -167,7 +168,11 @@ impl Module for Default {
 
                                         // Errors?
                                         // cat /sys/kernel/debug/gpio
-                                        
+
+                                        fn input_callback(event: Event) {
+                                            println!("Event: {:?}", event);
+                                        }
+
                                         pin.set_async_interrupt(Trigger::Both, 
                                             Some(Duration::from_millis(50)),
                                             move |event| {
@@ -210,6 +215,3 @@ impl Module for Default {
     }
 }
 
-fn input_callback(event: Event) {
-    println!("Event: {:?}", event);
-}
