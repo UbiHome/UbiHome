@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.12](https://github.com/DanielHabenicht/OSHome/compare/v0.3.11...oshome-gpio-v0.3.12) (2025-04-26)
+
+
+### Bug Fixes
+
+* better warnings ([0a28ec2](https://github.com/DanielHabenicht/OSHome/commit/0a28ec2247e82adfa04eb997528b82d4d30dab0b))
+
 ## [0.3.11](https://github.com/DanielHabenicht/OSHome/compare/v0.3.10...oshome-gpio-v0.3.11) (2025-04-26)
 
 
