@@ -74,7 +74,6 @@ impl Default {
         }
 
         Default {
-            config,
             components,
             binary_sensors,
         }
