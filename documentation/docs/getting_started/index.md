@@ -28,10 +28,9 @@ For now[^1] a single executable is provided. You can download them from the [Git
         ```bash
         curl -L -o oshome.tar.gz https://github.com/DanielHabenicht/OSHome/releases/download/v0.3.15/oshome-Linux-musleabi-armv7.tar.gz
         tar xvzf ./oshome.tar.gz
-        ./oshome
         ```
 
-    2. Create a configuration file in the same directory as the executable. The configuration file should be named `config.yaml` and should contain the following:
+    2. Edit the configuration file `config.yaml` in the same directory as the executable. It could contain the following:
 
         ```yaml
         --8<-- "getting_started/linux.yml"
@@ -86,10 +85,9 @@ For now[^1] a single executable is provided. You can download them from the [Git
     ```powershell
     Invoke-WebRequest -OutFile oshome.zip -Uri https://github.com/DanielHabenicht/OSHome/releases/download/v0.3.15/oshome-Windows-msvc-x86_64.zip
     Expand-Archive -Force oshome.zip ./
-    ./oshome.exe
     ```
 
-    2. Create a configuration file in the same directory as the executable. The configuration file should be named `config.yaml` and should contain the following:
+    2. Edit the configuration file `config.yaml` in the same directory as the executable. It could contain the following:
 
     ```yaml
     --8<-- "getting_started/windows.yml"
