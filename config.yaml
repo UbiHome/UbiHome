@@ -3,6 +3,8 @@ oshome:
 
 logger:
   level: debug
+  directory: ./logs
+  
 # mqtt: 
 #   broker: 127.0.0.1
 #   port: 1883
@@ -25,7 +27,7 @@ button:
    id: my_button
    name: "Write Hello World"
    command: "echo 'Hello World!' >> test.log"
-   
+
  - platform: shell
    id: disconnect_speaker
    name: "Disconnect Speaker"
