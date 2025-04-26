@@ -1,4 +1,4 @@
-use log::debug;
+use log::{debug};
 use oshome_core::{config_template, home_assistant::sensors::{Component, HABinarySensor, HAButton, HASensor}, ChangedMessage, Module, PublishedMessage};
 use serde::{Deserialize, Deserializer};
 use shell_exec::{Execution, Shell, ShellError};
@@ -63,6 +63,7 @@ pub struct Default {
 impl Default {
     pub fn new(config_string: &String) -> Self {
         let config = serde_yaml::from_str::<CoreConfig>(config_string).unwrap();
+        // info!("Shell config: {:?}", config);
         Default {
             config
         }

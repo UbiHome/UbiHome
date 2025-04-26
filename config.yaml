@@ -38,6 +38,7 @@ sensor:
       free | grep Mem | awk '{print $3/$2 * 100.0}'
     # device_class: "data_size"
   - platform: bme280
+    update_interval: 30s # 0 only executes it once and assumes a long running processes.
     name: "bla"
 
 binary_sensor:
@@ -58,8 +59,10 @@ binary_sensor:
     name: "Motion"
     icon: "mdi:motion-sensor"
     device_class: presence
-    pin: 23
+    pin: 23 # 17
     pull_up: true
+    update_interval: 0
+
 
 
 # TODO: Things still to implement...

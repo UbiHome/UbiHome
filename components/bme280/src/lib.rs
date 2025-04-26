@@ -1,9 +1,8 @@
 use duration_str::deserialize_option_duration;
 use log::{debug, warn};
 use oshome_core::{
-    button::UnknownButton,
     home_assistant::sensors::{Component, HASensor},
-    sensor::SensorBase,
+    sensor::{SensorBase, UnknownSensor},
     ChangedMessage, Module, OSHome, PublishedMessage,
 };
 use serde::Deserialize;
@@ -22,36 +21,32 @@ pub struct BME280InternalConfig {
 #[serde(tag = "platform")]
 #[serde(rename_all = "camelCase")]
 pub enum SensorKind {
+    #[serde(alias = "bme280")]
     Bme280(BME280SensorConfig),
     #[serde(untagged)]
-    Unknown(UnknownButton),
+    Unknown(UnknownSensor),
 }
 
 #[derive(Clone, Deserialize, Debug)]
-pub struct ButtonConfig {
+pub struct SensorConfig {
     #[serde(flatten)]
     pub extra: SensorKind,
 }
 
 #[derive(Clone, Deserialize, Debug)]
 pub struct BME280SensorConfig {
-    // pub platform: String,
     pub temperature: Option<SensorBase>,
     pub pressure: Option<SensorBase>,
     pub humidity: Option<SensorBase>,
+    pub address: Option<String>,
     #[serde(deserialize_with = "deserialize_option_duration")]
     pub update_interval: Option<Duration>,
-    pub address: Option<String>,
 }
-
-// template_sensor!(bme280, BME280SensorConfig);
 
 #[derive(Clone, Deserialize, Debug)]
 struct CoreConfig {
     pub oshome: OSHome,
-    
-
-    pub sensor: Vec<ButtonConfig>,
+    pub sensor: Vec<SensorConfig>,
 }
 
 #[derive(PartialEq, Eq, Clone, Debug, Hash)]
@@ -68,7 +63,6 @@ pub struct InternalSensor {
     pub update_interval: Option<Duration>,
 }
 
-// config_template!(bme280, Option<NoConfig>, NoConfig, NoConfig, BME280SensorConfig);
 
 #[derive(Clone, Debug)]
 pub struct Default {
@@ -80,6 +74,7 @@ pub struct Default {
 impl Default {
     pub fn new(config_string: &String) -> Self {
         let config = serde_yaml::from_str::<CoreConfig>(config_string).unwrap();
+        // info!("BME280 config: {:?}", config);
         let mut components: Vec<Component> = Vec::new();
         let mut sensors: Vec<InternalSensor> = Vec::new();
 
