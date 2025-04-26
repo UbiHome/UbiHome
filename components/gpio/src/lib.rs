@@ -4,10 +4,11 @@ use oshome_core::{
     home_assistant::sensors::{Component, HABinarySensor},
     ChangedMessage, Module, NoConfig, PublishedMessage,
 };
+use rppal::gpio::Event;
 use serde::{Deserialize, Deserializer};
 use std::collections::HashMap;
 use std::{future::Future, pin::Pin, str, time::Duration};
-use tokio::sync::broadcast::{Receiver, Sender};
+use tokio::{sync::broadcast::{Receiver, Sender}, time};
 
 #[derive(Debug, Copy, Clone, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -24,6 +25,8 @@ pub struct GpioConfig {
 pub struct GpioBinarySensorConfig {
     pub pin: u8, // TODO: Use GPIO types or library
     pub pull_up: Option<bool>,
+    #[serde(deserialize_with = "deserialize_option_duration")]
+    pub update_interval: Option<Duration>,
 }
 
 config_template!(gpio, GpioConfig, NoConfig, GpioBinarySensorConfig, NoConfig);
@@ -135,6 +138,17 @@ impl Module for Default {
                                     BinarySensorKind::gpio(gpio_config) => {
                                         debug!("BinarySensor {} is of type Gpio", key);
 
+                                        // tokio::spawn(async move {
+                                        //     let duration = gpio_config
+                                        //         .update_interval
+                                        //         .unwrap_or(Duration::from_secs(30));
+                                        //     let mut interval = time::interval(duration);
+
+                                        //     loop {
+                                        //         interval.tick().await;
+
+                                        //     }
+                                        // });
                                         let gpio_pin =
                                             gpio.get(gpio_config.pin).expect("GPIO pin not found?");
                                         let mut pin: rppal::gpio::InputPin;
@@ -151,6 +165,15 @@ impl Module for Default {
                                             pin = gpio_pin.into_input_pullup();
                                         }
 
+                                        // Errors?
+                                        // cat /sys/kernel/debug/gpio
+                                        
+                                        pin.set_async_interrupt(Trigger::Both, 
+                                            Some(Duration::from_millis(50)),
+                                            move |event| {
+                                                // Note: you could add more parameters here!
+                                                input_callback(event);
+                                            }).expect("failed to set async interrupt");
                                         pin.set_interrupt(Trigger::Both, None).unwrap();
                                         pin.poll_interrupt(true, None).unwrap();
                                         debug!("BinarySensor {} triggered.", key);
@@ -185,4 +208,8 @@ impl Module for Default {
             Ok(())
         })
     }
+}
+
+fn input_callback(event: Event) {
+    println!("Event: {:?}", event);
 }
