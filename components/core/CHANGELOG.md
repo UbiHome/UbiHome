@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.6](https://github.com/DanielHabenicht/OSHome/compare/v0.3.5...oshome-core-v0.3.6) (2025-04-26)
+
+
+### Bug Fixes
+
+* bme280 not looping ([79e7998](https://github.com/DanielHabenicht/OSHome/commit/79e79984f9ca72c3675f27d5a11e24f9265375f0))
+
 ## [0.3.5](https://github.com/DanielHabenicht/OSHome/compare/v0.3.4...oshome-core-v0.3.5) (2025-04-16)
 
 
