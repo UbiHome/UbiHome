@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.14](https://github.com/DanielHabenicht/OSHome/compare/v0.3.13...v0.3.14) (2025-04-26)
+
+
+### Bug Fixes
+
+* logging clarity ([52274a0](https://github.com/DanielHabenicht/OSHome/commit/52274a0c5c31d02588ad8a2838dc2faf130bb3bb))
+
 ## [0.3.13](https://github.com/DanielHabenicht/OSHome/compare/v0.3.12...v0.3.13) (2025-04-26)
 
 
