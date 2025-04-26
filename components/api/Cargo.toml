@@ -9,9 +9,7 @@ log = "0.4"
 serde = { version = "1.0", features = ["derive"] }
 tokio = { version = "1", features = ["full"] }
 oshome-core = { path = "../core" }
-prost = "0.13.5"
 serde_yaml = "0.9.34"
 duration-str = "0.16.1"
+esphome-native-api = "0.0.3"
 
-[build-dependencies]
-prost-build = "0.13"
