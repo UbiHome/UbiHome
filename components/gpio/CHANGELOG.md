@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.3.18](https://github.com/DanielHabenicht/OSHome/compare/v0.3.17...oshome-gpio-v0.3.18) (2025-04-26)
+
+
+### Bug Fixes
+
+* keys of shell component ([5772f9e](https://github.com/DanielHabenicht/OSHome/commit/5772f9ed32b0d1c965dcffe7035b3ecefc202354))
+* panic ([574f0b6](https://github.com/DanielHabenicht/OSHome/commit/574f0b6a65ba8b68d9f9bb1974bba2ebfc67380c))
+
 ## [0.3.17](https://github.com/DanielHabenicht/OSHome/compare/v0.3.16...oshome-gpio-v0.3.17) (2025-04-26)
 
 
