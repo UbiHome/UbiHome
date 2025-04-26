@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.3.10](https://github.com/DanielHabenicht/OSHome/compare/v0.3.9...v0.3.10) (2025-04-26)
+
+
+### Bug Fixes
+
+* bme280 not looping ([79e7998](https://github.com/DanielHabenicht/OSHome/commit/79e79984f9ca72c3675f27d5a11e24f9265375f0))
+* shell binary sensor not published ([2caa712](https://github.com/DanielHabenicht/OSHome/commit/2caa7126f9f244ece6a57ebc670574b69a27b6a3))
+* try async gpio interrupt ([a79cb53](https://github.com/DanielHabenicht/OSHome/commit/a79cb53acf85b6b9e04e3e7769741978e295c652))
+
 ## [0.3.9](https://github.com/DanielHabenicht/OSHome/compare/v0.3.8...v0.3.9) (2025-04-17)
 
 
