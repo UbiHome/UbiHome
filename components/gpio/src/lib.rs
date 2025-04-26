@@ -177,38 +177,35 @@ impl Module for Default {
                             // Errors?
                             // cat /sys/kernel/debug/gpio
 
-                            fn input_callback(event: Event) {
-                                println!("Event: {:?}", event);
-                            }
 
                             pin.set_async_interrupt(
                                 Trigger::Both,
-                                Some(Duration::from_millis(50)),
+                                None,
                                 move |event| {
-                                    // Note: you could add more parameters here!
-                                    input_callback(event);
+                                    println!("Event: {:?}", event);
+                                    debug!("BinarySensor {} triggered.", binary_sensor.key);
                                 },
                             )
                             .expect("failed to set async interrupt");
-                            pin.set_interrupt(Trigger::Both, None).unwrap();
-                            pin.poll_interrupt(true, None).unwrap();
-                            debug!("BinarySensor {} triggered.", binary_sensor.key);
-                            println!("Binary Sensor '{}' triggered.", binary_sensor.key);
+                            // pin.set_interrupt(Trigger::Both, None).unwrap();
+                            // pin.poll_interrupt(true, None).unwrap();
+                            // debug!("BinarySensor {} triggered.", binary_sensor.key);
+                            // println!("Binary Sensor '{}' triggered.", binary_sensor.key);
 
-                            _ = cloned_sender.send(ChangedMessage::BinarySensorValueChange {
-                                key: binary_sensor.key.clone(),
-                                value: true,
-                            });
-                            let cloned_sender2 = cloned_sender.clone();
+                            // _ = cloned_sender.send(ChangedMessage::BinarySensorValueChange {
+                            //     key: binary_sensor.key.clone(),
+                            //     value: true,
+                            // });
+                            // let cloned_sender2 = cloned_sender.clone();
 
-                            let cloned_key = binary_sensor.key.clone();
-                            _ = tokio::spawn(async move {
-                                tokio::time::sleep(Duration::from_secs(5)).await;
-                                _ = &cloned_sender2.send(ChangedMessage::BinarySensorValueChange {
-                                    key: cloned_key,
-                                    value: false,
-                                });
-                            });
+                            // let cloned_key = binary_sensor.key.clone();
+                            // _ = tokio::spawn(async move {
+                            //     tokio::time::sleep(Duration::from_secs(5)).await;
+                            //     _ = &cloned_sender2.send(ChangedMessage::BinarySensorValueChange {
+                            //         key: cloned_key,
+                            //         value: false,
+                            //     });
+                            // });
                         }
                     }
                 }
