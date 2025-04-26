@@ -5,7 +5,7 @@ use oshome_core::{
     ChangedMessage, Module, NoConfig, PublishedMessage,
 };
 use serde::{Deserialize, Deserializer};
-use std::collections::HashMap;
+use std::{collections::HashMap, future};
 use std::{future::Future, pin::Pin, str, time::Duration};
 use tokio::sync::broadcast::{Receiver, Sender};
 
@@ -159,7 +159,8 @@ impl Module for Default {
 
                             //     }
                             // });
-                            let gpio_pin = gpio.get(binary_sensor.pin).expect("GPIO pin not found?");
+                            let gpio_pin =
+                                gpio.get(binary_sensor.pin).expect("GPIO pin not found?");
                             let mut pin: rppal::gpio::InputPin;
                             if let Some(pullup) = binary_sensor.pull_up {
                                 if pullup {
@@ -177,35 +178,40 @@ impl Module for Default {
                             // Errors?
                             // cat /sys/kernel/debug/gpio
 
+                            pin.set_async_interrupt(Trigger::Both, None, move |event| {
+                                println!("Event: {:?}", event);
+                                debug!("BinarySensor {} triggered.", binary_sensor.key);
+                                _ = cloned_sender.send(ChangedMessage::BinarySensorValueChange {
+                                    key: binary_sensor.key.clone(),
+                                    value: true,
+                                });
+                                let cloned_sender2 = cloned_sender.clone();
 
-                            pin.set_async_interrupt(
-                                Trigger::Both,
-                                None,
-                                move |event| {
-                                    println!("Event: {:?}", event);
-                                    debug!("BinarySensor {} triggered.", binary_sensor.key);
-                                },
-                            )
+                                let cloned_key = binary_sensor.key.clone();
+                                _ = tokio::spawn(async move {
+                                    tokio::time::sleep(Duration::from_secs(5)).await;
+                                    _ = &cloned_sender2.send(
+                                        ChangedMessage::BinarySensorValueChange {
+                                            key: cloned_key,
+                                            value: false,
+                                        },
+                                    );
+                                });
+                            })
                             .expect("failed to set async interrupt");
+
+                            debug!("Waiting for interrupts.");
+
+                            // Wait indefinitely for the interrupts
+                            let future = future::pending();
+                            let () = future.await;
+                            debug!("Never called.");
+
+
                             // pin.set_interrupt(Trigger::Both, None).unwrap();
                             // pin.poll_interrupt(true, None).unwrap();
                             // debug!("BinarySensor {} triggered.", binary_sensor.key);
                             // println!("Binary Sensor '{}' triggered.", binary_sensor.key);
-
-                            // _ = cloned_sender.send(ChangedMessage::BinarySensorValueChange {
-                            //     key: binary_sensor.key.clone(),
-                            //     value: true,
-                            // });
-                            // let cloned_sender2 = cloned_sender.clone();
-
-                            // let cloned_key = binary_sensor.key.clone();
-                            // _ = tokio::spawn(async move {
-                            //     tokio::time::sleep(Duration::from_secs(5)).await;
-                            //     _ = &cloned_sender2.send(ChangedMessage::BinarySensorValueChange {
-                            //         key: cloned_key,
-                            //         value: false,
-                            //     });
-                            // });
                         }
                     }
                 }
