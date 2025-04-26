@@ -1,6 +1,6 @@
 [package]
 name = "oshome-api"
-version = "0.3.14"
+version = "0.3.15"
 authors = ["Daniel Habenicht <daniel-habenicht@outlook.de>"]
 edition = "2021"
 
