@@ -5,7 +5,7 @@ use oshome_core::{
     ChangedMessage, Module, NoConfig, PublishedMessage,
 };
 use serde::{Deserialize, Deserializer};
-use std::{collections::HashMap, future};
+use std::{collections::HashMap, future, thread::sleep};
 use std::{future::Future, pin::Pin, str, time::Duration};
 use tokio::sync::broadcast::{Receiver, Sender};
 
@@ -188,15 +188,14 @@ impl Module for Default {
                                 let cloned_sender2 = cloned_sender.clone();
 
                                 let cloned_key = binary_sensor.key.clone();
-                                _ = tokio::spawn(async move {
-                                    tokio::time::sleep(Duration::from_secs(5)).await;
-                                    _ = &cloned_sender2.send(
-                                        ChangedMessage::BinarySensorValueChange {
-                                            key: cloned_key,
-                                            value: false,
-                                        },
-                                    );
-                                });
+                                sleep(Duration::from_secs(5));
+                                debug!("BinarySensor {} reset.", cloned_key);
+                                cloned_sender2.send(
+                                    ChangedMessage::BinarySensorValueChange {
+                                        key: cloned_key,
+                                        value: false,
+                                    },
+                                ).unwrap();
                             })
                             .expect("failed to set async interrupt");
 
@@ -206,12 +205,6 @@ impl Module for Default {
                             let future = future::pending();
                             let () = future.await;
                             debug!("Never called.");
-
-
-                            // pin.set_interrupt(Trigger::Both, None).unwrap();
-                            // pin.poll_interrupt(true, None).unwrap();
-                            // debug!("BinarySensor {} triggered.", binary_sensor.key);
-                            // println!("Binary Sensor '{}' triggered.", binary_sensor.key);
                         }
                     }
                 }
