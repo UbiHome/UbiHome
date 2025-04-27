@@ -53,54 +53,56 @@ impl Module for Default {
             let responder = libmdns::Responder::new().unwrap();
 
             // Native API
-            let _svc = responder.register(
-                "_esphomelib._tcp.local".to_owned(),
-                "Test Device".to_owned(),
-                6053,
-                &["friendly_name=Hello", "version=1.0", "mac=00:00:00:00:00:00"],
-            );
+            // let _svc = responder.register(
+            //     "_esphomelib._tcp.local".to_owned(),
+            //     "Test Device".to_owned(),
+            //     6053,
+            //     &["friendly_name=Hello", "version=2024.4.2", "network=wifi"],
+            //     // "friendly_name=frame"  "mac=34987a9f6a28" "platform=ESP32" "board=esp32dev" 
+            // );
 
-            // HTTP API
-            let _svc = responder.register(
-                "_http._tcp.local".to_owned(),
-                "Test Device".to_owned(),
-                80, // TODO: Get Port?
-                &["friendly_name=Hello", "version=1.0", "path=/"],
-            );
+            // // HTTP API
+            // let _svc = responder.register(
+            //     "_http._tcp.local".to_owned(),
+            //     "Test Device".to_owned(),
+            //     80, // TODO: Get Port?
+            //     &["friendly_name=Hello", "version=1.0", "path=/"],
+            // );
+
+            
+
+
+            use mdns_sd::{ServiceDaemon, ServiceInfo};
+
+            // Create a daemon
+            let mdns = ServiceDaemon::new().expect("Failed to create daemon");
+
+            // Create a service info.
+            let service_type = "_esphomelib._tcp.local";
+            let instance_name = "Test Device";
+            let ip = "192.168.178.175";
+            let host_name = "raspberry.local";
+            let port = 6053;
+            let properties = [("friendly_name", "Hello"), ("version", "1.0")];
+
+            let my_service = ServiceInfo::new(
+                service_type,
+                instance_name,
+                host_name,
+                ip,
+                port,
+                &properties[..],
+            ).unwrap();
+
+            // Register with the daemon, which publishes the service.
+            mdns.register(my_service).expect("Failed to register our service");
+
+            // Gracefully shutdown the daemon
+            // mdns.shutdown().unwrap();
 
             // Wait indefinitely for the interrupts
             let future = future::pending();
             let () = future.await;
-
-
-            // use mdns_sd::{ServiceDaemon, ServiceInfo};
-
-            // // Create a daemon
-            // let mdns = ServiceDaemon::new().expect("Failed to create daemon");
-
-            // // Create a service info.
-            // let service_type = "_esphomelib._tcp.local.";
-            // let instance_name = "Test Device";
-            // let ip = "192.168.1.12";
-            // let host_name = "test.local.";
-            // let port = 6053;
-            // let properties = [("friendly_name", "Hello"), ("version", "1.0")];
-
-            // let my_service = ServiceInfo::new(
-            //     service_type,
-            //     instance_name,
-            //     host_name,
-            //     ip,
-            //     port,
-            //     &properties[..],
-            // ).unwrap();
-
-            // // Register with the daemon, which publishes the service.
-            // mdns.register(my_service).expect("Failed to register our service");
-
-            // // Gracefully shutdown the daemon
-            // std::thread::sleep(std::time::Duration::from_secs(1));
-            // mdns.shutdown().unwrap();
             Ok(()) 
         })
      }
