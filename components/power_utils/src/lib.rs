@@ -10,6 +10,10 @@ use tokio::sync::broadcast::{Receiver, Sender};
 
 use system_shutdown::shutdown;
 use system_shutdown::reboot;
+use system_shutdown::hibernate;
+use system_shutdown::sleep;
+use system_shutdown::logout;
+
 
 
 #[derive(Clone, Deserialize, Debug)]
@@ -18,10 +22,16 @@ pub struct PowerUtilsConfig {}
 #[derive(Debug, Copy, Clone, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub enum PowerAction {
-    #[serde(alias = "reboot")]
+    #[serde(alias = "reboot", alias = "restart")]
     Reboot,
     #[serde(alias = "shutdown")]
     Shutdown,
+    #[serde(alias = "hibernate")]
+    Hibernate,
+    #[serde(alias = "logout")]
+    Logout,
+    #[serde(alias = "sleep")]
+    Sleep,
 }
 
 
@@ -55,13 +65,56 @@ impl Default {
             match any_sensor.extra {
                 ButtonKind::power_utils(button) => {
                     let id = any_sensor.default.get_object_id(&config.oshome.name);
-                    components.push(Component::Button(HAButton {
-                        platform: "sensor".to_string(),
-                        icon: any_sensor.default.icon.clone(),
-                        unique_id: Some(id.clone()),
-                        name: any_sensor.default.name.clone(),
-                        object_id: id.clone(),
-                    }));
+                    let button_component;
+                    match button.action {
+                        PowerAction::Reboot => {
+                            button_component = HAButton {
+                                platform: "sensor".to_string(),
+                                icon: Some(any_sensor.default.icon.unwrap_or("mdi:restart".to_string())),
+                                unique_id: Some(id.clone()),
+                                name: any_sensor.default.name.clone(),
+                                object_id: id.clone(),
+                            };
+                        }
+                        PowerAction::Shutdown => {
+                            button_component = HAButton {
+                                platform: "sensor".to_string(),
+                                icon: Some(any_sensor.default.icon.unwrap_or("mdi:power".to_string())),
+                                unique_id: Some(id.clone()),
+                                name: any_sensor.default.name.clone(),
+                                object_id: id.clone(),
+                            };
+                        }
+                        PowerAction::Hibernate => {
+                            button_component = HAButton {
+                                platform: "sensor".to_string(),
+                                icon: Some(any_sensor.default.icon.unwrap_or("mdi:snowflake".to_string())),
+                                unique_id: Some(id.clone()),
+                                name: any_sensor.default.name.clone(),
+                                object_id: id.clone(),
+                            };
+                        }
+                        PowerAction::Logout => {
+                            button_component = HAButton {
+                                platform: "sensor".to_string(),
+                                icon: Some(any_sensor.default.icon.unwrap_or("mdi:logout".to_string())),
+                                unique_id: Some(id.clone()),
+                                name: any_sensor.default.name.clone(),
+                                object_id: id.clone(),
+                            };
+                        }
+                        PowerAction::Sleep => {
+                            button_component = HAButton {
+                                platform: "sensor".to_string(),
+                                icon: Some(any_sensor.default.icon.unwrap_or("mdi:sleep".to_string())),
+                                unique_id: Some(id.clone()),
+                                name: any_sensor.default.name.clone(),
+                                object_id: id.clone(),
+                            };
+                        }
+                    }
+
+                    components.push(Component::Button(button_component));
                     buttons.insert(id.clone(), button);
                 }
                 _ => {}
@@ -104,17 +157,38 @@ impl Module for Default {
 
                                 match power_utils_button.action {
                                     PowerAction::Reboot => {
-                                        debug!("Rebooting");
+                                        debug!("Rebooting...");
                                         match reboot() {
-                                            Ok(_) => debug!("Rebooting, bye!"),
+                                            Ok(_) => debug!("Rebooting."),
                                             Err(error) => error!("Failed to reboot: {}", error),
                                         }
                                     }
                                     PowerAction::Shutdown => {
-                                        debug!("Shutting down");
+                                        debug!("Shutting down...");
                                         match shutdown() {
-                                            Ok(_) => debug!("Shutting down, bye!"),
+                                            Ok(_) => debug!("Shutting down."),
                                             Err(error) => error!("Failed to shut down: {}", error),
+                                        }
+                                    }
+                                    PowerAction::Hibernate => {
+                                        debug!("Hibernating...");
+                                        match hibernate() {
+                                            Ok(_) => debug!("Hibernating."),
+                                            Err(error) => error!("Failed to hibernate: {}", error),
+                                        }
+                                    }
+                                    PowerAction::Logout => {
+                                        debug!("Logging out...");
+                                        match logout() {
+                                            Ok(_) => debug!("Logging out."),
+                                            Err(error) => error!("Failed to log out: {}", error),
+                                        }
+                                    }
+                                    PowerAction::Sleep => {
+                                        debug!("Sleeping...");
+                                        match sleep() {
+                                            Ok(_) => debug!("Sleeping."),
+                                            Err(error) => error!("Failed to sleep: {}", error),
                                         }
                                     }
                                 }

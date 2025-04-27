@@ -1,5 +1,5 @@
 use log::{debug, error, info};
-use oshome_core::{binary_sensor, config_template, home_assistant::sensors::Component, ChangedMessage, Module, PublishedMessage};
+use oshome_core::{config_template, home_assistant::sensors::Component, ChangedMessage, Module, PublishedMessage};
 use rumqttc::{AsyncClient, Event, MqttOptions, QoS};
 use serde::{Deserialize, Deserializer, Serialize};
 use std::{collections::HashMap, future::Future, pin::Pin, str, time::Duration};

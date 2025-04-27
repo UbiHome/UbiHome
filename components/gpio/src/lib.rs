@@ -94,7 +94,6 @@ impl Module for Default {
             }
             #[cfg(target_os = "linux")]
             {
-                use rppal::gpio::Event;
                 use rppal::gpio::{Gpio, Trigger};
 
                 let gpio = Gpio::new();

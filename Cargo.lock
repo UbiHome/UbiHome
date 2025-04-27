@@ -1717,7 +1717,7 @@ dependencies = [
 
 [[package]]
 name = "oshome-bme280"
-version = "0.3.20"
+version = "0.4.3"
 dependencies = [
  "bme280",
  "duration-str",
@@ -1731,7 +1731,7 @@ dependencies = [
 
 [[package]]
 name = "oshome-core"
-version = "0.3.16"
+version = "0.4.3"
 dependencies = [
  "convert_case",
  "duration-str",
@@ -1742,7 +1742,7 @@ dependencies = [
 
 [[package]]
 name = "oshome-evdev"
-version = "0.3.18"
+version = "0.4.3"
 dependencies = [
  "async-trait",
  "duration-str",
@@ -1756,7 +1756,7 @@ dependencies = [
 
 [[package]]
 name = "oshome-gpio"
-version = "0.3.19"
+version = "0.4.3"
 dependencies = [
  "async-trait",
  "duration-str",
@@ -1784,7 +1784,7 @@ dependencies = [
 
 [[package]]
 name = "oshome-mqtt"
-version = "0.3.20"
+version = "0.4.3"
 dependencies = [
  "duration-str",
  "log",
@@ -1799,7 +1799,7 @@ dependencies = [
 
 [[package]]
 name = "oshome-power_utils"
-version = "0.4.0"
+version = "0.4.3"
 dependencies = [
  "duration-str",
  "log",
@@ -1812,7 +1812,7 @@ dependencies = [
 
 [[package]]
 name = "oshome-shell"
-version = "0.3.19"
+version = "0.4.3"
 dependencies = [
  "duration-str",
  "log",
@@ -1825,7 +1825,7 @@ dependencies = [
 
 [[package]]
 name = "oshome-web_server"
-version = "0.3.20"
+version = "0.4.3"
 dependencies = [
  "axum",
  "log",

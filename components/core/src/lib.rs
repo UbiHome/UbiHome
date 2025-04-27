@@ -54,6 +54,8 @@ pub struct NoConfig {}
 #[derive(Clone, Deserialize, Debug)]
 pub struct OSHome {
     pub name: String,
+    pub friendly_name: Option<String>,
+    pub area: Option<String>,
 }
 
 
