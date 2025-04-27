@@ -40,5 +40,4 @@ windows-sys = "0.59"
 
 [workspace]
 resolver = "2"
-members = ["components/api", "components/bme280", "components/core", "components/evdev", "components/gpio", "components/mdns", "components/mqtt", "components/shell", "components/web_server"]
-
+members = ["components/api", "components/bme280", "components/core", "components/evdev", "components/gpio", "components/mdns", "components/mqtt", "components/power_utils", "components/shell", "components/web_server"]

@@ -1,0 +1,14 @@
+[package]
+name = "oshome-power_utils"
+version = "0.3.19"
+authors = ["Daniel Habenicht <daniel-habenicht@outlook.de>"]
+edition = "2024"
+
+[dependencies]
+log = "0.4"
+serde = { version = "1.0", features = ["derive"] }
+tokio = { version = "1", features = ["full"] }
+oshome-core = { path = "../core" }
+serde_yaml = "0.9.34"
+duration-str = "0.16.1"
+system_shutdown = "4.0.1"

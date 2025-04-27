@@ -31,6 +31,9 @@
         "components/mqtt": {
             "skip-github-release": true
         },
+        "components/power_utils": {
+            "skip-github-release": true
+        },
         "components/python": {
             "skip-github-release": true
         },
