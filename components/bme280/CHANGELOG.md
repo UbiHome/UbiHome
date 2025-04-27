@@ -1,5 +1,7 @@
 # Changelog
 
+## [0.3.20](https://github.com/DanielHabenicht/OSHome/compare/v0.3.19...oshome-bme280-v0.3.20) (2025-04-27)
+
 ## [0.3.19](https://github.com/DanielHabenicht/OSHome/compare/v0.3.18...oshome-bme280-v0.3.19) (2025-04-26)
 
 ## [0.3.18](https://github.com/DanielHabenicht/OSHome/compare/v0.3.17...oshome-bme280-v0.3.18) (2025-04-26)

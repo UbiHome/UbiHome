@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.20](https://github.com/DanielHabenicht/OSHome/compare/v0.3.19...oshome-mdns-v0.3.20) (2025-04-27)
+
+
+### Bug Fixes
+
+* mdns not waiting ([342f61a](https://github.com/DanielHabenicht/OSHome/commit/342f61a935685ca4474cf0384db68e4547be8209))
+
 ## [0.3.19](https://github.com/DanielHabenicht/OSHome/compare/v0.3.18...oshome-mdns-v0.3.19) (2025-04-26)
 
 
