@@ -1,6 +1,6 @@
 {
-    ".": "0.4.2",
-    "components/api": "0.3.22",
+    ".": "0.4.3",
+    "components/api": "0.3.23",
     "components/bme280": "0.3.20",
     "components/core": "0.3.16",
     "components/evdev": "0.3.18",
@@ -10,5 +10,5 @@
     "components/shell": "0.3.19",
     "components/web_server": "0.3.20",
     "components/gpio": "0.3.19",
-    "components/mdns": "0.3.22"
+    "components/mdns": "0.3.23"
 }
