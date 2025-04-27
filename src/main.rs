@@ -215,7 +215,7 @@ fn main() {
         )).unwrap();
 
         logger
-            .parse_and_push_temp_spec(format!("{}, libmdns = info", logger_config.get_flexi_logger_spec()))
+            .parse_and_push_temp_spec( logger_config.get_flexi_logger_spec())
             .unwrap();
     };
 
