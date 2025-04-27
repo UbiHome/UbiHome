@@ -1,4 +1,4 @@
-use log::debug;
+use log::{debug, error};
 use oshome_core::{
     ChangedMessage, Module, NoConfig, PublishedMessage, config_template,
     home_assistant::sensors::{Component, HAButton},
@@ -8,12 +8,26 @@ use std::collections::HashMap;
 use std::{future::Future, pin::Pin, str};
 use tokio::sync::broadcast::{Receiver, Sender};
 
+use system_shutdown::shutdown;
+use system_shutdown::reboot;
+
+
 #[derive(Clone, Deserialize, Debug)]
 pub struct PowerUtilsConfig {}
 
+#[derive(Debug, Copy, Clone, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub enum PowerAction {
+    #[serde(alias = "reboot")]
+    Reboot,
+    #[serde(alias = "shutdown")]
+    Shutdown,
+}
+
+
 #[derive(Clone, Deserialize, Debug)]
 pub struct PowerUtilsButtonConfig {
-    pub command: String,
+    pub action: PowerAction
 }
 
 config_template!(
@@ -72,44 +86,38 @@ impl Module for Default {
 
     fn run(
         &self,
-        sender: Sender<ChangedMessage>,
+        _: Sender<ChangedMessage>,
         mut receiver: Receiver<PublishedMessage>,
     ) -> Pin<Box<dyn Future<Output = Result<(), Box<dyn std::error::Error>>> + Send + 'static>>
     {
-        let config = self.config.clone();
         let buttons = self.buttons.clone();
         Box::pin(async move {
-            let cloned_config = config.clone();
             // Handle Button Presses
             tokio::spawn(async move {
                 while let Ok(cmd) = receiver.recv().await {
                     match cmd {
                         PublishedMessage::ButtonPressed { key } => {
                             debug!("Button pressed1: {}", key);
-                            if let Some(PowerUtils_button) = buttons.get(&key) {
-                                // ButtonKind::PowerUtils(PowerUtils_button) => {
+                            if let Some(power_utils_button) = buttons.get(&key) {
                                 debug!("Button pressed: {}", key);
-                                debug!("Executing command: {}", PowerUtils_button.command);
-                                println!("Button '{}' pressed.", key);
+                                debug!("Executing command: {:?}", power_utils_button.action);
 
-                                // let output = execute_command(
-                                //     &cloned_config,
-                                //     &PowerUtils_button.command,
-                                //     &cloned_config.timeout,
-                                // )
-                                // .await
-                                // .unwrap();
-                                // If output is empty report status code
-                                // if output.is_empty() {
-                                //     println!("Command executed successfully with no output.");
-                                // } else {
-                                //     println!(
-                                //         "Command executed successfully with output: {}",
-                                //         output
-                                //     );
-                                // }
-                            } else {
-                                debug!("Button pressed2: {}", key);
+                                match power_utils_button.action {
+                                    PowerAction::Reboot => {
+                                        debug!("Rebooting");
+                                        match reboot() {
+                                            Ok(_) => debug!("Rebooting, bye!"),
+                                            Err(error) => error!("Failed to reboot: {}", error),
+                                        }
+                                    }
+                                    PowerAction::Shutdown => {
+                                        debug!("Shutting down");
+                                        match shutdown() {
+                                            Ok(_) => debug!("Shutting down, bye!"),
+                                            Err(error) => error!("Failed to shut down: {}", error),
+                                        }
+                                    }
+                                }
                             }
                         }
                         _ => {

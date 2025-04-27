@@ -65,7 +65,7 @@ impl Module for Default {
                 "_http._tcp.local".to_owned(),
                 "Test Device".to_owned(),
                 80, // TODO: Get Port?
-                &["version=1.0"],
+                &["friendly_name=Hello", "version=1.0", "path=/"],
             );
 
             // Wait indefinitely for the interrupts

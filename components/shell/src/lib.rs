@@ -195,8 +195,6 @@ impl Module for Default {
                                         output
                                     );
                                 }
-                            } else {
-                                debug!("Button pressed2: {}", key);
                             }
                         }
                         _ => {
