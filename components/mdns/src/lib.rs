@@ -50,11 +50,11 @@ impl Module for Default {
         let config = self.config.clone();
         info!("Starting MDNS with config: {:?}", config.mdns);
         Box::pin(async move {
-        let responder = libmdns::Responder::new().unwrap();
+            let responder = libmdns::Responder::new().unwrap();
 
             // Native API
             let _svc = responder.register(
-                "_esphomelib._tcp.local.".to_owned(),
+                "_esphomelib._tcp.local".to_owned(),
                 "Test Device".to_owned(),
                 6053,
                 &["friendly_name=Hello", "version=1.0", "mac=00:00:00:00:00:00"],
@@ -62,7 +62,7 @@ impl Module for Default {
 
             // HTTP API
             let _svc = responder.register(
-                "_http._tcp.local.".to_owned(),
+                "_http._tcp.local".to_owned(),
                 "Test Device".to_owned(),
                 80, // TODO: Get Port?
                 &["version=1.0"],
