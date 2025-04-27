@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.3](https://github.com/DanielHabenicht/OSHome/compare/v0.4.2...v0.4.3) (2025-04-27)
+
+
+### Bug Fixes
+
+* make mdns name dynamic ([05ada8a](https://github.com/DanielHabenicht/OSHome/commit/05ada8a195da8f267fe395dde8fb17a783fa3621))
+
 ## [0.4.2](https://github.com/DanielHabenicht/OSHome/compare/v0.4.1...v0.4.2) (2025-04-27)
 
 
