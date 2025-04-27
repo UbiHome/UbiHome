@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.2](https://github.com/DanielHabenicht/OSHome/compare/v0.4.1...v0.4.2) (2025-04-27)
+
+
+### Bug Fixes
+
+* probably mdns ([f69a963](https://github.com/DanielHabenicht/OSHome/commit/f69a963f0a73348430900fe8a4ff2cd8437f3552))
+
 ## [0.4.1](https://github.com/DanielHabenicht/OSHome/compare/v0.4.0...v0.4.1) (2025-04-27)
 
 
