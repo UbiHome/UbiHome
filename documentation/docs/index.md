@@ -21,7 +21,7 @@ Explore the [examples](examples/index.md) to see how to use OSHome.
 
 ```bash
 pi@raspberrypi:~/ $ oshome
-OSHome - 0.4.0
+OSHome - 0.4.1
 
 OSHome is a system which allows you to integrate any device running an OS into your smart home.
 https://github.com/DanielHabenicht/OSHome
