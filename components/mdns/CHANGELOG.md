@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.21](https://github.com/DanielHabenicht/OSHome/compare/v0.3.20...oshome-mdns-v0.3.21) (2025-04-27)
+
+
+### Bug Fixes
+
+* use other mdns lib ([a9520d1](https://github.com/DanielHabenicht/OSHome/commit/a9520d18a9b40bae1b8bdf31b87c4f2041e37ce2))
+
 ## [0.3.20](https://github.com/DanielHabenicht/OSHome/compare/v0.3.19...oshome-mdns-v0.3.20) (2025-04-27)
 
 

@@ -1,6 +1,6 @@
 [package]
 name = "oshome-power_utils"
-version = "0.4.0"
+version = "0.4.1"
 authors = ["Daniel Habenicht <daniel-habenicht@outlook.de>"]
 edition = "2024"
 

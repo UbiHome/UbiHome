@@ -1,6 +1,6 @@
 [package]
 name = "oshome-shell"
-version = "0.3.19"
+version = "0.4.1"
 authors = ["Daniel Habenicht <daniel-habenicht@outlook.de>"]
 edition = "2021"
 
