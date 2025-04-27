@@ -52,21 +52,23 @@ impl Module for Default {
         Box::pin(async move {
             let responder = libmdns::Responder::new().unwrap();
 
+            let svc_name = config.oshome.name;
+            let friendly_name = config.oshome.friendly_name.unwrap_or(svc_name.clone());
             // Native API
             let _svc = responder.register(
                 "_esphomelib._tcp".to_owned(),
-                "Test Device".to_owned(),
+                svc_name.clone(),
                 6053,
-                &["friendly_name=Hello", "version=2024.4.2", "network=wifi"],
+                &[&format!("friendly_name={}", friendly_name).to_string(), "version=2024.4.2", "network=wifi"],
                 // "friendly_name=frame"  "mac=34987a9f6a28" "platform=ESP32" "board=esp32dev" 
             );
 
             // HTTP API
             let _svc = responder.register(
                 "_http._tcp".to_owned(),
-                "Test Device".to_owned(),
+                svc_name.clone(),
                 80, // TODO: Get Port?
-                &["friendly_name=Hello", "version=1.0", "path=/"],
+                &[&format!("friendly_name={}", friendly_name).to_string(), "version=1.0", "path=/"],
             );
 
             
