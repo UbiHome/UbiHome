@@ -1,6 +1,7 @@
 use log::info;
 use oshome_core::NoConfig;
 use oshome_core::{config_template, home_assistant::sensors::Component, ChangedMessage, Module, PublishedMessage};
+use std::future;
 use std::{future::Future, pin::Pin, str};
 use tokio::sync::broadcast::{Receiver, Sender};
 use serde::{Deserialize, Deserializer};
@@ -66,6 +67,10 @@ impl Module for Default {
                 80, // TODO: Get Port?
                 &["version=1.0"],
             );
+
+            // Wait indefinitely for the interrupts
+            let future = future::pending();
+            let () = future.await;
 
 
             // use mdns_sd::{ServiceDaemon, ServiceInfo};
