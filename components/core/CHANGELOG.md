@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.16](https://github.com/DanielHabenicht/OSHome/compare/v0.3.15...oshome-core-v0.3.16) (2025-04-27)
+
+
+### Bug Fixes
+
+* gpio sensor keys ([1764340](https://github.com/DanielHabenicht/OSHome/commit/176434007824a82871cb3d2b9616dc79dee5d06a))
+
 ## [0.3.15](https://github.com/DanielHabenicht/OSHome/compare/v0.3.14...oshome-core-v0.3.15) (2025-04-26)
 
 
