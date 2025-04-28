@@ -4,7 +4,7 @@ oshome:
 logger:
   level: debug
   directory: ./logs
-  
+
 # mqtt: 
 #   broker: 127.0.0.1
 #   port: 1883
@@ -22,6 +22,8 @@ gpio:
 shell: 
   type: bash
 
+power_utils:
+
 button: 
  - platform: shell
    id: my_button
@@ -32,6 +34,11 @@ button:
    id: disconnect_speaker
    name: "Disconnect Speaker"
    command: bluetoothctl -- disconnect 00:12:6F:F1:FF:61
+
+ - platform: power_utils
+   name: "Logout"
+   action: logout
+
 
 sensor:
   - platform: shell

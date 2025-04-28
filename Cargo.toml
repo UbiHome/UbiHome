@@ -20,6 +20,7 @@ oshome-core = { path = "components/core" }
 oshome-gpio = { path = "components/gpio" }
 oshome-mdns = { path = "components/mdns" }
 oshome-mqtt = { path = "components/mqtt" }
+oshome-power_utils = { path = "components/power_utils" }
 oshome-shell = { path = "components/shell" }
 oshome-web_server = { path = "components/web_server" }
 inquire = "0.7.5"

@@ -279,6 +279,7 @@ fn get_all_modules(yaml: &String) -> Vec<Box<dyn Module>> {
     modules.push(Box::new(oshome_mqtt::Default::new(&yaml)));
     modules.push(Box::new(oshome_mdns::Default::new(&yaml)));
     modules.push(Box::new(oshome_api::Default::new(&yaml)));
+    modules.push(Box::new(oshome_power_utils::Default::new(&yaml)));
     return modules
 }
 

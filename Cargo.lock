@@ -1701,6 +1701,7 @@ dependencies = [
  "oshome-gpio",
  "oshome-mdns",
  "oshome-mqtt",
+ "oshome-power_utils",
  "oshome-shell",
  "oshome-web_server",
  "rumqttc",
