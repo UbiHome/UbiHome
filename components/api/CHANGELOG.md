@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.25](https://github.com/DanielHabenicht/OSHome/compare/oshome-api-v0.3.24...oshome-api-v0.3.25) (2025-04-28)
+
+
+### Bug Fixes
+
+* use other mdns lib ([a9520d1](https://github.com/DanielHabenicht/OSHome/commit/a9520d18a9b40bae1b8bdf31b87c4f2041e37ce2))
+
 ## [0.3.24](https://github.com/DanielHabenicht/OSHome/compare/oshome-api-v0.3.23...oshome-api-v0.3.24) (2025-04-27)
 
 

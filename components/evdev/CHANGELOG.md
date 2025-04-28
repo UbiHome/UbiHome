@@ -1,5 +1,7 @@
 # Changelog
 
+## [0.4.5](https://github.com/DanielHabenicht/OSHome/compare/v0.4.4...oshome-evdev-v0.4.5) (2025-04-28)
+
 ## [0.4.4](https://github.com/DanielHabenicht/OSHome/compare/v0.3.18...oshome-evdev-v0.4.4) (2025-04-27)
 
 ## [0.3.18](https://github.com/DanielHabenicht/OSHome/compare/v0.3.17...oshome-evdev-v0.3.18) (2025-04-27)

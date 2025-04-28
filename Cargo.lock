@@ -1687,7 +1687,7 @@ dependencies = [
 
 [[package]]
 name = "oshome"
-version = "0.4.4"
+version = "0.4.5"
 dependencies = [
  "cargo_toml",
  "clap",
@@ -1716,7 +1716,7 @@ dependencies = [
 
 [[package]]
 name = "oshome-api"
-version = "0.3.24"
+version = "0.3.25"
 dependencies = [
  "duration-str",
  "esphome-native-api",
@@ -1729,7 +1729,7 @@ dependencies = [
 
 [[package]]
 name = "oshome-bme280"
-version = "0.4.4"
+version = "0.4.5"
 dependencies = [
  "bme280",
  "duration-str",
@@ -1743,7 +1743,7 @@ dependencies = [
 
 [[package]]
 name = "oshome-core"
-version = "0.3.17"
+version = "0.3.18"
 dependencies = [
  "convert_case",
  "duration-str",
@@ -1754,7 +1754,7 @@ dependencies = [
 
 [[package]]
 name = "oshome-evdev"
-version = "0.4.4"
+version = "0.4.5"
 dependencies = [
  "async-trait",
  "duration-str",
@@ -1768,7 +1768,7 @@ dependencies = [
 
 [[package]]
 name = "oshome-gpio"
-version = "0.3.20"
+version = "0.3.21"
 dependencies = [
  "async-trait",
  "duration-str",
@@ -1782,7 +1782,7 @@ dependencies = [
 
 [[package]]
 name = "oshome-mdns"
-version = "0.3.24"
+version = "0.3.25"
 dependencies = [
  "duration-str",
  "libmdns",
@@ -1797,7 +1797,7 @@ dependencies = [
 
 [[package]]
 name = "oshome-mqtt"
-version = "0.3.21"
+version = "0.4.0"
 dependencies = [
  "duration-str",
  "log",
@@ -1812,7 +1812,7 @@ dependencies = [
 
 [[package]]
 name = "oshome-power_utils"
-version = "0.4.1"
+version = "0.4.2"
 dependencies = [
  "duration-str",
  "log",
@@ -1825,7 +1825,7 @@ dependencies = [
 
 [[package]]
 name = "oshome-shell"
-version = "0.4.4"
+version = "0.4.5"
 dependencies = [
  "duration-str",
  "log",
@@ -1838,7 +1838,7 @@ dependencies = [
 
 [[package]]
 name = "oshome-web_server"
-version = "0.4.4"
+version = "0.4.5"
 dependencies = [
  "axum",
  "log",

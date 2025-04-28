@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.4.0](https://github.com/DanielHabenicht/OSHome/compare/oshome-mqtt-v0.3.21...oshome-mqtt-v0.4.0) (2025-04-28)
+
+
+### Features
+
+* add binary sensor ([2189379](https://github.com/DanielHabenicht/OSHome/commit/218937924b6f09f8bd9962c373a12b567fdad079))
+
+
+### Bug Fixes
+
+* build error and add more power utils ([12b2fd3](https://github.com/DanielHabenicht/OSHome/commit/12b2fd3df3266ed28bc0499f8e89968d2e9a9e79))
+
 ## [0.3.21](https://github.com/DanielHabenicht/OSHome/compare/v0.3.20...oshome-mqtt-v0.3.21) (2025-04-27)
 
 
