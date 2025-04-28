@@ -1,6 +1,6 @@
 [package]
 name = "oshome-mdns"
-version = "0.3.24"
+version = "0.3.25"
 authors = ["Daniel Habenicht <daniel-habenicht@outlook.de>"]
 edition = "2018"
 

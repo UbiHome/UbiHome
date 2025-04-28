@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.4.5](https://github.com/DanielHabenicht/OSHome/compare/v0.4.4...v0.4.5) (2025-04-28)
+
+
+### Bug Fixes
+
+* better logging ([435869f](https://github.com/DanielHabenicht/OSHome/commit/435869f425276b5169cda2c7075b37cbd2bf0568))
+* bme state and device classes ([17be6ae](https://github.com/DanielHabenicht/OSHome/commit/17be6aef08583da57e56b9b3feeff7a1714a163e))
+* discovery ([627fc43](https://github.com/DanielHabenicht/OSHome/commit/627fc43e5cc4675f3fcac5253575c851a5f30dca))
+
 ## [0.4.4](https://github.com/DanielHabenicht/OSHome/compare/v0.4.3...v0.4.4) (2025-04-27)
 
 
