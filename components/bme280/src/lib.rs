@@ -82,12 +82,12 @@ impl Default {
             match n_sensor.extra {
                 SensorKind::Bme280(sensor) => {
                     let mut sensor_entries: HashMap<Measurement, String> = HashMap::new();
-                    let temperature = sensor.temperature.unwrap_or(SensorBase {
+                    let temperature = sensor.temperature.clone().unwrap_or(SensorBase {
                         id: None,
                         name: "Temperature".to_string(),
                         icon: None,
-                        state_class: None,
-                        device_class: None,
+                        state_class: Some(sensor.temperature.clone().and_then(|p| p.state_class).unwrap_or("measurement".to_string())),
+                        device_class: Some(sensor.pressure.clone().and_then(|p| p.device_class).unwrap_or("temperature".to_string())),
                         unit_of_measurement: None,
                     });
                     let object_id = temperature.get_object_id(&config.oshome.name);
@@ -112,12 +112,12 @@ impl Default {
                         name: temperature.name.clone(),
                         object_id: object_id.clone(),
                     }));
-                    let pressure = sensor.pressure.unwrap_or(SensorBase {
+                    let pressure = sensor.pressure.clone().unwrap_or(SensorBase {
                         id: None,
                         name: "Pressure".to_string(),
                         icon: None,
-                        state_class: None,
-                        device_class: None,
+                        state_class: Some(sensor.pressure.clone().and_then(|p| p.state_class).unwrap_or("measurement".to_string())),
+                        device_class: Some(sensor.pressure.clone().and_then(|p| p.device_class).unwrap_or("pressure".to_string())),
                         unit_of_measurement: None,
                     });
                     let object_id = pressure.get_object_id(&config.oshome.name);
@@ -137,12 +137,12 @@ impl Default {
                         name: pressure.name.clone(),
                         object_id: id.clone(),
                     }));
-                    let humidity = sensor.humidity.unwrap_or(SensorBase {
+                    let humidity = sensor.humidity.clone().unwrap_or(SensorBase {
                         id: None,
                         name: "Humidity".to_string(),
                         icon: None,
                         state_class: None,
-                        device_class: None,
+                        device_class: Some(sensor.humidity.clone().and_then(|p| p.device_class).unwrap_or("humidity".to_string())),
                         unit_of_measurement: None,
                     });
                     let object_id = humidity.get_object_id(&config.oshome.name);
