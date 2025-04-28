@@ -15,3 +15,18 @@ logger:
     zeroconf: debug
 ```
 
+or
+
+```bash
+python3 -m venv .venv
+.\.venv\Scripts\activate.bat
+pip install aioesphomeapi
+aioesphomeapi-discover -v
+```
+
+```
+# aioesphomeapi-discover -v
+Status |Name                            |Address        |MAC         |Version         |Platform  |Board
+------------------------------------------------------------------------------------------------------------------------
+ONLINE |new_awesome                     |172.20.208.1   |unknown     |2024.4.2        |unknown   |unknown
+```
