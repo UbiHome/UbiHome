@@ -1387,6 +1387,18 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "fe7db12097d22ec582439daf8618b8fdd1a7bef6270e9af3b1ebcd30893cf413"
 
 [[package]]
+name = "local-ip-address"
+version = "0.6.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c986b1747bbd3666abe4d57c64e60e6a82c2216140d8b12d5ceb33feb9de44b3"
+dependencies = [
+ "libc",
+ "neli",
+ "thiserror 2.0.12",
+ "windows-sys 0.59.0",
+]
+
+[[package]]
 name = "lock_api"
 version = "0.4.12"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1564,6 +1576,31 @@ name = "nb"
 version = "1.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8d5439c4ad607c3c23abf66de8c8bf57ba8adcd1f129e699851a6e43935d339d"
+
+[[package]]
+name = "neli"
+version = "0.6.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "93062a0dce6da2517ea35f301dfc88184ce18d3601ec786a727a87bf535deca9"
+dependencies = [
+ "byteorder",
+ "libc",
+ "log",
+ "neli-proc-macros",
+]
+
+[[package]]
+name = "neli-proc-macros"
+version = "0.1.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0c8034b7fbb6f9455b2a96c19e6edf8dc9fc34c70449938d8ee3b4df363f61fe"
+dependencies = [
+ "either",
+ "proc-macro2",
+ "quote",
+ "serde",
+ "syn 1.0.109",
+]
 
 [[package]]
 name = "newline-converter"
@@ -1786,6 +1823,7 @@ version = "0.3.25"
 dependencies = [
  "duration-str",
  "libmdns",
+ "local-ip-address",
  "log",
  "mac_address",
  "mdns-sd",
