@@ -48,8 +48,8 @@ Options:
 
 - Monitor connected bluetooth devices and maybe even proxy them to home assistant.
 - [ ] Auto installation
-  - [ ] Windows (https://github.com/mullvad/windows-service-rs) https://medium.com/@aleksej.gudkov/rust-windows-service-example-building-a-windows-service-in-rust-907be67d2287
-  - [ ] Linux Service
+  - [x] Windows (https://github.com/mullvad/windows-service-rs) https://medium.com/@aleksej.gudkov/rust-windows-service-example-building-a-windows-service-in-rust-907be67d2287
+  - [x] Linux Service
     - debian (https://github.com/kornelski/cargo-deb/blob/fc34c45fafc3904cadf652473ff7e9e0344c605c/systemd.md)
   - [ ] MacOS?
 - [ ] Templates and Services
@@ -63,8 +63,8 @@ Options:
 - [ ] CLI for automatic generation of executables
 - [ ] Builder Component similar to ESP Home
 - [ ] Self update (https://github.com/jaemk/self_update)
-- [ ] GPIO https://github.com/golemparts/rppal
-- [ ] Kernel evens (e.g. Keyboard press) https://docs.rs/evdev/latest/evdev/
+- [x] GPIO https://github.com/golemparts/rppal
+- [ ] Kernel events (e.g. Keyboard press) https://docs.rs/evdev/latest/evdev/
 
 ... Control USB Devices?
 

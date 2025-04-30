@@ -15,6 +15,7 @@ rumqttc = "0.24.0"
 serde = { version = "1.0", features = ["derive"] }
 serde_yaml = "0.9"
 oshome-api = { path = "components/api" }
+oshome-bluetooth_proxy = { path = "components/bluetooth_proxy" }
 oshome-bme280 = { path = "components/bme280" }
 oshome-core = { path = "components/core" }
 oshome-gpio = { path = "components/gpio" }
@@ -42,4 +43,4 @@ windows-sys = "0.59"
 
 [workspace]
 resolver = "2"
-members = ["components/api", "components/bme280", "components/core", "components/evdev", "components/gpio", "components/mdns", "components/mqtt", "components/power_utils", "components/shell", "components/web_server"]
+members = ["components/api", "components/bluetooth_proxy", "components/bme280", "components/core", "components/evdev", "components/gpio", "components/mdns", "components/mqtt", "components/power_utils", "components/shell", "components/web_server"]

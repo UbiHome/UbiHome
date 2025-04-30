@@ -107,7 +107,6 @@ fn cli() -> Command {
                 .long("configuration")
                 .help("Optional configuration file. If not provided, the default configuration will be used.")
                 .default_value("config.yaml")
-                // .group("tests")
         ])
         .subcommand(
             Command::new("install")
@@ -118,12 +117,20 @@ fn cli() -> Command {
                     )
         )
         .subcommand(
+            Command::new("update")
+                    .about("Update the current OSHome executable (from GitHub).")
+        )
+        .subcommand(
             Command::new("uninstall")
                     .about("Uninstall OSHome")
                     .arg(
                         Arg::new("location")
                         .help( "The location where OSHome is installed.")
                     )
+        )
+        .subcommand(
+            Command::new("validate")
+                    .about("Validates the Configuration File.")
         )
         .subcommand(
             Command::new("run")
@@ -135,7 +142,6 @@ fn cli() -> Command {
                         .hide(true)
                         .action(ArgAction::SetTrue)
                         .num_args(0)
-                        // .group("tests")
                 ])
         )
 }
@@ -165,8 +171,6 @@ fn read_base_config(path: Option<&String>) -> Result<String, String> {
 }
 
 fn main() {
-    println!("OSHome - {}", VERSION);
-
     let matches = cli().get_matches();
     let config_file = matches.try_get_one::<String>("configuration_file").unwrap();
 
@@ -188,6 +192,9 @@ fn main() {
                 install(location.unwrap().as_str());
             }
         }
+        Some(("update", sub_matches)) => {
+            todo!("Update OSHome");
+        }
         Some(("uninstall", sub_matches)) => {
             let location = sub_matches.try_get_one::<String>("location").unwrap();
             if let Some(location) = location {
@@ -197,6 +204,9 @@ fn main() {
                 let location = Text::new("OS Home is not installed under the default location. Where should the uninstall script run?").with_default(default_installation_path).prompt();
                 uninstall(location.unwrap().as_str());
             }
+        }
+        Some(("validate", sub_matches)) => {
+            todo!("Validate OSHome");
         }
         Some(("run", sub_matches)) => {
             let is_windows_service = sub_matches.get_one::<bool>("as-windows-service").unwrap();
@@ -231,6 +241,7 @@ fn get_all_modules(yaml: &String) -> Vec<Box<dyn Module>> {
     modules.push(Box::new(oshome_mdns::Default::new(&yaml)));
     modules.push(Box::new(oshome_api::Default::new(&yaml)));
     modules.push(Box::new(oshome_power_utils::Default::new(&yaml)));
+    modules.push(Box::new(oshome_bluetooth_proxy::Default::new(&yaml)));
     return modules
 }
 
@@ -272,6 +283,7 @@ fn run(
     config_path: Option<&String>,
     shutdown_signal: Option<mpsc::Receiver<()>>,
 ) -> Result<(), Box<dyn std::error::Error>> {
+    println!("OSHome - {}", VERSION);
 
 
 

@@ -13,6 +13,9 @@
         "components/api": {
             "skip-github-release": true
         },
+        "components/bluetooth_proxy": {
+            "skip-github-release": true
+        },
         "components/bme280": {
             "skip-github-release": true
         },

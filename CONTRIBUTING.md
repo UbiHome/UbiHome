@@ -8,6 +8,10 @@ Please follow the semantic commit message format for all commits.
 
 Just use the devcontainer setup.
 
+```bash
+sudo apt install libdbus-1-dev pkg-config
+```
+
 
 ## Current Pitfalls
 
