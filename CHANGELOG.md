@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.6](https://github.com/DanielHabenicht/OSHome/compare/v0.4.5...v0.4.6) (2025-04-30)
+
+
+### Bug Fixes
+
+* retry mqtt connections ([3fe55de](https://github.com/DanielHabenicht/OSHome/commit/3fe55de3ba09bbfd938a7583eb92942f4b50bc26))
+
 ## [0.4.5](https://github.com/DanielHabenicht/OSHome/compare/v0.4.4...v0.4.5) (2025-04-28)
 
 

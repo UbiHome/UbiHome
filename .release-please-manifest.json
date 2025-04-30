@@ -1,14 +1,14 @@
 {
-    ".": "0.4.5",
-    "components/api": "0.3.25",
-    "components/bme280": "0.4.5",
-    "components/core": "0.3.18",
-    "components/evdev": "0.4.5",
-    "components/mqtt": "0.4.0",
-    "components/power_utils": "0.4.2",
+    ".": "0.4.6",
+    "components/api": "0.3.26",
+    "components/bme280": "0.4.6",
+    "components/core": "0.3.19",
+    "components/evdev": "0.4.6",
+    "components/mqtt": "0.4.1",
+    "components/power_utils": "0.4.3",
     "components/python": "0.3.2",
-    "components/shell": "0.4.5",
-    "components/web_server": "0.4.5",
-    "components/gpio": "0.3.21",
-    "components/mdns": "0.3.25"
+    "components/shell": "0.4.6",
+    "components/web_server": "0.4.6",
+    "components/gpio": "0.4.0",
+    "components/mdns": "0.3.26"
 }

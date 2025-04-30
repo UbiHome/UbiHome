@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.4.1](https://github.com/DanielHabenicht/OSHome/compare/v0.4.0...oshome-mqtt-v0.4.1) (2025-04-30)
+
+
+### Bug Fixes
+
+* build error and add more power utils ([12b2fd3](https://github.com/DanielHabenicht/OSHome/commit/12b2fd3df3266ed28bc0499f8e89968d2e9a9e79))
+* retry mqtt connections ([3fe55de](https://github.com/DanielHabenicht/OSHome/commit/3fe55de3ba09bbfd938a7583eb92942f4b50bc26))
+
 ## [0.4.0](https://github.com/DanielHabenicht/OSHome/compare/oshome-mqtt-v0.3.21...oshome-mqtt-v0.4.0) (2025-04-28)
 
 
