@@ -2,8 +2,10 @@ oshome:
   name: new_awesome
 
 logger:
-  level: debug
+  level: INFO
   directory: ./logs
+  logs:
+    libmdns: INFO
 
 # mqtt: 
 #   broker: 127.0.0.1
@@ -41,19 +43,20 @@ button:
 
 
 sensor:
-  - platform: shell
-    name: "RAM Usage"
-    id: ram_usage
-    icon: mdi:memory
-    state_class: "measurement"
-    unit_of_measurement: "%"
-    update_interval: 30s # 0 only executes it once and assumes a long running processes.
-    command: |-
-      free | grep Mem | awk '{print $3/$2 * 100.0}'
-    # device_class: "data_size"
-  - platform: bme280
-    update_interval: 30s # 0 only executes it once and assumes a long running processes.
-    name: "bla"
+#   - platform: shell
+#     name: "RAM Usage"
+#     id: ram_usage
+#     icon: mdi:memory
+#     state_class: "measurement"
+#     unit_of_measurement: "%"
+#     update_interval: 30s # 0 only executes it once and assumes a long running processes.
+#     command: |-
+#       echo test
+#       # free | grep Mem | awk '{print $3/$2 * 100.0}'
+#     # device_class: "data_size"
+#   - platform: bme280
+#     update_interval: 30s # 0 only executes it once and assumes a long running processes.
+#     name: "bla"
 
 binary_sensor:
   - platform: shell
@@ -63,12 +66,17 @@ binary_sensor:
     device_class: presence
     update_interval: 10s
     command: |-
-      if hcitool con | grep -q "00:12:6F:F1:FF:61"; then
-          echo true
-      else
-          echo false
-      fi
-      
+      echo false
+      # if hcitool con | grep -q "00:12:6F:F1:FF:61"; then
+      #     echo true
+      # else
+      #     echo false
+      # fi
+    filters:
+     - invert:
+     - delayed_off: 5s
+    #  - delayed_on: 10s
+
   - platform: gpio
     name: "motion"
     icon: "mdi:motion-sensor"
@@ -76,6 +84,7 @@ binary_sensor:
     pin: 23 # 17
     pull_up: true
     update_interval: "0s"
+
 
 
 

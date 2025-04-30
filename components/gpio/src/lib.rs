@@ -44,7 +44,7 @@ impl Default {
         for (_, any_sensor) in config.binary_sensor.clone().unwrap_or_default() {
             match any_sensor.extra {
                 BinarySensorKind::gpio(binary_sensor) => {
-                    let object_id = any_sensor.default.get_object_id(&config.oshome.name);
+                    let object_id = any_sensor.default.get_object_id();
                     let id = any_sensor.default.id.unwrap_or(object_id.clone());
                     components.push(Component::BinarySensor(HABinarySensor {
                         platform: "sensor".to_string(),

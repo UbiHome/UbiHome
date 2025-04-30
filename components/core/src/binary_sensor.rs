@@ -1,21 +1,52 @@
+use std::time::Duration;
+use duration_str::deserialize_duration;
+
 use serde::Deserialize;
 
 use crate::utils::format_id;
 
 #[derive(Clone, Deserialize, Debug)]
+pub enum FilterType {
+    invert(Option<String>),
+
+    #[serde(deserialize_with = "deserialize_duration")]
+    delayed_off(Duration),
+
+    #[serde(deserialize_with = "deserialize_duration")]
+    delayed_on(Duration),
+}
+
+#[derive(Clone, Deserialize, Debug, PartialEq, Eq, Hash)]
+pub enum FilterTypeEnum {
+    invert,
+    delayed_off,
+    delayed_on,
+}
+
+#[derive(Clone, Deserialize, Debug)]
+#[serde(deny_unknown_fields)]
+
+pub struct BinarySensorFilter {
+    #[serde(flatten)]
+    pub filter: FilterType,
+
+}
+
+#[derive(Clone, Deserialize, Debug)]
+#[serde(deny_unknown_fields)]
 pub struct BinarySensorBase {
     pub id: Option<String>,
     pub name: String,
     pub icon: Option<String>,
     pub device_class: Option<String>,
 
-    pub filters: Option<Vec<String>>,
+    pub filters: Option<Vec<BinarySensorFilter>>,
 }
 
 // TODO implement as procedural macro
 impl BinarySensorBase {
-    pub fn get_object_id(&self, base_name: &String) -> String {
-        format_id(base_name, &self.id, &self.name)
+    pub fn get_object_id(&self) -> String {
+        format_id( &self.id, &self.name)
     }
 }
 

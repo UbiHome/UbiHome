@@ -1,8 +1,9 @@
 use std::collections::HashMap;
 
 use log::debug;
-use oshome_core::OSHome;
+use oshome_core::{binary_sensor::BinarySensorBase, template_mapper, OSHome};
 use serde::Deserialize;
+use serde::Deserializer;
 
 #[derive(Clone, Deserialize, Debug)]
 pub enum LogLevel {
@@ -71,8 +72,28 @@ impl Logger {
     }
 }
 
+
+#[derive(Clone, Debug, Deserialize)]
+pub struct BinarySensor {
+    #[serde(flatten)]
+    pub default: BinarySensorBase,
+}
+
+template_mapper!(map_binary_sensor, BinarySensor);
+
+
 #[derive(Clone, Deserialize, Debug)]
 pub struct CoreConfig {
     pub oshome: OSHome,
     pub logger: Option<Logger>,
+
+    // #[serde(default, deserialize_with = "map_button")]
+    // pub button: Option<HashMap<String, ButtonConfig>>,
+
+    // #[serde(default, deserialize_with = "map_sensor")]
+    // pub sensor: Option<HashMap<String, Sensor>>,
+
+    
+    #[serde(default, deserialize_with = "map_binary_sensor")]
+    pub binary_sensor: Option<HashMap<String, BinarySensor>>,
 }

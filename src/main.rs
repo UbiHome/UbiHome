@@ -5,18 +5,23 @@ use flexi_logger::writers::FileLogWriter;
 use flexi_logger::{detailed_format, Age, Cleanup, Criterion, Duplicate, FileSpec, Logger, Naming};
 use inquire::Text;
 use oshome::CoreConfig;
+use oshome_core::binary_sensor::FilterType;
 use oshome_core::home_assistant::sensors::Component;
 use oshome_core::{ChangedMessage, Module, PublishedMessage};
 
 use clap::{Arg, ArgAction, Command};
 use log::{debug, info, warn};
 use service::{install, uninstall};
+use std::collections::HashMap;
+use std::future::Future;
 use std::path::Path;
 use std::sync::mpsc;
+use std::thread::sleep;
 use std::time::Duration;
 use std::{env, fs};
 use tokio::sync::broadcast::{self, Receiver, Sender};
 use tokio::{runtime::Runtime, signal};
+use futures_signals::signal::{MapFuture, Mutable, MutableSignal, Signal, SignalExt, SignalFuture};
 
 #[cfg(target_os = "windows")]
 use windows_service::{
@@ -36,7 +41,8 @@ fn windows_service_main(_arguments: Vec<std::ffi::OsString>) {
     use std::time::Duration;
 
     use constants::SERVICE_NAME;
-    info!("Starting Windows service...");
+    println!("Starting Windows service...");
+    println!("Args: {:?}", _arguments);
 
     let (shutdown_tx, shutdown_rx) = std::sync::mpsc::channel();
     let status_handle =
@@ -65,9 +71,8 @@ fn windows_service_main(_arguments: Vec<std::ffi::OsString>) {
     dir.pop();
     dir.push("config.yaml");
     let config_file = dir.to_string_lossy().to_string();
-    let config_string: String = read_base_config(Some(&config_file)).expect("Failed to load base configuration");
 
-    if let Err(e) = run(&config_string, Some(shutdown_rx)) {
+    if let Err(e) = run(Some(&config_file), Some(shutdown_rx)) {
         error!("{}", e)
     }
 
@@ -162,62 +167,8 @@ fn read_base_config(path: Option<&String>) -> Result<String, String> {
 fn main() {
     println!("OSHome - {}", VERSION);
 
-    #[cfg(not(debug_assertions))]
-    use directories::BaseDirs;
-    #[cfg(not(debug_assertions))]
-    let base_dirs = BaseDirs::new().expect("Failed to get base directories");
-    #[cfg(not(debug_assertions))]
-    let log_directory = base_dirs.data_local_dir();
-
-    #[cfg(debug_assertions)]
-    let log_directory = Path::new("./");
-
-    #[cfg(not(debug_assertions))]
-    let log_level = "info";
-
-    #[cfg(debug_assertions)]
-    let log_level = "debug";
-
-    let mut logger_builder = Logger::try_with_env_or_str(log_level).unwrap();
-
-    logger_builder = logger_builder
-        .format_for_files(detailed_format)
-        .log_to_file(FileSpec::default().directory(&log_directory)) // write logs to file
-        // .write_mode(WriteMode::BufferAndFlush)
-        .append()
-        .rotate(
-            Criterion::AgeOrSize(Age::Day, 10 * 1024 * 1024),
-            Naming::Timestamps,
-            Cleanup::KeepLogFiles(7),
-        );
-
-    // if cfg!(debug_assertions) {
-        logger_builder = logger_builder.duplicate_to_stdout(Duplicate::Debug);
-    // }
-
-    let mut logger = logger_builder.start().unwrap();
-
-    println!("LogDirectory: {}", log_directory.display());
-    
     let matches = cli().get_matches();
     let config_file = matches.try_get_one::<String>("configuration_file").unwrap();
-    let config_string: String = read_base_config(config_file).expect("Failed to load base configuration");
-
-    let config = serde_yaml::from_str::<CoreConfig>(&config_string).unwrap();
-    if let Some(logger_config) = config.logger {
-        logger.reset_flw(&FileLogWriter::builder(
-            FileSpec::default().directory(
-                logger_config
-                    .clone()
-                    .directory
-                    .unwrap_or(log_directory.to_string_lossy().to_string()),
-            ),
-        )).unwrap();
-
-        logger
-            .parse_and_push_temp_spec( logger_config.get_flexi_logger_spec())
-            .unwrap();
-    };
 
     #[cfg(any(target_os = "linux", target_os = "macos"))]
     let default_installation_path = "/usr/bin/oshome";
@@ -260,7 +211,7 @@ fn main() {
                 panic!("Running as a Windows service is not supported on Linux.");
             } else {
                 // Run normally
-                run(&config_string, None).unwrap();
+                run( config_file,None).unwrap();
             }
         }
         _ => {
@@ -318,20 +269,176 @@ async fn run_modules(
 }
 
 fn run(
-    config: &String,
+    config_path: Option<&String>,
     shutdown_signal: Option<mpsc::Receiver<()>>,
 ) -> Result<(), Box<dyn std::error::Error>> {
+
+
+
+    #[cfg(not(debug_assertions))]
+    use directories::BaseDirs;
+    #[cfg(not(debug_assertions))]
+    let base_dirs = BaseDirs::new().expect("Failed to get base directories");
+    #[cfg(not(debug_assertions))]
+    let log_directory = base_dirs.data_local_dir();
+
+    #[cfg(debug_assertions)]
+    let log_directory = Path::new("./");
+
+    #[cfg(not(debug_assertions))]
+    let log_level = "info";
+
+    #[cfg(debug_assertions)]
+    let log_level = "debug";
+
+    let mut logger_builder = Logger::try_with_env_or_str(log_level).unwrap();
+
+    logger_builder = logger_builder
+        .format_for_files(detailed_format)
+        .log_to_file(FileSpec::default().directory(&log_directory)) // write logs to file
+        // .write_mode(WriteMode::BufferAndFlush)
+        .append()
+        .rotate(
+            Criterion::AgeOrSize(Age::Day, 10 * 1024 * 1024),
+            Naming::Timestamps,
+            Cleanup::KeepLogFiles(7),
+        );
+
+    // if cfg!(debug_assertions) {
+        logger_builder = logger_builder.duplicate_to_stdout(Duplicate::Debug);
+    // }
+
+    let mut logger = logger_builder.start().unwrap();
+
+    println!("LogDirectory: {}", log_directory.display());
+    
+    
+    let config_string: String = read_base_config(config_path).expect("Failed to load base configuration");
+
+    let config = serde_yaml::from_str::<CoreConfig>(&config_string).unwrap();
+    if let Some(logger_config) = config.logger.clone() {
+        logger.reset_flw(&FileLogWriter::builder(
+            FileSpec::default().directory(
+                logger_config
+                .clone()
+                    .directory
+                    .unwrap_or(log_directory.to_string_lossy().to_string()),
+            ),
+        )).unwrap();
+
+        logger
+            .parse_and_push_temp_spec(logger_config.get_flexi_logger_spec())
+            .unwrap();
+    };
+
+    warn!("Config: {:?}", &config);
 
     // Spawn the root task
     let rt = Runtime::new().unwrap();
     rt.block_on(async {
-        let mut modules = get_all_modules(&config);
+        let mut modules = get_all_modules(&config_string);
         log::info!("Loaded {} modules", modules.len());
         let components = initialize_modules(&mut modules).await.unwrap();
 
         let (internal_tx, modules_rx) = broadcast::channel::<PublishedMessage>(16);
         let (modules_tx, mut internal_rx) = broadcast::channel::<ChangedMessage>(16);
         let internal_tx_clone = internal_tx.clone();
+
+        // Workaround for https://github.com/Pauan/rust-signals/issues/75
+        let mut signal_map_binary_sensor: HashMap<String, Mutable<Option<Option<bool>>>> = HashMap::new();
+        for (key, any_sensor) in config.binary_sensor.clone().unwrap_or_default() {
+            let mutable: Mutable<Option<Option<bool>>> = Mutable::new(Option::None);
+            signal_map_binary_sensor.insert(
+                key,
+                mutable.clone());
+
+                let mutable_clone = mutable.clone();
+                tokio::spawn(async move {
+                    // let future: SignalFuture<MutableSignal<bool>> = mutable_clone.signal()
+                    println!("Filters: {:?}", any_sensor.default.filters);
+
+                    let mut signal = mutable_clone.signal().boxed();
+                    for filter in any_sensor.default.filters.unwrap_or_default() {
+                        println!("Filter: {:?}", filter);
+                        match filter.filter {
+                            FilterType::delayed_on(time) => {
+                                    // println!("delayed_on");
+                                    let time_clone = time.clone();
+                                signal = signal.map_future(move |value| {
+                                    let time_clone = time_clone.clone();
+                                    Box::pin(async move {
+                                        let value = value.and_then(|v| v);
+                                        if let Some(v) = value {
+                                            if v {
+                                                // println!("Before delay");
+    
+                                                sleep(time_clone);
+                                                // println!("After delay");
+                                                return value;
+                                            }
+                                        }
+                                        return value;
+                                    })
+                                }).boxed();
+                            }
+                            FilterType::delayed_off(time) => {
+                                let time_clone = time.clone();
+                                signal = signal.map_future(move |value| {
+                                    println!("delayed_off");
+                                    let time_clone = time_clone.clone();
+
+                                    Box::pin(async move {
+                                        let value = value.and_then(|v| v);
+                                        // println!("delayed_off value {:?}", value);
+
+                                        if let Some(v) = value {
+                                            if v {
+                                                // println!("Before delay");
+    
+                                                sleep(time_clone);
+                                                // println!("After delay");
+                                                return value;
+                                            }
+                                        }
+                                        return value;
+                                    })
+                                }).boxed();
+                            }
+                            FilterType::invert(_) => {
+                                signal = signal.map(|value| {
+                                    println!("invert");
+                                    if value.is_some() {
+                                        return Some(Some(!value.and_then(|v| v).unwrap()));
+                                    }
+                                    return value;
+                                }).boxed();
+                            }
+                        }
+                    
+                    }
+                    // React to signal changes
+                    signal
+                        .for_each(|value| {
+                            println!("Value: {:?}", value);
+                            async {}
+                        })
+                        .await;
+
+
+
+                    // // Debounce future for "off" values
+                    // future
+                    //     .for_each(|value| {
+                    //         // This code is run for the current value of my_state,
+                    //         // and also every time my_state changes
+                    //         println!("From signal: {}", value);
+                    //         async {}
+                    //     })
+                    //     .await;
+                });
+            
+        }
+
         tokio::spawn({
             async move {
                 while let Ok(cmd) = internal_rx.recv().await {
@@ -342,9 +449,18 @@ fn run(
                             publish_cmd = Some(PublishedMessage::ButtonPressed { key });
                         }
                         ChangedMessage::SensorValueChange { key, value } => {
+                            println!("SensorValueChange: {}", value);
+
+                            // signal_map_binary_sensor.get(&key).map(|signal| {
+                            //     signal.set(value.to_string());
+                            // });
                             publish_cmd = Some(PublishedMessage::SensorValueChanged { key, value });
                         }
                         ChangedMessage::BinarySensorValueChange { key, value } => {
+                            println!("BinarySensorValueChange: {}", value);
+                            signal_map_binary_sensor.get(&key).map(|signal| {
+                                signal.set(Some(Some(value)));
+                            });
                             publish_cmd =
                                 Some(PublishedMessage::BinarySensorValueChanged { key, value });
                         }

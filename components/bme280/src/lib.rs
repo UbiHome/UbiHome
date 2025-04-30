@@ -90,7 +90,7 @@ impl Default {
                         device_class: Some(sensor.pressure.clone().and_then(|p| p.device_class).unwrap_or("temperature".to_string())),
                         unit_of_measurement: None,
                     });
-                    let object_id = temperature.get_object_id(&config.oshome.name);
+                    let object_id = temperature.get_object_id();
                     let id = temperature.id.unwrap_or(object_id.clone());
                     sensor_entries.insert(Measurement::Temperature, id.clone());
                     components.push(Component::Sensor(HASensor {
@@ -120,7 +120,7 @@ impl Default {
                         device_class: Some(sensor.pressure.clone().and_then(|p| p.device_class).unwrap_or("pressure".to_string())),
                         unit_of_measurement: None,
                     });
-                    let object_id = pressure.get_object_id(&config.oshome.name);
+                    let object_id = pressure.get_object_id();
                     let id = pressure.id.unwrap_or(object_id.clone());
                     sensor_entries.insert(Measurement::Pressure, id.clone());
                     components.push(Component::Sensor(HASensor {
@@ -145,7 +145,7 @@ impl Default {
                         device_class: Some(sensor.humidity.clone().and_then(|p| p.device_class).unwrap_or("humidity".to_string())),
                         unit_of_measurement: None,
                     });
-                    let object_id = humidity.get_object_id(&config.oshome.name);
+                    let object_id = humidity.get_object_id();
                     let id = humidity.id.unwrap_or(object_id.clone());
                     sensor_entries.insert(Measurement::Humidity, id.clone());
                     components.push(Component::Sensor(HASensor {

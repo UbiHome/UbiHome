@@ -64,7 +64,7 @@ impl Default {
         for (_, any_sensor) in config.button.clone().unwrap_or_default() {
             match any_sensor.extra {
                 ButtonKind::power_utils(button) => {
-                    let id = any_sensor.default.get_object_id(&config.oshome.name);
+                    let id = any_sensor.default.get_object_id();
                     let button_component;
                     match button.action {
                         PowerAction::Reboot => {

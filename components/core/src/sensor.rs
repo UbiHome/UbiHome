@@ -15,8 +15,8 @@ pub struct SensorBase {
 
 // TODO implement as procedural macro
 impl SensorBase {
-    pub fn get_object_id(&self, base_name: &String) -> String {
-        format_id(base_name, &self.id, &self.name)
+    pub fn get_object_id(&self) -> String {
+        format_id(&self.id, &self.name)
     }
 }
 

@@ -25,7 +25,7 @@ macro_rules! template_mapper {
                     let mut map = HashMap::with_capacity(seq.size_hint().unwrap_or(0));
         
                     while let Some(item) = seq.next_element::<$component_type>()? {
-                        let key = item.default.id.clone().unwrap_or(item.default.name.clone());
+                        let key = item.default.get_object_id();
                         match map.entry(key) {
                             std::collections::hash_map::Entry::Occupied(entry) => {
                                 return Err(serde::de::Error::custom(format!(

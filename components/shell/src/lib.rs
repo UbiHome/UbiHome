@@ -84,7 +84,7 @@ impl Default {
         for (_, any_sensor) in config.sensor.clone().unwrap_or_default() {
             match any_sensor.extra {
                 SensorKind::shell(sensor) => {
-                    let id = any_sensor.default.get_object_id(&config.oshome.name);
+                    let id = any_sensor.default.get_object_id();
                     components.push(Component::Sensor(HASensor {
                         platform: "sensor".to_string(),
                         icon: any_sensor.default.icon.clone(),
@@ -104,7 +104,7 @@ impl Default {
         for (_, any_sensor) in config.binary_sensor.clone().unwrap_or_default() {
             match any_sensor.extra {
                 BinarySensorKind::shell(binary_sensor) => {
-                    let id = any_sensor.default.get_object_id(&config.oshome.name);
+                    let id = any_sensor.default.get_object_id();
                     components.push(Component::BinarySensor(HABinarySensor {
                         platform: "sensor".to_string(),
                         icon: any_sensor.default.icon.clone(),
@@ -123,7 +123,7 @@ impl Default {
         for (_, any_sensor) in config.button.clone().unwrap_or_default() {
             match any_sensor.extra {
                 ButtonKind::shell(button) => {
-                    let id = any_sensor.default.get_object_id(&config.oshome.name);
+                    let id = any_sensor.default.get_object_id();
                     components.push(Component::Button(HAButton {
                         platform: "sensor".to_string(),
                         icon: any_sensor.default.icon.clone(),
@@ -268,7 +268,7 @@ impl Module for Default {
                                         debug!("Invalid binary sensor output: {}", output);
                                         continue;
                                     };
-                                    println!("Binary Sensor '{}' output: {}", key, value);
+                                    debug!("Binary Sensor '{}' output: {}", key, value);
 
                                     _ = cloned_sender.send(
                                         ChangedMessage::BinarySensorValueChange {
