@@ -3,7 +3,7 @@ use oshome_core::{config_template, home_assistant::sensors::Component, ChangedMe
 use rumqttc::{AsyncClient, Event, MqttOptions, QoS};
 use serde::{Deserialize, Deserializer, Serialize};
 use std::{collections::HashMap, future::Future, pin::Pin, str, time::Duration};
-use tokio::sync::broadcast::{Receiver, Sender};
+use tokio::{sync::broadcast::{Receiver, Sender}, time::sleep};
 
 #[derive(Clone, Deserialize, Debug)]
 pub struct MqttConfig {
@@ -202,8 +202,23 @@ impl Module for Default {
                         }
                         Ok(Event::Outgoing(_)) => {}
                         Err(e) => {
-                            error!("Error in MQTT event loop: {:?}", e);
-                            break;
+                            match e {
+                                rumqttc::Error::Io(e_io) => {
+                                    match e_io {
+                                        std::io::ErrorKind::NetworkUnreachable => {
+                                            warn!("Network unreachable, trying again...");
+                                            sleep(Duration::from_secs(60))
+                                        }
+                                        _ => {
+                                            error!("Network error: {:?}", e);
+                                            break;
+                                        }
+                                    }
+                                }
+                                _ => {
+                                    error!("Error in MQTT event loop: {:?}", e);
+                                    break;
+                                }
                         }
                     }
                 }
@@ -299,6 +314,8 @@ impl Module for Default {
                             debug!("Publishing discovery message to topic: {}", discovery_topic);
                             debug!("Discovery payload: {}", discovery_payload);
                 
+                            // ERROR [oshome_mqtt] Error in MQTT event loop: Io(Os { code: 101, kind: NetworkUnreachable, message: "Network unreachable" })
+
                             client
                                 .publish(&discovery_topic, QoS::AtLeastOnce, false, discovery_payload)
                                 .await
