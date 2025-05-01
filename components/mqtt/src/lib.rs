@@ -2,9 +2,9 @@ use log::{debug, error, info, warn};
 use oshome_core::{
     config_template, home_assistant::sensors::Component, ChangedMessage, Module, PublishedMessage,
 };
-use rumqttc::{AsyncClient, ConnectionError, Event, MqttOptions, QoS};
+use rumqttc::{AsyncClient, ConnectionError, Event, MqttOptions, QoS, StateError};
 use serde::{Deserialize, Deserializer, Serialize};
-use std::{collections::HashMap, future::Future, pin::Pin, str, time::Duration};
+use std::{collections::HashMap, future::{self, Future}, pin::Pin, str, time::Duration};
 use tokio::{
     sync::broadcast::{Receiver, Sender},
     time::sleep,
@@ -209,10 +209,46 @@ impl Module for Default {
                             ConnectionError::Io(e_io) => match e_io.kind() {
                                 std::io::ErrorKind::NetworkUnreachable => {
                                     warn!("Network unreachable, trying again...");
-                                    sleep(Duration::from_secs(60)).await
+                                    sleep(Duration::from_secs(60)).await;
+                                    continue;
+
+                                }
+                                std::io::ErrorKind::ConnectionAborted => {
+                                    warn!("Connection aborted, trying again...");
+                                    sleep(Duration::from_secs(60)).await;
+                                    continue;
                                 }
                                 _ => {
                                     error!("Network error: {:?}", e_io);
+                                    break;
+                                }
+                            },
+                            ConnectionError::MqttState(e_mqtt) => match e_mqtt {
+                                StateError::Io(io_error) => {
+                                    match io_error.kind() {
+                                        std::io::ErrorKind::NetworkUnreachable => {
+                                            warn!("Network unreachable, trying again...");
+                                            sleep(Duration::from_secs(60)).await;
+                                            continue;
+                                        }
+                                        std::io::ErrorKind::ConnectionAborted => {
+                                            warn!("Connection aborted, trying again...");
+                                            sleep(Duration::from_secs(60)).await;
+                                            continue;
+                                        }
+                                        _ => {
+                                            error!("Network error: {:?}", io_error);
+                                            break;
+                                        }
+                                    }
+                                }
+                                StateError::AwaitPingResp => {
+                                    warn!("Ping response not received (maybe network is down?), trying again...");
+                                    sleep(Duration::from_secs(60)).await;
+                                    continue;
+                                }
+                                _ => {
+                                    error!("MqttState error: {:?}", e_mqtt);
                                     break;
                                 }
                             },
@@ -223,6 +259,7 @@ impl Module for Default {
                         },
                     }
                 }
+                error!("MQTT Receiver terminated");
             });
 
             // Handle Sensor Updates
@@ -345,9 +382,6 @@ impl Module for Default {
 
                             debug!("Publishing discovery message to topic: {}", discovery_topic);
                             debug!("Discovery payload: {}", discovery_payload);
-
-                            // ERROR [oshome_mqtt] Error in MQTT event loop: Io(Os { code: 101, kind: NetworkUnreachable, message: "Network unreachable" })
-
                             client
                                 .publish(
                                     &discovery_topic,
@@ -403,7 +437,14 @@ impl Module for Default {
                         }
                     }
                 }
+                error!("MQTT Sender terminated");
             });
+
+
+            // Wait indefinitely to keep the eventloop alive
+            let future = future::pending();
+            let () = future.await;
+            error!("MQTT event loop terminated");
             Ok(())
         })
     }
