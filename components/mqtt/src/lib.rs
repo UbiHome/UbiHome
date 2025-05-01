@@ -44,8 +44,8 @@ struct HAMqttSensor {
     #[serde(rename = "ic")]
     icon: Option<String>,
     name: String,
-    device_class: Option<String>,
-    unit_of_measurement: Option<String>,
+    device_class: String,
+    unit_of_measurement: String,
     unique_id: String,
     object_id: String,
     state_topic: String,
@@ -59,7 +59,7 @@ struct HAMqttBinarySensor {
     #[serde(rename = "ic")]
     icon: Option<String>,
     name: String,
-    device_class: Option<String>,
+    device_class: String,
     unique_id: String,
     object_id: String,
     state_topic: String,
@@ -271,10 +271,14 @@ impl Module for Default {
                                                 platform: "sensor".to_string(),
                                                 icon: sensor.icon.clone(),
                                                 unique_id: id.clone(),
-                                                device_class: sensor.device_class.clone(),
+                                                device_class: sensor
+                                                    .device_class
+                                                    .clone()
+                                                    .unwrap_or("".to_string()),
                                                 unit_of_measurement: sensor
                                                     .unit_of_measurement
-                                                    .clone(),
+                                                    .clone()
+                                                    .unwrap_or("".to_string()),
                                                 name: sensor.name.clone(),
                                                 state_topic: format!(
                                                     "{}/{}",
@@ -296,7 +300,10 @@ impl Module for Default {
                                                 platform: "binary_sensor".to_string(),
                                                 icon: sensor.icon.clone(),
                                                 unique_id: id.clone(),
-                                                device_class: sensor.device_class.clone(),
+                                                device_class: sensor
+                                                    .device_class
+                                                    .clone()
+                                                    .unwrap_or("".to_string()),
                                                 name: sensor.name.clone(),
                                                 state_topic: format!(
                                                     "{}/{}",

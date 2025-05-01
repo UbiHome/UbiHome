@@ -63,7 +63,6 @@ pub struct InternalSensor {
     pub update_interval: Option<Duration>,
 }
 
-
 #[derive(Clone, Debug)]
 pub struct Default {
     // config: CoreConfig,
@@ -86,8 +85,8 @@ impl Default {
                         id: None,
                         name: "Temperature".to_string(),
                         icon: None,
-                        state_class: Some(sensor.temperature.clone().and_then(|p| p.state_class).unwrap_or("measurement".to_string())),
-                        device_class: Some(sensor.pressure.clone().and_then(|p| p.device_class).unwrap_or("temperature".to_string())),
+                        state_class: None,
+                        device_class: None,
                         unit_of_measurement: None,
                     });
                     let object_id = temperature.get_object_id();
@@ -102,7 +101,18 @@ impl Default {
                                 .clone(),
                         ),
                         unique_id: Some(id.clone()),
-                        device_class: temperature.device_class.clone(),
+                        state_class: Some(
+                            temperature
+                                .state_class
+                                .clone()
+                                .unwrap_or("measurement".to_string()),
+                        ),
+                        device_class: Some(
+                            temperature
+                                .device_class
+                                .clone()
+                                .unwrap_or("temperature".to_string()),
+                        ),
                         unit_of_measurement: Some(
                             temperature
                                 .unit_of_measurement
@@ -116,8 +126,8 @@ impl Default {
                         id: None,
                         name: "Pressure".to_string(),
                         icon: None,
-                        state_class: Some(sensor.pressure.clone().and_then(|p| p.state_class).unwrap_or("measurement".to_string())),
-                        device_class: Some(sensor.pressure.clone().and_then(|p| p.device_class).unwrap_or("pressure".to_string())),
+                        state_class: None,
+                        device_class: None,
                         unit_of_measurement: None,
                     });
                     let object_id = pressure.get_object_id();
@@ -127,13 +137,25 @@ impl Default {
                         platform: "sensor".to_string(),
                         icon: Some(pressure.icon.unwrap_or("mdi:umbrella".to_string()).clone()),
                         unique_id: Some(id.clone()),
-                        device_class: pressure.device_class.clone(),
+                        state_class: Some(
+                            pressure
+                                .state_class
+                                .clone()
+                                .unwrap_or("measurement".to_string()),
+                        ),
+                        device_class: Some(
+                            pressure
+                                .device_class
+                                .clone()
+                                .unwrap_or("pressure".to_string()),
+                        ),
                         unit_of_measurement: Some(
                             pressure
                                 .unit_of_measurement
                                 .unwrap_or("Pa".to_string())
                                 .clone(),
                         ),
+
                         name: pressure.name.clone(),
                         object_id: id.clone(),
                     }));
@@ -142,7 +164,7 @@ impl Default {
                         name: "Humidity".to_string(),
                         icon: None,
                         state_class: None,
-                        device_class: Some(sensor.humidity.clone().and_then(|p| p.device_class).unwrap_or("humidity".to_string())),
+                        device_class: None,
                         unit_of_measurement: None,
                     });
                     let object_id = humidity.get_object_id();
@@ -157,7 +179,18 @@ impl Default {
                                 .clone(),
                         ),
                         unique_id: Some(id.clone()),
-                        device_class: humidity.device_class.clone(),
+                        state_class: Some(
+                            temperature
+                                .state_class
+                                .clone()
+                                .unwrap_or("measurement".to_string()),
+                        ),
+                        device_class: Some(
+                            humidity
+                                .device_class
+                                .clone()
+                                .unwrap_or("humidity".to_string()),
+                        ),
                         unit_of_measurement: Some(
                             humidity
                                 .unit_of_measurement

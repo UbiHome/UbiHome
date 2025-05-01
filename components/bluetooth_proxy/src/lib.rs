@@ -1,4 +1,4 @@
-use log::info;
+use log::{debug, info};
 use oshome_core::NoConfig;
 use oshome_core::{
     config_template, home_assistant::sensors::Component, ChangedMessage, Module, PublishedMessage,
@@ -52,13 +52,15 @@ impl Module for Default {
 
     fn run(
         &self,
-        _sender: Sender<ChangedMessage>,
+        sender: Sender<ChangedMessage>,
         _: Receiver<PublishedMessage>,
     ) -> Pin<Box<dyn Future<Output = Result<(), Box<dyn std::error::Error>>> + Send + 'static>>
     {
         let config = self.config.clone();
         info!("Starting Bluetooth Proxy with config: {:?}", config.mdns);
         Box::pin(async move {
+
+            // TODO: Check if bluetooth is enabled
 
             let manager = Manager::new().await.expect("Failed to create bluetooth manager");
 
@@ -67,7 +69,7 @@ impl Module for Default {
             let central = get_central(&manager).await;
         
             let central_state = central.adapter_state().await.expect("No adapter found");
-            println!("CentralState: {:?}", central_state);
+            info!("CentralState: {:?}", central_state);
         
             // Each adapter has an event stream, we fetch via events(),
             // simplifying the type, this will return what is essentially a
@@ -86,36 +88,50 @@ impl Module for Default {
                         let peripheral = central.peripheral(&id).await?;
                         let properties = peripheral.properties().await?;
                         let name = properties
-                            .and_then(|p| p.local_name)
-                            .map(|local_name| format!("Name: {local_name}"))
+                                                    .as_ref()
+                                                    .and_then(|p| p.local_name.clone())
+                                                    .unwrap_or_default();
+
+                        let rssi = properties
+                            .as_ref()
+                            .and_then(|p| p.rssi.clone())
                             .unwrap_or_default();
-                        println!("DeviceDiscovered: {:?} {}", id, name);
+
+                            debug!("DeviceDiscovered: {:?} Name: {} RSSI: {}", id, name, rssi);
+                        _ = sender.send(ChangedMessage::BluetoothProxyMessage { mac: id.to_string(), rssi: rssi });
                     }
                     CentralEvent::StateUpdate(state) => {
-                        println!("AdapterStatusUpdate {:?}", state);
+                        debug!("AdapterStatusUpdate {:?}", state);
                     }
                     CentralEvent::DeviceConnected(id) => {
-                        println!("DeviceConnected: {:?}", id);
+                        debug!("DeviceConnected: {:?}", id);
                     }
                     CentralEvent::DeviceDisconnected(id) => {
-                        println!("DeviceDisconnected: {:?}", id);
+                        debug!("DeviceDisconnected: {:?}", id);
                     }
                     CentralEvent::ManufacturerDataAdvertisement {
                         id,
                         manufacturer_data,
                     } => {
-                        println!(
-                            "ManufacturerDataAdvertisement: {:?}, {:?}",
-                            id, manufacturer_data
+                        let peripheral = central.peripheral(&id).await?;
+                        let properties = peripheral.properties().await?;
+
+                        let rssi = properties
+                            .as_ref()
+                            .and_then(|p| p.rssi.clone())
+                            .unwrap_or_default();
+                        debug!(
+                            "ManufacturerDataAdvertisement: {:?}, {}, {:?}",
+                            id, rssi, manufacturer_data
                         );
                     }
                     CentralEvent::ServiceDataAdvertisement { id, service_data } => {
-                        println!("ServiceDataAdvertisement: {:?}, {:?}", id, service_data);
+                        debug!("ServiceDataAdvertisement: {:?}, {:?}", id, service_data);
                     }
                     CentralEvent::ServicesAdvertisement { id, services } => {
                         let services: Vec<String> =
                             services.into_iter().map(|s| s.to_short_string()).collect();
-                        println!("ServicesAdvertisement: {:?}, {:?}", id, services);
+                            debug!("ServicesAdvertisement: {:?}, {:?}", id, services);
                     }
                     _ => {}
                 }

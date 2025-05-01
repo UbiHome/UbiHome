@@ -5,6 +5,7 @@ pub mod sensor_mapper;
 pub mod button;
 pub mod mapper;
 pub mod utils;
+pub mod internal;
 pub extern crate paste;
 
 use home_assistant::sensors::Component;
@@ -36,6 +37,7 @@ pub enum ChangedMessage {
     ButtonPress { key: String },
     SensorValueChange { key: String, value: String },
     BinarySensorValueChange { key: String, value: bool },
+    BluetoothProxyMessage { mac: String, rssi: i16},
 }
 
 
@@ -45,6 +47,7 @@ pub enum PublishedMessage {
     ButtonPressed { key: String },
     SensorValueChanged { key: String, value: String },
     BinarySensorValueChanged { key: String, value: bool },
+    BluetoothProxyMessage { mac: String, rssi: i16},
 }
 
 #[derive(Clone, Deserialize, Debug)]

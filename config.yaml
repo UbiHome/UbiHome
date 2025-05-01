@@ -6,6 +6,11 @@ logger:
   directory: ./logs
   logs:
     libmdns: INFO
+    oshome_api: debug
+
+mdns:
+  ip: "192.168.178.33"
+  mac: "18:65:71:EB:5A:FB"
 
 # mqtt: 
 #   broker: 127.0.0.1

@@ -90,6 +90,7 @@ impl Default {
                         icon: any_sensor.default.icon.clone(),
                         unique_id: Some(id.clone()),
                         device_class: any_sensor.default.device_class.clone(),
+                        state_class: any_sensor.default.state_class.clone(),
                         unit_of_measurement: any_sensor.default.unit_of_measurement.clone(),
                         name: any_sensor.default.name.clone(),
                         object_id: id.clone(),

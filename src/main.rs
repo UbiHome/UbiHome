@@ -242,6 +242,7 @@ fn get_all_modules(yaml: &String) -> Vec<Box<dyn Module>> {
     modules.push(Box::new(oshome_api::Default::new(&yaml)));
     modules.push(Box::new(oshome_power_utils::Default::new(&yaml)));
     modules.push(Box::new(oshome_bluetooth_proxy::Default::new(&yaml)));
+    modules.push(Box::new(oshome_web_server::Default::new(&yaml)));
     return modules
 }
 
@@ -475,6 +476,12 @@ fn run(
                             });
                             publish_cmd =
                                 Some(PublishedMessage::BinarySensorValueChanged { key, value });
+                        }
+                        ChangedMessage::BluetoothProxyMessage { mac, rssi } => {
+                            publish_cmd = Some(PublishedMessage::BluetoothProxyMessage {
+                                mac: mac,
+                                rssi: rssi,
+                            });
                         }
                     }
                     if let Some(pcmd) = publish_cmd {

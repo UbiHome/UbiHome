@@ -13,6 +13,8 @@ use tokio::sync::broadcast::{Receiver, Sender};
 #[derive(Clone, Deserialize, Debug)]
 pub struct MdnsConfig {
     pub disabled: Option<bool>,
+    pub ip: Option<String>,
+    pub mac: Option<String>,
 }
 
 config_template!(mdns, Option<MdnsConfig>, NoConfig, NoConfig, NoConfig);
@@ -54,7 +56,15 @@ impl Module for Default {
                 Ok(Some(ma)) => {
                     let mac_hex = ma.to_string().replace(":", "").to_uppercase();
                     
-                    let responder = libmdns::Responder::new().unwrap();
+                    let responder: libmdns::Responder;
+                    if let Some(ip) = config.mdns.clone().and_then(|c| c.ip) {
+                        let ip_addr = ip.parse::<std::net::IpAddr>().map_err(|e| format!("Invalid IP address: {}", e))?;
+                        responder = libmdns::Responder::new_with_ip_list(vec![ip_addr]).unwrap();
+
+                    }else{
+                        responder = libmdns::Responder::new().unwrap();
+
+                    }
 
                     let svc_name = config.oshome.name;
                     let friendly_name = config.oshome.friendly_name.unwrap_or(svc_name.clone());
@@ -67,7 +77,7 @@ impl Module for Default {
                             &format!("friendly_name={}", friendly_name).to_string(),
                             "version=2024.4.2",
                             "network=wifi",
-                            &format!("mac={}", mac_hex),
+                            &format!("mac={}", config.mdns.and_then(|c| c.mac).unwrap_or(mac_hex)),
                             "platform=ESP32",
                             "board=esp32dev",
                         ],

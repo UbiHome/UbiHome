@@ -19,11 +19,13 @@ pub struct HAButton {
     pub object_id: String,
 }
 
+// https://developers.home-assistant.io/docs/core/entity/sensor/
 #[derive(Clone, Serialize, Deserialize, Debug)]
 pub struct HASensor {
     pub name: String,
     pub platform: String,
     pub icon: Option<String>,
+    pub state_class: Option<String>,
     pub device_class: Option<String>,
     pub unit_of_measurement: Option<String>,
     pub unique_id: Option<String>,

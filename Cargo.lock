@@ -913,9 +913,9 @@ dependencies = [
 
 [[package]]
 name = "esphome-native-api"
-version = "0.0.3"
+version = "1.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6eac4c0020dd2b68ee5c0650f45e7161d61f2f45aec559ba35ca2105373489fb"
+checksum = "ddaeb56c709f924342ef677e19dda13cb4321b3d0760c84a866fd748bd79c2bb"
 dependencies = [
  "log",
  "prost",
@@ -2026,6 +2026,7 @@ dependencies = [
  "serde",
  "serde_yaml",
  "tokio",
+ "whoami",
 ]
 
 [[package]]
@@ -2157,9 +2158,11 @@ name = "oshome-web_server"
 version = "0.4.6"
 dependencies = [
  "axum",
+ "duration-str",
  "log",
  "oshome-core",
  "serde",
+ "serde_yaml",
  "tokio",
  "tower-http",
 ]
