@@ -1,42 +1,53 @@
 use esphome_native_api::parser;
 use esphome_native_api::parser::ProtoMessage;
 use esphome_native_api::proto;
+use esphome_native_api::proto::BluetoothLeRawAdvertisement;
+use esphome_native_api::proto::BluetoothServiceData;
 use esphome_native_api::proto::DeviceInfoResponse;
 use esphome_native_api::proto::EntityCategory;
 use esphome_native_api::proto::ListEntitiesSensorResponse;
 use esphome_native_api::proto::SensorLastResetType;
 use esphome_native_api::proto::SensorStateClass;
 use esphome_native_api::to_packet;
+use esphome_native_api::to_packet_from_ref;
 use log::debug;
 use log::info;
+use log::trace;
 use log::warn;
 use oshome_core::NoConfig;
 use oshome_core::{
     config_template, home_assistant::sensors::Component, ChangedMessage, Module, PublishedMessage,
 };
 use serde::{Deserialize, Deserializer};
+use tokio::select;
 use std::collections::HashMap;
+use std::num::ParseIntError;
+use std::sync::RwLock;
 use std::{future::Future, pin::Pin, str};
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::TcpListener;
+use tokio::sync::broadcast;
 use tokio::sync::broadcast::Receiver;
 use tokio::sync::broadcast::Sender;
 
 #[derive(Clone, Deserialize, Debug)]
-pub struct ApiConfig {
-    pub disabled: Option<bool>,
+pub struct ApiConfig {}
+
+fn mac_to_u64(mac: &str) -> Result<u64, ParseIntError> {
+    let mac = mac.replace(":", "");
+    u64::from_str_radix(&mac, 16)
 }
 
 config_template!(api, Option<ApiConfig>, NoConfig, NoConfig, NoConfig);
 
 #[derive(Clone, Debug)]
-pub struct Default {
+pub struct OSHomeDefault {
     config: CoreConfig,
     components: HashMap<String, ProtoMessage>,
     device_info: DeviceInfoResponse,
 }
 
-impl Default {
+impl OSHomeDefault {
     pub fn new(config_string: &String) -> Self {
         let config = serde_yaml::from_str::<CoreConfig>(config_string).unwrap();
 
@@ -53,9 +64,10 @@ impl Default {
             project_name: "".to_owned(),
             project_version: "".to_owned(),
             webserver_port: 8080,
+            // See https://github.com/esphome/aioesphomeapi/blob/c1fee2f4eaff84d13ca71996bb272c28b82314fc/aioesphomeapi/model.py#L154
             legacy_bluetooth_proxy_version: 1,
-            bluetooth_proxy_feature_flags: 0,
-            manufacturer: "".to_string(),
+            bluetooth_proxy_feature_flags: 1,
+            manufacturer: "Test".to_string(),
             // format!(
             //     "{} {} {}",
             //     whoami::platform(),
@@ -70,10 +82,10 @@ impl Default {
             legacy_voice_assistant_version: 0,
             voice_assistant_feature_flags: 0,
             suggested_area: "".to_owned(),
-            bluetooth_mac_address: "".to_owned(),
+            bluetooth_mac_address: "18:65:71:EB:5A:FB".to_owned(),
         };
 
-        Default {
+        OSHomeDefault {
             config: config,
             components: HashMap::new(),
             device_info: device_info,
@@ -81,7 +93,7 @@ impl Default {
     }
 }
 
-impl Module for Default {
+impl Module for OSHomeDefault {
     fn validate(&mut self) -> Result<(), String> {
         Ok(())
     }
@@ -188,6 +200,53 @@ impl Module for Default {
                 }
                 break;
             }
+            let (answer_messages_tx, answer_messages_rx) = broadcast::channel::<ProtoMessage>(16);
+            let (messages_tx, messages_rx) = broadcast::channel::<ProtoMessage>(16);
+            tokio::spawn(async move {
+                while let Ok(cmd) = receiver.recv().await {
+                    match cmd {
+                        PublishedMessage::BluetoothProxyMessage(msg) => {
+                            debug!("BluetoothProxyMessage: {:?}", &msg);
+                            let service_data = msg
+                                .service_data
+                                .iter()
+                                .map(|(k, v)| {
+                                    BluetoothServiceData {
+                                        uuid: k.to_string(),
+                                        data: v.clone(),
+                                        legacy_data: Vec::new(),
+                                    }
+                                }).collect();
+                            let manufacturer_data = msg
+                                .manufacturer_data
+                                .iter()
+                                .map(|(k, v)| {
+                                    BluetoothServiceData {
+                                        uuid: k.to_string(),
+                                        data: v.clone(),
+                                        legacy_data: Vec::new(),
+                                    }
+                                }).collect();
+                            let test = proto::BluetoothLeAdvertisementResponse {
+                                address: mac_to_u64(&msg.mac).unwrap(),
+                                rssi: msg.rssi.try_into().unwrap(),
+                                address_type: 1,
+                                name: msg.name.as_bytes().to_vec(),
+                                service_uuids: msg.service_uuids,
+                                service_data: service_data,
+                                manufacturer_data: manufacturer_data,
+                            };
+
+                            messages_tx
+                                .send(ProtoMessage::BluetoothLeAdvertisementResponse(
+                                    test
+                                ))
+                                .unwrap();
+                        }
+                        _ => {}
+                    }
+                }
+            });
 
             let addr = "0.0.0.0:6053".to_string();
             let listener = TcpListener::bind(&addr).await?;
@@ -195,16 +254,19 @@ impl Module for Default {
 
             loop {
                 // Asynchronously wait for an inbound socket.
-                let (mut socket, _) = listener.accept().await?;
+                let (socket, _) = listener.accept().await?;
                 debug!("Accepted request from {}", socket.peer_addr().unwrap());
+                let (mut read, mut write) = tokio::io::split(socket);
 
                 let device_info_clone = device_info.clone();
                 let api_components_clone = api_components.clone();
+                // Read Loop
+                let answer_messages_tx_clone = answer_messages_tx.clone();
                 tokio::spawn(async move {
                     let mut buf = vec![0; 1024];
 
                     loop {
-                        let n = socket
+                        let n = read
                             .read(&mut buf)
                             .await
                             .expect("failed to read data from socket");
@@ -213,7 +275,7 @@ impl Module for Default {
                             return;
                         }
 
-                        debug!("TCP: {:02X?}", &buf[0..n]);
+                        trace!("TCP: {:02X?}", &buf[0..n]);
 
                         let mut cursor = 0;
 
@@ -232,8 +294,6 @@ impl Module for Default {
                             let message =
                                 parser::parse_proto_message(message_type, packet_content).unwrap();
 
-                            let mut answer_buf: Vec<u8> = vec![];
-                            let mut disconnect: bool = false;
                             match message {
                                 ProtoMessage::HelloRequest(hello_request) => {
                                     debug!("HelloRequest: {:?}", hello_request);
@@ -243,82 +303,53 @@ impl Module for Default {
                                         server_info: "Rust: esphome-native-api".to_string(),
                                         name: device_info_clone.name.clone(),
                                     };
-                                    debug!("HelloResponse: {:?}", response_message);
-
-                                    answer_buf = [
-                                        answer_buf,
-                                        to_packet(ProtoMessage::HelloResponse(response_message))
-                                            .unwrap(),
-                                    ]
-                                    .concat();
+                                    answer_messages_tx_clone
+                                        .send(ProtoMessage::HelloResponse(response_message))
+                                        .unwrap();
                                 }
                                 ProtoMessage::DeviceInfoRequest(device_info_request) => {
                                     debug!("DeviceInfoRequest: {:?}", device_info_request);
-                                    debug!("DeviceInfo: {:?}", device_info_clone);
-                                    answer_buf = [
-                                        answer_buf,
-                                        to_packet(ProtoMessage::DeviceInfoResponse(
+                                    answer_messages_tx_clone
+                                        .send(ProtoMessage::DeviceInfoResponse(
                                             device_info_clone.clone(),
                                         ))
-                                        .unwrap(),
-                                    ]
-                                    .concat();
+                                        .unwrap();
                                 }
                                 ProtoMessage::ConnectRequest(connect_request) => {
                                     debug!("ConnectRequest: {:?}", connect_request);
                                     let response_message = proto::ConnectResponse {
                                         invalid_password: false,
                                     };
-                                    answer_buf = [
-                                        answer_buf,
-                                        to_packet(ProtoMessage::ConnectResponse(response_message))
-                                            .unwrap(),
-                                    ]
-                                    .concat();
+                                    answer_messages_tx_clone
+                                        .send(ProtoMessage::ConnectResponse(response_message))
+                                        .unwrap();
                                 }
 
                                 ProtoMessage::DisconnectRequest(disconnect_request) => {
                                     debug!("DisconnectRequest: {:?}", disconnect_request);
                                     let response_message = proto::DisconnectResponse {};
-                                    answer_buf = [
-                                        answer_buf,
-                                        to_packet(ProtoMessage::DisconnectResponse(
-                                            response_message,
-                                        ))
-                                        .unwrap(),
-                                    ]
-                                    .concat();
-                                    disconnect = true;
+                                    answer_messages_tx_clone
+                                        .send(ProtoMessage::DisconnectResponse(response_message))
+                                        .unwrap();
                                 }
                                 ProtoMessage::ListEntitiesRequest(list_entities_request) => {
                                     debug!("ListEntitiesRequest: {:?}", list_entities_request);
 
                                     for (key, sensor) in &api_components_clone {
-                                        debug!("Sensor: {:?}", sensor);
-                                        answer_buf =
-                                            [answer_buf, to_packet(sensor.clone()).unwrap()]
-                                                .concat();
+                                        answer_messages_tx_clone.send(sensor.clone()).unwrap();
                                     }
-
-                                    let response_message = proto::ListEntitiesDoneResponse {};
-                                    answer_buf = [
-                                        answer_buf,
-                                        to_packet(ProtoMessage::ListEntitiesDoneResponse(
-                                            response_message,
+                                    answer_messages_tx_clone
+                                        .send(ProtoMessage::ListEntitiesDoneResponse(
+                                            proto::ListEntitiesDoneResponse {},
                                         ))
-                                        .unwrap(),
-                                    ]
-                                    .concat();
+                                        .unwrap();
                                 }
                                 ProtoMessage::PingRequest(ping_request) => {
                                     debug!("PingRequest: {:?}", ping_request);
                                     let response_message = proto::PingResponse {};
-                                    answer_buf = [
-                                        answer_buf,
-                                        to_packet(ProtoMessage::PingResponse(response_message))
-                                            .unwrap(),
-                                    ]
-                                    .concat();
+                                    answer_messages_tx_clone
+                                        .send(ProtoMessage::PingResponse(response_message))
+                                        .unwrap();
                                 }
                                 ProtoMessage::SubscribeLogsRequest(request) => {
                                     debug!("SubscribeLogsRequest: {:?}", request);
@@ -327,17 +358,17 @@ impl Module for Default {
                                         message: "Test log".to_string().into_bytes(),
                                         send_failed: false,
                                     };
-                                    answer_buf = [
-                                        answer_buf,
-                                        to_packet(ProtoMessage::SubscribeLogsResponse(
-                                            response_message,
-                                        ))
-                                        .unwrap(),
-                                    ]
-                                    .concat();
+                                    answer_messages_tx_clone
+                                        .send(ProtoMessage::SubscribeLogsResponse(response_message))
+                                        .unwrap();
                                 }
-                                ProtoMessage::SubscribeBluetoothLeAdvertisementsRequest(request) => {
-                                    debug!("SubscribeBluetoothLeAdvertisementsRequest: {:?}", request);
+                                ProtoMessage::SubscribeBluetoothLeAdvertisementsRequest(
+                                    request,
+                                ) => {
+                                    debug!(
+                                        "SubscribeBluetoothLeAdvertisementsRequest: {:?}",
+                                        request
+                                    );
                                     // let response_message = proto::BluetoothLeAdvertisementResponse {
                                     //     address: u64::from_str_radix("000000000000", 16).unwrap(),
                                     //     rssi: -100,
@@ -353,8 +384,13 @@ impl Module for Default {
                                     // ]
                                     // .concat();
                                 }
-                                ProtoMessage::UnsubscribeBluetoothLeAdvertisementsRequest(request) => {
-                                    debug!("UnsubscribeBluetoothLeAdvertisementsRequest: {:?}", request);
+                                ProtoMessage::UnsubscribeBluetoothLeAdvertisementsRequest(
+                                    request,
+                                ) => {
+                                    debug!(
+                                        "UnsubscribeBluetoothLeAdvertisementsRequest: {:?}",
+                                        request
+                                    );
                                     // let response_message = proto::BluetoothLeAdvertisementResponse {
                                     //     address: u64::from_str_radix("000000000000", 16).unwrap(),
                                     //     rssi: -100,
@@ -371,7 +407,10 @@ impl Module for Default {
                                     // .concat();
                                 }
                                 ProtoMessage::SubscribeStatesRequest(subscribe_states_request) => {
-                                    debug!("SubscribeStatesRequest: {:?}", subscribe_states_request);
+                                    debug!(
+                                        "SubscribeStatesRequest: {:?}",
+                                        subscribe_states_request
+                                    );
                                 }
                                 ProtoMessage::SubscribeHomeassistantServicesRequest(request) => {
                                     debug!("SubscribeHomeassistantServicesRequest: {:?}", request);
@@ -379,20 +418,16 @@ impl Module for Default {
                                 ProtoMessage::SubscribeHomeAssistantStatesRequest(
                                     subscribe_homeassistant_services_request,
                                 ) => {
-                                    debug!("SubscribeHomeAssistantStatesRequest: {:?}", subscribe_homeassistant_services_request);
-                                    let response_message = proto::SubscribeHomeAssistantStateResponse {
-                                        entity_id: "test".to_string(),
-                                        attribute: "test".to_string(),
-                                        once: true,
-                                    };
-                                    answer_buf = [
-                                        answer_buf,
-                                        to_packet(ProtoMessage::SubscribeHomeAssistantStateResponse(
-                                            response_message,
-                                        ))
-                                        .unwrap(),
-                                    ]
-                                    .concat();
+                                    debug!(
+                                        "SubscribeHomeAssistantStatesRequest: {:?}",
+                                        subscribe_homeassistant_services_request
+                                    );
+                                    let response_message =
+                                        proto::SubscribeHomeAssistantStateResponse {
+                                            entity_id: "test".to_string(),
+                                            attribute: "test".to_string(),
+                                            once: true,
+                                        };
                                 }
                                 ProtoMessage::ButtonCommandRequest(button_command_request) => {
                                     debug!("ButtonCommandRequest: {:?}", button_command_request);
@@ -403,21 +438,74 @@ impl Module for Default {
                                 }
                             }
 
-                            debug!("Send response: {:?}", answer_buf);
-
-                            socket
-                                .write_all(&answer_buf)
-                                .await
-                                .expect("failed to write data to socket");
-
-                            if disconnect {
-                                debug!("Disconnecting");
-                                socket.shutdown().await.expect("failed to shutdown socket");
-                                break;
-                            }
-                            // Close the socket
-
                             cursor += 3 + len;
+                        }
+                    }
+                });
+
+                // Write Loop
+                let mut answer_messages_rx_clone = answer_messages_rx.resubscribe();
+                let mut messages_rx_clone = messages_rx.resubscribe();
+                tokio::spawn(async move {
+                    let mut disconnect = false;
+                    loop {
+                        let mut answer_buf: Vec<u8> = vec![];
+
+                        let answer_messages = answer_messages_rx_clone.recv();
+                        let normal_messages = messages_rx_clone.recv();
+                        let answer_message: ProtoMessage;
+                        // Wait for any new message
+                        tokio::select! {
+                            (message) = answer_messages => {
+                                answer_message = message.unwrap();
+                            }
+                            (message) = normal_messages => {
+                                answer_message = message.unwrap();
+                            }
+                        };
+
+                        debug!("Answer message: {:?}", answer_message);
+                        answer_buf =
+                            [answer_buf, to_packet_from_ref(&answer_message).unwrap()].concat();
+                        match answer_message {
+                            ProtoMessage::DisconnectResponse(_) => {
+                                disconnect = true;
+                            }
+                            _ => {}
+                        }
+
+                        loop {
+                            // let message = messages_rx_clone.recv().await.unwrap();
+                            let answer_message = answer_messages_rx_clone.try_recv();
+                            match answer_message {
+                                Ok(answer_message) => {
+                                    // debug!("Answer message: {:?}", answer_message);
+                                    answer_buf =
+                                        [answer_buf, to_packet_from_ref(&answer_message).unwrap()]
+                                            .concat();
+
+                                    match answer_message {
+                                        ProtoMessage::DisconnectResponse(_) => {
+                                            disconnect = true;
+                                        }
+                                        _ => {}
+                                    }
+                                }
+                                Err(_) => break,
+                            }
+                        }
+
+                        trace!("Send response: {:?}", answer_buf);
+                        write
+                            .write_all(&answer_buf)
+                            .await
+                            .expect("failed to write data to socket");
+
+                        if disconnect {
+                            // Close the socket
+                            debug!("Disconnecting");
+                            write.shutdown().await.expect("failed to shutdown socket");
+                            break;
                         }
                     }
                 });

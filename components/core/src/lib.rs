@@ -9,7 +9,7 @@ pub mod internal;
 pub extern crate paste;
 
 use home_assistant::sensors::Component;
-use std::pin::Pin;
+use std::{collections::HashMap, pin::Pin};
 use tokio::sync::broadcast::{Receiver, Sender};
 use serde::{Deserialize};
 
@@ -31,13 +31,24 @@ where
 }
 
 
+#[derive(Debug, Clone)]
+pub struct BluetoothProxyMessage {
+    pub reason: String,
+    pub mac: String,
+    pub rssi: i16, 
+    pub name: String, 
+    pub service_uuids: Vec<String>, 
+    pub service_data: HashMap<String, Vec<u8>>, 
+    pub manufacturer_data: HashMap<String, Vec<u8>>,
+}
+
 
 #[derive(Debug, Clone)]
 pub enum ChangedMessage {
     ButtonPress { key: String },
     SensorValueChange { key: String, value: String },
     BinarySensorValueChange { key: String, value: bool },
-    BluetoothProxyMessage { mac: String, rssi: i16},
+    BluetoothProxyMessage(BluetoothProxyMessage),
 }
 
 
@@ -47,7 +58,7 @@ pub enum PublishedMessage {
     ButtonPressed { key: String },
     SensorValueChanged { key: String, value: String },
     BinarySensorValueChanged { key: String, value: bool },
-    BluetoothProxyMessage { mac: String, rssi: i16},
+    BluetoothProxyMessage (BluetoothProxyMessage),
 }
 
 #[derive(Clone, Deserialize, Debug)]

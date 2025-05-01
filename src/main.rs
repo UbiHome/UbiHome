@@ -13,7 +13,6 @@ use clap::{Arg, ArgAction, Command};
 use log::{debug, info, warn};
 use service::{install, uninstall};
 use std::collections::HashMap;
-use std::future::Future;
 use std::path::Path;
 use std::sync::mpsc;
 use std::thread::sleep;
@@ -239,7 +238,7 @@ fn get_all_modules(yaml: &String) -> Vec<Box<dyn Module>> {
     modules.push(Box::new(oshome_shell::Default::new(&yaml)));
     modules.push(Box::new(oshome_mqtt::Default::new(&yaml)));
     modules.push(Box::new(oshome_mdns::Default::new(&yaml)));
-    modules.push(Box::new(oshome_api::Default::new(&yaml)));
+    modules.push(Box::new(oshome_api::OSHomeDefault::new(&yaml)));
     modules.push(Box::new(oshome_power_utils::Default::new(&yaml)));
     modules.push(Box::new(oshome_bluetooth_proxy::Default::new(&yaml)));
     modules.push(Box::new(oshome_web_server::Default::new(&yaml)));
@@ -477,11 +476,9 @@ fn run(
                             publish_cmd =
                                 Some(PublishedMessage::BinarySensorValueChanged { key, value });
                         }
-                        ChangedMessage::BluetoothProxyMessage { mac, rssi } => {
-                            publish_cmd = Some(PublishedMessage::BluetoothProxyMessage {
-                                mac: mac,
-                                rssi: rssi,
-                            });
+                        ChangedMessage::BluetoothProxyMessage(msg)=> {
+                            publish_cmd = Some(PublishedMessage::BluetoothProxyMessage(msg));
+                        
                         }
                     }
                     if let Some(pcmd) = publish_cmd {
