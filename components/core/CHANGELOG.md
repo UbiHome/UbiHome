@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.20](https://github.com/DanielHabenicht/OSHome/compare/v0.3.19...oshome-core-v0.3.20) (2025-05-02)
+
+
+### Bug Fixes
+
+* build error and add more power utils ([12b2fd3](https://github.com/DanielHabenicht/OSHome/commit/12b2fd3df3266ed28bc0499f8e89968d2e9a9e79))
+
 ## [0.3.19](https://github.com/DanielHabenicht/OSHome/compare/v0.3.18...oshome-core-v0.3.19) (2025-04-30)
 
 

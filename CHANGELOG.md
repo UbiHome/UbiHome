@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.4.7](https://github.com/DanielHabenicht/OSHome/compare/v0.4.6...v0.4.7) (2025-05-02)
+
+
+### Bug Fixes
+
+* categories ([bf90765](https://github.com/DanielHabenicht/OSHome/commit/bf90765baff37491bd7a23f1b1a8f88323c3c4e5))
+* mqtt stability on errors ([e9780aa](https://github.com/DanielHabenicht/OSHome/commit/e9780aa0d18974832b38922fb824fedd8db132ca))
+
 ## [0.4.6](https://github.com/DanielHabenicht/OSHome/compare/v0.4.5...v0.4.6) (2025-04-30)
 
 
