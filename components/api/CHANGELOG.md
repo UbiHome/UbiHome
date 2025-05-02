@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.3.30](https://github.com/UbiHome/UbiHome/compare/ubihome-api-v0.3.29...ubihome-api-v0.3.30) (2025-05-02)
+
+
+### Bug Fixes
+
+* categories ([bf90765](https://github.com/UbiHome/UbiHome/commit/bf90765baff37491bd7a23f1b1a8f88323c3c4e5))
+* use other mdns lib ([a9520d1](https://github.com/UbiHome/UbiHome/commit/a9520d18a9b40bae1b8bdf31b87c4f2041e37ce2))
+
 ## [0.3.29](https://github.com/UbiHome/UbiHome/compare/ubihome-api-v0.3.28...ubihome-api-v0.3.29) (2025-05-02)
 
 

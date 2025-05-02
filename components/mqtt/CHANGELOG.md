@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.4.5](https://github.com/UbiHome/UbiHome/compare/v0.4.4...ubihome-mqtt-v0.4.5) (2025-05-02)
+
+
+### Bug Fixes
+
+* mqtt stability on errors ([e9780aa](https://github.com/UbiHome/UbiHome/commit/e9780aa0d18974832b38922fb824fedd8db132ca))
+* retry mqtt connections ([3fe55de](https://github.com/UbiHome/UbiHome/commit/3fe55de3ba09bbfd938a7583eb92942f4b50bc26))
+
 ## [0.4.4](https://github.com/UbiHome/UbiHome/compare/v0.4.3...ubihome-mqtt-v0.4.4) (2025-05-02)
 
 

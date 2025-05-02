@@ -1,6 +1,6 @@
 [package]
 name = "ubihome-shell"
-version = "0.4.9"
+version = "0.4.10"
 authors = ["Daniel Habenicht <daniel-habenicht@outlook.de>"]
 edition = "2021"
 

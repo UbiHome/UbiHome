@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.3.30](https://github.com/UbiHome/UbiHome/compare/ubihome-mdns-v0.3.29...ubihome-mdns-v0.3.30) (2025-05-02)
+
+
+### Bug Fixes
+
+* build error and add more power utils ([12b2fd3](https://github.com/UbiHome/UbiHome/commit/12b2fd3df3266ed28bc0499f8e89968d2e9a9e79))
+* discovery ([627fc43](https://github.com/UbiHome/UbiHome/commit/627fc43e5cc4675f3fcac5253575c851a5f30dca))
+* make mdns name dynamic ([05ada8a](https://github.com/UbiHome/UbiHome/commit/05ada8a195da8f267fe395dde8fb17a783fa3621))
+* mdns not waiting ([342f61a](https://github.com/UbiHome/UbiHome/commit/342f61a935685ca4474cf0384db68e4547be8209))
+* probably mdns ([f69a963](https://github.com/UbiHome/UbiHome/commit/f69a963f0a73348430900fe8a4ff2cd8437f3552))
+* switch to libmdns ([8462d4f](https://github.com/UbiHome/UbiHome/commit/8462d4fd1f628593ea0525cd46d73f7a75e7c3e9))
+* use other mdns lib ([a9520d1](https://github.com/UbiHome/UbiHome/commit/a9520d18a9b40bae1b8bdf31b87c4f2041e37ce2))
+
 ## [0.3.29](https://github.com/UbiHome/UbiHome/compare/ubihome-mdns-v0.3.28...ubihome-mdns-v0.3.29) (2025-05-02)
 
 
