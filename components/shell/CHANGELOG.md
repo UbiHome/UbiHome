@@ -1,5 +1,7 @@
 # Changelog
 
+## [0.4.8](https://github.com/DanielHabenicht/OSHome/compare/v0.4.7...oshome-shell-v0.4.8) (2025-05-02)
+
 ## [0.4.7](https://github.com/DanielHabenicht/OSHome/compare/v0.4.6...oshome-shell-v0.4.7) (2025-05-02)
 
 ## [0.4.6](https://github.com/DanielHabenicht/OSHome/compare/v0.4.5...oshome-shell-v0.4.6) (2025-04-30)

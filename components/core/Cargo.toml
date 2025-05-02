@@ -1,6 +1,6 @@
 [package]
 name = "oshome-core"
-version = "0.3.20"
+version = "0.3.21"
 authors = ["Daniel Habenicht <daniel-habenicht@outlook.de>"]
 edition = "2024"
 description = "Core package"
