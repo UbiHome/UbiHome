@@ -134,7 +134,7 @@ impl Module for OSHomeDefault {
                                             icon: "".to_string(),
                                             device_class: "".to_string(), //button.device_class,
                                             disabled_by_default: false,
-                                            entity_category: EntityCategory::Config as i32,
+                                            entity_category: EntityCategory::None as i32,
                                         },
                                     );
                                     api_components.insert(button.object_id, component_button);
@@ -164,7 +164,7 @@ impl Module for OSHomeDefault {
                                             last_reset_type: SensorLastResetType::LastResetNone
                                                 as i32,
                                             disabled_by_default: false,
-                                            entity_category: EntityCategory::Config as i32,
+                                            entity_category: EntityCategory::None as i32,
                                         },
                                     );
                                     api_components.insert(sensor.object_id, component_sensor);
@@ -187,7 +187,7 @@ impl Module for OSHomeDefault {
                                                     .unwrap_or("".to_string()), //binary_sensor.device_class,
                                                 is_status_binary_sensor: false,
                                                 disabled_by_default: false,
-                                                entity_category: EntityCategory::Config as i32,
+                                                entity_category: EntityCategory::None as i32,
                                             },
                                         );
                                     api_components
@@ -207,7 +207,7 @@ impl Module for OSHomeDefault {
                     match cmd {
                         PublishedMessage::BluetoothProxyMessage(msg) => {
                             debug!("BluetoothProxyMessage: {:?}", &msg);
-                            let service_data = msg
+                            let service_data: Vec<BluetoothServiceData> = msg
                                 .service_data
                                 .iter()
                                 .map(|(k, v)| {
