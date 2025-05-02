@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.2](https://github.com/UbiHome/UbiHome/compare/v0.4.1...ubihome-gpio-v0.4.2) (2025-05-02)
+
+
+### Bug Fixes
+
+* build error and add more power utils ([12b2fd3](https://github.com/UbiHome/UbiHome/commit/12b2fd3df3266ed28bc0499f8e89968d2e9a9e79))
+
 ## [0.4.1](https://github.com/DanielHabenicht/UbiHome/compare/v0.4.0...ubihome-gpio-v0.4.1) (2025-05-02)
 
 
