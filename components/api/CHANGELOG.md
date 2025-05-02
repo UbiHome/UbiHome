@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.3.27](https://github.com/DanielHabenicht/OSHome/compare/oshome-api-v0.3.26...oshome-api-v0.3.27) (2025-05-02)
+
+
+### Bug Fixes
+
+* categories ([bf90765](https://github.com/DanielHabenicht/OSHome/commit/bf90765baff37491bd7a23f1b1a8f88323c3c4e5))
+* use other mdns lib ([a9520d1](https://github.com/DanielHabenicht/OSHome/commit/a9520d18a9b40bae1b8bdf31b87c4f2041e37ce2))
+
 ## [0.3.26](https://github.com/DanielHabenicht/OSHome/compare/oshome-api-v0.3.25...oshome-api-v0.3.26) (2025-04-30)
 
 
