@@ -2,8 +2,8 @@ name: Release
 
 on:
   push:
-    # # Just for debugging
-    branches: [ main ]
+    # Just for debugging
+    # branches: [ main ]
     tags:
       - 'v*'
 
@@ -74,11 +74,11 @@ jobs:
         with:
           script: |
             await github.rest.actions.createWorkflowDispatch({
-              'UbiHome',
-              'ubihome.github.io',
-              '.github/workflows/docs.yml',
-              'main',
+              owner: 'UbiHome',
+              repo: 'ubihome.github.io',
+              workflow_id: 'docs.yml',
+              ref: 'main',
               inputs: {
                 version: context.payload.ref.replace('refs/tags/v', ''),
-              },
+              }
             });
