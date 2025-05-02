@@ -1,1 +1,4 @@
 # https://github.com/cross-rs/cross/blob/main/docs/config_file.md
+pre-build = [
+    "apt install libdbus-1-dev pkg-config"
+]  

@@ -16,7 +16,7 @@ jobs:
       matrix:
         include:
         - target: x86_64-unknown-linux-gnu # tested in a debian container on a mac
-          os: ubuntu-latest
+          runs-on: ubuntu-24.04
           fileending: ""
         # - target: aarch64-unknown-linux-gnu # tested on aws t4g.nano
         #   os: ubuntu-latest
@@ -25,19 +25,23 @@ jobs:
         # - target: arm-unknown-linux-gnueabihf # raspberry pi 0-1, not tested
         #   os: ubuntu-latest
         - target: x86_64-apple-darwin # tested on a mac, is not properly signed so there are security warnings
-          os: macos-latest
+          runs-on: macOS-latest
           fileending: ""
         - target: x86_64-pc-windows-msvc # tested on a windows machine
-          os: windows-latest
+          runs-on: windows-latest
           fileending: ".exe"
 
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install Protoc
-        uses: arduino/setup-protoc@v3
-        with:
-          repo-token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Add extra packages (MacOS)
+        if: matrix.platform.runs-on == 'macOS-latest'
+        run: brew install libdbus-1-dev pkg-config
+
+      - name: Add extra packages (Linux)
+        if: matrix.platform.runs-on == 'ubuntu-24.04'
+        run: sudo apt install -y libdbus-1-dev pkg-config
+
           
       - name: Set up Rust
         uses: actions-rs/toolchain@v1
