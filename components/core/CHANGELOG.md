@@ -1,5 +1,24 @@
 # Changelog
 
+## [0.4.0](https://github.com/UbiHome/UbiHome/compare/ubihome-core-v0.3.21...ubihome-core-v0.4.0) (2025-05-02)
+
+
+### Features
+
+* add binary sensor ([2189379](https://github.com/UbiHome/UbiHome/commit/218937924b6f09f8bd9962c373a12b567fdad079))
+* add rpi gpio ([0fe5532](https://github.com/UbiHome/UbiHome/commit/0fe5532bcf50964675ff09a075954f4d3475a892))
+
+
+### Bug Fixes
+
+* add pullup ([462bf9b](https://github.com/UbiHome/UbiHome/commit/462bf9baeddde638843278d623356b3b73a4feb1))
+* better logging ([51a56f7](https://github.com/UbiHome/UbiHome/commit/51a56f73b71755448cc7774000d035057258f209))
+* bme280 not looping ([79e7998](https://github.com/UbiHome/UbiHome/commit/79e79984f9ca72c3675f27d5a11e24f9265375f0))
+* build error and add more power utils ([12b2fd3](https://github.com/UbiHome/UbiHome/commit/12b2fd3df3266ed28bc0499f8e89968d2e9a9e79))
+* centralize logging ([86d2c2d](https://github.com/UbiHome/UbiHome/commit/86d2c2da8a1ab36c06e02bf957e55af902d53e4a))
+* gpio sensor keys ([1764340](https://github.com/UbiHome/UbiHome/commit/176434007824a82871cb3d2b9616dc79dee5d06a))
+* test release ([0345ca5](https://github.com/UbiHome/UbiHome/commit/0345ca57e0583b3d806bfeb0698711de42ac1550))
+
 ## [0.3.21](https://github.com/UbiHome/UbiHome/compare/v0.3.20...ubihome-core-v0.3.21) (2025-05-02)
 
 

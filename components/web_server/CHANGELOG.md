@@ -1,5 +1,7 @@
 # Changelog
 
+## [0.4.9](https://github.com/UbiHome/UbiHome/compare/v0.4.8...ubihome-web_server-v0.4.9) (2025-05-02)
+
 ## [0.4.8](https://github.com/UbiHome/UbiHome/compare/v0.4.7...ubihome-web_server-v0.4.8) (2025-05-02)
 
 ## [0.4.7](https://github.com/DanielHabenicht/UbiHome/compare/v0.4.6...ubihome-web_server-v0.4.7) (2025-05-02)
