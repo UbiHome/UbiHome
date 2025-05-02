@@ -12,8 +12,8 @@ pre-build = [
 ]
 
 # # https://github.com/rust-lang/rust/issues/115450#issuecomment-1705281000
-# [target.armv7-unknown-linux-musleabi.env]
-# passthrough = ["RUSTFLAGS=\"-C target-feature=-crt-static\""]
+[target.armv7-unknown-linux-musleabi.env]
+passthrough = ["RUSTFLAGS=\"-C target-feature=-crt-static\""]
 
-# [target.x86_64-unknown-linux-musl.env]
-# passthrough = ["RUSTFLAGS=\"-C target-feature=-crt-static\""]
+[target.x86_64-unknown-linux-musl.env]
+passthrough = ["RUSTFLAGS=\"-C target-feature=-crt-static\""]
