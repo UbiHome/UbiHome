@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.8](https://github.com/UbiHome/UbiHome/compare/v0.4.7...v0.4.8) (2025-05-02)
+
+
+### Bug Fixes
+
+* build by not adding bluetooth_proxy for now ([1e9deeb](https://github.com/UbiHome/UbiHome/commit/1e9deeb3cf267044f4082338ca447b5ace39eede))
+
 ## [0.4.7](https://github.com/DanielHabenicht/UbiHome/compare/v0.4.6...v0.4.7) (2025-05-02)
 
 
