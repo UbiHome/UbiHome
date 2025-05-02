@@ -23,7 +23,7 @@
 		"terminal.integrated.shell.linux": "/bin/bash"
 		}
 	},
-	"postCreateCommand": "rustup component add rustfmt clippy && cargo build",
+	"postCreateCommand": "sudo apt update && sudo apt install -y libdbus-1-dev pkg-config && rustup component add rustfmt clippy && cargo build",
 	"features": {
 			"ghcr.io/devcontainers/features/rust:1": {}
 	}

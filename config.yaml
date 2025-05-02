@@ -7,6 +7,8 @@ logger:
   logs:
     libmdns: INFO
     oshome_api: debug
+    # oshome_bluetooth_proxy: debug
+    # rumqttc: debug
 
 mdns:
   ip: "192.168.178.33"
@@ -64,22 +66,22 @@ sensor:
 #     name: "bla"
 
 binary_sensor:
-  - platform: shell
-    name: "Bluetooth Speaker connected"
-    id: bluetooth_connected
-    icon: "mdi:bluetooth-settings"
-    device_class: presence
-    update_interval: 10s
-    command: |-
-      echo false
-      # if hcitool con | grep -q "00:12:6F:F1:FF:61"; then
-      #     echo true
-      # else
-      #     echo false
-      # fi
-    filters:
-     - invert:
-     - delayed_off: 5s
+  # - platform: shell
+  #   name: "Bluetooth Speaker connected"
+  #   id: bluetooth_connected
+  #   icon: "mdi:bluetooth-settings"
+  #   device_class: presence
+  #   update_interval: 10s
+  #   command: |-
+  #     echo false
+  #     # if hcitool con | grep -q "00:12:6F:F1:FF:61"; then
+  #     #     echo true
+  #     # else
+  #     #     echo false
+  #     # fi
+  #   filters:
+  #    - invert:
+  #    - delayed_off: 5s
     #  - delayed_on: 10s
 
   - platform: gpio
