@@ -12,6 +12,11 @@ Just use the devcontainer setup.
 sudo apt install -y libdbus-1-dev pkg-config
 ```
 
+Vendored:
+```
+sudo apt-get install -y musl-tools
+```
+
 
 ## Current Pitfalls
 

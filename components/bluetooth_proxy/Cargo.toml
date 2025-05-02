@@ -14,3 +14,5 @@ btleplug = "0.11.8"
 duration-str = "0.16.1"
 futures = "0.3.31"
 anyhow = "1.0.98"
+
+dbus = {version = "0.9.7", features = ["vendored"]}
