@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use log::debug;
-use oshome_core::{binary_sensor::BinarySensorBase, template_mapper, OSHome};
+use ubihome_core::{binary_sensor::BinarySensorBase, template_mapper, UbiHome};
 use serde::Deserialize;
 use serde::Deserializer;
 
@@ -84,7 +84,7 @@ template_mapper!(map_binary_sensor, BinarySensor);
 
 #[derive(Clone, Deserialize, Debug)]
 pub struct CoreConfig {
-    pub oshome: OSHome,
+    pub ubihome: UbiHome,
     pub logger: Option<Logger>,
 
     // #[serde(default, deserialize_with = "map_button")]

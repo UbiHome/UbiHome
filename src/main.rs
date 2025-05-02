@@ -4,10 +4,10 @@ mod service;
 use flexi_logger::writers::FileLogWriter;
 use flexi_logger::{detailed_format, Age, Cleanup, Criterion, Duplicate, FileSpec, Logger, Naming};
 use inquire::Text;
-use oshome::CoreConfig;
-use oshome_core::binary_sensor::FilterType;
-use oshome_core::home_assistant::sensors::Component;
-use oshome_core::{ChangedMessage, Module, PublishedMessage};
+use ubihome::CoreConfig;
+use ubihome_core::binary_sensor::FilterType;
+use ubihome_core::home_assistant::sensors::Component;
+use ubihome_core::{ChangedMessage, Module, PublishedMessage};
 
 use clap::{Arg, ArgAction, Command};
 use log::{debug, info, warn};
@@ -89,14 +89,14 @@ fn windows_service_main(_arguments: Vec<std::ffi::OsString>) {
         .unwrap();
 }
 
-// use oshome::
+// use ubihome::
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 const DESCRIPTION: &str = env!("CARGO_PKG_DESCRIPTION");
 const CARGO_PKG_HOMEPAGE: &str = env!("CARGO_PKG_HOMEPAGE");
 
 fn cli() -> Command {
-    Command::new("oshome")
-        .about(format!("OSHome - {}\n\n{}\n{}" ,VERSION, DESCRIPTION, CARGO_PKG_HOMEPAGE))
+    Command::new("ubihome")
+        .about(format!("UbiHome - {}\n\n{}\n{}" ,VERSION, DESCRIPTION, CARGO_PKG_HOMEPAGE))
         .version(VERSION)
         .subcommand_required(true)
         .arg_required_else_help(true)
@@ -109,22 +109,22 @@ fn cli() -> Command {
         ])
         .subcommand(
             Command::new("install")
-                    .about("Install OSHome")
+                    .about("Install UbiHome")
                     .arg(
                         Arg::new("location")
-                        .help( "The location to install OSHome.")
+                        .help( "The location to install UbiHome.")
                     )
         )
         .subcommand(
             Command::new("update")
-                    .about("Update the current OSHome executable (from GitHub).")
+                    .about("Update the current UbiHome executable (from GitHub).")
         )
         .subcommand(
             Command::new("uninstall")
-                    .about("Uninstall OSHome")
+                    .about("Uninstall UbiHome")
                     .arg(
                         Arg::new("location")
-                        .help( "The location where OSHome is installed.")
+                        .help( "The location where UbiHome is installed.")
                     )
         )
         .subcommand(
@@ -133,7 +133,7 @@ fn cli() -> Command {
         )
         .subcommand(
             Command::new("run")
-                .about("Run OSHome manually.")
+                .about("Run UbiHome manually.")
                 .args([
                     Arg::new("as-windows-service")
                         .long("as-windows-service")
@@ -174,9 +174,9 @@ fn main() {
     let config_file = matches.try_get_one::<String>("configuration_file").unwrap();
 
     #[cfg(any(target_os = "linux", target_os = "macos"))]
-    let default_installation_path = "/usr/bin/oshome";
+    let default_installation_path = "/usr/bin/ubihome";
     #[cfg(target_os = "windows")]
-    let default_installation_path = "C:\\Program Files\\oshome";
+    let default_installation_path = "C:\\Program Files\\ubihome";
 
     match matches.subcommand() {
         Some(("install", sub_matches)) => {
@@ -185,14 +185,14 @@ fn main() {
                 // Perform installation logic here
                 install(location);
             } else {
-                let location = Text::new("Where do you want to install OSHome?")
+                let location = Text::new("Where do you want to install UbiHome?")
                     .with_default(default_installation_path)
                     .prompt();
                 install(location.unwrap().as_str());
             }
         }
         Some(("update", sub_matches)) => {
-            todo!("Update OSHome");
+            todo!("Update UbiHome");
         }
         Some(("uninstall", sub_matches)) => {
             let location = sub_matches.try_get_one::<String>("location").unwrap();
@@ -205,7 +205,7 @@ fn main() {
             }
         }
         Some(("validate", sub_matches)) => {
-            todo!("Validate OSHome");
+            todo!("Validate UbiHome");
         }
         Some(("run", sub_matches)) => {
             let is_windows_service = sub_matches.get_one::<bool>("as-windows-service").unwrap();
@@ -233,15 +233,15 @@ fn main() {
 fn get_all_modules(yaml: &String) -> Vec<Box<dyn Module>> {
     let mut modules: Vec<Box<dyn Module>> = Vec::new();
 
-    modules.push(Box::new(oshome_bme280::Default::new(&yaml)));
-    modules.push(Box::new(oshome_gpio::Default::new(&yaml)));
-    modules.push(Box::new(oshome_shell::Default::new(&yaml)));
-    modules.push(Box::new(oshome_mqtt::Default::new(&yaml)));
-    modules.push(Box::new(oshome_mdns::Default::new(&yaml)));
-    modules.push(Box::new(oshome_api::OSHomeDefault::new(&yaml)));
-    modules.push(Box::new(oshome_power_utils::Default::new(&yaml)));
-    modules.push(Box::new(oshome_bluetooth_proxy::Default::new(&yaml)));
-    modules.push(Box::new(oshome_web_server::Default::new(&yaml)));
+    modules.push(Box::new(ubihome_bme280::Default::new(&yaml)));
+    modules.push(Box::new(ubihome_gpio::Default::new(&yaml)));
+    modules.push(Box::new(ubihome_shell::Default::new(&yaml)));
+    modules.push(Box::new(ubihome_mqtt::Default::new(&yaml)));
+    modules.push(Box::new(ubihome_mdns::Default::new(&yaml)));
+    modules.push(Box::new(ubihome_api::UbiHomeDefault::new(&yaml)));
+    modules.push(Box::new(ubihome_power_utils::Default::new(&yaml)));
+    modules.push(Box::new(ubihome_bluetooth_proxy::Default::new(&yaml)));
+    modules.push(Box::new(ubihome_web_server::Default::new(&yaml)));
     return modules
 }
 
@@ -283,7 +283,7 @@ fn run(
     config_path: Option<&String>,
     shutdown_signal: Option<mpsc::Receiver<()>>,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    println!("OSHome - {}", VERSION);
+    println!("UbiHome - {}", VERSION);
 
 
 

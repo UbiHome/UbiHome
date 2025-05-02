@@ -1,5 +1,5 @@
 use log::{debug, warn};
-use oshome_core::{
+use ubihome_core::{
     config_template,
     home_assistant::sensors::{Component, HABinarySensor},
     ChangedMessage, Module, NoConfig, PublishedMessage,

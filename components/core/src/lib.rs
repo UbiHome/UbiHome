@@ -66,7 +66,7 @@ pub struct NoConfig {}
 
 
 #[derive(Clone, Deserialize, Debug)]
-pub struct OSHome {
+pub struct UbiHome {
     pub name: String,
     pub friendly_name: Option<String>,
     pub area: Option<String>,
@@ -83,11 +83,11 @@ macro_rules! config_template {
         $sensor_extension:ident) => {
 
         use duration_str::deserialize_option_duration;
-        use oshome_core::template_button;
-        use oshome_core::template_binary_sensor;
-        use oshome_core::template_sensor;
-        use oshome_core::template_mapper;
-        use oshome_core::OSHome;
+        use ubihome_core::template_button;
+        use ubihome_core::template_binary_sensor;
+        use ubihome_core::template_sensor;
+        use ubihome_core::template_mapper;
+        use ubihome_core::UbiHome;
 
 
         template_button!($component_name, $button_extension);
@@ -105,7 +105,7 @@ macro_rules! config_template {
 
         #[derive(Clone, Deserialize, Debug)]
         pub struct CoreConfig {
-            pub oshome: OSHome,
+            pub ubihome: UbiHome,
 
             pub $component_name: $component_config,
 

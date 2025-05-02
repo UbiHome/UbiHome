@@ -1,5 +1,5 @@
 [package]
-name = "oshome-web_server"
+name = "ubihome-web_server"
 version = "0.4.7"
 authors = ["Daniel Habenicht <daniel-habenicht@outlook.de>"]
 edition = "2021"
@@ -12,5 +12,5 @@ tower-http = { version = "0.6.1", features = ["timeout", "trace"] }
 serde_yaml = "0.9.34"
 duration-str = "0.16.1"
 
-oshome-core = { path = "../core" }
+ubihome-core = { path = "../core" }
 tokio = { version = "1", features = ["full"] }

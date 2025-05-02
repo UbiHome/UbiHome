@@ -1,5 +1,5 @@
 use log::{debug, error, info, warn};
-use oshome_core::{
+use ubihome_core::{
     config_template, home_assistant::sensors::Component, ChangedMessage, Module, PublishedMessage,
 };
 use rumqttc::{AsyncClient, ConnectionError, Event, MqttOptions, QoS, StateError};
@@ -149,7 +149,7 @@ impl Module for Default {
         let core_config = self.core.clone();
         Box::pin(async move {
             let mut mqttoptions = MqttOptions::new(
-                core_config.oshome.name.clone(),
+                core_config.ubihome.name.clone(),
                 config.mqtt.broker.clone(),
                 config.mqtt.port.unwrap_or(1883),
             );
@@ -176,10 +176,10 @@ impl Module for Default {
                     .discovery_prefix
                     .clone()
                     .unwrap_or("os-home".to_string()),
-                core_config.oshome.name
+                core_config.ubihome.name
             );
             let discovery_topic =
-                format!("homeassistant/device/{}/config", core_config.oshome.name);
+                format!("homeassistant/device/{}/config", core_config.ubihome.name);
 
             // Handle incoming messages
             let base_topic1 = base_topic.clone();
@@ -277,7 +277,7 @@ impl Module for Default {
                                     Component::Button(button) => {
                                         let id = button.unique_id.unwrap_or(format!(
                                             "{}_{}",
-                                            core_config.oshome.name, button.name
+                                            core_config.ubihome.name, button.name
                                         ));
                                         let topic =
                                             format!("{}/{}", base_topic.clone(), id.clone());
@@ -300,7 +300,7 @@ impl Module for Default {
                                     Component::Sensor(sensor) => {
                                         let id = sensor.unique_id.unwrap_or(format!(
                                             "{}_{}",
-                                            core_config.oshome.name, sensor.name
+                                            core_config.ubihome.name, sensor.name
                                         ));
                                         mqtt_components.insert(
                                             id.clone(),
@@ -329,7 +329,7 @@ impl Module for Default {
                                     Component::BinarySensor(sensor) => {
                                         let id = sensor.unique_id.unwrap_or(format!(
                                             "{}_{}",
-                                            core_config.oshome.name, sensor.name
+                                            core_config.ubihome.name, sensor.name
                                         ));
                                         mqtt_components.insert(
                                             id.clone(),
@@ -355,14 +355,14 @@ impl Module for Default {
                             }
 
                             let device = Device {
-                                identifiers: vec![core_config.oshome.name.clone()],
+                                identifiers: vec![core_config.ubihome.name.clone()],
                                 manufacturer: format!(
                                     "{} {} {}",
                                     whoami::platform(),
                                     whoami::distro(),
                                     whoami::arch()
                                 ),
-                                name: core_config.oshome.name.clone(),
+                                name: core_config.ubihome.name.clone(),
                                 model: whoami::devicename(),
                             };
 

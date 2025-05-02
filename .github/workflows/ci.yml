@@ -65,7 +65,7 @@ jobs:
         with:
           name: release-${{ matrix.target }}
           path: |
-            target/${{ matrix.target }}/release/oshome${{ matrix.fileending }}
+            target/${{ matrix.target }}/release/ubihome${{ matrix.fileending }}
 
 
 

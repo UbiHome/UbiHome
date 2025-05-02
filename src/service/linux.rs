@@ -16,11 +16,11 @@ pub async fn install(location: &str){
     use crate::constants::SERVICE_DESCRIPTION;
 
     // TODO: Run update logic if already installed (e.g. stop service before copy)
-    println!("Installing OSHome to {}", location);
+    println!("Installing UbiHome to {}", location);
     println!(" - Creating Folder at {}", location);
     fs::create_dir_all(location).expect("Unable to create directory");
 
-    let new_path = Path::new(location).join("oshome");
+    let new_path = Path::new(location).join("ubihome");
     println!(" - Copying Binary to {}", new_path.display());
     fs::copy(env::current_exe().unwrap(), new_path).expect("Unable to copy file");
 
@@ -36,7 +36,7 @@ After=network-online.target
 Type=simple
 Restart=always
 RestartSec=1
-ExecStart={}/oshome run
+ExecStart={}/ubihome run
 StandardOutput=journal
 WorkingDirectory={}
 
@@ -84,7 +84,7 @@ pub async fn uninstall(location: &str){
         return;
     }
 
-    println!("Uninstalling OSHome at {}", location);
+    println!("Uninstalling UbiHome at {}", location);
     println!(" - Remove Folder at {}", location);
     fs::remove_dir(location).unwrap();
 

@@ -1,4 +1,4 @@
-oshome:
+ubihome:
   name: new_awesome
 
 logger:
@@ -6,8 +6,8 @@ logger:
   directory: ./logs
   logs:
     libmdns: INFO
-    oshome_api: debug
-    # oshome_bluetooth_proxy: debug
+    ubihome_api: debug
+    # ubihome_bluetooth_proxy: debug
     # rumqttc: debug
 
 mdns:
@@ -113,5 +113,5 @@ api:
 
 # Enable Automatic updates
 ota:
-  - platform: oshome
+  - platform: ubihome
     password: "ea04d2dc1adb3b82edea4b97ced1cc7c"

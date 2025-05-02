@@ -1,26 +1,26 @@
-# OSHome
+# UbiHome
 
 
-[Repository](https://github.com/DanielHabenicht/OSHome) -- [Documentation](https://danielhabenicht.github.io/OSHome/) -- [Issues](https://github.com/DanielHabenicht/OSHome/issues)
+[Repository](https://github.com/DanielHabenicht/UbiHome) -- [Documentation](https://danielhabenicht.github.io/UbiHome/) -- [Issues](https://github.com/DanielHabenicht/UbiHome/issues)
 
 ---
 
-`OSHome` is a system which allows you to integrate any device running any OS (Linux, Windows, MacOS) into your smart home (similar to ESPHome for Microcontrollers).
+`UbiHome` is a system which allows you to integrate any device running any OS (Linux, Windows, MacOS) into your smart home (similar to ESPHome for Microcontrollers).
 
 > Attention: This is a work in progress. The documentation is not complete and the project is still in development.
 > Still many things already work - so feel free to try it out.
 
-Simply [download](https://danielhabenicht.github.io/OSHome/getting_started/index.html) the executable and configure it.
+Simply [download](https://danielhabenicht.github.io/UbiHome/getting_started/index.html) the executable and configure it.
 
 ```yaml
 # Example configuration
 
-oshome:
+ubihome:
   name: "Raspberry Pi behind the TV"
 
 mqtt: 
   broker: 192.168.100.23
-  username: oshome-tv
+  username: ubihome-tv
   password: <secure_password>
 
 sensor:
@@ -42,10 +42,10 @@ Test it out:
 
 ```bash
 # Run once:
-./oshome run
+./ubihome run
 
 # Install directly as background service:
-./oshome install
+./ubihome install
 ```
 
-> Have a look at the [examples](https://danielhabenicht.github.io/OSHome/examples/index.html) to get started.
+> Have a look at the [examples](https://danielhabenicht.github.io/UbiHome/examples/index.html) to get started.

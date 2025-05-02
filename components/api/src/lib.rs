@@ -14,8 +14,8 @@ use log::debug;
 use log::info;
 use log::trace;
 use log::warn;
-use oshome_core::NoConfig;
-use oshome_core::{
+use ubihome_core::NoConfig;
+use ubihome_core::{
     config_template, home_assistant::sensors::Component, ChangedMessage, Module, PublishedMessage,
 };
 use serde::{Deserialize, Deserializer};
@@ -41,19 +41,19 @@ fn mac_to_u64(mac: &str) -> Result<u64, ParseIntError> {
 config_template!(api, Option<ApiConfig>, NoConfig, NoConfig, NoConfig);
 
 #[derive(Clone, Debug)]
-pub struct OSHomeDefault {
+pub struct UbiHomeDefault {
     config: CoreConfig,
     components: HashMap<String, ProtoMessage>,
     device_info: DeviceInfoResponse,
 }
 
-impl OSHomeDefault {
+impl UbiHomeDefault {
     pub fn new(config_string: &String) -> Self {
         let config = serde_yaml::from_str::<CoreConfig>(config_string).unwrap();
 
         let device_info = DeviceInfoResponse {
             uses_password: false,
-            name: config.oshome.name.clone(),
+            name: config.ubihome.name.clone(),
             // 186571EB5AFB
             // mac_address: "aa:bb:cc:dd:ee:ff".to_owned(),
             mac_address: "18:65:71:EB:5A:FB".to_owned(),
@@ -75,17 +75,17 @@ impl OSHomeDefault {
             //     whoami::arch()
             // ),
             friendly_name: config
-                .oshome
+                .ubihome
                 .friendly_name
                 .clone()
-                .unwrap_or(config.oshome.name.clone()),
+                .unwrap_or(config.ubihome.name.clone()),
             legacy_voice_assistant_version: 0,
             voice_assistant_feature_flags: 0,
             suggested_area: "".to_owned(),
             bluetooth_mac_address: "18:65:71:EB:5A:FB".to_owned(),
         };
 
-        OSHomeDefault {
+        UbiHomeDefault {
             config: config,
             components: HashMap::new(),
             device_info: device_info,
@@ -93,7 +93,7 @@ impl OSHomeDefault {
     }
 }
 
-impl Module for OSHomeDefault {
+impl Module for UbiHomeDefault {
     fn validate(&mut self) -> Result<(), String> {
         Ok(())
     }
@@ -123,7 +123,7 @@ impl Module for OSHomeDefault {
                                 Component::Button(button) => {
                                     let id = button.unique_id.unwrap_or(format!(
                                         "{}_{}",
-                                        core_config.oshome.name, button.name
+                                        core_config.ubihome.name, button.name
                                     ));
                                     let component_button = ProtoMessage::ListEntitiesButtonResponse(
                                         proto::ListEntitiesButtonResponse {
@@ -142,7 +142,7 @@ impl Module for OSHomeDefault {
                                 Component::Sensor(sensor) => {
                                     let id = sensor.unique_id.unwrap_or(format!(
                                         "{}_{}",
-                                        core_config.oshome.name, sensor.name
+                                        core_config.ubihome.name, sensor.name
                                     ));
                                     let component_sensor = ProtoMessage::ListEntitiesSensorResponse(
                                         proto::ListEntitiesSensorResponse {
@@ -172,7 +172,7 @@ impl Module for OSHomeDefault {
                                 Component::BinarySensor(binary_sensor) => {
                                     let id = binary_sensor.unique_id.unwrap_or(format!(
                                         "{}_{}",
-                                        core_config.oshome.name, binary_sensor.name
+                                        core_config.ubihome.name, binary_sensor.name
                                     ));
                                     let component_binary_sensor =
                                         ProtoMessage::ListEntitiesBinarySensorResponse(

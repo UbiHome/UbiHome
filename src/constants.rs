@@ -1,2 +1,2 @@
-pub const SERVICE_NAME: &str = "oshome";
-pub const SERVICE_DESCRIPTION: &str = "Service for OSHome";
+pub const SERVICE_NAME: &str = "ubihome";
+pub const SERVICE_DESCRIPTION: &str = "Service for UbiHome";

@@ -5,11 +5,11 @@ use log::{debug, info};
 use crate::constants;
 
 pub async fn install(location: &str) -> Result<(), Box<dyn std::error::Error>> {
-    println!("Installing OSHome to {}", location);
+    println!("Installing UbiHome to {}", location);
     println!(" - Creating Folder at {}", location);
     fs::create_dir_all(location).expect("Unable to create directory");
 
-    let new_path = Path::new(location).join("oshome.exe");
+    let new_path = Path::new(location).join("ubihome.exe");
     println!(" - Copying Binary to {}", new_path.display());
     fs::copy(env::current_exe().unwrap(), &new_path).expect("Unable to copy file");
 
@@ -63,7 +63,7 @@ pub async fn uninstall(location: &str) -> Result<(), Box<dyn std::error::Error>>
     };
     use windows_sys::Win32::Foundation::ERROR_SERVICE_DOES_NOT_EXIST;
 
-    println!("Uninstalling OSHome to");
+    println!("Uninstalling UbiHome to");
 
     
     println!(" - TODO: Cleanup Logs...");

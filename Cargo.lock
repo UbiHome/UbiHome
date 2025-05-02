@@ -1986,190 +1986,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "oshome"
-version = "0.4.7"
-dependencies = [
- "cargo_toml",
- "clap",
- "directories",
- "flexi_logger",
- "futures-signals",
- "inquire",
- "log",
- "oshome-api",
- "oshome-bluetooth_proxy",
- "oshome-bme280",
- "oshome-core",
- "oshome-gpio",
- "oshome-mdns",
- "oshome-mqtt",
- "oshome-power_utils",
- "oshome-shell",
- "oshome-web_server",
- "rumqttc",
- "rust-embed",
- "serde",
- "serde_yaml",
- "shell_exec",
- "tokio",
- "windows-service",
- "windows-sys 0.59.0",
-]
-
-[[package]]
-name = "oshome-api"
-version = "0.3.27"
-dependencies = [
- "duration-str",
- "esphome-native-api",
- "log",
- "oshome-core",
- "serde",
- "serde_yaml",
- "tokio",
- "whoami",
-]
-
-[[package]]
-name = "oshome-bluetooth_proxy"
-version = "0.3.26"
-dependencies = [
- "anyhow",
- "btleplug",
- "dbus",
- "duration-str",
- "futures",
- "log",
- "oshome-core",
- "serde",
- "serde_yaml",
- "tokio",
-]
-
-[[package]]
-name = "oshome-bme280"
-version = "0.4.7"
-dependencies = [
- "bme280",
- "duration-str",
- "linux-embedded-hal",
- "log",
- "oshome-core",
- "serde",
- "serde_yaml",
- "tokio",
-]
-
-[[package]]
-name = "oshome-core"
-version = "0.3.20"
-dependencies = [
- "convert_case",
- "duration-str",
- "paste",
- "serde",
- "tokio",
-]
-
-[[package]]
-name = "oshome-evdev"
-version = "0.4.7"
-dependencies = [
- "async-trait",
- "duration-str",
- "evdev",
- "log",
- "oshome-core",
- "serde",
- "serde_yaml",
- "tokio",
-]
-
-[[package]]
-name = "oshome-gpio"
-version = "0.4.1"
-dependencies = [
- "async-trait",
- "duration-str",
- "log",
- "oshome-core",
- "rppal",
- "serde",
- "serde_yaml",
- "tokio",
-]
-
-[[package]]
-name = "oshome-mdns"
-version = "0.3.27"
-dependencies = [
- "duration-str",
- "libmdns",
- "log",
- "mac_address",
- "mdns-sd",
- "oshome-core",
- "serde",
- "serde_yaml",
- "tokio",
-]
-
-[[package]]
-name = "oshome-mqtt"
-version = "0.4.2"
-dependencies = [
- "duration-str",
- "log",
- "oshome-core",
- "rumqttc",
- "serde",
- "serde_json",
- "serde_yaml",
- "tokio",
- "whoami",
-]
-
-[[package]]
-name = "oshome-power_utils"
-version = "0.4.4"
-dependencies = [
- "duration-str",
- "log",
- "oshome-core",
- "serde",
- "serde_yaml",
- "system_shutdown",
- "tokio",
-]
-
-[[package]]
-name = "oshome-shell"
-version = "0.4.7"
-dependencies = [
- "duration-str",
- "log",
- "oshome-core",
- "serde",
- "serde_yaml",
- "shell_exec",
- "tokio",
-]
-
-[[package]]
-name = "oshome-web_server"
-version = "0.4.7"
-dependencies = [
- "axum",
- "duration-str",
- "log",
- "oshome-core",
- "serde",
- "serde_yaml",
- "tokio",
- "tower-http",
-]
-
-[[package]]
 name = "parking"
 version = "2.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3379,6 +3195,190 @@ name = "typenum"
 version = "1.18.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1dccffe3ce07af9386bfd29e80c0ab1a8205a2fc34e4bcd40364df902cfa8f3f"
+
+[[package]]
+name = "ubihome"
+version = "0.4.7"
+dependencies = [
+ "cargo_toml",
+ "clap",
+ "directories",
+ "flexi_logger",
+ "futures-signals",
+ "inquire",
+ "log",
+ "rumqttc",
+ "rust-embed",
+ "serde",
+ "serde_yaml",
+ "shell_exec",
+ "tokio",
+ "ubihome-api",
+ "ubihome-bluetooth_proxy",
+ "ubihome-bme280",
+ "ubihome-core",
+ "ubihome-gpio",
+ "ubihome-mdns",
+ "ubihome-mqtt",
+ "ubihome-power_utils",
+ "ubihome-shell",
+ "ubihome-web_server",
+ "windows-service",
+ "windows-sys 0.59.0",
+]
+
+[[package]]
+name = "ubihome-api"
+version = "0.3.27"
+dependencies = [
+ "duration-str",
+ "esphome-native-api",
+ "log",
+ "serde",
+ "serde_yaml",
+ "tokio",
+ "ubihome-core",
+ "whoami",
+]
+
+[[package]]
+name = "ubihome-bluetooth_proxy"
+version = "0.3.26"
+dependencies = [
+ "anyhow",
+ "btleplug",
+ "dbus",
+ "duration-str",
+ "futures",
+ "log",
+ "serde",
+ "serde_yaml",
+ "tokio",
+ "ubihome-core",
+]
+
+[[package]]
+name = "ubihome-bme280"
+version = "0.4.7"
+dependencies = [
+ "bme280",
+ "duration-str",
+ "linux-embedded-hal",
+ "log",
+ "serde",
+ "serde_yaml",
+ "tokio",
+ "ubihome-core",
+]
+
+[[package]]
+name = "ubihome-core"
+version = "0.3.20"
+dependencies = [
+ "convert_case",
+ "duration-str",
+ "paste",
+ "serde",
+ "tokio",
+]
+
+[[package]]
+name = "ubihome-evdev"
+version = "0.4.7"
+dependencies = [
+ "async-trait",
+ "duration-str",
+ "evdev",
+ "log",
+ "serde",
+ "serde_yaml",
+ "tokio",
+ "ubihome-core",
+]
+
+[[package]]
+name = "ubihome-gpio"
+version = "0.4.1"
+dependencies = [
+ "async-trait",
+ "duration-str",
+ "log",
+ "rppal",
+ "serde",
+ "serde_yaml",
+ "tokio",
+ "ubihome-core",
+]
+
+[[package]]
+name = "ubihome-mdns"
+version = "0.3.27"
+dependencies = [
+ "duration-str",
+ "libmdns",
+ "log",
+ "mac_address",
+ "mdns-sd",
+ "serde",
+ "serde_yaml",
+ "tokio",
+ "ubihome-core",
+]
+
+[[package]]
+name = "ubihome-mqtt"
+version = "0.4.2"
+dependencies = [
+ "duration-str",
+ "log",
+ "rumqttc",
+ "serde",
+ "serde_json",
+ "serde_yaml",
+ "tokio",
+ "ubihome-core",
+ "whoami",
+]
+
+[[package]]
+name = "ubihome-power_utils"
+version = "0.4.4"
+dependencies = [
+ "duration-str",
+ "log",
+ "serde",
+ "serde_yaml",
+ "system_shutdown",
+ "tokio",
+ "ubihome-core",
+]
+
+[[package]]
+name = "ubihome-shell"
+version = "0.4.7"
+dependencies = [
+ "duration-str",
+ "log",
+ "serde",
+ "serde_yaml",
+ "shell_exec",
+ "tokio",
+ "ubihome-core",
+]
+
+[[package]]
+name = "ubihome-web_server"
+version = "0.4.7"
+dependencies = [
+ "axum",
+ "duration-str",
+ "log",
+ "serde",
+ "serde_yaml",
+ "tokio",
+ "tower-http",
+ "ubihome-core",
+]
 
 [[package]]
 name = "uds_windows"

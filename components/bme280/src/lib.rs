@@ -1,9 +1,9 @@
 use duration_str::deserialize_option_duration;
 use log::{debug, warn};
-use oshome_core::{
+use ubihome_core::{
     home_assistant::sensors::{Component, HASensor},
     sensor::{SensorBase, UnknownSensor},
-    ChangedMessage, Module, OSHome, PublishedMessage,
+    ChangedMessage, Module, UbiHome, PublishedMessage,
 };
 use serde::Deserialize;
 use std::{collections::HashMap, future::Future, pin::Pin, str, time::Duration};
@@ -45,7 +45,7 @@ pub struct BME280SensorConfig {
 
 #[derive(Clone, Deserialize, Debug)]
 struct CoreConfig {
-    pub oshome: OSHome,
+    pub ubihome: UbiHome,
     pub sensor: Vec<SensorConfig>,
 }
 

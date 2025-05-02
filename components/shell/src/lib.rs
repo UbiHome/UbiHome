@@ -1,6 +1,6 @@
 use duration_str::deserialize_duration;
 use log::debug;
-use oshome_core::{
+use ubihome_core::{
     config_template,
     home_assistant::sensors::{Component, HABinarySensor, HAButton, HASensor},
     ChangedMessage, Module, PublishedMessage,

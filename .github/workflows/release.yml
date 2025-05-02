@@ -71,7 +71,7 @@ jobs:
       # - name: Publish artifacts and release
       #   uses: houseabsolute/actions-rust-release@v0
       #   with:
-      #     executable-name: oshome
+      #     executable-name: ubihome
       #     target: ${{ matrix.platform.target }}
       #     changes-file: null
       #     extra-files: |

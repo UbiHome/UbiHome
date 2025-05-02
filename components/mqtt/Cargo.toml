@@ -1,5 +1,5 @@
 [package]
-name = "oshome-mqtt"
+name = "ubihome-mqtt"
 version = "0.4.2"
 authors = ["Daniel Habenicht <daniel-habenicht@outlook.de>"]
 edition = "2021"
@@ -10,7 +10,7 @@ rumqttc = "0.24.0"
 serde = { version = "1.0", features = ["derive"] }
 tokio = { version = "1", features = ["full"] }
 whoami = "1.6.0"
-oshome-core = { path = "../core" }
+ubihome-core = { path = "../core" }
 serde_json = "1.0"
 serde_yaml = "0.9.34"
 duration-str = "0.16.1"

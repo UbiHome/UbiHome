@@ -7,7 +7,7 @@ use cargo_toml::Manifest;
 // use saphyr::Yaml;
 
 
-// const RESERVED_KEYWORDS: [&str; 5] = ["oshome", "button", "sensor", "binary_sensor", "text_sensor"];
+// const RESERVED_KEYWORDS: [&str; 5] = ["ubihome", "button", "sensor", "binary_sensor", "text_sensor"];
 
 fn main() {
     // println!("cargo:rerun-if-changed=NULL");
@@ -27,7 +27,7 @@ fn main() {
 
     let toml_path =  Path::join(Path::new(&env::var_os("CARGO_MANIFEST_DIR").unwrap()), "Cargo.toml");
     let cargo_toml = Manifest::from_path(toml_path).unwrap();
-    let import_packages = cargo_toml.dependencies.iter().filter(|k| k.0.starts_with("oshome-")).map(|(k, _)| k).collect::<Vec<_>>(); 
+    let import_packages = cargo_toml.dependencies.iter().filter(|k| k.0.starts_with("ubihome-")).map(|(k, _)| k).collect::<Vec<_>>(); 
 
     let usings = import_packages.clone().iter()
         .map(|p| p.replace("-", "_"))
@@ -46,7 +46,7 @@ fn main() {
         &dest_path,
         format!("#[derive(Clone, Deserialize, Debug)]
 pub struct Config {{
-    pub oshome: OSHome,
+    pub ubihome: UbiHome,
     pub logger: Option<Logger>,
 
     pub button: Option<Vec<ButtonConfig>>,
@@ -57,7 +57,7 @@ pub struct Config {{
     // pub shell: Option<ShellConfig>,
     // pub web_server: Option<WebServerConfig>,
     // pub gpio: Option<GpioConfig>,
-}}", &import_packages.iter().map(|p| format!("    pub {}: Option<{}Config>", p.replace("oshome-", ""), package_name_to_camel_case(p.replace("oshome-", "")))).collect::<Vec<_>>().join(",\n"))).unwrap();
+}}", &import_packages.iter().map(|p| format!("    pub {}: Option<{}Config>", p.replace("ubihome-", ""), package_name_to_camel_case(p.replace("ubihome-", "")))).collect::<Vec<_>>().join(",\n"))).unwrap();
 
 }
 

@@ -1,7 +1,7 @@
 use log::info;
 use mac_address::get_mac_address;
-use oshome_core::NoConfig;
-use oshome_core::{
+use ubihome_core::NoConfig;
+use ubihome_core::{
     config_template, home_assistant::sensors::Component, ChangedMessage, Module, PublishedMessage,
 };
 use serde::{Deserialize, Deserializer};
@@ -66,8 +66,8 @@ impl Module for Default {
 
                     }
 
-                    let svc_name = config.oshome.name;
-                    let friendly_name = config.oshome.friendly_name.unwrap_or(svc_name.clone());
+                    let svc_name = config.ubihome.name;
+                    let friendly_name = config.ubihome.friendly_name.unwrap_or(svc_name.clone());
                     // Native API
                     let _svc = responder.register(
                         "_esphomelib._tcp".to_owned(),

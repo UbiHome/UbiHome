@@ -1,5 +1,5 @@
 use log::{debug, error};
-use oshome_core::{
+use ubihome_core::{
     ChangedMessage, Module, NoConfig, PublishedMessage, config_template,
     home_assistant::sensors::{Component, HAButton},
 };

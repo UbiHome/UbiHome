@@ -26,8 +26,8 @@ async fn handle_request(State(state): State<Arc<AppState>>) -> impl IntoResponse
 }
 
 
-use oshome_core::NoConfig;
-use oshome_core::{
+use ubihome_core::NoConfig;
+use ubihome_core::{
     config_template, home_assistant::sensors::Component, ChangedMessage, Module, PublishedMessage,
 };
 use serde::Deserializer;

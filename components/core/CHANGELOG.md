@@ -1,180 +1,180 @@
 # Changelog
 
-## [0.3.20](https://github.com/DanielHabenicht/OSHome/compare/v0.3.19...oshome-core-v0.3.20) (2025-05-02)
+## [0.3.20](https://github.com/DanielHabenicht/UbiHome/compare/v0.3.19...ubihome-core-v0.3.20) (2025-05-02)
 
 
 ### Bug Fixes
 
-* build error and add more power utils ([12b2fd3](https://github.com/DanielHabenicht/OSHome/commit/12b2fd3df3266ed28bc0499f8e89968d2e9a9e79))
+* build error and add more power utils ([12b2fd3](https://github.com/DanielHabenicht/UbiHome/commit/12b2fd3df3266ed28bc0499f8e89968d2e9a9e79))
 
-## [0.3.19](https://github.com/DanielHabenicht/OSHome/compare/v0.3.18...oshome-core-v0.3.19) (2025-04-30)
-
-
-### Bug Fixes
-
-* build error and add more power utils ([12b2fd3](https://github.com/DanielHabenicht/OSHome/commit/12b2fd3df3266ed28bc0499f8e89968d2e9a9e79))
-
-## [0.3.18](https://github.com/DanielHabenicht/OSHome/compare/v0.3.17...oshome-core-v0.3.18) (2025-04-28)
+## [0.3.19](https://github.com/DanielHabenicht/UbiHome/compare/v0.3.18...ubihome-core-v0.3.19) (2025-04-30)
 
 
 ### Bug Fixes
 
-* build error and add more power utils ([12b2fd3](https://github.com/DanielHabenicht/OSHome/commit/12b2fd3df3266ed28bc0499f8e89968d2e9a9e79))
+* build error and add more power utils ([12b2fd3](https://github.com/DanielHabenicht/UbiHome/commit/12b2fd3df3266ed28bc0499f8e89968d2e9a9e79))
 
-## [0.3.17](https://github.com/DanielHabenicht/OSHome/compare/v0.3.16...oshome-core-v0.3.17) (2025-04-27)
-
-
-### Bug Fixes
-
-* build error and add more power utils ([12b2fd3](https://github.com/DanielHabenicht/OSHome/commit/12b2fd3df3266ed28bc0499f8e89968d2e9a9e79))
-
-## [0.3.16](https://github.com/DanielHabenicht/OSHome/compare/v0.3.15...oshome-core-v0.3.16) (2025-04-27)
+## [0.3.18](https://github.com/DanielHabenicht/UbiHome/compare/v0.3.17...ubihome-core-v0.3.18) (2025-04-28)
 
 
 ### Bug Fixes
 
-* gpio sensor keys ([1764340](https://github.com/DanielHabenicht/OSHome/commit/176434007824a82871cb3d2b9616dc79dee5d06a))
+* build error and add more power utils ([12b2fd3](https://github.com/DanielHabenicht/UbiHome/commit/12b2fd3df3266ed28bc0499f8e89968d2e9a9e79))
 
-## [0.3.15](https://github.com/DanielHabenicht/OSHome/compare/v0.3.14...oshome-core-v0.3.15) (2025-04-26)
-
-
-### Bug Fixes
-
-* gpio sensor keys ([1764340](https://github.com/DanielHabenicht/OSHome/commit/176434007824a82871cb3d2b9616dc79dee5d06a))
-
-## [0.3.14](https://github.com/DanielHabenicht/OSHome/compare/v0.3.13...oshome-core-v0.3.14) (2025-04-26)
+## [0.3.17](https://github.com/DanielHabenicht/UbiHome/compare/v0.3.16...ubihome-core-v0.3.17) (2025-04-27)
 
 
 ### Bug Fixes
 
-* gpio sensor keys ([1764340](https://github.com/DanielHabenicht/OSHome/commit/176434007824a82871cb3d2b9616dc79dee5d06a))
+* build error and add more power utils ([12b2fd3](https://github.com/DanielHabenicht/UbiHome/commit/12b2fd3df3266ed28bc0499f8e89968d2e9a9e79))
 
-## [0.3.13](https://github.com/DanielHabenicht/OSHome/compare/v0.3.12...oshome-core-v0.3.13) (2025-04-26)
-
-
-### Bug Fixes
-
-* gpio sensor keys ([1764340](https://github.com/DanielHabenicht/OSHome/commit/176434007824a82871cb3d2b9616dc79dee5d06a))
-
-## [0.3.12](https://github.com/DanielHabenicht/OSHome/compare/v0.3.11...oshome-core-v0.3.12) (2025-04-26)
+## [0.3.16](https://github.com/DanielHabenicht/UbiHome/compare/v0.3.15...ubihome-core-v0.3.16) (2025-04-27)
 
 
 ### Bug Fixes
 
-* centralize logging ([86d2c2d](https://github.com/DanielHabenicht/OSHome/commit/86d2c2da8a1ab36c06e02bf957e55af902d53e4a))
-* gpio sensor keys ([1764340](https://github.com/DanielHabenicht/OSHome/commit/176434007824a82871cb3d2b9616dc79dee5d06a))
+* gpio sensor keys ([1764340](https://github.com/DanielHabenicht/UbiHome/commit/176434007824a82871cb3d2b9616dc79dee5d06a))
 
-## [0.3.11](https://github.com/DanielHabenicht/OSHome/compare/v0.3.10...oshome-core-v0.3.11) (2025-04-26)
-
-
-### Bug Fixes
-
-* centralize logging ([86d2c2d](https://github.com/DanielHabenicht/OSHome/commit/86d2c2da8a1ab36c06e02bf957e55af902d53e4a))
-
-## [0.3.10](https://github.com/DanielHabenicht/OSHome/compare/v0.3.9...oshome-core-v0.3.10) (2025-04-26)
+## [0.3.15](https://github.com/DanielHabenicht/UbiHome/compare/v0.3.14...ubihome-core-v0.3.15) (2025-04-26)
 
 
 ### Bug Fixes
 
-* bme280 not looping ([79e7998](https://github.com/DanielHabenicht/OSHome/commit/79e79984f9ca72c3675f27d5a11e24f9265375f0))
-* centralize logging ([86d2c2d](https://github.com/DanielHabenicht/OSHome/commit/86d2c2da8a1ab36c06e02bf957e55af902d53e4a))
+* gpio sensor keys ([1764340](https://github.com/DanielHabenicht/UbiHome/commit/176434007824a82871cb3d2b9616dc79dee5d06a))
 
-## [0.3.9](https://github.com/DanielHabenicht/OSHome/compare/v0.3.8...oshome-core-v0.3.9) (2025-04-26)
-
-
-### Bug Fixes
-
-* bme280 not looping ([79e7998](https://github.com/DanielHabenicht/OSHome/commit/79e79984f9ca72c3675f27d5a11e24f9265375f0))
-* centralize logging ([86d2c2d](https://github.com/DanielHabenicht/OSHome/commit/86d2c2da8a1ab36c06e02bf957e55af902d53e4a))
-
-## [0.3.8](https://github.com/DanielHabenicht/OSHome/compare/v0.3.7...oshome-core-v0.3.8) (2025-04-26)
+## [0.3.14](https://github.com/DanielHabenicht/UbiHome/compare/v0.3.13...ubihome-core-v0.3.14) (2025-04-26)
 
 
 ### Bug Fixes
 
-* bme280 not looping ([79e7998](https://github.com/DanielHabenicht/OSHome/commit/79e79984f9ca72c3675f27d5a11e24f9265375f0))
-* centralize logging ([86d2c2d](https://github.com/DanielHabenicht/OSHome/commit/86d2c2da8a1ab36c06e02bf957e55af902d53e4a))
+* gpio sensor keys ([1764340](https://github.com/DanielHabenicht/UbiHome/commit/176434007824a82871cb3d2b9616dc79dee5d06a))
 
-## [0.3.7](https://github.com/DanielHabenicht/OSHome/compare/v0.3.6...oshome-core-v0.3.7) (2025-04-26)
-
-
-### Bug Fixes
-
-* bme280 not looping ([79e7998](https://github.com/DanielHabenicht/OSHome/commit/79e79984f9ca72c3675f27d5a11e24f9265375f0))
-
-## [0.3.6](https://github.com/DanielHabenicht/OSHome/compare/v0.3.5...oshome-core-v0.3.6) (2025-04-26)
+## [0.3.13](https://github.com/DanielHabenicht/UbiHome/compare/v0.3.12...ubihome-core-v0.3.13) (2025-04-26)
 
 
 ### Bug Fixes
 
-* bme280 not looping ([79e7998](https://github.com/DanielHabenicht/OSHome/commit/79e79984f9ca72c3675f27d5a11e24f9265375f0))
+* gpio sensor keys ([1764340](https://github.com/DanielHabenicht/UbiHome/commit/176434007824a82871cb3d2b9616dc79dee5d06a))
 
-## [0.3.5](https://github.com/DanielHabenicht/OSHome/compare/v0.3.4...oshome-core-v0.3.5) (2025-04-16)
-
-
-### Bug Fixes
-
-* add pullup ([462bf9b](https://github.com/DanielHabenicht/OSHome/commit/462bf9baeddde638843278d623356b3b73a4feb1))
-
-## [0.3.4](https://github.com/DanielHabenicht/OSHome/compare/v0.3.3...oshome-core-v0.3.4) (2025-04-16)
+## [0.3.12](https://github.com/DanielHabenicht/UbiHome/compare/v0.3.11...ubihome-core-v0.3.12) (2025-04-26)
 
 
 ### Bug Fixes
 
-* add pullup ([462bf9b](https://github.com/DanielHabenicht/OSHome/commit/462bf9baeddde638843278d623356b3b73a4feb1))
+* centralize logging ([86d2c2d](https://github.com/DanielHabenicht/UbiHome/commit/86d2c2da8a1ab36c06e02bf957e55af902d53e4a))
+* gpio sensor keys ([1764340](https://github.com/DanielHabenicht/UbiHome/commit/176434007824a82871cb3d2b9616dc79dee5d06a))
 
-## [0.3.3](https://github.com/DanielHabenicht/OSHome/compare/v0.3.2...oshome-core-v0.3.3) (2025-03-30)
+## [0.3.11](https://github.com/DanielHabenicht/UbiHome/compare/v0.3.10...ubihome-core-v0.3.11) (2025-04-26)
 
 
 ### Bug Fixes
 
-* add pullup ([462bf9b](https://github.com/DanielHabenicht/OSHome/commit/462bf9baeddde638843278d623356b3b73a4feb1))
+* centralize logging ([86d2c2d](https://github.com/DanielHabenicht/UbiHome/commit/86d2c2da8a1ab36c06e02bf957e55af902d53e4a))
 
-## [0.3.0](https://github.com/DanielHabenicht/OSHome/compare/v0.2.2...oshome-core-v0.3.0) (2025-03-30)
+## [0.3.10](https://github.com/DanielHabenicht/UbiHome/compare/v0.3.9...ubihome-core-v0.3.10) (2025-04-26)
+
+
+### Bug Fixes
+
+* bme280 not looping ([79e7998](https://github.com/DanielHabenicht/UbiHome/commit/79e79984f9ca72c3675f27d5a11e24f9265375f0))
+* centralize logging ([86d2c2d](https://github.com/DanielHabenicht/UbiHome/commit/86d2c2da8a1ab36c06e02bf957e55af902d53e4a))
+
+## [0.3.9](https://github.com/DanielHabenicht/UbiHome/compare/v0.3.8...ubihome-core-v0.3.9) (2025-04-26)
+
+
+### Bug Fixes
+
+* bme280 not looping ([79e7998](https://github.com/DanielHabenicht/UbiHome/commit/79e79984f9ca72c3675f27d5a11e24f9265375f0))
+* centralize logging ([86d2c2d](https://github.com/DanielHabenicht/UbiHome/commit/86d2c2da8a1ab36c06e02bf957e55af902d53e4a))
+
+## [0.3.8](https://github.com/DanielHabenicht/UbiHome/compare/v0.3.7...ubihome-core-v0.3.8) (2025-04-26)
+
+
+### Bug Fixes
+
+* bme280 not looping ([79e7998](https://github.com/DanielHabenicht/UbiHome/commit/79e79984f9ca72c3675f27d5a11e24f9265375f0))
+* centralize logging ([86d2c2d](https://github.com/DanielHabenicht/UbiHome/commit/86d2c2da8a1ab36c06e02bf957e55af902d53e4a))
+
+## [0.3.7](https://github.com/DanielHabenicht/UbiHome/compare/v0.3.6...ubihome-core-v0.3.7) (2025-04-26)
+
+
+### Bug Fixes
+
+* bme280 not looping ([79e7998](https://github.com/DanielHabenicht/UbiHome/commit/79e79984f9ca72c3675f27d5a11e24f9265375f0))
+
+## [0.3.6](https://github.com/DanielHabenicht/UbiHome/compare/v0.3.5...ubihome-core-v0.3.6) (2025-04-26)
+
+
+### Bug Fixes
+
+* bme280 not looping ([79e7998](https://github.com/DanielHabenicht/UbiHome/commit/79e79984f9ca72c3675f27d5a11e24f9265375f0))
+
+## [0.3.5](https://github.com/DanielHabenicht/UbiHome/compare/v0.3.4...ubihome-core-v0.3.5) (2025-04-16)
+
+
+### Bug Fixes
+
+* add pullup ([462bf9b](https://github.com/DanielHabenicht/UbiHome/commit/462bf9baeddde638843278d623356b3b73a4feb1))
+
+## [0.3.4](https://github.com/DanielHabenicht/UbiHome/compare/v0.3.3...ubihome-core-v0.3.4) (2025-04-16)
+
+
+### Bug Fixes
+
+* add pullup ([462bf9b](https://github.com/DanielHabenicht/UbiHome/commit/462bf9baeddde638843278d623356b3b73a4feb1))
+
+## [0.3.3](https://github.com/DanielHabenicht/UbiHome/compare/v0.3.2...ubihome-core-v0.3.3) (2025-03-30)
+
+
+### Bug Fixes
+
+* add pullup ([462bf9b](https://github.com/DanielHabenicht/UbiHome/commit/462bf9baeddde638843278d623356b3b73a4feb1))
+
+## [0.3.0](https://github.com/DanielHabenicht/UbiHome/compare/v0.2.2...ubihome-core-v0.3.0) (2025-03-30)
 
 
 ### Features
 
-* add rpi gpio ([0fe5532](https://github.com/DanielHabenicht/OSHome/commit/0fe5532bcf50964675ff09a075954f4d3475a892))
+* add rpi gpio ([0fe5532](https://github.com/DanielHabenicht/UbiHome/commit/0fe5532bcf50964675ff09a075954f4d3475a892))
 
-## [0.2.2](https://github.com/DanielHabenicht/OSHome/compare/v0.2.1...oshome-core-v0.2.2) (2025-03-30)
-
-
-### Bug Fixes
-
-* better logging ([51a56f7](https://github.com/DanielHabenicht/OSHome/commit/51a56f73b71755448cc7774000d035057258f209))
-
-## [0.2.1](https://github.com/DanielHabenicht/OSHome/compare/v0.2.0...oshome-core-v0.2.1) (2025-03-30)
+## [0.2.2](https://github.com/DanielHabenicht/UbiHome/compare/v0.2.1...ubihome-core-v0.2.2) (2025-03-30)
 
 
 ### Bug Fixes
 
-* better logging ([51a56f7](https://github.com/DanielHabenicht/OSHome/commit/51a56f73b71755448cc7774000d035057258f209))
+* better logging ([51a56f7](https://github.com/DanielHabenicht/UbiHome/commit/51a56f73b71755448cc7774000d035057258f209))
 
-## [0.2.0](https://github.com/DanielHabenicht/OSHome/compare/v0.1.3...oshome-core-v0.2.0) (2025-03-30)
+## [0.2.1](https://github.com/DanielHabenicht/UbiHome/compare/v0.2.0...ubihome-core-v0.2.1) (2025-03-30)
+
+
+### Bug Fixes
+
+* better logging ([51a56f7](https://github.com/DanielHabenicht/UbiHome/commit/51a56f73b71755448cc7774000d035057258f209))
+
+## [0.2.0](https://github.com/DanielHabenicht/UbiHome/compare/v0.1.3...ubihome-core-v0.2.0) (2025-03-30)
 
 
 ### Features
 
-* add binary sensor ([2189379](https://github.com/DanielHabenicht/OSHome/commit/218937924b6f09f8bd9962c373a12b567fdad079))
+* add binary sensor ([2189379](https://github.com/DanielHabenicht/UbiHome/commit/218937924b6f09f8bd9962c373a12b567fdad079))
 
-## [0.1.3](https://github.com/DanielHabenicht/OSHome/compare/oshome-core-v0.1.2...oshome-core-v0.1.3) (2025-03-30)
-
-
-### Bug Fixes
-
-* test release ([0345ca5](https://github.com/DanielHabenicht/OSHome/commit/0345ca57e0583b3d806bfeb0698711de42ac1550))
-
-## [0.1.2](https://github.com/DanielHabenicht/OSHome/compare/oshome-core-v0.1.1...oshome-core-v0.1.2) (2025-03-29)
+## [0.1.3](https://github.com/DanielHabenicht/UbiHome/compare/ubihome-core-v0.1.2...ubihome-core-v0.1.3) (2025-03-30)
 
 
 ### Bug Fixes
 
-* test release ([0345ca5](https://github.com/DanielHabenicht/OSHome/commit/0345ca57e0583b3d806bfeb0698711de42ac1550))
+* test release ([0345ca5](https://github.com/DanielHabenicht/UbiHome/commit/0345ca57e0583b3d806bfeb0698711de42ac1550))
 
-## [0.1.1](https://github.com/DanielHabenicht/OSHome/compare/oshome-core-v0.1.0...oshome-core-v0.1.1) (2025-03-29)
+## [0.1.2](https://github.com/DanielHabenicht/UbiHome/compare/ubihome-core-v0.1.1...ubihome-core-v0.1.2) (2025-03-29)
 
 
 ### Bug Fixes
 
-* test release ([0345ca5](https://github.com/DanielHabenicht/OSHome/commit/0345ca57e0583b3d806bfeb0698711de42ac1550))
+* test release ([0345ca5](https://github.com/DanielHabenicht/UbiHome/commit/0345ca57e0583b3d806bfeb0698711de42ac1550))
+
+## [0.1.1](https://github.com/DanielHabenicht/UbiHome/compare/ubihome-core-v0.1.0...ubihome-core-v0.1.1) (2025-03-29)
+
+
+### Bug Fixes
+
+* test release ([0345ca5](https://github.com/DanielHabenicht/UbiHome/commit/0345ca57e0583b3d806bfeb0698711de42ac1550))

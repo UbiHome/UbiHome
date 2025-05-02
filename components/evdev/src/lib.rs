@@ -1,5 +1,5 @@
 use log::{debug, info, warn};
-use oshome_core::{
+use ubihome_core::{
     config_template,
     home_assistant::sensors::{Component, HABinarySensor},
     ChangedMessage, Module, NoConfig, PublishedMessage,
@@ -46,7 +46,7 @@ impl Module for Default {
                 BinarySensorKind::evdev(_) => {
                     let object_id = format!(
                         "{}_{}",
-                        self.config.oshome.name,
+                        self.config.ubihome.name,
                         any_sensor.default.name.clone()
                     );
                     let id = any_sensor.default.id.unwrap_or(object_id.clone());

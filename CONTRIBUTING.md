@@ -1,6 +1,6 @@
-# Contributing to OSHome
+# Contributing to UbiHome
 
-We welcome any contributions to the OSHome suite of code and documentation!
+We welcome any contributions to the UbiHome suite of code and documentation!
 
 Please follow the semantic commit message format for all commits. 
 

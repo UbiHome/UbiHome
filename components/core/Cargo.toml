@@ -1,5 +1,5 @@
 [package]
-name = "oshome-core"
+name = "ubihome-core"
 version = "0.3.20"
 authors = ["Daniel Habenicht <daniel-habenicht@outlook.de>"]
 edition = "2024"
