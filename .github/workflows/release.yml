@@ -66,6 +66,7 @@ jobs:
           # Add "--locked" again when release please is not updating all Cargo.toml files
           args: "--release"
           strip: true
+          force_use_cross: ${{ matrix.platform.target == 'x86_64-unknown-linux-musl' }}
 
       # - name: Publish artifacts and release
       #   uses: houseabsolute/actions-rust-release@v0
