@@ -1,5 +1,6 @@
 # https://github.com/cross-rs/cross/blob/main/docs/config_file.md
 [target.armv7-unknown-linux-musleabi]
 pre-build = [
-    "apt-get install dbus-1 -y",
+    "apt-get update",
+    "apt-get install -y libdbus-1-dev pkg-config",
 ]
