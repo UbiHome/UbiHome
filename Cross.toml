@@ -10,3 +10,10 @@ pre-build = [
     "apt-get update",
     "apt-get install -y libdbus-1-dev pkg-config",
 ]
+
+# https://github.com/rust-lang/rust/issues/115450#issuecomment-1705281000
+[target.armv7-unknown-linux-musleabi.env]
+passthrough = ["RUSTFLAGS=\"-Ctarget-feature=-crt-static\""]
+
+[target.x86_64-unknown-linux-musl.env]
+passthrough = ["RUSTFLAGS=\"-Ctarget-feature=-crt-static\""]
