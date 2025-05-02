@@ -77,7 +77,7 @@ jobs:
             await github.rest.actions.createWorkflowDispatch({
               owner: 'UbiHome',
               repo: 'ubihome.github.io',
-              workflow_id: 'docs.yml',
+              workflow_id: 'update_version.yml',
               ref: 'main',
               inputs: {
                 version: context.payload.ref.replace('refs/tags/v', ''),
