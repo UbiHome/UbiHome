@@ -240,7 +240,7 @@ fn get_all_modules(yaml: &String) -> Vec<Box<dyn Module>> {
     modules.push(Box::new(ubihome_mdns::Default::new(&yaml)));
     modules.push(Box::new(ubihome_api::UbiHomeDefault::new(&yaml)));
     modules.push(Box::new(ubihome_power_utils::Default::new(&yaml)));
-    modules.push(Box::new(ubihome_bluetooth_proxy::Default::new(&yaml)));
+    // modules.push(Box::new(ubihome_bluetooth_proxy::Default::new(&yaml)));
     modules.push(Box::new(ubihome_web_server::Default::new(&yaml)));
     return modules
 }

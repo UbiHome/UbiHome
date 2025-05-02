@@ -48,15 +48,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      # - name: Add extra packages (MacOS)
-      #   if: matrix.platform.runs-on == 'macOS-latest'
-      #   run: brew install libmodbus
-
-      - name: Add extra packages (Linux)
-        if: matrix.platform.runs-on == 'ubuntu-24.04'
-        run: | 
-          sudo apt-get update
-          sudo apt-get install -y musl-tools libdbus-1-dev pkg-config
 
       - name: Build binary
         uses: houseabsolute/actions-rust-cross@v1
@@ -66,26 +57,28 @@ jobs:
           # Add "--locked" again when release please is not updating all Cargo.toml files
           args: "--release"
           strip: true
-          # force-use-cross: ${{ matrix.platform.target == 'x86_64-unknown-linux-musl' }}
 
-      # - name: Publish artifacts and release
-      #   uses: houseabsolute/actions-rust-release@v0
-      #   with:
-      #     executable-name: ubihome
-      #     target: ${{ matrix.platform.target }}
-      #     changes-file: null
-      #     extra-files: |
-      #       README.md
-      #       config.yaml
+      - name: Publish artifacts and release
+        uses: houseabsolute/actions-rust-release@v0
+        with:
+          executable-name: ubihome
+          target: ${{ matrix.platform.target }}
+          changes-file: null
+          extra-files: |
+            README.md
+            config.yaml
 
       # https://octokit.github.io/rest.js/v21/
-      # - name: Update docs version numbers
-      #   uses: actions/github-script@v5
-      #   with:
-      #     script: |
-      #       await github.rest.actions.createWorkflowDispatch({
-      #         'Mause',
-      #         'fdroidrepo',
-      #         'workflows/update.yaml',
-      #         'main',
-      #       });
+      - name: Update docs version numbers
+        uses: actions/github-script@v5
+        with:
+          script: |
+            await github.rest.actions.createWorkflowDispatch({
+              'UbiHome',
+              'ubihome.github.io',
+              '.github/workflows/docs.yml',
+              'main',
+              inputs: {
+                version: context.payload.ref.replace('refs/tags/v', ''),
+              },
+            });
