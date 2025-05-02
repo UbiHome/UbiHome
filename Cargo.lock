@@ -3227,7 +3227,7 @@ dependencies = [
 
 [[package]]
 name = "ubihome-api"
-version = "0.3.29"
+version = "0.4.9"
 dependencies = [
  "duration-str",
  "esphome-native-api",
@@ -3241,7 +3241,7 @@ dependencies = [
 
 [[package]]
 name = "ubihome-bluetooth_proxy"
-version = "0.3.28"
+version = "0.4.9"
 dependencies = [
  "anyhow",
  "btleplug",
@@ -3270,7 +3270,7 @@ dependencies = [
 
 [[package]]
 name = "ubihome-core"
-version = "0.4.0"
+version = "0.4.9"
 dependencies = [
  "convert_case",
  "duration-str",
@@ -3295,7 +3295,7 @@ dependencies = [
 
 [[package]]
 name = "ubihome-gpio"
-version = "0.4.3"
+version = "0.4.9"
 dependencies = [
  "async-trait",
  "duration-str",
@@ -3309,7 +3309,7 @@ dependencies = [
 
 [[package]]
 name = "ubihome-mdns"
-version = "0.3.29"
+version = "0.4.9"
 dependencies = [
  "duration-str",
  "libmdns",
@@ -3324,7 +3324,7 @@ dependencies = [
 
 [[package]]
 name = "ubihome-mqtt"
-version = "0.4.4"
+version = "0.4.9"
 dependencies = [
  "duration-str",
  "log",
@@ -3339,7 +3339,7 @@ dependencies = [
 
 [[package]]
 name = "ubihome-power_utils"
-version = "0.4.6"
+version = "0.4.9"
 dependencies = [
  "duration-str",
  "log",
