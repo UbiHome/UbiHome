@@ -1,5 +1,0 @@
-# Bluetooth
-
-TBD
-
-<!--  -->

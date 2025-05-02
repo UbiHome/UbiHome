@@ -77,3 +77,15 @@ jobs:
       #     extra-files: |
       #       README.md
       #       config.yaml
+
+      # https://octokit.github.io/rest.js/v21/
+      # - name: Update docs version numbers
+      #   uses: actions/github-script@v5
+      #   with:
+      #     script: |
+      #       await github.rest.actions.createWorkflowDispatch({
+      #         'Mause',
+      #         'fdroidrepo',
+      #         'workflows/update.yaml',
+      #         'main',
+      #       });
