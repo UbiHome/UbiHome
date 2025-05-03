@@ -164,7 +164,7 @@ impl Module for Default {
                             let cloned_key = key.clone();
                             let cloned_sender = sender.clone();
                             pin.set_async_interrupt(Trigger::RisingEdge, None, move |event| {
-                                println!("Event: {:?}", event);
+                                debug!("Event: {:?}", event);
                                 debug!("BinarySensor {} triggered.", cloned_key);
                                 _ = cloned_sender.send(ChangedMessage::BinarySensorValueChange {
                                     key: cloned_key.clone(),
@@ -187,7 +187,7 @@ impl Module for Default {
                             let cloned_key = key.clone();
                             let cloned_sender = sender.clone();
                             pin.set_async_interrupt(Trigger::FallingEdge, None, move |event| {
-                                println!("Event: {:?}", event);
+                                debug!("Event: {:?}", event);
                                 debug!("BinarySensor {} triggered.", cloned_key);
                                 _ = cloned_sender.send(ChangedMessage::BinarySensorValueChange {
                                     key: cloned_key.clone(),
