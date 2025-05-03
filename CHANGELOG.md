@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.4](https://github.com/UbiHome/UbiHome/compare/v0.5.3...v0.5.4) (2025-05-03)
+
+
+### Bug Fixes
+
+* readme ([75ddefd](https://github.com/UbiHome/UbiHome/commit/75ddefdb09b8143a7db0d29da054912a489f10e4))
+
 ## [0.5.3](https://github.com/UbiHome/UbiHome/compare/v0.5.2...v0.5.3) (2025-05-03)
 
 
