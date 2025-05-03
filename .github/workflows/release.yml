@@ -3,7 +3,7 @@ name: Release
 on:
   push:
     # Just for debugging
-    branches: [ main ]
+    # branches: [ main ]
     tags:
       - 'v*'
 
@@ -59,28 +59,28 @@ jobs:
           args: "--release"
           strip: true
 
-      # - name: Publish artifacts and release
-      #   uses: houseabsolute/actions-rust-release@v0
-      #   with:
-      #     executable-name: ubihome
-      #     target: ${{ matrix.target }}
-      #     changes-file: null
-      #     extra-files: |
-      #       README.md
-      #       config.yaml
+      - name: Publish artifacts and release
+        uses: houseabsolute/actions-rust-release@v0
+        with:
+          executable-name: ubihome
+          target: ${{ matrix.target }}
+          changes-file: null
+          extra-files: |
+            README.md
+            config.yaml
 
       # https://octokit.github.io/rest.js/v21/
-      # - name: Update docs version numbers
-      #   uses: actions/github-script@v5
-      #   with:
-      #     github-token: ${{ secrets.CUSTOM_GITHUB_PAT }}
-      #     script: |
-      #       await github.rest.actions.createWorkflowDispatch({
-      #         owner: 'UbiHome',
-      #         repo: 'ubihome.github.io',
-      #         workflow_id: 'update_version.yml',
-      #         ref: 'main',
-      #         inputs: {
-      #           version: context.payload.ref.replace('refs/tags/v', ''),
-      #         }
-      #       });
+      - name: Update docs version numbers
+        uses: actions/github-script@v5
+        with:
+          github-token: ${{ secrets.CUSTOM_GITHUB_PAT }}
+          script: |
+            await github.rest.actions.createWorkflowDispatch({
+              owner: 'UbiHome',
+              repo: 'ubihome.github.io',
+              workflow_id: 'update_version.yml',
+              ref: 'main',
+              inputs: {
+                version: context.payload.ref.replace('refs/tags/v', ''),
+              }
+            });
