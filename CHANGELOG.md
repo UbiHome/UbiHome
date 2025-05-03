@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.3](https://github.com/UbiHome/UbiHome/compare/v0.5.2...v0.5.3) (2025-05-03)
+
+
+### Bug Fixes
+
+* gpio interrupts ([44e4f16](https://github.com/UbiHome/UbiHome/commit/44e4f16a211f6d09617af863bdfb87297f2ba73f))
+
 ## [0.5.2](https://github.com/UbiHome/UbiHome/compare/v0.5.1...v0.5.2) (2025-05-03)
 
 
