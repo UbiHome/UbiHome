@@ -9,6 +9,7 @@ pub mod internal;
 pub extern crate paste;
 
 use home_assistant::sensors::Component;
+use internal::sensors::InternalComponent;
 use std::{collections::HashMap, pin::Pin};
 use tokio::sync::broadcast::{Receiver, Sender};
 use serde::{Deserialize};
@@ -22,7 +23,7 @@ where
 {
     fn validate(&mut self) -> Result<(), String>;
 
-    fn init(&mut self) -> Result<Vec<Component>, String>;
+    fn init(&mut self) -> Result<Vec<InternalComponent>, String>;
     fn run(
         &self,
         sender: Sender<ChangedMessage>,

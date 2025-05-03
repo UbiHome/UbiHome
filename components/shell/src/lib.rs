@@ -1,10 +1,5 @@
 use duration_str::deserialize_duration;
-use log::debug;
-use ubihome_core::{
-    config_template,
-    home_assistant::sensors::{Component, HABinarySensor, HAButton, HASensor},
-    ChangedMessage, Module, PublishedMessage,
-};
+use log::{debug, error, info};
 use serde::{Deserialize, Deserializer};
 use shell_exec::{Execution, Shell, ShellError};
 use std::collections::HashMap;
@@ -12,6 +7,12 @@ use std::{future::Future, pin::Pin, str, time::Duration};
 use tokio::{
     sync::broadcast::{Receiver, Sender},
     time,
+};
+use ubihome_core::{
+    config_template,
+    home_assistant::sensors::{Component, HABinarySensor, HAButton, HASensor},
+    internal::sensors::{InternalBinarySensor, InternalButton, InternalComponent, InternalSensor},
+    ChangedMessage, Module, PublishedMessage,
 };
 
 #[derive(Debug, Copy, Clone, Deserialize)]
@@ -68,7 +69,7 @@ config_template!(
 
 pub struct Default {
     config: ShellConfig,
-    components: Vec<Component>,
+    components: Vec<InternalComponent>,
     binary_sensors: HashMap<String, ShellBinarySensorConfig>,
     buttons: HashMap<String, ShellButtonConfig>,
     sensors: HashMap<String, ShellSensorConfig>,
@@ -77,23 +78,25 @@ pub struct Default {
 impl Default {
     pub fn new(config_string: &String) -> Self {
         let config = serde_yaml::from_str::<CoreConfig>(config_string).unwrap();
-        // info!("Shell config: {:?}", config);
-        let mut components: Vec<Component> = Vec::new();
+        let mut components: Vec<InternalComponent> = Vec::new();
 
         let mut sensors: HashMap<String, ShellSensorConfig> = HashMap::new();
         for (_, any_sensor) in config.sensor.clone().unwrap_or_default() {
             match any_sensor.extra {
                 SensorKind::shell(sensor) => {
                     let id = any_sensor.default.get_object_id();
-                    components.push(Component::Sensor(HASensor {
-                        platform: "sensor".to_string(),
-                        icon: any_sensor.default.icon.clone(),
-                        unique_id: Some(id.clone()),
-                        device_class: any_sensor.default.device_class.clone(),
-                        state_class: any_sensor.default.state_class.clone(),
-                        unit_of_measurement: any_sensor.default.unit_of_measurement.clone(),
-                        name: any_sensor.default.name.clone(),
-                        object_id: id.clone(),
+                    components.push(InternalComponent::Sensor(InternalSensor {
+                        ha: HASensor {
+                            platform: "sensor".to_string(),
+                            icon: any_sensor.default.icon.clone(),
+                            unique_id: Some(id.clone()),
+                            device_class: any_sensor.default.device_class.clone(),
+                            state_class: any_sensor.default.state_class.clone(),
+                            unit_of_measurement: any_sensor.default.unit_of_measurement.clone(),
+                            name: any_sensor.default.name.clone(),
+                            object_id: id.clone(),
+                        },
+                        filters: None,
                     }));
                     sensors.insert(id.clone(), sensor);
                 }
@@ -106,13 +109,16 @@ impl Default {
             match any_sensor.extra {
                 BinarySensorKind::shell(binary_sensor) => {
                     let id = any_sensor.default.get_object_id();
-                    components.push(Component::BinarySensor(HABinarySensor {
-                        platform: "sensor".to_string(),
-                        icon: any_sensor.default.icon.clone(),
-                        unique_id: Some(id.clone()),
-                        device_class: any_sensor.default.device_class.clone(),
-                        name: any_sensor.default.name.clone(),
-                        object_id: id.clone(),
+                    components.push(InternalComponent::BinarySensor(InternalBinarySensor {
+                        ha: HABinarySensor {
+                            platform: "sensor".to_string(),
+                            icon: any_sensor.default.icon.clone(),
+                            unique_id: Some(id.clone()),
+                            device_class: any_sensor.default.device_class.clone(),
+                            name: any_sensor.default.name.clone(),
+                            object_id: id.clone(),
+                        },
+                        filters: any_sensor.default.filters.clone(),
                     }));
                     binary_sensors.insert(id.clone(), binary_sensor);
                 }
@@ -125,12 +131,14 @@ impl Default {
             match any_sensor.extra {
                 ButtonKind::shell(button) => {
                     let id = any_sensor.default.get_object_id();
-                    components.push(Component::Button(HAButton {
-                        platform: "sensor".to_string(),
-                        icon: any_sensor.default.icon.clone(),
-                        unique_id: Some(id.clone()),
-                        name: any_sensor.default.name.clone(),
-                        object_id: id.clone(),
+                    components.push(InternalComponent::Button(InternalButton {
+                        ha: HAButton {
+                            platform: "sensor".to_string(),
+                            icon: any_sensor.default.icon.clone(),
+                            unique_id: Some(id.clone()),
+                            name: any_sensor.default.name.clone(),
+                            object_id: id.clone(),
+                        },
                     }));
                     buttons.insert(id.clone(), button);
                 }
@@ -152,7 +160,7 @@ impl Module for Default {
         Ok(())
     }
 
-    fn init(&mut self) -> Result<Vec<Component>, String> {
+    fn init(&mut self) -> Result<Vec<InternalComponent>, String> {
         Ok(self.components.clone())
     }
 
@@ -198,9 +206,7 @@ impl Module for Default {
                                 }
                             }
                         }
-                        _ => {
-                            debug!("Ignored message type: {:?}", cmd);
-                        }
+                        _ => {}
                     }
                 }
             });
@@ -243,6 +249,7 @@ impl Module for Default {
             for (key, binary_sensor) in binary_sensors {
                 let cloned_config = config.clone();
                 let cloned_sender = sender.clone();
+                debug!("Binary Sensor {}: {:?}", key, binary_sensor);
 
                 tokio::spawn(async move {
                     if let Some(duration) = binary_sensor.update_interval {
@@ -259,8 +266,6 @@ impl Module for Default {
                             // TODO: Handle long running commands (e.g. newline per value) and multivalued outputs (e.g. json)
                             match output {
                                 Ok(output) => {
-                                    debug!("Sensor {} output: {}", key, output);
-
                                     let value = if output.trim().to_lowercase() == "true" {
                                         true
                                     } else if output.trim().to_lowercase() == "false" {

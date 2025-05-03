@@ -7,20 +7,20 @@ use inquire::Text;
 use ubihome::CoreConfig;
 use ubihome_core::binary_sensor::FilterType;
 use ubihome_core::home_assistant::sensors::Component;
+use ubihome_core::internal::sensors::InternalComponent;
 use ubihome_core::{ChangedMessage, Module, PublishedMessage};
 
 use clap::{Arg, ArgAction, Command};
-use log::{debug, info, warn};
+use futures_signals::signal::{MapFuture, Mutable, MutableSignal, Signal, SignalExt, SignalFuture};
+use log::{debug, error, info, trace, warn};
 use service::{install, uninstall};
 use std::collections::HashMap;
 use std::path::Path;
 use std::sync::mpsc;
-use std::thread::sleep;
 use std::time::Duration;
 use std::{env, fs};
 use tokio::sync::broadcast::{self, Receiver, Sender};
 use tokio::{runtime::Runtime, signal};
-use futures_signals::signal::{MapFuture, Mutable, MutableSignal, Signal, SignalExt, SignalFuture};
 
 #[cfg(target_os = "windows")]
 use windows_service::{
@@ -220,7 +220,7 @@ fn main() {
                 panic!("Running as a Windows service is not supported on Linux.");
             } else {
                 // Run normally
-                run( config_file,None).unwrap();
+                run(config_file, None).unwrap();
             }
         }
         _ => {
@@ -232,7 +232,8 @@ fn main() {
 
 fn get_all_modules(yaml: &String) -> Vec<Box<dyn Module>> {
     // Match all top level keys in the YAML file
-    let modules_to_load = yaml.lines()
+    let modules_to_load = yaml
+        .lines()
         .filter_map(|line| {
             let line = line;
             if line.starts_with(' ') {
@@ -242,9 +243,7 @@ fn get_all_modules(yaml: &String) -> Vec<Box<dyn Module>> {
             } else if line.starts_with('#') {
                 None
             } else {
-                line.split(':')
-                    .next()
-                    .map(|key| key.trim().to_string())
+                line.split(':').next().map(|key| key.trim().to_string())
             }
         })
         .collect::<Vec<String>>();
@@ -280,11 +279,13 @@ fn get_all_modules(yaml: &String) -> Vec<Box<dyn Module>> {
     // TODO: Throw error if platform is used in sensor but not configured
 
     // modules.push(Box::new(ubihome_bluetooth_proxy::Default::new(&yaml)));
-    return modules
+    return modules;
 }
 
-async fn initialize_modules(modules: &mut Vec<Box<dyn Module>>) -> Result<Vec<Component>, String> {
-    let mut all_components: Vec<Component> = Vec::new();
+async fn initialize_modules(
+    modules: &mut Vec<Box<dyn Module>>,
+) -> Result<Vec<InternalComponent>, String> {
+    let mut all_components: Vec<InternalComponent> = Vec::new();
     for module in modules.iter_mut() {
         let components = module.init();
         match components {
@@ -306,7 +307,6 @@ async fn run_modules(
     receiver: Receiver<PublishedMessage>,
 ) {
     for module in modules {
-        // Start MQTT client in a separate task
         let tx = sender.clone();
         let rx = receiver.resubscribe();
         tokio::spawn({
@@ -322,8 +322,6 @@ fn run(
     shutdown_signal: Option<mpsc::Receiver<()>>,
 ) -> Result<(), Box<dyn std::error::Error>> {
     println!("UbiHome - {}", VERSION);
-
-
 
     #[cfg(not(debug_assertions))]
     use directories::BaseDirs;
@@ -355,38 +353,39 @@ fn run(
         );
 
     // if cfg!(debug_assertions) {
-        logger_builder = logger_builder.duplicate_to_stdout(Duplicate::Debug);
+    logger_builder = logger_builder.duplicate_to_stdout(Duplicate::Debug);
     // }
 
     let mut logger = logger_builder.start().unwrap();
 
     println!("LogDirectory: {}", log_directory.display());
-    
-    
-    let config_string: String = read_base_config(config_path).expect("Failed to load base configuration");
+
+    let config_string: String =
+        read_base_config(config_path).expect("Failed to load base configuration");
 
     let config = serde_yaml::from_str::<CoreConfig>(&config_string).unwrap();
     if let Some(logger_config) = config.logger.clone() {
-        logger.reset_flw(&FileLogWriter::builder(
-            FileSpec::default().directory(
-                logger_config
-                .clone()
-                    .directory
-                    .unwrap_or(log_directory.to_string_lossy().to_string()),
-            ),
-        )).unwrap();
+        logger
+            .reset_flw(&FileLogWriter::builder(
+                FileSpec::default().directory(
+                    logger_config
+                        .clone()
+                        .directory
+                        .unwrap_or(log_directory.to_string_lossy().to_string()),
+                ),
+            ))
+            .unwrap();
 
         logger
             .parse_and_push_temp_spec(logger_config.get_flexi_logger_spec())
             .unwrap();
     };
 
-    warn!("Config: {:?}", &config);
+    // warn!("Config: {:?}", &config);
 
     // Spawn the root task
     let rt = Runtime::new().unwrap();
     rt.block_on(async {
-
         let mut modules = get_all_modules(&config_string);
         log::info!("Loaded {} modules", modules.len());
 
@@ -394,102 +393,128 @@ fn run(
 
         let (internal_tx, modules_rx) = broadcast::channel::<PublishedMessage>(16);
         let (modules_tx, mut internal_rx) = broadcast::channel::<ChangedMessage>(16);
-        let internal_tx_clone = internal_tx.clone();
 
         // Double Option Workaround for https://github.com/Pauan/rust-signals/issues/75
-        let mut signal_map_binary_sensor: HashMap<String, Mutable<Option<Option<bool>>>> = HashMap::new();
-        for (key, any_sensor) in config.binary_sensor.clone().unwrap_or_default() {
-            let mutable: Mutable<Option<Option<bool>>> = Mutable::new(Option::None);
-            signal_map_binary_sensor.insert(
-                key,
-                mutable.clone());
+        let mut signal_map_binary_sensor: HashMap<String, Mutable<Option<Option<bool>>>> =
+            HashMap::new();
 
-                let mutable_clone = mutable.clone();
-                tokio::spawn(async move {
-                    println!("Filters: {:?}", any_sensor.default.filters);
+        for (component) in components.clone() {
+            match component {
+                InternalComponent::Button(button) => {
+                    println!("Button: {:?}", button);
+                }
+                InternalComponent::Sensor(sensor) => {
+                    println!("Sensor: {:?}", sensor);
+                }
+                InternalComponent::BinarySensor(binary_sensor) => {
+                    let mutable: Mutable<Option<Option<bool>>> = Mutable::new(Option::None);
+                    signal_map_binary_sensor.insert(binary_sensor.ha.object_id.clone(), mutable.clone());
+                    let internal_tx_clone = internal_tx.clone();
 
-                    let mut signal = mutable_clone.signal().boxed();
-                    for filter in any_sensor.default.filters.unwrap_or_default() {
-                        println!("Filter: {:?}", filter);
-                        match filter.filter {
-                            FilterType::delayed_on(time) => {
-                                    // println!("delayed_on");
+                    let mutable_clone = mutable.clone();
+                    tokio::spawn(async move {
+                        // println!("Filters: {:?}", binary_sensor.filters);
+
+                        let mut signal = mutable_clone.signal().boxed();
+                        for filter in binary_sensor.filters.unwrap_or_default() {
+                            match filter.filter {
+                                FilterType::delayed_on(time) => {
+                                    trace!("delayed_on");
                                     let time_clone = time.clone();
-                                signal = signal.map_future(move |value| {
-                                    let time_clone = time_clone.clone();
-                                    Box::pin(async move {
-                                        let value = value.and_then(|v| v);
-                                        if let Some(v) = value {
-                                            if v {
-                                                // println!("Before delay");
-    
-                                                sleep(time_clone);
-                                                // println!("After delay");
+                                    signal = signal
+                                        .map_future(move |value| {
+                                            let time_clone = time_clone.clone();
+                                            Box::pin(async move {
+                                                let value = value.and_then(|v| v);
+                                                if let Some(v) = value {
+                                                    if v {
+                                                        // println!("Before delay");
+                                                        tokio::time::sleep(time_clone).await;
+                                                        // println!("After delay");
+                                                        return value;
+                                                    }
+                                                }
                                                 return value;
-                                            }
-                                        }
-                                        return value;
-                                    })
-                                }).boxed();
-                            }
-                            FilterType::delayed_off(time) => {
-                                let time_clone = time.clone();
-                                signal = signal.map_future(move |value| {
-                                    println!("delayed_off");
-                                    let time_clone = time_clone.clone();
+                                            })
+                                        })
+                                        .boxed();
+                                }
+                                FilterType::delayed_off(time) => {
+                                    let time_clone = time.clone();
+                                    signal = signal
+                                        .map_future(move |value| {
+                                            trace!("delayed_off");
+                                            let time_clone = time_clone.clone();
 
-                                    Box::pin(async move {
-                                        let value = value.and_then(|v| v);
-                                        // println!("delayed_off value {:?}", value);
+                                            Box::pin(async move {
+                                                let value = value.and_then(|v| v);
+                                                // println!("delayed_off value {:?}", value);
 
-                                        if let Some(v) = value {
-                                            if v {
-                                                // println!("Before delay");
-    
-                                                sleep(time_clone);
-                                                // println!("After delay");
+                                                if let Some(v) = value {
+                                                    if v {
+                                                        // println!("Before delay");
+
+                                                        tokio::time::sleep(time_clone).await;
+                                                        // println!("After delay");
+                                                        return value;
+                                                    }
+                                                }
                                                 return value;
+                                            })
+                                        })
+                                        .boxed();
+                                }
+                                FilterType::invert(_) => {
+                                    signal = signal
+                                        .map(|value| {
+                                            trace!("invert");
+                                            if value.is_some() {
+                                                return Some(Some(!value.and_then(|v| v).unwrap()));
                                             }
-                                        }
-                                        return value;
-                                    })
-                                }).boxed();
-                            }
-                            FilterType::invert(_) => {
-                                signal = signal.map(|value| {
-                                    println!("invert");
-                                    if value.is_some() {
-                                        return Some(Some(!value.and_then(|v| v).unwrap()));
-                                    }
-                                    return value;
-                                }).boxed();
+                                            return value;
+                                        })
+                                        .boxed();
+                                }
                             }
                         }
-                    
-                    }
-                    // React to signal changes
-                    signal
-                        .for_each(|value| {
-                            println!("Value: {:?}", value);
-                            async {}
-                        })
-                        .await;
+                        // React to signal changes
 
+                        signal
+                            .for_each(|value| {
+                                println!("Value: {:?}", value);
+                                let signal_tx_clone = internal_tx_clone.clone();
+                                let key = binary_sensor.ha.object_id.clone();
+                                async move {
+                                    if let Some(value) = value.and_then(|v| v) {
+                                        let pcmd = PublishedMessage::BinarySensorValueChanged {
+                                            key: key,
+                                            value: value,
+                                        };
+                                        debug!("Publishing command from signal: {:?}", pcmd);
+                                        // if signal_tx_clone.closed()..now_or_never().is_none() {
+                                        // }
+                                            
+                                        signal_tx_clone.send(pcmd).unwrap();
+                                    }
+                                }
+                            })
+                            .await;
 
-
-                    // // Debounce future for "off" values
-                    // future
-                    //     .for_each(|value| {
-                    //         // This code is run for the current value of my_state,
-                    //         // and also every time my_state changes
-                    //         println!("From signal: {}", value);
-                    //         async {}
-                    //     })
-                    //     .await;
-                });
-            
+                        // // Debounce future for "off" values
+                        // future
+                        //     .for_each(|value| {
+                        //         // This code is run for the current value of my_state,
+                        //         // and also every time my_state changes
+                        //         println!("From signal: {}", value);
+                        //         async {}
+                        //     })
+                        //     .await;
+                    });
+                }
+            }
         }
 
+        let internal_tx_clone = internal_tx.clone();
         tokio::spawn({
             async move {
                 while let Ok(cmd) = internal_rx.recv().await {
@@ -508,16 +533,15 @@ fn run(
                             publish_cmd = Some(PublishedMessage::SensorValueChanged { key, value });
                         }
                         ChangedMessage::BinarySensorValueChange { key, value } => {
-                            println!("BinarySensorValueChange: {}", value);
+                            debug!("BinarySensorValueChange: {}", value);
                             signal_map_binary_sensor.get(&key).map(|signal| {
                                 signal.set(Some(Some(value)));
                             });
-                            publish_cmd =
-                                Some(PublishedMessage::BinarySensorValueChanged { key, value });
+                            publish_cmd = None;
+                            // Some(PublishedMessage::BinarySensorValueChanged { key, value });
                         }
-                        ChangedMessage::BluetoothProxyMessage(msg)=> {
+                        ChangedMessage::BluetoothProxyMessage(msg) => {
                             publish_cmd = Some(PublishedMessage::BluetoothProxyMessage(msg));
-                        
                         }
                     }
                     if let Some(pcmd) = publish_cmd {
@@ -533,7 +557,16 @@ fn run(
         println!("Components: {:?}", components);
         internal_tx
             .send(PublishedMessage::Components {
-                components: components,
+                components: components
+                    .iter()
+                    .map(|c| match c {
+                        InternalComponent::Button(button) => Component::Button(button.ha.clone()),
+                        InternalComponent::Sensor(sensor) => Component::Sensor(sensor.ha.clone()),
+                        InternalComponent::BinarySensor(binary_sensor) => {
+                            Component::BinarySensor(binary_sensor.ha.clone())
+                        }
+                    })
+                    .collect(),
             })
             .unwrap();
 

@@ -1,9 +1,7 @@
 use duration_str::deserialize_option_duration;
 use log::{debug, warn};
 use ubihome_core::{
-    home_assistant::sensors::{Component, HASensor},
-    sensor::{SensorBase, UnknownSensor},
-    ChangedMessage, Module, UbiHome, PublishedMessage,
+    home_assistant::sensors::{Component, HASensor}, internal::sensors::{InternalComponent, InternalSensor}, sensor::{SensorBase, UnknownSensor}, ChangedMessage, Module, PublishedMessage, UbiHome
 };
 use serde::Deserialize;
 use std::{collections::HashMap, future::Future, pin::Pin, str, time::Duration};
@@ -57,7 +55,7 @@ pub enum Measurement {
 }
 
 #[derive(Clone, Debug)]
-pub struct InternalSensor {
+pub struct BME280Sensor {
     pub entries: HashMap<Measurement, String>,
     pub address: Option<String>,
     pub update_interval: Option<Duration>,
@@ -66,16 +64,16 @@ pub struct InternalSensor {
 #[derive(Clone, Debug)]
 pub struct Default {
     // config: CoreConfig,
-    components: Vec<Component>,
-    sensors: Vec<InternalSensor>,
+    components: Vec<InternalComponent>,
+    sensors: Vec<BME280Sensor>,
 }
 
 impl Default {
     pub fn new(config_string: &String) -> Self {
         let config = serde_yaml::from_str::<CoreConfig>(config_string).unwrap();
         // info!("BME280 config: {:?}", config);
-        let mut components: Vec<Component> = Vec::new();
-        let mut sensors: Vec<InternalSensor> = Vec::new();
+        let mut components: Vec<InternalComponent> = Vec::new();
+        let mut sensors: Vec<BME280Sensor> = Vec::new();
 
         for n_sensor in config.sensor.clone() {
             match n_sensor.extra {
@@ -92,7 +90,8 @@ impl Default {
                     let object_id = temperature.get_object_id();
                     let id = temperature.id.unwrap_or(object_id.clone());
                     sensor_entries.insert(Measurement::Temperature, id.clone());
-                    components.push(Component::Sensor(HASensor {
+                    components.push(InternalComponent::Sensor(InternalSensor {
+                        ha: HASensor {
                         platform: "sensor".to_string(),
                         icon: Some(
                             temperature
@@ -121,7 +120,7 @@ impl Default {
                         ),
                         name: temperature.name.clone(),
                         object_id: object_id.clone(),
-                    }));
+                    }, filters: None }));
                     let pressure = sensor.pressure.clone().unwrap_or(SensorBase {
                         id: None,
                         name: "Pressure".to_string(),
@@ -133,7 +132,8 @@ impl Default {
                     let object_id = pressure.get_object_id();
                     let id = pressure.id.unwrap_or(object_id.clone());
                     sensor_entries.insert(Measurement::Pressure, id.clone());
-                    components.push(Component::Sensor(HASensor {
+                    components.push(InternalComponent::Sensor(InternalSensor {
+                        ha: HASensor {
                         platform: "sensor".to_string(),
                         icon: Some(pressure.icon.unwrap_or("mdi:umbrella".to_string()).clone()),
                         unique_id: Some(id.clone()),
@@ -158,7 +158,7 @@ impl Default {
 
                         name: pressure.name.clone(),
                         object_id: id.clone(),
-                    }));
+                    }, filters: None}));
                     let humidity = sensor.humidity.clone().unwrap_or(SensorBase {
                         id: None,
                         name: "Humidity".to_string(),
@@ -170,7 +170,8 @@ impl Default {
                     let object_id = humidity.get_object_id();
                     let id = humidity.id.unwrap_or(object_id.clone());
                     sensor_entries.insert(Measurement::Humidity, id.clone());
-                    components.push(Component::Sensor(HASensor {
+                    components.push(InternalComponent::Sensor(InternalSensor {
+                        ha: HASensor {
                         platform: "sensor".to_string(),
                         icon: Some(
                             humidity
@@ -199,8 +200,8 @@ impl Default {
                         ),
                         name: humidity.name.clone(),
                         object_id: id.clone(),
-                    }));
-                    let sensor_entry = InternalSensor {
+                    }, filters: None}));
+                    let sensor_entry = BME280Sensor {
                         address: sensor.address.clone(),
                         update_interval: sensor.update_interval.clone(),
                         entries: sensor_entries,
@@ -223,7 +224,7 @@ impl Module for Default {
         Ok(())
     }
 
-    fn init(&mut self) -> Result<Vec<Component>, String> {
+    fn init(&mut self) -> Result<Vec<InternalComponent>, String> {
         Ok(self.components.clone())
     }
 

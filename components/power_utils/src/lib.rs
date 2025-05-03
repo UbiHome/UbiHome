@@ -1,7 +1,6 @@
 use log::{debug, error};
 use ubihome_core::{
-    ChangedMessage, Module, NoConfig, PublishedMessage, config_template,
-    home_assistant::sensors::{Component, HAButton},
+    config_template, home_assistant::sensors::{Component, HAButton}, internal::sensors::{InternalButton, InternalComponent}, ChangedMessage, Module, NoConfig, PublishedMessage
 };
 use serde::{Deserialize, Deserializer};
 use std::collections::HashMap;
@@ -50,7 +49,7 @@ config_template!(
 
 pub struct Default {
     config: PowerUtilsConfig,
-    components: Vec<Component>,
+    components: Vec<InternalComponent>,
     buttons: HashMap<String, PowerUtilsButtonConfig>,
 }
 
@@ -58,7 +57,7 @@ impl Default {
     pub fn new(config_string: &String) -> Self {
         let config = serde_yaml::from_str::<CoreConfig>(config_string).unwrap();
         // info!("PowerUtils config: {:?}", config);
-        let mut components: Vec<Component> = Vec::new();
+        let mut components: Vec<InternalComponent> = Vec::new();
 
         let mut buttons: HashMap<String, PowerUtilsButtonConfig> = HashMap::new();
         for (_, any_sensor) in config.button.clone().unwrap_or_default() {
@@ -68,53 +67,58 @@ impl Default {
                     let button_component;
                     match button.action {
                         PowerAction::Reboot => {
-                            button_component = HAButton {
+                            button_component = InternalButton {
+                                ha: HAButton {
                                 platform: "sensor".to_string(),
                                 icon: Some(any_sensor.default.icon.unwrap_or("mdi:restart".to_string())),
                                 unique_id: Some(id.clone()),
                                 name: any_sensor.default.name.clone(),
                                 object_id: id.clone(),
-                            };
+                            }};
                         }
                         PowerAction::Shutdown => {
-                            button_component = HAButton {
+                            button_component = InternalButton {
+                                ha: HAButton {
                                 platform: "sensor".to_string(),
                                 icon: Some(any_sensor.default.icon.unwrap_or("mdi:power".to_string())),
                                 unique_id: Some(id.clone()),
                                 name: any_sensor.default.name.clone(),
                                 object_id: id.clone(),
-                            };
+                            }};
                         }
                         PowerAction::Hibernate => {
-                            button_component = HAButton {
+                            button_component = InternalButton {
+                                ha: HAButton {
                                 platform: "sensor".to_string(),
                                 icon: Some(any_sensor.default.icon.unwrap_or("mdi:snowflake".to_string())),
                                 unique_id: Some(id.clone()),
                                 name: any_sensor.default.name.clone(),
                                 object_id: id.clone(),
-                            };
+                            }};
                         }
                         PowerAction::Logout => {
-                            button_component = HAButton {
+                            button_component = InternalButton {
+                                ha: HAButton {
                                 platform: "sensor".to_string(),
                                 icon: Some(any_sensor.default.icon.unwrap_or("mdi:logout".to_string())),
                                 unique_id: Some(id.clone()),
                                 name: any_sensor.default.name.clone(),
                                 object_id: id.clone(),
-                            };
+                            }};
                         }
                         PowerAction::Sleep => {
-                            button_component = HAButton {
+                            button_component = InternalButton {
+                                ha: HAButton {
                                 platform: "sensor".to_string(),
                                 icon: Some(any_sensor.default.icon.unwrap_or("mdi:sleep".to_string())),
                                 unique_id: Some(id.clone()),
                                 name: any_sensor.default.name.clone(),
                                 object_id: id.clone(),
-                            };
+                            }};
                         }
                     }
 
-                    components.push(Component::Button(button_component));
+                    components.push(InternalComponent::Button(button_component));
                     buttons.insert(id.clone(), button);
                 }
                 _ => {}
@@ -133,7 +137,7 @@ impl Module for Default {
         Ok(())
     }
 
-    fn init(&mut self) -> Result<Vec<Component>, String> {
+    fn init(&mut self) -> Result<Vec<InternalComponent>, String> {
         Ok(self.components.clone())
     }
 

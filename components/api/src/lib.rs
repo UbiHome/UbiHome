@@ -14,6 +14,7 @@ use log::debug;
 use log::info;
 use log::trace;
 use log::warn;
+use ubihome_core::internal::sensors::InternalComponent;
 use ubihome_core::NoConfig;
 use ubihome_core::{
     config_template, home_assistant::sensors::Component, ChangedMessage, Module, PublishedMessage,
@@ -98,7 +99,7 @@ impl Module for UbiHomeDefault {
         Ok(())
     }
 
-    fn init(&mut self) -> Result<Vec<Component>, String> {
+    fn init(&mut self) -> Result<Vec<InternalComponent>, String> {
         // Does not advertise any components
         Ok(Vec::new())
     }

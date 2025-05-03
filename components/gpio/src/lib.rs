@@ -1,8 +1,6 @@
 use log::{debug, warn};
 use ubihome_core::{
-    config_template,
-    home_assistant::sensors::{Component, HABinarySensor},
-    ChangedMessage, Module, NoConfig, PublishedMessage,
+    config_template, home_assistant::sensors::{Component, HABinarySensor}, internal::sensors::{InternalBinarySensor, InternalComponent}, ChangedMessage, Module, NoConfig, PublishedMessage
 };
 use serde::{Deserialize, Deserializer};
 use std::{collections::HashMap, future, thread::sleep};
@@ -30,7 +28,7 @@ config_template!(gpio, GpioConfig, NoConfig, GpioBinarySensorConfig, NoConfig);
 
 #[derive(Clone, Debug)]
 pub struct Default {
-    components: Vec<Component>,
+    components: Vec<InternalComponent>,
     binary_sensors: HashMap<String, GpioBinarySensorConfig>,
 }
 
@@ -38,7 +36,7 @@ impl Default {
     pub fn new(config_string: &String) -> Self {
         let config = serde_yaml::from_str::<CoreConfig>(config_string).unwrap();
         // info!("GPIO config: {:?}", config);
-        let mut components: Vec<Component> = Vec::new();
+        let mut components: Vec<InternalComponent> = Vec::new();
         let mut binary_sensors: HashMap<String, GpioBinarySensorConfig> = HashMap::new();
 
         for (_, any_sensor) in config.binary_sensor.clone().unwrap_or_default() {
@@ -46,14 +44,15 @@ impl Default {
                 BinarySensorKind::gpio(binary_sensor) => {
                     let object_id = any_sensor.default.get_object_id();
                     let id = any_sensor.default.id.unwrap_or(object_id.clone());
-                    components.push(Component::BinarySensor(HABinarySensor {
+                    components.push(InternalComponent::BinarySensor(InternalBinarySensor {
+                        ha: HABinarySensor {
                         platform: "sensor".to_string(),
                         icon: any_sensor.default.icon.clone(),
                         unique_id: Some(id.clone()),
                         device_class: any_sensor.default.device_class.clone(),
                         name: any_sensor.default.name.clone(),
                         object_id: object_id.clone(),
-                    }));
+                    }, filters: None }));
                     binary_sensors.insert(id, GpioBinarySensorConfig {
                         pin: binary_sensor.pin,
                         pull_up: binary_sensor.pull_up,
@@ -75,7 +74,7 @@ impl Module for Default {
         Ok(())
     }
 
-    fn init(&mut self) -> Result<Vec<Component>, String> {
+    fn init(&mut self) -> Result<Vec<InternalComponent>, String> {
         Ok(self.components.clone())
     }
 

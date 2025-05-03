@@ -1,5 +1,6 @@
 use axum::{extract::State, http::StatusCode, response::IntoResponse, routing::get, Json, Router};
 use serde::Deserialize;
+use ubihome_core::internal::sensors::InternalComponent;
 use std::env;
 use std::time::Duration;
 
@@ -56,8 +57,8 @@ impl Module for Default {
         Ok(())
     }
 
-    fn init(&mut self) -> Result<Vec<Component>, String> {
-        let components: Vec<Component> = Vec::new();
+    fn init(&mut self) -> Result<Vec<InternalComponent>, String> {
+        let components: Vec<InternalComponent> = Vec::new();
 
         Ok(components)
     }

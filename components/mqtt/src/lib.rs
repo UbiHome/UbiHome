@@ -1,13 +1,20 @@
 use log::{debug, error, info, warn};
-use ubihome_core::{
-    config_template, home_assistant::sensors::Component, ChangedMessage, Module, PublishedMessage,
-};
 use rumqttc::{AsyncClient, ConnectionError, Event, MqttOptions, QoS, StateError};
 use serde::{Deserialize, Deserializer, Serialize};
-use std::{collections::HashMap, future::{self, Future}, pin::Pin, str, time::Duration};
+use std::{
+    collections::HashMap,
+    future::{self, Future},
+    pin::Pin,
+    str,
+    time::Duration,
+};
 use tokio::{
     sync::broadcast::{Receiver, Sender},
     time::sleep,
+};
+use ubihome_core::{
+    config_template, home_assistant::sensors::Component, internal::sensors::InternalComponent,
+    ChangedMessage, Module, PublishedMessage,
 };
 
 #[derive(Clone, Deserialize, Debug)]
@@ -133,8 +140,8 @@ impl Module for Default {
         Ok(())
     }
 
-    fn init(&mut self) -> Result<Vec<Component>, String> {
-        let components: Vec<Component> = Vec::new();
+    fn init(&mut self) -> Result<Vec<InternalComponent>, String> {
+        let components: Vec<InternalComponent> = Vec::new();
 
         Ok(components)
     }
@@ -175,7 +182,7 @@ impl Module for Default {
                     .mqtt
                     .discovery_prefix
                     .clone()
-                    .unwrap_or("os-home".to_string()),
+                    .unwrap_or("ubihome".to_string()),
                 core_config.ubihome.name
             );
             let discovery_topic =
@@ -211,7 +218,6 @@ impl Module for Default {
                                     warn!("Network unreachable, trying again...");
                                     sleep(Duration::from_secs(60)).await;
                                     continue;
-
                                 }
                                 std::io::ErrorKind::ConnectionAborted => {
                                     warn!("Connection aborted, trying again...");
@@ -224,24 +230,22 @@ impl Module for Default {
                                 }
                             },
                             ConnectionError::MqttState(e_mqtt) => match e_mqtt {
-                                StateError::Io(io_error) => {
-                                    match io_error.kind() {
-                                        std::io::ErrorKind::NetworkUnreachable => {
-                                            warn!("Network unreachable, trying again...");
-                                            sleep(Duration::from_secs(60)).await;
-                                            continue;
-                                        }
-                                        std::io::ErrorKind::ConnectionAborted => {
-                                            warn!("Connection aborted, trying again...");
-                                            sleep(Duration::from_secs(60)).await;
-                                            continue;
-                                        }
-                                        _ => {
-                                            error!("Network error: {:?}", io_error);
-                                            break;
-                                        }
+                                StateError::Io(io_error) => match io_error.kind() {
+                                    std::io::ErrorKind::NetworkUnreachable => {
+                                        warn!("Network unreachable, trying again...");
+                                        sleep(Duration::from_secs(60)).await;
+                                        continue;
                                     }
-                                }
+                                    std::io::ErrorKind::ConnectionAborted => {
+                                        warn!("Connection aborted, trying again...");
+                                        sleep(Duration::from_secs(60)).await;
+                                        continue;
+                                    }
+                                    _ => {
+                                        error!("Network error: {:?}", io_error);
+                                        break;
+                                    }
+                                },
                                 StateError::AwaitPingResp => {
                                     warn!("Ping response not received (maybe network is down?), trying again...");
                                     sleep(Duration::from_secs(60)).await;
@@ -367,7 +371,7 @@ impl Module for Default {
                             };
 
                             let origin = Origin {
-                                name: "os-home".to_string(),
+                                name: "ubihome".to_string(),
                                 sw: "0.1".to_string(),
                                 url: "https://test.com".to_string(),
                             };
@@ -432,14 +436,11 @@ impl Module for Default {
                                 error!("{}", e)
                             }
                         }
-                        _ => {
-                            debug!("Ignored message type: {:?}", cmd);
-                        }
+                        _ => {}
                     }
                 }
                 error!("MQTT Sender terminated");
             });
-
 
             // Wait indefinitely to keep the eventloop alive
             let future = future::pending();
