@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.5.0](https://github.com/UbiHome/UbiHome/compare/v0.4.9...v0.5.0) (2025-05-03)
+
+
+### Features
+
+* working basic binary filters ([52e0bc0](https://github.com/UbiHome/UbiHome/commit/52e0bc0f6b6c028165252675881714b6764bbdea))
+
+
+### Bug Fixes
+
+* load modules conditionally ([11c52bf](https://github.com/UbiHome/UbiHome/commit/11c52bffa181846679c503778a1d7af5381cb038))
+* native api button not working ([bf1eb97](https://github.com/UbiHome/UbiHome/commit/bf1eb9773441816ee75fd565600efd0d1ecd1664))
+
 ## [0.4.9](https://github.com/UbiHome/UbiHome/compare/v0.4.8...v0.4.9) (2025-05-02)
 
 ## [0.4.8](https://github.com/UbiHome/UbiHome/compare/v0.4.7...v0.4.8) (2025-05-02)

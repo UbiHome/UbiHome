@@ -1,5 +1,7 @@
 # Changelog
 
+## [0.4.10](https://github.com/UbiHome/UbiHome/compare/v0.4.9...ubihome-evdev-v0.4.10) (2025-05-03)
+
 ## [0.4.9](https://github.com/UbiHome/UbiHome/compare/v0.4.8...ubihome-evdev-v0.4.9) (2025-05-02)
 
 ## [0.4.8](https://github.com/UbiHome/UbiHome/compare/v0.4.7...ubihome-evdev-v0.4.8) (2025-05-02)

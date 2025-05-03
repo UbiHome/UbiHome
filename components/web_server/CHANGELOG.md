@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.0](https://github.com/UbiHome/UbiHome/compare/v0.4.9...ubihome-web_server-v0.5.0) (2025-05-03)
+
+
+### Features
+
+* working basic binary filters ([52e0bc0](https://github.com/UbiHome/UbiHome/commit/52e0bc0f6b6c028165252675881714b6764bbdea))
+
 ## [0.4.9](https://github.com/UbiHome/UbiHome/compare/v0.4.8...ubihome-web_server-v0.4.9) (2025-05-02)
 
 ## [0.4.8](https://github.com/UbiHome/UbiHome/compare/v0.4.7...ubihome-web_server-v0.4.8) (2025-05-02)

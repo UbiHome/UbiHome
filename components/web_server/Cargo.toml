@@ -1,6 +1,6 @@
 [package]
 name = "ubihome-web_server"
-version = "0.4.9"
+version = "0.5.0"
 authors = ["Daniel Habenicht <daniel-habenicht@outlook.de>"]
 edition = "2021"
 
