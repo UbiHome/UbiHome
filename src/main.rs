@@ -165,7 +165,7 @@ fn main() {
             }
         }
         Some(("update", sub_matches)) => {
-            update();
+            update().unwrap();
         }
         Some(("uninstall", sub_matches)) => {
             let location = sub_matches.try_get_one::<String>("location").unwrap();
