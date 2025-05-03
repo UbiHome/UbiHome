@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.6.0](https://github.com/UbiHome/UbiHome/compare/v0.5.6...v0.6.0) (2025-05-03)
+
+
+### Features
+
+* add bluetooth proxy ([#53](https://github.com/UbiHome/UbiHome/issues/53)) ([1308582](https://github.com/UbiHome/UbiHome/commit/1308582057511d01e8a99cf93bf3f71d83df22e0))
+
+
+### Bug Fixes
+
+* gpio triggers ([bf5b035](https://github.com/UbiHome/UbiHome/commit/bf5b0350a6e6b07959750cd0762ff2d05c70d0b0))
+
 ## [0.5.6](https://github.com/UbiHome/UbiHome/compare/v0.5.5...v0.5.6) (2025-05-03)
 
 

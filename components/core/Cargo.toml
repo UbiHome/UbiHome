@@ -1,6 +1,6 @@
 [package]
 name = "ubihome-core"
-version = "0.5.6"
+version = "0.6.0"
 authors = ["Daniel Habenicht <daniel-habenicht@outlook.de>"]
 edition = "2024"
 description = "Core package"
