@@ -33,11 +33,11 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Add extra packages (MacOS)
-        if: matrix.platform.runs-on == 'macOS-latest'
+        if: matrix.runs-on == 'macOS-latest'
         run: brew install libdbus-1-dev pkg-config
 
       - name: Add extra packages (Linux)
-        if: matrix.platform.runs-on == 'ubuntu-24.04'
+        if: matrix.runs-on == 'ubuntu-24.04'
         run: sudo apt install -y libdbus-1-dev pkg-config
 
           
