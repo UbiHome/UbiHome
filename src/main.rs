@@ -407,7 +407,8 @@ fn run(
                 }
                 InternalComponent::BinarySensor(binary_sensor) => {
                     let mutable: Mutable<Option<Option<bool>>> = Mutable::new(Option::None);
-                    signal_map_binary_sensor.insert(binary_sensor.ha.object_id.clone(), mutable.clone());
+                    signal_map_binary_sensor
+                        .insert(binary_sensor.ha.object_id.clone(), mutable.clone());
                     let internal_tx_clone = internal_tx.clone();
 
                     let mutable_clone = mutable.clone();
@@ -426,10 +427,9 @@ fn run(
                                             Box::pin(async move {
                                                 let value = value.and_then(|v| v);
                                                 if let Some(v) = value {
+                                                    // Delay on (true) values
                                                     if v {
-                                                        // println!("Before delay");
                                                         tokio::time::sleep(time_clone).await;
-                                                        // println!("After delay");
                                                         return value;
                                                     }
                                                 }
@@ -439,22 +439,18 @@ fn run(
                                         .boxed();
                                 }
                                 FilterType::delayed_off(time) => {
+                                    trace!("delayed_off");
                                     let time_clone = time.clone();
                                     signal = signal
                                         .map_future(move |value| {
-                                            trace!("delayed_off");
                                             let time_clone = time_clone.clone();
 
                                             Box::pin(async move {
                                                 let value = value.and_then(|v| v);
-                                                // println!("delayed_off value {:?}", value);
-
                                                 if let Some(v) = value {
-                                                    if v {
-                                                        // println!("Before delay");
-
+                                                    // Delay off (false) values
+                                                    if !v {
                                                         tokio::time::sleep(time_clone).await;
-                                                        // println!("After delay");
                                                         return value;
                                                     }
                                                 }
@@ -491,7 +487,7 @@ fn run(
                                         debug!("Publishing command from signal: {:?}", pcmd);
                                         // if signal_tx_clone.closed()..now_or_never().is_none() {
                                         // }
-                                            
+
                                         signal_tx_clone.send(pcmd).unwrap();
                                     }
                                 }
