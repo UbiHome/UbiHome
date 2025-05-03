@@ -3197,7 +3197,7 @@ checksum = "1dccffe3ce07af9386bfd29e80c0ab1a8205a2fc34e4bcd40364df902cfa8f3f"
 
 [[package]]
 name = "ubihome"
-version = "0.5.1"
+version = "0.5.2"
 dependencies = [
  "cargo_toml",
  "clap",
@@ -3241,7 +3241,7 @@ dependencies = [
 
 [[package]]
 name = "ubihome-bluetooth_proxy"
-version = "0.4.11"
+version = "0.4.12"
 dependencies = [
  "anyhow",
  "btleplug",

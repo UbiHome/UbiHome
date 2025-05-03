@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.12](https://github.com/UbiHome/UbiHome/compare/ubihome-bluetooth_proxy-v0.4.11...ubihome-bluetooth_proxy-v0.4.12) (2025-05-03)
+
+
+### Bug Fixes
+
+* build by not adding bluetooth_proxy for now ([1e9deeb](https://github.com/UbiHome/UbiHome/commit/1e9deeb3cf267044f4082338ca447b5ace39eede))
+
 ## [0.4.11](https://github.com/UbiHome/UbiHome/compare/ubihome-bluetooth_proxy-v0.4.10...ubihome-bluetooth_proxy-v0.4.11) (2025-05-03)
 
 
