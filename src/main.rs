@@ -64,7 +64,7 @@ fn windows_service_main(_arguments: Vec<std::ffi::OsString>) {
     dir.push("config.yaml");
     let config_file = dir.to_string_lossy().to_string();
 
-    if let Err(e) = run(Some(&config_file), Some(shutdown_rx)) {
+    if let Err(e) = run::run(Some(&config_file), Some(shutdown_rx)) {
         error!("{}", e)
     }
 
