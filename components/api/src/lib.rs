@@ -43,7 +43,7 @@ config_template!(api, Option<ApiConfig>, NoConfig, NoConfig, NoConfig);
 #[derive(Clone, Debug)]
 pub struct UbiHomeDefault {
     config: CoreConfig,
-    components: HashMap<String, ProtoMessage>,
+    components: HashMap<u32, ProtoMessage>,
     device_info: DeviceInfoResponse,
 }
 
@@ -105,7 +105,7 @@ impl Module for UbiHomeDefault {
 
     fn run(
         &self,
-        _sender: Sender<ChangedMessage>,
+        sender: Sender<ChangedMessage>,
         mut receiver: Receiver<PublishedMessage>,
     ) -> Pin<Box<dyn Future<Output = Result<(), Box<dyn std::error::Error>>> + Send + 'static>>
     {
@@ -137,7 +137,7 @@ impl Module for UbiHomeDefault {
                                             entity_category: EntityCategory::None as i32,
                                         },
                                     );
-                                    api_components.insert(button.object_id, component_button);
+                                    api_components.insert(index.try_into().unwrap(), component_button);
                                 }
                                 Component::Sensor(sensor) => {
                                     let id = sensor.unique_id.unwrap_or(format!(
@@ -167,7 +167,7 @@ impl Module for UbiHomeDefault {
                                             entity_category: EntityCategory::None as i32,
                                         },
                                     );
-                                    api_components.insert(sensor.object_id, component_sensor);
+                                    api_components.insert(index.try_into().unwrap(), component_sensor);
                                 }
                                 Component::BinarySensor(binary_sensor) => {
                                     let id = binary_sensor.unique_id.unwrap_or(format!(
@@ -191,7 +191,7 @@ impl Module for UbiHomeDefault {
                                             },
                                         );
                                     api_components
-                                        .insert(binary_sensor.object_id, component_binary_sensor);
+                                        .insert(index.try_into().unwrap(), component_binary_sensor);
                                 }
                             }
                         }
@@ -262,6 +262,7 @@ impl Module for UbiHomeDefault {
                 let api_components_clone = api_components.clone();
                 // Read Loop
                 let answer_messages_tx_clone = answer_messages_tx.clone();
+                let cloned_sender = sender.clone();
                 tokio::spawn(async move {
                     let mut buf = vec![0; 1024];
 
@@ -431,6 +432,18 @@ impl Module for UbiHomeDefault {
                                 }
                                 ProtoMessage::ButtonCommandRequest(button_command_request) => {
                                     debug!("ButtonCommandRequest: {:?}", button_command_request);
+                                    let button = api_components_clone.get(&button_command_request.key).unwrap();
+                                    match button {
+                                        ProtoMessage::ListEntitiesButtonResponse(button) => {
+                                            debug!("ButtonCommandRequest: {:?}", button);
+                                            let msg = ChangedMessage::ButtonPress {
+                                                key: button.unique_id.clone(),
+                                            };
+            
+                                            cloned_sender.send(msg).unwrap();
+                                        }
+                                        _ => {}
+                                    }
                                 }
                                 _ => {
                                     debug!("Ignore message type: {:?}", message);
@@ -479,7 +492,7 @@ impl Module for UbiHomeDefault {
                             let answer_message = answer_messages_rx_clone.try_recv();
                             match answer_message {
                                 Ok(answer_message) => {
-                                    // debug!("Answer message: {:?}", answer_message);
+                                    debug!("Answer message: {:?}", answer_message);
                                     answer_buf =
                                         [answer_buf, to_packet_from_ref(&answer_message).unwrap()]
                                             .concat();

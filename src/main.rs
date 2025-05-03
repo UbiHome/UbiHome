@@ -231,6 +231,21 @@ fn main() {
 }
 
 fn get_all_modules(yaml: &String) -> Vec<Box<dyn Module>> {
+    // Match all top level keys in the YAML file
+    let modules_to_load = yaml.lines()
+        .filter_map(|line| {
+            let line = line.trim();
+            if line.starts_with(' ') {
+                None
+            } else {
+                line.split(':')
+                    .next()
+                    .map(|key| key.trim().to_string())
+            }
+        })
+        .collect::<Vec<String>>();
+    println!("Modules to load: {:?}", modules_to_load);
+
     let mut modules: Vec<Box<dyn Module>> = Vec::new();
 
     modules.push(Box::new(ubihome_bme280::Default::new(&yaml)));
@@ -348,15 +363,17 @@ fn run(
     // Spawn the root task
     let rt = Runtime::new().unwrap();
     rt.block_on(async {
+
         let mut modules = get_all_modules(&config_string);
         log::info!("Loaded {} modules", modules.len());
+
         let components = initialize_modules(&mut modules).await.unwrap();
 
         let (internal_tx, modules_rx) = broadcast::channel::<PublishedMessage>(16);
         let (modules_tx, mut internal_rx) = broadcast::channel::<ChangedMessage>(16);
         let internal_tx_clone = internal_tx.clone();
 
-        // Workaround for https://github.com/Pauan/rust-signals/issues/75
+        // Double Option Workaround for https://github.com/Pauan/rust-signals/issues/75
         let mut signal_map_binary_sensor: HashMap<String, Mutable<Option<Option<bool>>>> = HashMap::new();
         for (key, any_sensor) in config.binary_sensor.clone().unwrap_or_default() {
             let mutable: Mutable<Option<Option<bool>>> = Mutable::new(Option::None);
@@ -366,7 +383,6 @@ fn run(
 
                 let mutable_clone = mutable.clone();
                 tokio::spawn(async move {
-                    // let future: SignalFuture<MutableSignal<bool>> = mutable_clone.signal()
                     println!("Filters: {:?}", any_sensor.default.filters);
 
                     let mut signal = mutable_clone.signal().boxed();
