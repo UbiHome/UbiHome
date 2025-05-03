@@ -1,5 +1,7 @@
 # Changelog
 
+## [0.4.10](https://github.com/UbiHome/UbiHome/compare/v0.4.9...ubihome-bluetooth_proxy-v0.4.10) (2025-05-03)
+
 ## [0.3.28](https://github.com/UbiHome/UbiHome/compare/ubihome-bluetooth_proxy-v0.3.27...ubihome-bluetooth_proxy-v0.3.28) (2025-05-02)
 
 
