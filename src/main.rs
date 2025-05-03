@@ -250,7 +250,9 @@ fn get_all_modules(yaml: &String) -> Vec<Box<dyn Module>> {
     println!("Modules to load: {:?}", modules_to_load);
 
     let mut modules: Vec<Box<dyn Module>> = Vec::new();
-
+    if modules_to_load.contains(&"bme280".to_string()) {
+        modules.push(Box::new(ubihome_bme280::Default::new(&yaml)));
+    }
     if modules_to_load.contains(&"mqtt".to_string()) {
         modules.push(Box::new(ubihome_mqtt::Default::new(&yaml)));
     }
@@ -481,7 +483,6 @@ fn run(
 
                         signal
                             .for_each(|value| {
-                                println!("Value: {:?}", value);
                                 let signal_tx_clone = internal_tx_clone.clone();
                                 let key = binary_sensor.ha.object_id.clone();
                                 async move {
@@ -538,7 +539,6 @@ fn run(
                                 signal.set(Some(Some(value)));
                             });
                             publish_cmd = None;
-                            // Some(PublishedMessage::BinarySensorValueChanged { key, value });
                         }
                         ChangedMessage::BluetoothProxyMessage(msg) => {
                             publish_cmd = Some(PublishedMessage::BluetoothProxyMessage(msg));
