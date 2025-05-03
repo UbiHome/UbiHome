@@ -28,3 +28,8 @@ Logs are in `C:\Windows\System32\config\systemprofile\AppData\Local` as the serv
 - Validate config.yaml
   - Before Build (not yet implemented)
   - During Runtime
+
+
+# Optimization
+
+- https://github.com/johnthagen/min-sized-rust
