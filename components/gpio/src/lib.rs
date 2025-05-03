@@ -1,11 +1,14 @@
 use log::{debug, warn};
-use ubihome_core::{
-    config_template, home_assistant::sensors::{Component, HABinarySensor}, internal::sensors::{InternalBinarySensor, InternalComponent}, ChangedMessage, Module, NoConfig, PublishedMessage
-};
 use serde::{Deserialize, Deserializer};
-use std::{collections::HashMap, future, thread::sleep};
-use std::{future::Future, pin::Pin, str, time::Duration};
+use std::{collections::HashMap, future};
+use std::{future::Future, pin::Pin, str};
 use tokio::sync::broadcast::{Receiver, Sender};
+use ubihome_core::{
+    config_template,
+    home_assistant::sensors::HABinarySensor,
+    internal::sensors::{InternalBinarySensor, InternalComponent},
+    ChangedMessage, Module, NoConfig, PublishedMessage,
+};
 
 #[derive(Debug, Copy, Clone, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -46,17 +49,22 @@ impl Default {
                     let id = any_sensor.default.id.unwrap_or(object_id.clone());
                     components.push(InternalComponent::BinarySensor(InternalBinarySensor {
                         ha: HABinarySensor {
-                        platform: "sensor".to_string(),
-                        icon: any_sensor.default.icon.clone(),
-                        unique_id: Some(id.clone()),
-                        device_class: any_sensor.default.device_class.clone(),
-                        name: any_sensor.default.name.clone(),
-                        object_id: object_id.clone(),
-                    }, filters: None }));
-                    binary_sensors.insert(id, GpioBinarySensorConfig {
-                        pin: binary_sensor.pin,
-                        pull_up: binary_sensor.pull_up,
-                    });
+                            platform: "sensor".to_string(),
+                            icon: any_sensor.default.icon.clone(),
+                            unique_id: Some(id.clone()),
+                            device_class: any_sensor.default.device_class.clone(),
+                            name: any_sensor.default.name.clone(),
+                            object_id: object_id.clone(),
+                        },
+                        filters: None,
+                    }));
+                    binary_sensors.insert(
+                        id,
+                        GpioBinarySensorConfig {
+                            pin: binary_sensor.pin,
+                            pull_up: binary_sensor.pull_up,
+                        },
+                    );
                 }
                 _ => {}
             }
@@ -135,7 +143,6 @@ impl Module for Default {
                         // });
 
                         for (key, binary_sensor) in binary_sensors {
-                            let cloned_sender = sender.clone();
                             let gpio_pin =
                                 gpio.get(binary_sensor.pin).expect("GPIO pin not found?");
                             let mut pin: rppal::gpio::InputPin;
@@ -154,25 +161,38 @@ impl Module for Default {
 
                             // Errors?
                             // cat /sys/kernel/debug/gpio
-
-                            pin.set_async_interrupt(Trigger::Both, None, move |event| {
+                            let cloned_key = key.clone();
+                            let cloned_sender = sender.clone();
+                            pin.set_async_interrupt(Trigger::RisingEdge, None, move |event| {
                                 println!("Event: {:?}", event);
-                                debug!("BinarySensor {} triggered.", key);
+                                debug!("BinarySensor {} triggered.", cloned_key);
                                 _ = cloned_sender.send(ChangedMessage::BinarySensorValueChange {
-                                    key: key.clone(),
+                                    key: cloned_key.clone(),
                                     value: true,
                                 });
-                                let cloned_sender2 = cloned_sender.clone();
+                                // let cloned_sender2 = cloned_sender.clone();
 
-                                let cloned_key = key.clone();
-                                sleep(Duration::from_secs(5));
-                                debug!("BinarySensor {} reset.", cloned_key);
-                                cloned_sender2.send(
-                                    ChangedMessage::BinarySensorValueChange {
-                                        key: cloned_key,
-                                        value: false,
-                                    },
-                                ).unwrap();
+                                // let cloned_key = key.clone();
+                                // sleep(Duration::from_secs(5));
+                                // debug!("BinarySensor {} reset.", cloned_key);
+                                // cloned_sender2
+                                //     .send(ChangedMessage::BinarySensorValueChange {
+                                //         key: cloned_key,
+                                //         value: false,
+                                //     })
+                                //     .unwrap();
+                            })
+                            .expect("failed to set async interrupt");
+
+                            let cloned_key = key.clone();
+                            let cloned_sender = sender.clone();
+                            pin.set_async_interrupt(Trigger::FallingEdge, None, move |event| {
+                                println!("Event: {:?}", event);
+                                debug!("BinarySensor {} triggered.", cloned_key);
+                                _ = cloned_sender.send(ChangedMessage::BinarySensorValueChange {
+                                    key: cloned_key.clone(),
+                                    value: false,
+                                });
                             })
                             .expect("failed to set async interrupt");
 
