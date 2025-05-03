@@ -5,13 +5,11 @@ on:
   #   branches: [ main ]
       
   pull_request:
-    branches:
-      - main
       
 
 jobs:
   build:
-    runs-on: ${{ matrix.os }}
+    runs-on: ${{ matrix.runs-on }}
     strategy:
       matrix:
         include:
@@ -30,34 +28,51 @@ jobs:
         - target: x86_64-pc-windows-msvc # tested on a windows machine
           runs-on: windows-latest
           fileending: ".exe"
+        - target: armv7-unknown-linux-musleabi
+          runs-on: ubuntu-24.04
+          fileending: ""
 
     steps:
       - uses: actions/checkout@v4
 
       - name: Add extra packages (MacOS)
-        if: matrix.platform.runs-on == 'macOS-latest'
-        run: brew install libdbus-1-dev pkg-config
+        if: matrix.runs-on == 'macOS-latest'
+        run: brew install libmodbus
 
       - name: Add extra packages (Linux)
-        if: matrix.platform.runs-on == 'ubuntu-24.04'
+        if: matrix.runs-on == 'ubuntu-24.04'
         run: sudo apt install -y libdbus-1-dev pkg-config
 
-          
       - name: Set up Rust
+        if: matrix.runs-on == 'macOS-latest'
         uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
   
       - name: Rust Cache
+        if: matrix.runs-on == 'macOS-latest'
         uses: Swatinem/rust-cache@v2.7.8
         with:
           key: release
   
       - name: Install rust target
+        if: matrix.runs-on == 'macOS-latest'
         run: rustup target add ${{ matrix.target }}
 
       - name: Build
+        if: matrix.runs-on == 'macOS-latest'
         run: cargo build --release --target ${{ matrix.target }}
+
+      - name: Build binary
+        if: matrix.runs-on != 'macOS-latest'
+        uses: houseabsolute/actions-rust-cross@v1
+        with:
+          command: build
+          target: ${{ matrix.target }}
+          # Add "--locked" again when release please is not updating all Cargo.toml files
+          args: "--release"
+          strip: true
+
 
       # Save executable
       - name: Archive artifacts

@@ -15,7 +15,7 @@ rumqttc = "0.24.0"
 serde = { version = "1.0", features = ["derive"] }
 serde_yaml = "0.9"
 ubihome-api = { path = "components/api" }
-# ubihome-bluetooth_proxy = { path = "components/bluetooth_proxy" }
+ubihome-bluetooth_proxy = { path = "components/bluetooth_proxy" }
 ubihome-bme280 = { path = "components/bme280" }
 ubihome-core = { path = "components/core" }
 ubihome-gpio = { path = "components/gpio" }
