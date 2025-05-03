@@ -163,7 +163,7 @@ impl Module for Default {
                             // cat /sys/kernel/debug/gpio
                             let cloned_key = key.clone();
                             let cloned_sender = sender.clone();
-                            pin.set_async_interrupt(Trigger::RisingEdge, None, move |event| {
+                            pin.set_async_interrupt(Trigger::Both, None, move |event| {
                                 debug!("Event: {:?}", event);
                                 debug!("BinarySensor {} triggered.", cloned_key);
 

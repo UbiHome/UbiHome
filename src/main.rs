@@ -82,9 +82,6 @@ fn windows_service_main(_arguments: Vec<std::ffi::OsString>) {
         .unwrap();
 }
 
-
-
-
 fn cli() -> Command {
     Command::new("ubihome")
         .about(format!("UbiHome - {}\n\n{}\nDocumentation: https://ubihome.github.io/\nHomepage: {}" ,VERSION, DESCRIPTION, CARGO_PKG_HOMEPAGE))
@@ -136,15 +133,9 @@ fn cli() -> Command {
                         .help( "The location where UbiHome is installed.")
                     )
         )
-
-
 }
 
-
-
 fn main() {
-    println!("UbiHome - {}", VERSION);
-
     let matches = cli().get_matches();
     let config_file = matches.try_get_one::<String>("configuration_file").unwrap();
 
@@ -183,6 +174,7 @@ fn main() {
             todo!("Validate UbiHome");
         }
         Some(("run", sub_matches)) => {
+            println!("UbiHome - {}", VERSION);
             let is_windows_service = sub_matches.get_one::<bool>("as-windows-service").unwrap();
             if *is_windows_service {
                 // Run as a Windows service
