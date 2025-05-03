@@ -102,6 +102,8 @@ fn cli() -> Command {
             Command::new("run")
                 .about("Run UbiHome manually.")
                 .args([
+                    // TODO:
+                    // #[cfg(target_os = "windows")]
                     Arg::new("as-windows-service")
                         .long("as-windows-service")
                         .help("Flag to identify if run as windows service.")
@@ -183,7 +185,6 @@ fn main() {
         Some(("run", sub_matches)) => {
             let is_windows_service = sub_matches.get_one::<bool>("as-windows-service").unwrap();
             if *is_windows_service {
-                #[cfg(target_os = "linux")]
                 // Run as a Windows service
                 info!("Running as Windows service");
                 #[cfg(target_os = "windows")]

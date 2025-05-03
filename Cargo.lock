@@ -3702,7 +3702,7 @@ dependencies = [
 
 [[package]]
 name = "ubihome-api"
-version = "0.5.4"
+version = "0.5.6"
 dependencies = [
  "duration-str",
  "esphome-native-api",
@@ -3731,7 +3731,7 @@ dependencies = [
 
 [[package]]
 name = "ubihome-bme280"
-version = "0.5.4"
+version = "0.5.6"
 dependencies = [
  "bme280",
  "duration-str",
@@ -3745,7 +3745,7 @@ dependencies = [
 
 [[package]]
 name = "ubihome-core"
-version = "0.5.4"
+version = "0.5.6"
 dependencies = [
  "convert_case",
  "duration-str",
@@ -3756,7 +3756,7 @@ dependencies = [
 
 [[package]]
 name = "ubihome-evdev"
-version = "0.5.4"
+version = "0.5.6"
 dependencies = [
  "async-trait",
  "duration-str",
@@ -3770,7 +3770,7 @@ dependencies = [
 
 [[package]]
 name = "ubihome-gpio"
-version = "0.5.3"
+version = "0.5.6"
 dependencies = [
  "async-trait",
  "duration-str",
@@ -3784,7 +3784,7 @@ dependencies = [
 
 [[package]]
 name = "ubihome-mdns"
-version = "0.5.4"
+version = "0.5.6"
 dependencies = [
  "duration-str",
  "libmdns",
@@ -3799,7 +3799,7 @@ dependencies = [
 
 [[package]]
 name = "ubihome-mqtt"
-version = "0.5.4"
+version = "0.5.6"
 dependencies = [
  "duration-str",
  "log",
@@ -3814,7 +3814,7 @@ dependencies = [
 
 [[package]]
 name = "ubihome-power_utils"
-version = "0.5.4"
+version = "0.5.6"
 dependencies = [
  "duration-str",
  "log",
@@ -3827,7 +3827,7 @@ dependencies = [
 
 [[package]]
 name = "ubihome-shell"
-version = "0.5.4"
+version = "0.5.6"
 dependencies = [
  "duration-str",
  "log",
@@ -3840,7 +3840,7 @@ dependencies = [
 
 [[package]]
 name = "ubihome-web_server"
-version = "0.5.4"
+version = "0.5.6"
 dependencies = [
  "axum",
  "duration-str",
