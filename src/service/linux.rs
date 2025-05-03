@@ -35,7 +35,7 @@ After=network-online.target
 [Service]
 Type=simple
 Restart=always
-RestartSec=1
+RestartSec=10
 ExecStart={}/ubihome run
 StandardOutput=journal
 WorkingDirectory={}
