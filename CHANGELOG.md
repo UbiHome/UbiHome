@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.6](https://github.com/UbiHome/UbiHome/compare/v0.5.5...v0.5.6) (2025-05-03)
+
+
+### Bug Fixes
+
+* windows build ([0bac992](https://github.com/UbiHome/UbiHome/commit/0bac99263cd5b6175a28e15bc2c04359510ad469))
+
 ## [0.5.5](https://github.com/UbiHome/UbiHome/compare/v0.5.4...v0.5.5) (2025-05-03)
 
 
