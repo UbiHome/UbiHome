@@ -166,10 +166,25 @@ impl Module for Default {
                             pin.set_async_interrupt(Trigger::RisingEdge, None, move |event| {
                                 debug!("Event: {:?}", event);
                                 debug!("BinarySensor {} triggered.", cloned_key);
-                                _ = cloned_sender.send(ChangedMessage::BinarySensorValueChange {
-                                    key: cloned_key.clone(),
-                                    value: true,
-                                });
+
+                                match event.trigger {
+                                    Trigger::RisingEdge => {
+                                        _ = cloned_sender.send(ChangedMessage::BinarySensorValueChange {
+                                            key: cloned_key.clone(),
+                                            value: true,
+                                        });
+                                    }
+                                    Trigger::FallingEdge => {
+                                        _ = cloned_sender.send(ChangedMessage::BinarySensorValueChange {
+                                            key: cloned_key.clone(),
+                                            value: false,
+                                        });
+                                    }
+                                    _ => {
+                                        debug!("Unknown trigger detected {:?}", event.trigger);
+                                    }
+                                }
+
                                 // let cloned_sender2 = cloned_sender.clone();
 
                                 // let cloned_key = key.clone();
@@ -183,25 +198,6 @@ impl Module for Default {
                                 //     .unwrap();
                             })
                             .expect("failed to set async interrupt");
-
-                            let cloned_key = key.clone();
-                            let cloned_sender = sender.clone();
-                            pin.set_async_interrupt(Trigger::FallingEdge, None, move |event| {
-                                debug!("Event: {:?}", event);
-                                debug!("BinarySensor {} triggered.", cloned_key);
-                                _ = cloned_sender.send(ChangedMessage::BinarySensorValueChange {
-                                    key: cloned_key.clone(),
-                                    value: false,
-                                });
-                            })
-                            .expect("failed to set async interrupt");
-
-                            debug!("Waiting for interrupts.");
-
-                            // Wait indefinitely for the interrupts
-                            let future = future::pending();
-                            let () = future.await;
-                            debug!("Never called.");
                         }
                     }
                 }
