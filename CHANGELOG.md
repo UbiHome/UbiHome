@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.5.1](https://github.com/UbiHome/UbiHome/compare/v0.5.0...v0.5.1) (2025-05-03)
+
+
+### Bug Fixes
+
+* add missing bme280 module ([90bac7c](https://github.com/UbiHome/UbiHome/commit/90bac7ca12aef73c1742d389a21dcfa5a7a18371))
+* filters functionality ([6854987](https://github.com/UbiHome/UbiHome/commit/6854987811ad80154c726416d204616ae07ef81b))
+* mqtt duplicated ([7b2f4b3](https://github.com/UbiHome/UbiHome/commit/7b2f4b325a49ac107f80d939e6308edf9546e7fc))
+* use longer restart interval ([b7f25d1](https://github.com/UbiHome/UbiHome/commit/b7f25d145b3a108db91474a84370f42d68745372))
+
 ## [0.5.0](https://github.com/UbiHome/UbiHome/compare/v0.4.9...v0.5.0) (2025-05-03)
 
 
