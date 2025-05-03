@@ -9,18 +9,7 @@ async def test_run():
 ubihome:
   name: {name}
 
-
-# Remove:
-sensor:
-binary_sensor:
-gpio:
-  device: raspberryPi
-shell:
-mqtt:
-  broker: 127.0.0.1
-  username: test
-  password: test
-power_utils:
+api:
 """
 
   async with UbiHome("run", DEVICE_INFO_CONFIG) as ubihome:

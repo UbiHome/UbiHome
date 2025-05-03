@@ -234,8 +234,12 @@ fn get_all_modules(yaml: &String) -> Vec<Box<dyn Module>> {
     // Match all top level keys in the YAML file
     let modules_to_load = yaml.lines()
         .filter_map(|line| {
-            let line = line.trim();
+            let line = line;
             if line.starts_with(' ') {
+                None
+            } else if line.is_empty() {
+                None
+            } else if line.starts_with('#') {
                 None
             } else {
                 line.split(':')
@@ -248,15 +252,34 @@ fn get_all_modules(yaml: &String) -> Vec<Box<dyn Module>> {
 
     let mut modules: Vec<Box<dyn Module>> = Vec::new();
 
-    modules.push(Box::new(ubihome_bme280::Default::new(&yaml)));
-    modules.push(Box::new(ubihome_gpio::Default::new(&yaml)));
-    modules.push(Box::new(ubihome_shell::Default::new(&yaml)));
-    modules.push(Box::new(ubihome_mqtt::Default::new(&yaml)));
-    modules.push(Box::new(ubihome_mdns::Default::new(&yaml)));
-    modules.push(Box::new(ubihome_api::UbiHomeDefault::new(&yaml)));
-    modules.push(Box::new(ubihome_power_utils::Default::new(&yaml)));
+    if modules_to_load.contains(&"mqtt".to_string()) {
+        modules.push(Box::new(ubihome_mqtt::Default::new(&yaml)));
+    }
+    if modules_to_load.contains(&"gpio".to_string()) {
+        modules.push(Box::new(ubihome_gpio::Default::new(&yaml)));
+    }
+    if modules_to_load.contains(&"shell".to_string()) {
+        modules.push(Box::new(ubihome_shell::Default::new(&yaml)));
+    }
+    if modules_to_load.contains(&"mdns".to_string()) {
+        modules.push(Box::new(ubihome_mdns::Default::new(&yaml)));
+    }
+    if modules_to_load.contains(&"mqtt".to_string()) {
+        modules.push(Box::new(ubihome_mqtt::Default::new(&yaml)));
+    }
+    if modules_to_load.contains(&"api".to_string()) {
+        modules.push(Box::new(ubihome_api::UbiHomeDefault::new(&yaml)));
+    }
+    if modules_to_load.contains(&"power_utils".to_string()) {
+        modules.push(Box::new(ubihome_power_utils::Default::new(&yaml)));
+    }
+    if modules_to_load.contains(&"web_server".to_string()) {
+        modules.push(Box::new(ubihome_web_server::Default::new(&yaml)));
+    }
+
+    // TODO: Throw error if platform is used in sensor but not configured
+
     // modules.push(Box::new(ubihome_bluetooth_proxy::Default::new(&yaml)));
-    modules.push(Box::new(ubihome_web_server::Default::new(&yaml)));
     return modules
 }
 
