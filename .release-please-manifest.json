@@ -1,7 +1,7 @@
 {
-    ".": "0.5.4",
+    ".": "0.5.5",
     "components/api": "0.5.0",
-    "components/bluetooth_proxy": "0.4.14",
+    "components/bluetooth_proxy": "0.4.15",
     "components/bme280": "0.5.0",
     "components/core": "0.5.0",
     "components/evdev": "0.4.10",

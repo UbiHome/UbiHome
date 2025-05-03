@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.5](https://github.com/UbiHome/UbiHome/compare/v0.5.4...v0.5.5) (2025-05-03)
+
+
+### Bug Fixes
+
+* ssl build ([351f0e8](https://github.com/UbiHome/UbiHome/commit/351f0e83a86c75729d961c57b0fc3f84d5631ef9))
+
 ## [0.5.4](https://github.com/UbiHome/UbiHome/compare/v0.5.3...v0.5.4) (2025-05-03)
 
 
