@@ -88,8 +88,9 @@ fn get_all_modules(yaml: &String) -> Vec<Box<dyn Module>> {
     }
 
     // TODO: Throw error if platform is used in sensor but not configured
-
-    // modules.push(Box::new(ubihome_bluetooth_proxy::Default::new(&yaml)));
+    if modules_to_load.contains(&"bluetooth_proxy".to_string()) {
+        modules.push(Box::new(ubihome_bluetooth_proxy::Default::new(&yaml)));
+    }
     return modules;
 }
 

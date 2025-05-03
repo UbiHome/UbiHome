@@ -3688,6 +3688,7 @@ dependencies = [
  "tar",
  "tokio",
  "ubihome-api",
+ "ubihome-bluetooth_proxy",
  "ubihome-bme280",
  "ubihome-core",
  "ubihome-gpio",
