@@ -253,9 +253,6 @@ fn get_all_modules(yaml: &String) -> Vec<Box<dyn Module>> {
     if modules_to_load.contains(&"bme280".to_string()) {
         modules.push(Box::new(ubihome_bme280::Default::new(&yaml)));
     }
-    if modules_to_load.contains(&"mqtt".to_string()) {
-        modules.push(Box::new(ubihome_mqtt::Default::new(&yaml)));
-    }
     if modules_to_load.contains(&"gpio".to_string()) {
         modules.push(Box::new(ubihome_gpio::Default::new(&yaml)));
     }
