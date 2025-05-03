@@ -47,4 +47,4 @@ Test it out:
 ./ubihome install
 ```
 
-> Have a look at the [examples](https://danielhabenicht.github.io/UbiHome/examples/index.html) to get started.
+Have a look at the [examples](https://danielhabenicht.github.io/UbiHome/examples/index.html) to get started.
