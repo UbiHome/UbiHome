@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.5.2](https://github.com/UbiHome/UbiHome/compare/v0.5.1...ubihome-gpio-v0.5.2) (2025-05-03)
+
+
+### Bug Fixes
+
+* gpio different interrupts for edges ([84dd869](https://github.com/UbiHome/UbiHome/commit/84dd86953a6daeba0c2297233b67677043c007a8))
+* gpio interrupts ([44e4f16](https://github.com/UbiHome/UbiHome/commit/44e4f16a211f6d09617af863bdfb87297f2ba73f))
+
 ## [0.5.1](https://github.com/UbiHome/UbiHome/compare/v0.5.0...ubihome-gpio-v0.5.1) (2025-05-03)
 
 

@@ -1,6 +1,6 @@
 [package]
 name = "ubihome-bluetooth_proxy"
-version = "0.4.12"
+version = "0.4.13"
 authors = ["Daniel Habenicht <daniel-habenicht@outlook.de>"]
 edition = "2018"
 
