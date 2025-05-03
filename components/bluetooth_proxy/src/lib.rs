@@ -3,6 +3,7 @@ use btleplug::api::{
     bleuuid::BleUuid, Central, CentralEvent, Manager as _, Peripheral, ScanFilter,
 };
 use log::{debug, info, trace};
+use ubihome_core::internal::sensors::InternalComponent;
 use ubihome_core::{
     config_template, home_assistant::sensors::Component, ChangedMessage, Module, PublishedMessage,
 };
@@ -51,8 +52,8 @@ impl Module for Default {
         Ok(())
     }
 
-    fn init(&mut self) -> Result<Vec<Component>, String> {
-        let components: Vec<Component> = Vec::new();
+    fn init(&mut self) -> Result<Vec<InternalComponent>, String> {
+        let components: Vec<InternalComponent> = Vec::new();
 
         Ok(components)
     }
