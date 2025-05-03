@@ -34,7 +34,7 @@ jobs:
 
       - name: Add extra packages (MacOS)
         if: matrix.runs-on == 'macOS-latest'
-        run: brew install libdbus-1-dev pkg-config
+        run: brew install libmodbus
 
       - name: Add extra packages (Linux)
         if: matrix.runs-on == 'ubuntu-24.04'
