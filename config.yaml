@@ -75,7 +75,7 @@ binary_sensor:
     device_class: presence
     update_interval: 10s
     command: |-
-      cat testfile
+      echo true
     # if hcitool con | grep -q "00:12:6F:F1:FF:61"; then
     #     echo true
     # else

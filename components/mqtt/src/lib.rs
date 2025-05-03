@@ -215,12 +215,12 @@ impl Module for Default {
                         Err(e) => match e {
                             ConnectionError::Io(e_io) => match e_io.kind() {
                                 std::io::ErrorKind::NetworkUnreachable => {
-                                    warn!("Network unreachable, trying again...");
+                                    warn!("MQTT encountered an error, but will continue running: {:?}", e_io);
                                     sleep(Duration::from_secs(60)).await;
                                     continue;
                                 }
                                 std::io::ErrorKind::ConnectionAborted => {
-                                    warn!("Connection aborted, trying again...");
+                                    warn!("MQTT encountered an error, but will continue running: {:?}", e_io);
                                     sleep(Duration::from_secs(60)).await;
                                     continue;
                                 }
@@ -237,7 +237,7 @@ impl Module for Default {
                                         continue;
                                     }
                                     std::io::ErrorKind::ConnectionAborted => {
-                                        warn!("Connection aborted, trying again...");
+                                    warn!("MQTT encountered an error, but will continue running: {:?}", io_error);
                                         sleep(Duration::from_secs(60)).await;
                                         continue;
                                     }
