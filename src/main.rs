@@ -96,7 +96,7 @@ const CARGO_PKG_HOMEPAGE: &str = env!("CARGO_PKG_HOMEPAGE");
 
 fn cli() -> Command {
     Command::new("ubihome")
-        .about(format!("UbiHome - {}\n\n{}\n{}" ,VERSION, DESCRIPTION, CARGO_PKG_HOMEPAGE))
+        .about(format!("UbiHome - {}\n\n{}\nDocumentation: https://ubihome.github.io/\nHomepage: {}" ,VERSION, DESCRIPTION, CARGO_PKG_HOMEPAGE))
         .version(VERSION)
         .subcommand_required(true)
         .arg_required_else_help(true)
@@ -107,6 +107,22 @@ fn cli() -> Command {
                 .help("Optional configuration file. If not provided, the default configuration will be used.")
                 .default_value("config.yaml")
         ])
+        .subcommand(
+            Command::new("run")
+                .about("Run UbiHome manually.")
+                .args([
+                    Arg::new("as-windows-service")
+                        .long("as-windows-service")
+                        .help("Flag to identify if run as windows service.")
+                        .hide(true)
+                        .action(ArgAction::SetTrue)
+                        .num_args(0)
+                ])
+        )
+        .subcommand(
+            Command::new("validate")
+                    .about("Validates the configuration file.")
+        )
         .subcommand(
             Command::new("install")
                     .about("Install UbiHome")
@@ -127,22 +143,8 @@ fn cli() -> Command {
                         .help( "The location where UbiHome is installed.")
                     )
         )
-        .subcommand(
-            Command::new("validate")
-                    .about("Validates the Configuration File.")
-        )
-        .subcommand(
-            Command::new("run")
-                .about("Run UbiHome manually.")
-                .args([
-                    Arg::new("as-windows-service")
-                        .long("as-windows-service")
-                        .help("Flag to identify if run as windows service.")
-                        .hide(true)
-                        .action(ArgAction::SetTrue)
-                        .num_args(0)
-                ])
-        )
+
+
 }
 
 // Embed the default configuration file at compile time
