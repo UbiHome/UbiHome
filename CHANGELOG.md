@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.6.2](https://github.com/UbiHome/UbiHome/compare/v0.6.1...v0.6.2) (2025-05-04)
+
+
+### Bug Fixes
+
+* gpio again ([0b3c7e1](https://github.com/UbiHome/UbiHome/commit/0b3c7e1902c4acfa8c6fbd7bab1b7e7a1f23c6f8))
+
 ## [0.6.1](https://github.com/UbiHome/UbiHome/compare/v0.6.0...v0.6.1) (2025-05-04)
 
 
