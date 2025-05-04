@@ -16,12 +16,6 @@ pub enum FilterType {
     delayed_on(Duration),
 }
 
-#[derive(Clone, Deserialize, Debug, PartialEq, Eq, Hash)]
-pub enum FilterTypeEnum {
-    invert,
-    delayed_off,
-    delayed_on,
-}
 
 #[derive(Clone, Deserialize, Debug)]
 #[serde(deny_unknown_fields)]
@@ -29,14 +23,7 @@ pub enum FilterTypeEnum {
 pub struct BinarySensorFilter {
     #[serde(flatten)]
     pub filter: FilterType,
-
 }
-
-// #[derive(Clone, Deserialize, Debug, PartialEq, Eq, Hash)]
-// pub enum ActionTypeEnum {
-//     switch_turn_on,
-//     switch_turn_off,
-// }
 
 #[derive(Clone, Deserialize, Debug)]
 pub enum ActionType {

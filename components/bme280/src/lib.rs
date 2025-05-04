@@ -86,9 +86,10 @@ impl Default {
                         state_class: None,
                         device_class: None,
                         unit_of_measurement: None,
+                        filters: None,
                     });
                     let object_id = temperature.get_object_id();
-                    let id = temperature.id.unwrap_or(object_id.clone());
+                    let id = temperature.id.clone().unwrap_or(object_id.clone());
                     sensor_entries.insert(Measurement::Temperature, id.clone());
                     components.push(InternalComponent::Sensor(InternalSensor {
                         ha: UbiSensor {
@@ -96,6 +97,7 @@ impl Default {
                         icon: Some(
                             temperature
                                 .icon
+                                .clone()
                                 .unwrap_or("mdi:thermometer".to_string())
                                 .clone(),
                         ),
@@ -114,12 +116,12 @@ impl Default {
                         unit_of_measurement: Some(
                             temperature
                                 .unit_of_measurement
-                                .unwrap_or("°C".to_string())
-                                .clone(),
+                                .clone()
+                                .unwrap_or("°C".to_string()),
                         ),
                         name: temperature.name.clone(),
                         id: object_id.clone(),
-                    }, filters: None }));
+                    }, base: temperature }));
                     let pressure = sensor.pressure.clone().unwrap_or(SensorBase {
                         id: None,
                         name: "Pressure".to_string(),
@@ -127,14 +129,15 @@ impl Default {
                         state_class: None,
                         device_class: None,
                         unit_of_measurement: None,
+                        filters: None,
                     });
                     let object_id = pressure.get_object_id();
-                    let id = pressure.id.unwrap_or(object_id.clone());
+                    let id = pressure.id.clone().unwrap_or(object_id.clone());
                     sensor_entries.insert(Measurement::Pressure, id.clone());
                     components.push(InternalComponent::Sensor(InternalSensor {
                         ha: UbiSensor {
                         platform: "sensor".to_string(),
-                        icon: Some(pressure.icon.unwrap_or("mdi:umbrella".to_string()).clone()),
+                        icon: Some(pressure.icon.clone().unwrap_or("mdi:umbrella".to_string()).clone()),
                         state_class: Some(
                             pressure
                                 .state_class
@@ -150,13 +153,13 @@ impl Default {
                         unit_of_measurement: Some(
                             pressure
                                 .unit_of_measurement
+                                .clone()
                                 .unwrap_or("Pa".to_string())
-                                .clone(),
                         ),
 
                         name: pressure.name.clone(),
                         id: id.clone(),
-                    }, filters: None}));
+                    }, base: pressure}));
                     let humidity = sensor.humidity.clone().unwrap_or(SensorBase {
                         id: None,
                         name: "Humidity".to_string(),
@@ -164,9 +167,10 @@ impl Default {
                         state_class: None,
                         device_class: None,
                         unit_of_measurement: None,
+                        filters: None,
                     });
                     let object_id = humidity.get_object_id();
-                    let id = humidity.id.unwrap_or(object_id.clone());
+                    let id = humidity.id.clone().unwrap_or(object_id.clone());
                     sensor_entries.insert(Measurement::Humidity, id.clone());
                     components.push(InternalComponent::Sensor(InternalSensor {
                         ha: UbiSensor {
@@ -174,11 +178,11 @@ impl Default {
                         icon: Some(
                             humidity
                                 .icon
+                                .clone()
                                 .unwrap_or("mdi:water-percent".to_string())
-                                .clone(),
                         ),
                         state_class: Some(
-                            temperature
+                            humidity
                                 .state_class
                                 .clone()
                                 .unwrap_or("measurement".to_string()),
@@ -192,12 +196,12 @@ impl Default {
                         unit_of_measurement: Some(
                             humidity
                                 .unit_of_measurement
+                                .clone()
                                 .unwrap_or("%".to_string())
-                                .clone(),
                         ),
                         name: humidity.name.clone(),
                         id: id.clone(),
-                    }, filters: None}));
+                    }, base: humidity}));
                     let sensor_entry = BME280Sensor {
                         address: sensor.address.clone(),
                         update_interval: sensor.update_interval.clone(),

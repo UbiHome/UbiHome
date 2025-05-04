@@ -16,13 +16,6 @@ use crate::utils::format_id;
 //     delayed_on(Duration),
 // }
 
-// #[derive(Clone, Deserialize, Debug, PartialEq, Eq, Hash)]
-// pub enum FilterTypeEnum {
-//     invert,
-//     delayed_off,
-//     delayed_on,
-// }
-
 // #[derive(Clone, Deserialize, Debug)]
 // #[serde(deny_unknown_fields)]
 

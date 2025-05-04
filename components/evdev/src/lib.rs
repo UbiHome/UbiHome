@@ -47,17 +47,16 @@ impl Module for Default {
                         self.config.ubihome.name,
                         &any_sensor.default.name.clone()
                     );
-                    let id = &any_sensor.default.id.unwrap_or(object_id.clone());
+                    let id = &any_sensor.default.id.clone().unwrap_or(object_id.clone());
                     components.push(InternalComponent::BinarySensor(InternalBinarySensor {
                         ha: UbiBinarySensor {
                             platform: "sensor".to_string(),
                             icon: any_sensor.default.icon.clone(),
-                            unique_id: Some(id.clone()),
                             device_class: any_sensor.default.device_class.clone(),
                             name: any_sensor.default.name.clone(),
                             id: object_id.clone(),
                         },
-                        base: None,
+                        base: any_sensor.default.clone(),
                     }));
                 }
                 _ => {}

@@ -5,6 +5,7 @@ use ubihome::CoreConfig;
 use ubihome_core::binary_sensor::{ActionType, FilterType};
 use ubihome_core::home_assistant::sensors::Component;
 use ubihome_core::internal::sensors::InternalComponent;
+use ubihome_core::sensor::SensorFilterType;
 use ubihome_core::{ChangedMessage, Module, PublishedMessage};
 
 use clap::{Arg, ArgAction, Command};
@@ -207,8 +208,8 @@ pub(crate) fn run(
         let (modules_tx, mut internal_rx) = broadcast::channel::<ChangedMessage>(16);
 
         // Double Option Workaround for https://github.com/Pauan/rust-signals/issues/75
-        let mut signal_map_binary_sensor: HashMap<String, Mutable<Option<Option<bool>>>> =
-            HashMap::new();
+        let mut signal_map_binary_sensor: HashMap<String, Mutable<Option<Option<bool>>>> = HashMap::new();
+        let mut signal_map_sensor: HashMap<String, Mutable<Option<Option<String>>>> = HashMap::new();
 
         for (component) in components.clone() {
             match component {
@@ -216,7 +217,57 @@ pub(crate) fn run(
                     println!("Button: {:?}", button);
                 }
                 InternalComponent::Sensor(sensor) => {
-                    println!("Sensor: {:?}", sensor);
+                    let mutable: Mutable<Option<Option<String>>> = Mutable::new(Option::None);
+                    signal_map_sensor
+                        .insert(sensor.ha.id.clone(), mutable.clone());
+                    let internal_tx_clone = internal_tx.clone();
+
+                    let mutable_clone = mutable.clone();
+                    tokio::spawn(async move {
+                        // println!("Filters: {:?}", binary_sensor.filters);
+
+                        let mut signal = mutable_clone.signal_cloned().boxed();
+                        for filter in sensor.base.filters.unwrap_or_default() {
+                            match filter.filter {
+                                SensorFilterType::round(decimals) => {
+                                    trace!("round");
+                                    signal = signal
+                                    .map(move |value| {
+                                        
+                                        if let Some(v) = value.clone().and_then(|v| v) {
+                                            let number: f64 = v.parse().unwrap();
+                                            let output = format!("{:.1$}", number, decimals);
+                                            warn!("Round: {}", output);
+                                            return Some(Some(output))
+                                        }
+                                        return value
+                                    })
+                                    .boxed();
+                                }
+                            }
+                        }
+
+                        // React to signal changes
+                        signal
+                            .for_each(|value| {
+                                let signal_tx_clone = internal_tx_clone.clone();
+
+                                let key = sensor.ha.id.clone();
+                                if let Some(value) = value.and_then(|v| v) {
+                                    let pcmd = PublishedMessage::SensorValueChanged {
+                                        key: key,
+                                        value: value,
+                                    };
+                                    debug!("Publishing command from signal: {:?}", pcmd);
+                                        
+                                    signal_tx_clone.send(pcmd).unwrap();
+                                }
+
+                                async move {
+                                }
+                            })
+                            .await;
+                    });
                 }
                 InternalComponent::Switch(switch) => {
                     println!("Switch: {:?}", switch);
@@ -394,10 +445,11 @@ pub(crate) fn run(
                         ChangedMessage::SensorValueChange { key, value } => {
                             println!("SensorValueChange: {}", value);
 
-                            // signal_map_binary_sensor.get(&key).map(|signal| {
-                            //     signal.set(value.to_string());
-                            // });
-                            publish_cmd = Some(PublishedMessage::SensorValueChanged { key, value });
+                            signal_map_sensor.get(&key).map(|signal| {
+                                signal.set(Some(Some(value)));
+                            });
+                            publish_cmd = None;
+                            // publish_cmd = Some(PublishedMessage::SensorValueChanged { key, value });
                         }
                         ChangedMessage::BinarySensorValueChange { key, value } => {
                             debug!("BinarySensorValueChange: {}", value);

@@ -53,20 +53,22 @@ button:
 
 
 sensor:
-#   - platform: shell
-#     name: "RAM Usage"
-#     id: ram_usage
-#     icon: mdi:memory
-#     state_class: "measurement"
-#     unit_of_measurement: "%"
-#     update_interval: 30s # 0 only executes it once and assumes a long running processes.
-#     command: |-
-#       echo test
-#       # free | grep Mem | awk '{print $3/$2 * 100.0}'
-#     # device_class: "data_size"
+  - platform: shell
+    name: "RAM Usage"
+    id: ram_usage
+    icon: mdi:memory
+    state_class: "measurement"
+    unit_of_measurement: "°C"
+    update_interval: 30s # 0 only executes it once and assumes a long running processes.
+    command: |-
+      echo 1.23453234
+    # free | grep Mem | awk '{print $3/$2 * 100.0}'
+    device_class: "temperature"
 #   - platform: bme280
 #     update_interval: 30s # 0 only executes it once and assumes a long running processes.
 #     name: "bla"
+    filters:
+      - round: 2
 
 binary_sensor:
   - platform: shell

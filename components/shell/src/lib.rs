@@ -2,6 +2,7 @@ use duration_str::deserialize_duration;
 use log::{debug, error, info, trace, warn};
 use serde::{Deserialize, Deserializer};
 use shell_exec::{Execution, Shell, ShellError};
+use std::any;
 use std::collections::HashMap;
 use std::sync::Arc;
 use std::{future::Future, pin::Pin, str, time::Duration};
@@ -121,7 +122,7 @@ impl Default {
                             name: any_sensor.default.name.clone(),
                             id: id.clone(),
                         },
-                        filters: None,
+                        base: any_sensor.default.clone(),
                     }));
                     sensors.insert(id.clone(), sensor);
                 }
