@@ -1,15 +1,16 @@
 use duration_str::deserialize_duration;
-use log::{debug, error, info, trace};
+use log::{debug, error, info, trace, warn};
 use serde::{Deserialize, Deserializer};
 use shell_exec::{Execution, Shell, ShellError};
-use ubihome_core::home_assistant::sensors::HASwitch;
-use ubihome_core::internal::sensors::InternalSwitch;
 use std::collections::HashMap;
+use std::sync::Arc;
 use std::{future::Future, pin::Pin, str, time::Duration};
 use tokio::{
     sync::broadcast::{Receiver, Sender},
     time,
 };
+use ubihome_core::home_assistant::sensors::HASwitch;
+use ubihome_core::internal::sensors::InternalSwitch;
 use ubihome_core::{
     config_template,
     home_assistant::sensors::{HABinarySensor, HAButton, HASensor},
@@ -65,7 +66,9 @@ pub struct ShellButtonConfig {
 pub struct ShellSwitchConfig {
     pub command_on: String,
     pub command_off: String,
-    pub command_state: String,
+    pub command_state: Option<String>,
+    #[serde(deserialize_with = "deserialize_option_duration")]
+    pub update_interval: Option<Duration>,
 }
 
 config_template!(
@@ -185,7 +188,7 @@ impl Default {
             binary_sensors,
             buttons,
             sensors,
-            switches
+            switches,
         }
     }
 }
@@ -212,19 +215,20 @@ impl Module for Default {
         let sensors = self.sensors.clone();
         Box::pin(async move {
             let cloned_config = config.clone();
+            let switches_clone = switches.clone();
             // Handle Button Presses
             tokio::spawn(async move {
                 while let Ok(cmd) = receiver.recv().await {
                     match cmd {
                         PublishedMessage::SwitchStateChange { key, state } => {
                             debug!("SwitchStateChanged: {} {}", key, state);
-                            if let Some(switch) = switches.get(&key) {
+                            if let Some(switch) = switches_clone.get(&key) {
                                 // ButtonKind::shell(shell_button) => {
                                 let command: String;
                                 if state {
                                     debug!("Turning on switch: {}", key);
                                     command = switch.command_on.clone();
-                                } else{
+                                } else {
                                     debug!("Turning off switch: {}", key);
                                     command = switch.command_off.clone();
                                 }
@@ -241,10 +245,7 @@ impl Module for Default {
                                 if output.is_empty() {
                                     trace!("Command executed successfully with no output.");
                                 } else {
-                                    trace!(
-                                        "Command executed successfully with output: {}",
-                                        output
-                                    );
+                                    trace!("Command executed successfully with output: {}", output);
                                 }
                             }
                         }
@@ -267,10 +268,7 @@ impl Module for Default {
                                 if output.is_empty() {
                                     trace!("Command executed successfully with no output.");
                                 } else {
-                                    trace!(
-                                        "Command executed successfully with output: {}",
-                                        output
-                                    );
+                                    trace!("Command executed successfully with output: {}", output);
                                 }
                             }
                         }
@@ -287,7 +285,6 @@ impl Module for Default {
                         let mut interval = time::interval(duration);
                         debug!("Sensor {} has update interval: {:?}", key, interval);
                         loop {
-                            interval.tick().await;
                             let output =
                                 execute_command(&cloned_config, sensor.command.as_str(), &duration)
                                     .await;
@@ -307,11 +304,64 @@ impl Module for Default {
                                     continue;
                                 }
                             };
+                            interval.tick().await;
                         }
                     } else {
                         debug!("Sensor {} has no update interval", key);
                     }
                 });
+            }
+
+            for (key, switch) in switches {
+                let switch = switch.clone();
+                debug!("Switch State {:?}", switch);
+
+                if let Some(command_state) = switch.command_state {
+                    let cloned_config = config.clone();
+                    let cloned_sender = sender.clone();
+                    tokio::spawn(async move {
+                        let duration = switch
+                            .update_interval
+                            .unwrap_or_else(|| Duration::from_secs(60));
+
+                        let mut interval = time::interval(duration);
+                        debug!("Switch {} has update interval: {:?}", key, interval);
+                        loop {
+                            let output = execute_command(
+                                &cloned_config,
+                                    &command_state,
+                                &duration,
+                            )
+                            .await;
+                            // TODO: Handle long running commands (e.g. newline per value) and multivalued outputs (e.g. json)
+                            match output {
+                                Ok(output) => {
+                                    debug!("Switch {} output: {}", key, &output);
+                                    let value = if output.trim().to_lowercase() == "true" {
+                                        true
+                                    } else if output.trim().to_lowercase() == "false" {
+                                        false
+                                    } else {
+                                        debug!("Invalid binary sensor output: {}", output);
+                                        continue;
+                                    };
+
+                                    _ = cloned_sender.send(ChangedMessage::SwitchStateChange {
+                                        key: key.clone(),
+                                        state: value,
+                                    });
+                                }
+                                Err(e) => {
+                                    debug!("Error executing command: {}", e);
+                                    continue;
+                                }
+                            };
+                            interval.tick().await;
+                        }
+                    });
+                } else {
+                    warn!("Switch {} has no command_state", key);
+                }
             }
 
             for (key, binary_sensor) in binary_sensors {
@@ -324,7 +374,6 @@ impl Module for Default {
                         let mut interval = time::interval(duration);
                         debug!("Sensor {} has update interval: {:?}", key, interval);
                         loop {
-                            interval.tick().await;
                             let output = execute_command(
                                 &cloned_config,
                                 binary_sensor.command.as_str(),
@@ -356,6 +405,7 @@ impl Module for Default {
                                     continue;
                                 }
                             };
+                            interval.tick().await;
                         }
                     } else {
                         debug!("Sensor {} has no update interval", key);

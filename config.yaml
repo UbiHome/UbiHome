@@ -8,6 +8,7 @@ logger:
     libmdns: INFO
     ubihome_mqtt: debug
     ubihome_shell: debug
+    ubihome: debug
     # ubihome_api: debug
     # ubihome_bluetooth_proxy: debug
     # rumqttc: debug
@@ -96,6 +97,7 @@ switch:
     command_on: "echo true > testfile"
     command_off: "echo false > testfile"
     command_state: "cat testfile"
+    # update_interval: 10s
 
 
 

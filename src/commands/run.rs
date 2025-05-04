@@ -364,7 +364,6 @@ pub(crate) fn run(
                     let publish_cmd: Option<PublishedMessage>;
                     match cmd {
                         ChangedMessage::SwitchStateChange { key, state } => {
-                            println!("SwitchStateChange: {}", state);
                             publish_cmd = Some(PublishedMessage::SwitchStateChange { key, state });
                         }
                         ChangedMessage::ButtonPress { key } => {
