@@ -3668,7 +3668,7 @@ checksum = "1dccffe3ce07af9386bfd29e80c0ab1a8205a2fc34e4bcd40364df902cfa8f3f"
 
 [[package]]
 name = "ubihome"
-version = "0.7.1"
+version = "0.7.2"
 dependencies = [
  "cargo_toml",
  "clap",
@@ -3759,7 +3759,7 @@ dependencies = [
 
 [[package]]
 name = "ubihome-evdev"
-version = "0.6.0"
+version = "0.7.0"
 dependencies = [
  "async-trait",
  "duration-str",
@@ -3802,7 +3802,7 @@ dependencies = [
 
 [[package]]
 name = "ubihome-mqtt"
-version = "0.7.0"
+version = "0.7.1"
 dependencies = [
  "duration-str",
  "log",
@@ -3830,7 +3830,7 @@ dependencies = [
 
 [[package]]
 name = "ubihome-shell"
-version = "0.7.0"
+version = "0.7.1"
 dependencies = [
  "duration-str",
  "log",

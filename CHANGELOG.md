@@ -1,5 +1,7 @@
 # Changelog
 
+## [0.7.2](https://github.com/UbiHome/UbiHome/compare/v0.7.1...v0.7.2) (2025-05-04)
+
 ## [0.7.1](https://github.com/UbiHome/UbiHome/compare/v0.7.0...v0.7.1) (2025-05-04)
 
 
