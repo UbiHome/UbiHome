@@ -2,11 +2,11 @@ ubihome:
   name: new_awesome
 
 logger:
-  level: info
+  level: debug
   directory: ./logs
   logs:
-    libmdns: INFO
-    ubihome: debug
+    libmdns: info
+    rumqtt: info
     ubihome_web_server: debug
     # ubihome_mqtt: debug
     # ubihome_shell: debug
@@ -79,7 +79,7 @@ binary_sensor:
     id: binary_sensor
     icon: "mdi:bluetooth-settings"
     device_class: presence
-    update_interval: 10s
+    update_interval: 1s
     command: |-
       cat binary_testfile
     on_press:
@@ -96,7 +96,9 @@ binary_sensor:
   #   pin: 23 # 17
   #   pull_up: true
   #   update_interval: "0s"
-
+    # filters:
+    #  - invert:
+    #  - delayed_off: 5s
 
 switch:
   - platform: shell
