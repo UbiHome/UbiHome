@@ -1,33 +1,33 @@
-use axum::body::Body;
 use axum::extract::Path;
 use axum::response::sse::Event;
 use axum::response::Sse;
-use axum::{extract::State, http::StatusCode, response::IntoResponse, routing::{post, get}, Json, Router};
-use tokio_stream::StreamExt;
+use axum::{
+    extract::State,
+    http::StatusCode,
+    response::IntoResponse,
+    routing::{get, post},
+    Json, Router,
+};
+use futures::stream::Stream;
 use serde::Deserialize;
-use ubihome_core::internal::sensors::InternalComponent;
 use std::convert::Infallible;
 use std::net::SocketAddr;
-use std::env;
 use std::time::Duration;
+use tokio_stream::StreamExt;
 use tower_http::trace::TraceLayer;
-use futures::stream::{self, Stream};
-use async_stream::stream;
+use ubihome_core::internal::sensors::InternalComponent;
 
-use log::{debug, info, warn};
+use log::{debug, info};
 use std::sync::Arc;
 use tokio::net::TcpSocket;
 use tower_http::timeout::TimeoutLayer;
 
-use ubihome_core::NoConfig;
-use ubihome_core::{
-    config_template, ChangedMessage, Module, PublishedMessage,
-};
 use serde::Deserializer;
 use std::collections::HashMap;
 use std::{future::Future, pin::Pin, str};
 use tokio::sync::broadcast::{Receiver, Sender};
-
+use ubihome_core::NoConfig;
+use ubihome_core::{config_template, ChangedMessage, Module, PublishedMessage};
 
 #[derive(Clone, Deserialize, Debug)]
 pub struct WebServerConfig {
@@ -39,7 +39,13 @@ struct AppState {
     receiver: Receiver<PublishedMessage>,
 }
 
-config_template!(web_server, Option<WebServerConfig>, NoConfig, NoConfig, NoConfig);
+config_template!(
+    web_server,
+    Option<WebServerConfig>,
+    NoConfig,
+    NoConfig,
+    NoConfig
+);
 
 #[derive(Clone, Debug)]
 pub struct Default {
@@ -54,69 +60,64 @@ impl Default {
     }
 }
 
-
 async fn handle_request(
-    Path((id)): Path<(String)>,
-    // State(state): State<Arc<AppState>>,
+    Path((domain, id)): Path<(String, String)>,
+    State(_): State<Arc<AppState>>,
 ) -> impl IntoResponse {
-    debug!("Handling request");
+    debug!("Handling request {} {}", domain, id);
+    (StatusCode::OK, Json("state.current_directory".clone()))
+}
+
+async fn handle_action(
+    Path((domain, id, action)): Path<(String, String, String)>,
+    State(_): State<Arc<AppState>>,
+) -> impl IntoResponse {
+    debug!("Handling request {} {} {}", domain, id, action);
     (StatusCode::OK, Json("state.current_directory".clone()))
 }
 
 async fn events_stream(
     State(state): State<Arc<AppState>>,
 ) -> Sse<impl Stream<Item = Result<Event, Infallible>>> {
-
-    let mut test = tokio_stream::wrappers::BroadcastStream::new(state.receiver.resubscribe()).filter_map(|m| {
-        warn!("stream message");
-        match m {
-            Ok(msg) => {
-                match msg {
+    let events = tokio_stream::wrappers::BroadcastStream::new(state.receiver.resubscribe())
+        .filter_map(|m| {
+            match m {
+                Ok(msg) => match msg {
                     PublishedMessage::ButtonPressed { key } => {
-
-                        return Some(Event::default().event("state").data("{\"state\": \"ok\"}"))
+                        return Some(
+                            Event::default()
+                                .event("state")
+                                .data(format!("{{\"id\": \"{}\"}}", key)),
+                        )
                     }
                     PublishedMessage::SensorValueChanged { key, value } => {
-                        return Some(Event::default().event("state").data(format!("{{\"id\": \"{}\", \"value\": {}}}", key, value )))
+                        return Some(
+                            Event::default()
+                                .event("state")
+                                .data(format!("{{\"id\": \"{}\", \"value\": {}}}", key, value)),
+                        )
                     }
                     PublishedMessage::BinarySensorValueChanged { key, value } => {
-                        return Some(Event::default().event("state").data(format!("{{\"id\": \"{}\", \"value\": {}}}", key, value )))
+                        return Some(
+                            Event::default()
+                                .event("state")
+                                .data(format!("{{\"id\": \"{}\", \"value\": {}}}", key, value)),
+                        )
                     }
                     _ => {
                         debug!("Not handled message: {:?}", msg);
                         None
-                    } //Event::default().event("state").data("{\"state\": \"ok\"}"),
-                }
+                    }
+                },
+                Err(_) => None,
             }
-            Err(_) => {
-                debug!("Error in stream");
-                None 
-            } //Event::default().event("state").data("{\"state\": \"ok\"}"),
-        }
-    }).map(|v| Ok::<_, Infallible>(v));
+        })
+        .map(|v| Ok::<_, Infallible>(v));
 
-    debug!("connected");
-    // A `Stream` that repeats an event every second
-    //
-    // You can also create streams from tokio channels using the wrappers in
-    // https://docs.rs/tokio-stream
-    // let s = stream::repeat_with(|| Event::default().event("state").data("{\"state\": \"ok\"}"))
-    //     .map(Ok)
-    //     .throttle(Duration::from_secs(5));
-
-    // let stream = stream::repeat_with(|| Event::default().data("hi!"))
-    //     .map(Ok)
-    //     .throttle(Duration::from_secs(1));
-
-    
-    // while let Some(_) = test.next().await {
-    //     debug!("test");
-    // }
-
-    Sse::new(test).keep_alive(
+    Sse::new(events).keep_alive(
         axum::response::sse::KeepAlive::new()
             .interval(Duration::from_secs(1))
-            .text("ping")
+            .text("ping"),
     )
 }
 
@@ -141,75 +142,35 @@ impl Module for Default {
         info!("Starting web_server with config: {:?}", config.web_server);
         Box::pin(async move {
             let bind_address = "0.0.0.0:8080";
-
-            // let extra_receiver = receiver.resubscribe();
-            // tokio::spawn(async move {
-            //     // while let Ok(cmd) = extra_receiver.resubscribe().recv().await {
-            //     //     warn!("test");
-            //     // }
-            //     let mut test = tokio_stream::wrappers::BroadcastStream::new(extra_receiver.resubscribe()).filter_map(|m| {
-            //         warn!("Test Received message");
-                    
-            //         return Some(Event::default().event("state").data("{{\"state\": \"test\"}}"));
-            //         match m {
-            //             Ok(msg) => {
-            //                 match msg {
-            //                     PublishedMessage::ButtonPressed { key } => {
-            //                         Some(Event::default().event("state").data("{\"state\": \"ok\"}"))
-            //                     }
-            //                     PublishedMessage::SensorValueChanged { key, value } => {
-            //                         Some(Event::default().event("state").data(format!("{{\"state\": \"{}\"}}", key )))
-            //                     }
-            //                     _ => None //Event::default().event("state").data("{\"state\": \"ok\"}"),
-            //                 }
-            //             }
-            //             Err(_) => None //Event::default().event("state").data("{\"state\": \"ok\"}"),
-            //         }
-            //     }).map(|v| Ok::<_, Infallible>(v));
-
-            //     while let Some(_) = test.next().await {
-            //         debug!("test");
-            //     }
-
-            // });
-
-            let app_state = Arc::new(AppState {
-                receiver: receiver,
-            });
+            let app_state = Arc::new(AppState { receiver: receiver });
 
             // let assets_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("assets");
             // let static_files_servicme = ServeDir::new(assets_dir);
 
-
-            
             let app = Router::new()
-            // .route("/", get(handle_request))
-            .route("/buttons/{id}", get(handle_request))
-            .route("/sensors/{id}", get(handle_request))
-            .route("/binary_sensors/{id}", get(handle_request))
-            // .route("/{domain}/{id}/{action}", post(handle_request))
-            .route("/events", get(events_stream))
-            .layer((
-                TraceLayer::new_for_http(),
-                // Graceful shutdown will wait for outstanding requests to complete. Add a timeout so
-                // requests don't hang forever.
-                TimeoutLayer::new(Duration::from_secs(1)),
-            ))
-            .with_state(app_state.clone());
-        
+                // .route("/", get(handle_request))
+                .route("/{domain}/{id}", get(handle_request))
+                .route("/{domain}/{id}/{action}", post(handle_action))
+                .route("/events", get(events_stream))
+                .layer((
+                    TraceLayer::new_for_http(),
+                    // Graceful shutdown will wait for outstanding requests to complete. Add a timeout so
+                    // requests don't hang forever.
+                    TimeoutLayer::new(Duration::from_secs(1)),
+                ))
+                .with_state(app_state.clone());
+
             let socket = TcpSocket::new_v4().unwrap();
             socket.set_reuseaddr(true).unwrap();
             let my_addr: SocketAddr = "0.0.0.0:8080".parse().unwrap();
 
             socket.bind(my_addr).unwrap();
             let listener = socket.listen(128).unwrap();
-            
+
             // let listener = TcpListener::bind(bind_address).await.unwrap();
             info!("Listening on http://{}", bind_address);
-            axum::serve(listener, app)
-                .await
-                .unwrap();
-        
+            axum::serve(listener, app).await.unwrap();
+
             Ok(())
         })
     }
