@@ -65,23 +65,33 @@ async fn handle_request(
 
 async fn events_stream(
     State(state): State<Arc<AppState>>,
-) -> impl IntoResponse {
+) -> Sse<impl Stream<Item = Result<Event, Infallible>>> {
 
-    let test = tokio_stream::wrappers::BroadcastStream::new(state.receiver.resubscribe()).filter_map(|m| {
-        warn!("Received message");
+    let mut test = tokio_stream::wrappers::BroadcastStream::new(state.receiver.resubscribe()).filter_map(|m| {
+        warn!("stream message");
         match m {
             Ok(msg) => {
                 match msg {
                     PublishedMessage::ButtonPressed { key } => {
-                        Some(Event::default().event("state").data("{\"state\": \"ok\"}"))
+
+                        return Some(Event::default().event("state").data("{\"state\": \"ok\"}"))
                     }
                     PublishedMessage::SensorValueChanged { key, value } => {
-                        Some(Event::default().event("state").data(format!("{{\"state\": \"{}\"}}", key )))
+                        return Some(Event::default().event("state").data(format!("{{\"id\": \"{}\", \"value\": {}}}", key, value )))
                     }
-                    _ => None //Event::default().event("state").data("{\"state\": \"ok\"}"),
+                    PublishedMessage::BinarySensorValueChanged { key, value } => {
+                        return Some(Event::default().event("state").data(format!("{{\"id\": \"{}\", \"value\": {}}}", key, value )))
+                    }
+                    _ => {
+                        debug!("Not handled message: {:?}", msg);
+                        None
+                    } //Event::default().event("state").data("{\"state\": \"ok\"}"),
                 }
             }
-            Err(_) => None //Event::default().event("state").data("{\"state\": \"ok\"}"),
+            Err(_) => {
+                debug!("Error in stream");
+                None 
+            } //Event::default().event("state").data("{\"state\": \"ok\"}"),
         }
     }).map(|v| Ok::<_, Infallible>(v));
 
@@ -98,11 +108,16 @@ async fn events_stream(
     //     .map(Ok)
     //     .throttle(Duration::from_secs(1));
 
+    
+    // while let Some(_) = test.next().await {
+    //     debug!("test");
+    // }
+
     Sse::new(test).keep_alive(
         axum::response::sse::KeepAlive::new()
             .interval(Duration::from_secs(1))
             .text("ping")
-    );
+    )
 }
 
 impl Module for Default {
@@ -127,12 +142,43 @@ impl Module for Default {
         Box::pin(async move {
             let bind_address = "0.0.0.0:8080";
 
+            // let extra_receiver = receiver.resubscribe();
+            // tokio::spawn(async move {
+            //     // while let Ok(cmd) = extra_receiver.resubscribe().recv().await {
+            //     //     warn!("test");
+            //     // }
+            //     let mut test = tokio_stream::wrappers::BroadcastStream::new(extra_receiver.resubscribe()).filter_map(|m| {
+            //         warn!("Test Received message");
+                    
+            //         return Some(Event::default().event("state").data("{{\"state\": \"test\"}}"));
+            //         match m {
+            //             Ok(msg) => {
+            //                 match msg {
+            //                     PublishedMessage::ButtonPressed { key } => {
+            //                         Some(Event::default().event("state").data("{\"state\": \"ok\"}"))
+            //                     }
+            //                     PublishedMessage::SensorValueChanged { key, value } => {
+            //                         Some(Event::default().event("state").data(format!("{{\"state\": \"{}\"}}", key )))
+            //                     }
+            //                     _ => None //Event::default().event("state").data("{\"state\": \"ok\"}"),
+            //                 }
+            //             }
+            //             Err(_) => None //Event::default().event("state").data("{\"state\": \"ok\"}"),
+            //         }
+            //     }).map(|v| Ok::<_, Infallible>(v));
+
+            //     while let Some(_) = test.next().await {
+            //         debug!("test");
+            //     }
+
+            // });
+
             let app_state = Arc::new(AppState {
                 receiver: receiver,
             });
 
             // let assets_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("assets");
-            // let static_files_service = ServeDir::new(assets_dir);
+            // let static_files_servicme = ServeDir::new(assets_dir);
 
 
             
