@@ -1,11 +1,11 @@
 {
-    ".": "0.6.2",
+    ".": "0.6.3",
     "components/api": "0.5.0",
     "components/bluetooth_proxy": "0.6.0",
     "components/bme280": "0.5.0",
     "components/core": "0.5.0",
     "components/evdev": "0.4.10",
-    "components/gpio": "0.5.6",
+    "components/gpio": "0.5.7",
     "components/mdns": "0.5.0",
     "components/mqtt": "0.5.0",
     "components/power_utils": "0.5.0",
