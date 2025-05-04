@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.7.0](https://github.com/UbiHome/UbiHome/compare/v0.6.0...ubihome-shell-v0.7.0) (2025-05-04)
+
+
+### Features
+
+* switch shell entity via mqtt ([b0e4bd4](https://github.com/UbiHome/UbiHome/commit/b0e4bd45affcb8494ddc53903a132d9edb871509))
+
+
+### Bug Fixes
+
+* add switch state ([50991db](https://github.com/UbiHome/UbiHome/commit/50991db5113ad358a17d73f9881cd53b97155403))
+* mqtt switch topic not recognized ([92b5f47](https://github.com/UbiHome/UbiHome/commit/92b5f475cbaa9e40161081a06e29ea843c7b8986))
+
 ## [0.6.0](https://github.com/UbiHome/UbiHome/compare/v0.5.0...ubihome-shell-v0.6.0) (2025-05-04)
 
 

@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.7.0](https://github.com/UbiHome/UbiHome/compare/ubihome-bme280-v0.6.4...ubihome-bme280-v0.7.0) (2025-05-04)
+
+
+### Features
+
+* working basic binary filters ([52e0bc0](https://github.com/UbiHome/UbiHome/commit/52e0bc0f6b6c028165252675881714b6764bbdea))
+
+
+### Bug Fixes
+
+* better warnings ([0a28ec2](https://github.com/UbiHome/UbiHome/commit/0a28ec2247e82adfa04eb997528b82d4d30dab0b))
+* bme state and device classes ([17be6ae](https://github.com/UbiHome/UbiHome/commit/17be6aef08583da57e56b9b3feeff7a1714a163e))
+* bme280 not looping ([79e7998](https://github.com/UbiHome/UbiHome/commit/79e79984f9ca72c3675f27d5a11e24f9265375f0))
+* centralize logging ([86d2c2d](https://github.com/UbiHome/UbiHome/commit/86d2c2da8a1ab36c06e02bf957e55af902d53e4a))
+
 ## [0.6.4](https://github.com/UbiHome/UbiHome/compare/v0.5.0...ubihome-bme280-v0.6.4) (2025-05-04)
 
 ## [0.5.0](https://github.com/UbiHome/UbiHome/compare/v0.4.9...ubihome-bme280-v0.5.0) (2025-05-03)

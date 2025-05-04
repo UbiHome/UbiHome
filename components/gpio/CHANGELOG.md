@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.7.0](https://github.com/UbiHome/UbiHome/compare/v0.6.0...ubihome-gpio-v0.7.0) (2025-05-04)
+
+
+### Features
+
+* switch shell entity via mqtt ([b0e4bd4](https://github.com/UbiHome/UbiHome/commit/b0e4bd45affcb8494ddc53903a132d9edb871509))
+
+
+### Bug Fixes
+
+* gpio again ([0b3c7e1](https://github.com/UbiHome/UbiHome/commit/0b3c7e1902c4acfa8c6fbd7bab1b7e7a1f23c6f8))
+* gpio filters ([795fe36](https://github.com/UbiHome/UbiHome/commit/795fe36d563f6078d3b9cd6b7b4f3b031dc358b9))
+* readd errornously removed wait future ([0529ef0](https://github.com/UbiHome/UbiHome/commit/0529ef03ba8a9bafc5589294d8a0523845d648b1))
+
 ## [0.6.0](https://github.com/UbiHome/UbiHome/compare/ubihome-gpio-v0.5.7...ubihome-gpio-v0.6.0) (2025-05-04)
 
 
