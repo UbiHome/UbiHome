@@ -1,5 +1,6 @@
 use log::{debug, warn};
 use serde::{Deserialize, Deserializer};
+use std::any;
 use std::{collections::HashMap, future};
 use std::{future::Future, pin::Pin, str};
 use tokio::sync::broadcast::{Receiver, Sender};
@@ -56,7 +57,7 @@ impl Default {
                             name: any_sensor.default.name.clone(),
                             object_id: object_id.clone(),
                         },
-                        filters: None,
+                        filters: any_sensor.default.filters.clone(),
                     }));
                     binary_sensors.insert(
                         id,
