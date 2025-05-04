@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.5.5](https://github.com/UbiHome/UbiHome/compare/v0.5.4...ubihome-gpio-v0.5.5) (2025-05-04)
+
+
+### Bug Fixes
+
+* gpio triggers ([bf5b035](https://github.com/UbiHome/UbiHome/commit/bf5b0350a6e6b07959750cd0762ff2d05c70d0b0))
+* readd errornously removed wait future ([0529ef0](https://github.com/UbiHome/UbiHome/commit/0529ef03ba8a9bafc5589294d8a0523845d648b1))
+
 ## [0.5.4](https://github.com/UbiHome/UbiHome/compare/v0.5.3...ubihome-gpio-v0.5.4) (2025-05-03)
 
 
