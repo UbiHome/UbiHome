@@ -331,7 +331,7 @@ impl Module for Default {
                                 let topic = received_message
                                     .topic
                                     .clone()
-                                    .split_off(base_topic1.clone().len() + 1);
+                                    .split_off(base_topic1.clone().len() + 1).split("/").next().unwrap().to_string();
                                 debug!("Received message on topic: {}", topic);
                                 debug!("Available: {:?}", mqtt_components.keys());
 

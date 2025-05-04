@@ -45,6 +45,7 @@ fn default_timeout() -> Duration {
 
 #[derive(Clone, Deserialize, Debug)]
 pub struct ShellBinarySensorConfig {
+    #[serde(default = "default_timeout_none")]
     #[serde(deserialize_with = "deserialize_option_duration")]
     pub update_interval: Option<Duration>,
     pub command: String,
@@ -53,6 +54,8 @@ pub struct ShellBinarySensorConfig {
 #[derive(Clone, Deserialize, Debug)]
 pub struct ShellSensorConfig {
     pub command: String,
+    
+    #[serde(default = "default_timeout_none")]
     #[serde(deserialize_with = "deserialize_option_duration")]
     pub update_interval: Option<Duration>,
 }
@@ -67,9 +70,17 @@ pub struct ShellSwitchConfig {
     pub command_on: String,
     pub command_off: String,
     pub command_state: Option<String>,
+
+    #[serde(default = "default_timeout_none")]
     #[serde(deserialize_with = "deserialize_option_duration")]
     pub update_interval: Option<Duration>,
 }
+
+fn default_timeout_none() -> Option<Duration>{
+    None
+}
+
+
 
 config_template!(
     shell,
@@ -92,6 +103,7 @@ pub struct Default {
 impl Default {
     pub fn new(config_string: &String) -> Self {
         let config = serde_yaml::from_str::<CoreConfig>(config_string).unwrap();
+        debug!("Shell config: {:?}", config);
         let mut components: Vec<InternalComponent> = Vec::new();
 
         let mut sensors: HashMap<String, ShellSensorConfig> = HashMap::new();
@@ -286,7 +298,7 @@ impl Module for Default {
                         debug!("Sensor {} has update interval: {:?}", key, interval);
                         loop {
                             let output =
-                                execute_command(&cloned_config, sensor.command.as_str(), &duration)
+                                execute_command(&cloned_config, sensor.command.as_str(), &cloned_config.timeout)
                                     .await;
                             // TODO: Handle long running commands (e.g. newline per value) and multivalued outputs (e.g. json)
                             match output {
@@ -330,7 +342,7 @@ impl Module for Default {
                             let output = execute_command(
                                 &cloned_config,
                                     &command_state,
-                                &duration,
+                                    &cloned_config.timeout,
                             )
                             .await;
                             // TODO: Handle long running commands (e.g. newline per value) and multivalued outputs (e.g. json)
@@ -377,7 +389,7 @@ impl Module for Default {
                             let output = execute_command(
                                 &cloned_config,
                                 binary_sensor.command.as_str(),
-                                &duration,
+                                &cloned_config.timeout,
                             )
                             .await;
                             // TODO: Handle long running commands (e.g. newline per value) and multivalued outputs (e.g. json)
