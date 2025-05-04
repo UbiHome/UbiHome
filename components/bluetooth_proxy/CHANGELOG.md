@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.6.0](https://github.com/UbiHome/UbiHome/compare/v0.5.0...ubihome-bluetooth_proxy-v0.6.0) (2025-05-04)
+
+
+### Features
+
+* add bluetooth proxy ([#53](https://github.com/UbiHome/UbiHome/issues/53)) ([1308582](https://github.com/UbiHome/UbiHome/commit/1308582057511d01e8a99cf93bf3f71d83df22e0))
+
 ## [0.5.0](https://github.com/UbiHome/UbiHome/compare/ubihome-bluetooth_proxy-v0.4.16...ubihome-bluetooth_proxy-v0.5.0) (2025-05-03)
 
 

@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.6.1](https://github.com/UbiHome/UbiHome/compare/v0.6.0...v0.6.1) (2025-05-04)
+
+
+### Bug Fixes
+
+* readd errornously removed wait future ([0529ef0](https://github.com/UbiHome/UbiHome/commit/0529ef03ba8a9bafc5589294d8a0523845d648b1))
+
 ## [0.6.0](https://github.com/UbiHome/UbiHome/compare/v0.5.6...v0.6.0) (2025-05-03)
 
 
