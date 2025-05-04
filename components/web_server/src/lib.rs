@@ -1,3 +1,4 @@
+use axum::body::Body;
 use axum::extract::Path;
 use axum::response::sse::Event;
 use axum::response::Sse;
@@ -31,10 +32,10 @@ struct AppState {
 
 async fn handle_request(
     Path((id)): Path<(String)>,
-    State(state): State<Arc<AppState>>,
+    // State(state): State<Arc<AppState>>,
 ) -> impl IntoResponse {
     debug!("Handling request");
-    (StatusCode::OK, Json(state.current_directory.clone()))
+    (StatusCode::OK, Json("state.current_directory".clone()))
 }
 
 
@@ -87,25 +88,13 @@ impl Module for Default {
         Box::pin(async move {
             let bind_address = "0.0.0.0:8080";
 
-            let app_state = Arc::new(AppState {
-                current_directory: env::current_dir().unwrap().to_string_lossy().to_string(),
-            });
+            // let app_state = Arc::new(AppState {
+            //     current_directory: env::current_dir().unwrap().to_string_lossy().to_string(),
+            // });
 
             // let assets_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("assets");
             // let static_files_service = ServeDir::new(assets_dir);
-            let test = tokio_stream::wrappers::BroadcastStream::new(receiver).filter_map(|m| {
-                match m {
-                    Ok(msg) => {
-                        match msg {
-                            PublishedMessage::ButtonPressed { key } => {
-                                Some(Event::default().event("state").data("{\"state\": \"ok\"}"))
-                            }
-                            _ => None //Event::default().event("state").data("{\"state\": \"ok\"}"),
-                        }
-                    }
-                    Err(_) => None //Event::default().event("state").data("{\"state\": \"ok\"}"),
-                }
-            }).map(|v| Ok::<_, Infallible>(v));
+            
 
             // let events:  = 
             //     stream! {
@@ -133,8 +122,27 @@ impl Module for Default {
             //     // println!("`{}` connected", user_agent.as_str());
                 
             // }
+            let stream_data = async || -> impl axum::response::IntoResponse {
+                // let (v, mut rx) = {
+                //     let snapshot = shared_data_behind_rw_lock.read().unwrap();
+                //     // Subscribe to the broadcast channel while snapshot is locked so that we don't miss any updates.
+                //     let rx = tx.subscribe();
+                //     (snapshot.clone(), rx)
+                // };
+        
+                let s = stream! {
+                    // yield MyError::Ok(v.into());
+        
+                    while let Ok(x) = receiver.recv().await {
+                        yield Ok(x)
+                    };
+                };
+                Body::from_stream(s)
+            }
+
+
             
-            // let stream = test.clone();
+            let cloned_receiver = receiver.resubscribe();
         
             let app = Router::new()
             // .route("/", get(handle_request))
@@ -142,7 +150,21 @@ impl Module for Default {
             .route("/sensors/{id}", get(handle_request))
             .route("/binary_sensors/{id}", get(handle_request))
             // .route("/{domain}/{id}/{action}", post(handle_request))
-            .route("/events", get(|State(state): State<Arc<AppState>>| async {
+            .route("/events", get(move || async {
+                let test = tokio_stream::wrappers::BroadcastStream::new(cloned_receiver).filter_map(|m| {
+                    match m {
+                        Ok(msg) => {
+                            match msg {
+                                PublishedMessage::ButtonPressed { key } => {
+                                    Some(Event::default().event("state").data("{\"state\": \"ok\"}"))
+                                }
+                                _ => None //Event::default().event("state").data("{\"state\": \"ok\"}"),
+                            }
+                        }
+                        Err(_) => None //Event::default().event("state").data("{\"state\": \"ok\"}"),
+                    }
+                }).map(|v| Ok::<_, Infallible>(v));
+
                 debug!("connected");
                 // A `Stream` that repeats an event every second
                 //
@@ -169,7 +191,7 @@ impl Module for Default {
                 // requests don't hang forever.
                 TimeoutLayer::new(Duration::from_secs(1)),
             ))
-            .with_state(app_state.clone());
+            // .with_state(app_state.clone());
         
             let socket = TcpSocket::new_v4().unwrap();
             socket.set_reuseaddr(true).unwrap();
