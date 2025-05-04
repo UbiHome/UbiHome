@@ -198,13 +198,13 @@ impl Module for Default {
                                 //     .unwrap();
                             })
                             .expect("failed to set async interrupt");
+                            debug!("Waiting for interrupts.");
+
+                            // Wait indefinitely for the interrupts
+                            let future = future::pending();
+                            let () = future.await;
                         }
 
-                        debug!("Waiting for interrupts.");
-
-                        // Wait indefinitely for the interrupts
-                        let future = future::pending();
-                        let () = future.await;
                     }
                 }
             }
