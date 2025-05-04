@@ -106,9 +106,9 @@ impl Module for Default {
             let all_mqtt_components_clone = all_mqtt_components.clone();
             tokio::spawn(async move {
                 while let Ok(cmd) = receiver.recv().await {
-                    let mut mqtt_components: HashMap<String, MqttComponent> = HashMap::new();
                     match cmd {
                         PublishedMessage::Components { components } => {
+                            let mut mqtt_components: HashMap<String, MqttComponent> = HashMap::new();
                             let mut topics: Vec<String> = vec![];
 
                             for component in components {
@@ -212,6 +212,11 @@ impl Module for Default {
                                     }
                                 }
                             }
+                            {
+                                let mut all_mqtt_components = all_mqtt_components_clone.write().await;
+                                all_mqtt_components.extend(mqtt_components.clone());
+                                debug!("MQTT Components: {:?}", mqtt_components.keys());
+                            }
 
                             let device = Device {
                                 identifiers: vec![core_config.ubihome.name.clone()],
@@ -310,13 +315,6 @@ impl Module for Default {
                         }
                         _ => {}
                     }
-                    {
-                        let mut all_mqtt_components = all_mqtt_components_clone.write().await;
-                        all_mqtt_components.extend(mqtt_components.clone());
-                        debug!("MQTT Components: {:?}", mqtt_components.keys());
-
-                    }
-
                 }
                 error!("MQTT Sender terminated");
             });
