@@ -93,24 +93,37 @@ impl Module for Default {
 
             // let assets_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("assets");
             // let static_files_service = ServeDir::new(assets_dir);
-
-            let events:  = 
-                stream! {
-                    loop {
-                        let msg = receiver.recv().await;
+            let test = tokio_stream::wrappers::BroadcastStream::new(receiver).filter_map(|m| {
+                match m {
+                    Ok(msg) => {
                         match msg {
-                            Ok(msg) => {
-                                match msg {
-                                    PublishedMessage::ButtonPressed { key } => {
-                                        yield Event::default().event("state").data("{\"state\": \"ok\"}");
-                                    }
-                                    _ => {}
-                                }
+                            PublishedMessage::ButtonPressed { key } => {
+                                Some(Event::default().event("state").data("{\"state\": \"ok\"}"))
                             }
-                            Err(_) => break,
+                            _ => None //Event::default().event("state").data("{\"state\": \"ok\"}"),
                         }
                     }
-            };
+                    Err(_) => None //Event::default().event("state").data("{\"state\": \"ok\"}"),
+                }
+            }).map(|v| Ok::<_, Infallible>(v));
+
+            // let events:  = 
+            //     stream! {
+            //         loop {
+            //             let msg = receiver.recv().await;
+            //             match msg {
+            //                 Ok(msg) => {
+            //                     match msg {
+            //                         PublishedMessage::ButtonPressed { key } => {
+            //                             yield Event::default().event("state").data("{\"state\": \"ok\"}");
+            //                         }
+            //                         _ => {}
+            //                     }
+            //                 }
+            //                 Err(_) => break,
+            //             }
+            //         }
+            // };
             
 
 
@@ -121,7 +134,7 @@ impl Module for Default {
                 
             // }
             
-
+            // let stream = test.clone();
         
             let app = Router::new()
             // .route("/", get(handle_request))
@@ -129,7 +142,7 @@ impl Module for Default {
             .route("/sensors/{id}", get(handle_request))
             .route("/binary_sensors/{id}", get(handle_request))
             // .route("/{domain}/{id}/{action}", post(handle_request))
-            .route("/events", get(|| async {
+            .route("/events", get(|State(state): State<Arc<AppState>>| async {
                 debug!("connected");
                 // A `Stream` that repeats an event every second
                 //
@@ -143,7 +156,7 @@ impl Module for Default {
                 //     .map(Ok)
                 //     .throttle(Duration::from_secs(1));
             
-                Sse::new(events).keep_alive(
+                Sse::new(test).keep_alive(
                     axum::response::sse::KeepAlive::new()
                         .interval(Duration::from_secs(1))
                         .text("ping")
