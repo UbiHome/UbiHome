@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.7.0](https://github.com/UbiHome/UbiHome/compare/v0.6.0...ubihome-mdns-v0.7.0) (2025-05-04)
+
+
+### Features
+
+* switch shell entity via mqtt ([b0e4bd4](https://github.com/UbiHome/UbiHome/commit/b0e4bd45affcb8494ddc53903a132d9edb871509))
+
 ## [0.6.0](https://github.com/UbiHome/UbiHome/compare/v0.5.0...ubihome-mdns-v0.6.0) (2025-05-04)
 
 
