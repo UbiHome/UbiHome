@@ -6,9 +6,10 @@ logger:
   directory: ./logs
   logs:
     libmdns: INFO
-    ubihome_mqtt: debug
-    ubihome_shell: debug
     ubihome: debug
+    ubihome_web_server: debug
+    # ubihome_mqtt: debug
+    # ubihome_shell: debug
     # ubihome_api: debug
     # ubihome_bluetooth_proxy: debug
     # rumqttc: debug
@@ -17,6 +18,8 @@ mdns:
   ip: "192.168.178.33"
   mac: "18:65:71:EB:5A:FB"
 
+web_server:
+  port: 8080
 # mqtt: 
 #   broker: 127.0.0.1
 #   port: 1883
@@ -118,9 +121,9 @@ text_sensor:
 
 
 # Native Homeassistant API
-api:
-  encryption:
-    key: "token"
+# api:
+#   encryption:
+#     key: "token"
 
 # Enable Automatic updates
 ota:

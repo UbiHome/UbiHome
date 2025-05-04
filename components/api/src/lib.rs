@@ -12,20 +12,21 @@ use log::error;
 use log::info;
 use log::trace;
 use log::warn;
-use serde::{Deserialize, Deserializer};
-use std::collections::HashMap;
-use std::num::ParseIntError;
-use std::{future::Future, pin::Pin, str};
-use tokio::io::{AsyncReadExt, AsyncWriteExt};
-use tokio::net::TcpListener;
-use tokio::sync::broadcast;
-use tokio::sync::broadcast::Receiver;
-use tokio::sync::broadcast::Sender;
+use tokio::net::TcpSocket;
 use ubihome_core::internal::sensors::InternalComponent;
 use ubihome_core::NoConfig;
 use ubihome_core::{
     config_template, home_assistant::sensors::Component, ChangedMessage, Module, PublishedMessage,
 };
+use serde::{Deserialize, Deserializer};
+use std::collections::HashMap;
+use std::net::SocketAddr;
+use std::num::ParseIntError;
+use std::{future::Future, pin::Pin, str};
+use tokio::io::{AsyncReadExt, AsyncWriteExt};
+use tokio::sync::broadcast;
+use tokio::sync::broadcast::Receiver;
+use tokio::sync::broadcast::Sender;
 
 #[derive(Clone, Deserialize, Debug)]
 pub struct ApiConfig {}
@@ -268,8 +269,15 @@ impl Module for UbiHomeDefault {
                 }
             });
 
-            let addr = "0.0.0.0:6053".to_string();
-            let listener = TcpListener::bind(&addr).await?;
+            let addr: SocketAddr = "0.0.0.0:6053".parse().unwrap();
+            let socket = TcpSocket::new_v4().unwrap();
+            socket.set_reuseaddr(true).unwrap();
+
+            socket.bind(addr).unwrap();
+            let listener = socket.listen(128).unwrap();
+
+            
+            // let listener = TcpListener::bind(&addr).await?;
             debug!("Listening on: {}", addr);
 
             loop {

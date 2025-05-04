@@ -1,18 +1,26 @@
-use axum::{extract::State, http::StatusCode, response::IntoResponse, routing::get, Json, Router};
+use axum::extract::Path;
+use axum::response::sse::Event;
+use axum::response::Sse;
+use axum::{extract::State, http::StatusCode, response::IntoResponse, routing::{post, get}, Json, Router};
+use tokio_stream::StreamExt;
 use serde::Deserialize;
 use ubihome_core::internal::sensors::InternalComponent;
+use std::convert::Infallible;
+use std::net::SocketAddr;
 use std::env;
 use std::time::Duration;
+use tower_http::trace::TraceLayer;
+use futures::stream::{self, Stream};
+use async_stream::stream;
 
 use log::{debug, info};
 use std::sync::Arc;
-use tokio::net::TcpListener;
+use tokio::net::TcpSocket;
 use tower_http::timeout::TimeoutLayer;
-use tower_http::trace::TraceLayer;
 
 #[derive(Clone, Deserialize, Debug)]
 pub struct WebServerConfig {
-    pub port: u8,
+    pub port: u16,
 }
 
 #[derive(Clone, Debug)]
@@ -21,15 +29,20 @@ struct AppState {
 }
 
 
-async fn handle_request(State(state): State<Arc<AppState>>) -> impl IntoResponse {
+async fn handle_request(
+    Path((id)): Path<(String)>,
+    State(state): State<Arc<AppState>>,
+) -> impl IntoResponse {
     debug!("Handling request");
     (StatusCode::OK, Json(state.current_directory.clone()))
 }
 
 
+
+
 use ubihome_core::NoConfig;
 use ubihome_core::{
-    config_template, home_assistant::sensors::Component, ChangedMessage, Module, PublishedMessage,
+    config_template, ChangedMessage, Module, PublishedMessage,
 };
 use serde::Deserializer;
 use std::collections::HashMap;
@@ -66,7 +79,7 @@ impl Module for Default {
     fn run(
         &self,
         _sender: Sender<ChangedMessage>,
-        _: Receiver<PublishedMessage>,
+        mut receiver: Receiver<PublishedMessage>,
     ) -> Pin<Box<dyn Future<Output = Result<(), Box<dyn std::error::Error>>> + Send + 'static>>
     {
         let config = self.config.clone();
@@ -77,24 +90,87 @@ impl Module for Default {
             let app_state = Arc::new(AppState {
                 current_directory: env::current_dir().unwrap().to_string_lossy().to_string(),
             });
+
+            // let assets_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("assets");
+            // let static_files_service = ServeDir::new(assets_dir);
+
+            let events:  = 
+                stream! {
+                    loop {
+                        let msg = receiver.recv().await;
+                        match msg {
+                            Ok(msg) => {
+                                match msg {
+                                    PublishedMessage::ButtonPressed { key } => {
+                                        yield Event::default().event("state").data("{\"state\": \"ok\"}");
+                                    }
+                                    _ => {}
+                                }
+                            }
+                            Err(_) => break,
+                        }
+                    }
+            };
+            
+
+
+            // async fn sse_handler(
+            //     // TypedHeader(user_agent): TypedHeader<headers::UserAgent>,
+            // ) -> Sse<impl Stream<Item = Result<Event, Infallible>>> {
+            //     // println!("`{}` connected", user_agent.as_str());
+                
+            // }
+            
+
         
             let app = Router::new()
-            .route("/", get(handle_request))
+            // .route("/", get(handle_request))
+            .route("/buttons/{id}", get(handle_request))
+            .route("/sensors/{id}", get(handle_request))
+            .route("/binary_sensors/{id}", get(handle_request))
+            // .route("/{domain}/{id}/{action}", post(handle_request))
+            .route("/events", get(|| async {
+                debug!("connected");
+                // A `Stream` that repeats an event every second
+                //
+                // You can also create streams from tokio channels using the wrappers in
+                // https://docs.rs/tokio-stream
+                // let s = stream::repeat_with(|| Event::default().event("state").data("{\"state\": \"ok\"}"))
+                //     .map(Ok)
+                //     .throttle(Duration::from_secs(5));
+            
+                // let stream = stream::repeat_with(|| Event::default().data("hi!"))
+                //     .map(Ok)
+                //     .throttle(Duration::from_secs(1));
+            
+                Sse::new(events).keep_alive(
+                    axum::response::sse::KeepAlive::new()
+                        .interval(Duration::from_secs(1))
+                        .text("ping")
+                );
+                Ok(());
+            }))
             .layer((
                 TraceLayer::new_for_http(),
                 // Graceful shutdown will wait for outstanding requests to complete. Add a timeout so
                 // requests don't hang forever.
-                TimeoutLayer::new(Duration::from_secs(10)),
+                TimeoutLayer::new(Duration::from_secs(1)),
             ))
             .with_state(app_state.clone());
         
-            let listener = TcpListener::bind(bind_address).await.unwrap();
+            let socket = TcpSocket::new_v4().unwrap();
+            socket.set_reuseaddr(true).unwrap();
+            let my_addr: SocketAddr = "0.0.0.0:8080".parse().unwrap();
+
+            socket.bind(my_addr).unwrap();
+            let listener = socket.listen(128).unwrap();
+            
+            // let listener = TcpListener::bind(bind_address).await.unwrap();
+            info!("Listening on http://{}", bind_address);
             axum::serve(listener, app)
-                // .with_graceful_shutdown(shutdown_signal())
                 .await
                 .unwrap();
         
-            info!("Listening on http://{}", bind_address);
             Ok(())
         })
     }
