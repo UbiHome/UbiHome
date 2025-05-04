@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.0](https://github.com/UbiHome/UbiHome/compare/ubihome-evdev-v0.4.10...ubihome-evdev-v0.5.0) (2025-05-04)
+
+
+### Features
+
+* switch shell entity via mqtt ([b0e4bd4](https://github.com/UbiHome/UbiHome/commit/b0e4bd45affcb8494ddc53903a132d9edb871509))
+
 ## [0.4.10](https://github.com/UbiHome/UbiHome/compare/v0.4.9...ubihome-evdev-v0.4.10) (2025-05-03)
 
 ## [0.4.9](https://github.com/UbiHome/UbiHome/compare/v0.4.8...ubihome-evdev-v0.4.9) (2025-05-02)
