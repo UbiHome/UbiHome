@@ -1,7 +1,7 @@
 use duration_str::deserialize_option_duration;
 use log::{debug, warn};
 use ubihome_core::{
-    home_assistant::sensors::{Component, HASensor}, internal::sensors::{InternalComponent, InternalSensor}, sensor::{SensorBase, UnknownSensor}, ChangedMessage, Module, PublishedMessage, UbiHome
+    home_assistant::sensors::{Component, UbiSensor}, internal::sensors::{InternalComponent, InternalSensor}, sensor::{SensorBase, UnknownSensor}, ChangedMessage, Module, PublishedMessage, UbiHome
 };
 use serde::Deserialize;
 use std::{collections::HashMap, future::Future, pin::Pin, str, time::Duration};
@@ -91,7 +91,7 @@ impl Default {
                     let id = temperature.id.unwrap_or(object_id.clone());
                     sensor_entries.insert(Measurement::Temperature, id.clone());
                     components.push(InternalComponent::Sensor(InternalSensor {
-                        ha: HASensor {
+                        ha: UbiSensor {
                         platform: "sensor".to_string(),
                         icon: Some(
                             temperature
@@ -99,7 +99,6 @@ impl Default {
                                 .unwrap_or("mdi:thermometer".to_string())
                                 .clone(),
                         ),
-                        unique_id: Some(id.clone()),
                         state_class: Some(
                             temperature
                                 .state_class
@@ -119,7 +118,7 @@ impl Default {
                                 .clone(),
                         ),
                         name: temperature.name.clone(),
-                        object_id: object_id.clone(),
+                        id: object_id.clone(),
                     }, filters: None }));
                     let pressure = sensor.pressure.clone().unwrap_or(SensorBase {
                         id: None,
@@ -133,10 +132,9 @@ impl Default {
                     let id = pressure.id.unwrap_or(object_id.clone());
                     sensor_entries.insert(Measurement::Pressure, id.clone());
                     components.push(InternalComponent::Sensor(InternalSensor {
-                        ha: HASensor {
+                        ha: UbiSensor {
                         platform: "sensor".to_string(),
                         icon: Some(pressure.icon.unwrap_or("mdi:umbrella".to_string()).clone()),
-                        unique_id: Some(id.clone()),
                         state_class: Some(
                             pressure
                                 .state_class
@@ -157,7 +155,7 @@ impl Default {
                         ),
 
                         name: pressure.name.clone(),
-                        object_id: id.clone(),
+                        id: id.clone(),
                     }, filters: None}));
                     let humidity = sensor.humidity.clone().unwrap_or(SensorBase {
                         id: None,
@@ -171,7 +169,7 @@ impl Default {
                     let id = humidity.id.unwrap_or(object_id.clone());
                     sensor_entries.insert(Measurement::Humidity, id.clone());
                     components.push(InternalComponent::Sensor(InternalSensor {
-                        ha: HASensor {
+                        ha: UbiSensor {
                         platform: "sensor".to_string(),
                         icon: Some(
                             humidity
@@ -179,7 +177,6 @@ impl Default {
                                 .unwrap_or("mdi:water-percent".to_string())
                                 .clone(),
                         ),
-                        unique_id: Some(id.clone()),
                         state_class: Some(
                             temperature
                                 .state_class
@@ -199,7 +196,7 @@ impl Default {
                                 .clone(),
                         ),
                         name: humidity.name.clone(),
-                        object_id: id.clone(),
+                        id: id.clone(),
                     }, filters: None}));
                     let sensor_entry = BME280Sensor {
                         address: sensor.address.clone(),

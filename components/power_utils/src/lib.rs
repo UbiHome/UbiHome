@@ -1,6 +1,6 @@
 use log::{debug, error};
 use ubihome_core::{
-    config_template, home_assistant::sensors::HAButton, internal::sensors::{InternalButton, InternalComponent}, ChangedMessage, Module, NoConfig, PublishedMessage
+    config_template, home_assistant::sensors::UbiButton, internal::sensors::{InternalButton, InternalComponent}, ChangedMessage, Module, NoConfig, PublishedMessage
 };
 use serde::{Deserialize, Deserializer};
 use std::collections::HashMap;
@@ -69,52 +69,47 @@ impl Default {
                     match button.action {
                         PowerAction::Reboot => {
                             button_component = InternalButton {
-                                ha: HAButton {
+                                ha: UbiButton {
                                 platform: "sensor".to_string(),
                                 icon: Some(any_sensor.default.icon.unwrap_or("mdi:restart".to_string())),
-                                unique_id: Some(id.clone()),
                                 name: any_sensor.default.name.clone(),
-                                object_id: id.clone(),
+                                id: id.clone(),
                             }};
                         }
                         PowerAction::Shutdown => {
                             button_component = InternalButton {
-                                ha: HAButton {
+                                ha: UbiButton {
                                 platform: "sensor".to_string(),
                                 icon: Some(any_sensor.default.icon.unwrap_or("mdi:power".to_string())),
-                                unique_id: Some(id.clone()),
                                 name: any_sensor.default.name.clone(),
-                                object_id: id.clone(),
+                                id: id.clone(),
                             }};
                         }
                         PowerAction::Hibernate => {
                             button_component = InternalButton {
-                                ha: HAButton {
+                                ha: UbiButton {
                                 platform: "sensor".to_string(),
                                 icon: Some(any_sensor.default.icon.unwrap_or("mdi:snowflake".to_string())),
-                                unique_id: Some(id.clone()),
                                 name: any_sensor.default.name.clone(),
-                                object_id: id.clone(),
+                                id: id.clone(),
                             }};
                         }
                         PowerAction::Logout => {
                             button_component = InternalButton {
-                                ha: HAButton {
+                                ha: UbiButton {
                                 platform: "sensor".to_string(),
                                 icon: Some(any_sensor.default.icon.unwrap_or("mdi:logout".to_string())),
-                                unique_id: Some(id.clone()),
                                 name: any_sensor.default.name.clone(),
-                                object_id: id.clone(),
+                                id: id.clone(),
                             }};
                         }
                         PowerAction::Sleep => {
                             button_component = InternalButton {
-                                ha: HAButton {
+                                ha: UbiButton {
                                 platform: "sensor".to_string(),
                                 icon: Some(any_sensor.default.icon.unwrap_or("mdi:sleep".to_string())),
-                                unique_id: Some(id.clone()),
                                 name: any_sensor.default.name.clone(),
-                                object_id: id.clone(),
+                                id: id.clone(),
                             }};
                         }
                     }

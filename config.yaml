@@ -80,6 +80,9 @@ binary_sensor:
     on_press:
       then:
         - switch.turn_on: "test_switch"
+    on_release:
+      then:
+        - switch.turn_off: "test_switch"
 
   # - platform: gpio
   #   name: "motion"

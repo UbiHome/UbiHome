@@ -73,6 +73,7 @@ pub struct BinarySensorBase {
 
     pub filters: Option<Vec<BinarySensorFilter>>,
     pub on_press: Option<Trigger>,
+    pub on_release: Option<Trigger>,
 }
 
 // TODO implement as procedural macro

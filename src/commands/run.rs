@@ -224,7 +224,7 @@ pub(crate) fn run(
                 InternalComponent::BinarySensor(binary_sensor) => {
                     let mutable: Mutable<Option<Option<bool>>> = Mutable::new(Option::None);
                     signal_map_binary_sensor
-                        .insert(binary_sensor.ha.object_id.clone(), mutable.clone());
+                        .insert(binary_sensor.ha.id.clone(), mutable.clone());
                     let internal_tx_clone = internal_tx.clone();
 
                     let mutable_clone = mutable.clone();
@@ -232,7 +232,7 @@ pub(crate) fn run(
                         // println!("Filters: {:?}", binary_sensor.filters);
 
                         let mut signal = mutable_clone.signal().boxed();
-                        for filter in binary_sensor.filters.unwrap_or_default() {
+                        for filter in binary_sensor.base.filters.unwrap_or_default() {
                             match filter.filter {
                                 FilterType::delayed_on(time) => {
                                     trace!("delayed_on");
@@ -299,12 +299,34 @@ pub(crate) fn run(
                             .for_each(|value| {
                                 let signal_tx_clone = internal_tx_clone.clone();
 
-                                let key = binary_sensor.ha.object_id.clone();
+                                let key = binary_sensor.ha.id.clone();
                                 if let Some(value) = value.and_then(|v| v) {
                                     if value == true {
-
-                                        if let Some(on_press) = binary_sensor.on_press.clone() {
+                                        if let Some(on_press) = binary_sensor.base.on_press.clone() {
                                             for action in on_press.then {
+                                                match &action.action {
+                                                    ActionType::switch_turn_on(key) => {
+                                                        let pcmd = PublishedMessage::SwitchStateChange {
+                                                            key: key.clone(),
+                                                            state: true,
+                                                        };
+                                                        debug!("Publishing command from action {:?}: {:?}", action.clone(), pcmd);
+                                                        internal_tx_clone.send(pcmd).unwrap();
+                                                    }
+                                                    ActionType::switch_turn_off(key) => {
+                                                        let pcmd = PublishedMessage::SwitchStateChange {
+                                                            key: key.clone(),
+                                                            state: false,
+                                                        };
+                                                        debug!("Publishing command from action {:?}: {:?}", action.clone(), pcmd);
+                                                        internal_tx_clone.send(pcmd).unwrap();
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }else{
+                                        if let Some(on_release) = binary_sensor.base.on_release.clone() {
+                                            for action in on_release.then {
                                                 match &action.action {
                                                     ActionType::switch_turn_on(key) => {
                                                         let pcmd = PublishedMessage::SwitchStateChange {

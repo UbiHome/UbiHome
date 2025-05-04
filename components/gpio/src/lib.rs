@@ -6,7 +6,7 @@ use std::{future::Future, pin::Pin, str};
 use tokio::sync::broadcast::{Receiver, Sender};
 use ubihome_core::{
     config_template,
-    home_assistant::sensors::HABinarySensor,
+    home_assistant::sensors::UbiBinarySensor,
     internal::sensors::{InternalBinarySensor, InternalComponent},
     ChangedMessage, Module, NoConfig, PublishedMessage,
 };
@@ -46,19 +46,16 @@ impl Default {
         for (_, any_sensor) in config.binary_sensor.clone().unwrap_or_default() {
             match any_sensor.extra {
                 BinarySensorKind::gpio(binary_sensor) => {
-                    let object_id = any_sensor.default.get_object_id();
-                    let id = any_sensor.default.id.unwrap_or(object_id.clone());
+                    let id = any_sensor.default.get_object_id();
                     components.push(InternalComponent::BinarySensor(InternalBinarySensor {
-                        ha: HABinarySensor {
+                        ha: UbiBinarySensor {
                             platform: "sensor".to_string(),
                             icon: any_sensor.default.icon.clone(),
-                            unique_id: Some(id.clone()),
                             device_class: any_sensor.default.device_class.clone(),
                             name: any_sensor.default.name.clone(),
-                            object_id: object_id.clone(),
+                            id: id.clone(),
                         },
-                        filters: any_sensor.default.filters.clone(),
-                        on_press: any_sensor.default.on_press.clone(),
+                        base: any_sensor.default.clone(),
                     }));
                     binary_sensors.insert(
                         id,

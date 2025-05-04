@@ -125,16 +125,12 @@ impl Module for UbiHomeDefault {
                                     // TODO: Add support for switches
                                 }
                                 Component::Button(button) => {
-                                    let id = button.unique_id.unwrap_or(format!(
-                                        "{}_{}",
-                                        core_config.ubihome.name, button.name
-                                    ));
                                     let component_button = ProtoMessage::ListEntitiesButtonResponse(
                                         proto::ListEntitiesButtonResponse {
-                                            object_id: button.object_id.clone(),
+                                            object_id: button.id.clone(),
                                             key: index.try_into().unwrap(),
                                             name: button.name,
-                                            unique_id: id,
+                                            unique_id: button.id,
                                             icon: "".to_string(),
                                             device_class: "".to_string(), //button.device_class,
                                             disabled_by_default: false,
@@ -144,16 +140,12 @@ impl Module for UbiHomeDefault {
                                     api_components.insert(index.try_into().unwrap(), component_button);
                                 }
                                 Component::Sensor(sensor) => {
-                                    let id = sensor.unique_id.unwrap_or(format!(
-                                        "{}_{}",
-                                        core_config.ubihome.name, sensor.name
-                                    ));
                                     let component_sensor = ProtoMessage::ListEntitiesSensorResponse(
                                         proto::ListEntitiesSensorResponse {
-                                            object_id: sensor.object_id.clone(),
+                                            object_id: sensor.id.clone(),
                                             key: index.try_into().unwrap(),
                                             name: sensor.name,
-                                            unique_id: id,
+                                            unique_id: sensor.id,
                                             icon: "".to_string(),
                                             unit_of_measurement: sensor
                                                 .unit_of_measurement
@@ -174,17 +166,13 @@ impl Module for UbiHomeDefault {
                                     api_components.insert(index.try_into().unwrap(), component_sensor);
                                 }
                                 Component::BinarySensor(binary_sensor) => {
-                                    let id = binary_sensor.unique_id.unwrap_or(format!(
-                                        "{}_{}",
-                                        core_config.ubihome.name, binary_sensor.name
-                                    ));
                                     let component_binary_sensor =
                                         ProtoMessage::ListEntitiesBinarySensorResponse(
                                             proto::ListEntitiesBinarySensorResponse {
-                                                object_id: binary_sensor.object_id.clone(),
+                                                object_id: binary_sensor.id.clone(),
                                                 key: index.try_into().unwrap(),
                                                 name: binary_sensor.name,
-                                                unique_id: id,
+                                                unique_id: binary_sensor.id,
                                                 icon: "".to_string(),
                                                 device_class: binary_sensor
                                                     .device_class

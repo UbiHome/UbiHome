@@ -1,4 +1,4 @@
-use crate::{binary_sensor::{BinarySensorFilter, Trigger}, home_assistant::sensors::{HABinarySensor, HAButton, HASensor, HASwitch}};
+use crate::{binary_sensor::{BinarySensorBase, BinarySensorFilter, Trigger}, home_assistant::sensors::{UbiBinarySensor, UbiButton, UbiSensor, UbiSwitch}};
 
 #[derive(Clone, Debug)]
 pub enum InternalComponent {
@@ -10,25 +10,24 @@ pub enum InternalComponent {
 
 #[derive(Clone, Debug)]
 pub struct InternalButton {
-    pub ha: HAButton,
+    pub ha: UbiButton,
 }
 
 // https://developers.home-assistant.io/docs/core/entity/sensor/
 #[derive(Clone, Debug)]
 pub struct InternalSensor {
-    pub ha: HASensor,
+    pub ha: UbiSensor,
     pub filters: Option<Vec<BinarySensorFilter>>,
 }
 
 #[derive(Clone, Debug)]
 pub struct InternalBinarySensor {
-    pub ha: HABinarySensor,
-    pub filters: Option<Vec<BinarySensorFilter>>,
-    pub on_press: Option<Trigger>,
+    pub ha: UbiBinarySensor,
+    pub base: BinarySensorBase,
 }
 
 #[derive(Clone, Debug)]
 pub struct InternalSwitch {
-    pub ha: HASwitch,
+    pub ha: UbiSwitch,
     // pub filters: Option<Vec<BinarySensorFilter>>,
 }

@@ -9,11 +9,11 @@ use tokio::{
     sync::broadcast::{Receiver, Sender},
     time,
 };
-use ubihome_core::home_assistant::sensors::HASwitch;
+use ubihome_core::home_assistant::sensors::UbiSwitch;
 use ubihome_core::internal::sensors::InternalSwitch;
 use ubihome_core::{
     config_template,
-    home_assistant::sensors::{HABinarySensor, HAButton, HASensor},
+    home_assistant::sensors::{UbiBinarySensor, UbiButton, UbiSensor},
     internal::sensors::{InternalBinarySensor, InternalButton, InternalComponent, InternalSensor},
     ChangedMessage, Module, PublishedMessage,
 };
@@ -112,15 +112,14 @@ impl Default {
                 SensorKind::shell(sensor) => {
                     let id = any_sensor.default.get_object_id();
                     components.push(InternalComponent::Sensor(InternalSensor {
-                        ha: HASensor {
+                        ha: UbiSensor {
                             platform: "sensor".to_string(),
                             icon: any_sensor.default.icon.clone(),
-                            unique_id: Some(id.clone()),
                             device_class: any_sensor.default.device_class.clone(),
                             state_class: any_sensor.default.state_class.clone(),
                             unit_of_measurement: any_sensor.default.unit_of_measurement.clone(),
                             name: any_sensor.default.name.clone(),
-                            object_id: id.clone(),
+                            id: id.clone(),
                         },
                         filters: None,
                     }));
@@ -136,16 +135,14 @@ impl Default {
                 BinarySensorKind::shell(binary_sensor) => {
                     let id = any_sensor.default.get_object_id();
                     components.push(InternalComponent::BinarySensor(InternalBinarySensor {
-                        ha: HABinarySensor {
+                        ha: UbiBinarySensor {
                             platform: "sensor".to_string(),
                             icon: any_sensor.default.icon.clone(),
-                            unique_id: Some(id.clone()),
                             device_class: any_sensor.default.device_class.clone(),
                             name: any_sensor.default.name.clone(),
-                            object_id: id.clone(),
+                            id: id.clone(),
                         },
-                        filters: any_sensor.default.filters.clone(),
-                        on_press: any_sensor.default.on_press.clone(),
+                        base: any_sensor.default.clone(),
                     }));
                     binary_sensors.insert(id.clone(), binary_sensor);
                 }
@@ -159,12 +156,11 @@ impl Default {
                 ButtonKind::shell(button) => {
                     let id = any_sensor.default.get_object_id();
                     components.push(InternalComponent::Button(InternalButton {
-                        ha: HAButton {
+                        ha: UbiButton {
                             platform: "sensor".to_string(),
                             icon: any_sensor.default.icon.clone(),
-                            unique_id: Some(id.clone()),
                             name: any_sensor.default.name.clone(),
-                            object_id: id.clone(),
+                            id: id.clone(),
                         },
                     }));
                     buttons.insert(id.clone(), button);
@@ -179,13 +175,12 @@ impl Default {
                 SwitchKind::shell(switch) => {
                     let id = any_sensor.default.get_object_id();
                     components.push(InternalComponent::Switch(InternalSwitch {
-                        ha: HASwitch {
+                        ha: UbiSwitch {
                             // TODO
                             platform: "sensor".to_string(),
                             icon: any_sensor.default.icon.clone(),
-                            unique_id: Some(id.clone()),
                             name: any_sensor.default.name.clone(),
-                            object_id: id.clone(),
+                            id: id.clone(),
                             device_class: None,
                         },
                     }));

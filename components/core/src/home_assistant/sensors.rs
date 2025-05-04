@@ -3,54 +3,50 @@ use serde::{Deserialize, Serialize};
 #[derive(Clone, Serialize, Deserialize, Debug)]
 #[serde(untagged)]
 pub enum Component {
-    Button(HAButton),
-    Sensor(HASensor),
-    BinarySensor(HABinarySensor),
-    Switch(HASwitch),
+    Button(UbiButton),
+    Sensor(UbiSensor),
+    BinarySensor(UbiBinarySensor),
+    Switch(UbiSwitch),
 }
 
 // Icons: https://pictogrammers.com/library/mdi/
 
 #[derive(Clone, Serialize, Deserialize, Debug)]
-pub struct HAButton {
+pub struct UbiButton {
     pub name: String,
     pub icon: Option<String>,
     pub platform: String,
-    pub unique_id: Option<String>,
-    pub object_id: String,
+    pub id: String,
 }
 
 // https://developers.home-assistant.io/docs/core/entity/sensor/
 #[derive(Clone, Serialize, Deserialize, Debug)]
-pub struct HASensor {
+pub struct UbiSensor {
     pub name: String,
     pub platform: String,
     pub icon: Option<String>,
     pub state_class: Option<String>,
     pub device_class: Option<String>,
     pub unit_of_measurement: Option<String>,
-    pub unique_id: Option<String>,
-    pub object_id: String,
+    pub id: String,
 }
 
 #[derive(Clone, Serialize, Deserialize, Debug)]
-pub struct HABinarySensor {
+pub struct UbiBinarySensor {
     pub name: String,
     pub platform: String,
     pub icon: Option<String>,
     pub device_class: Option<String>,
-    pub unique_id: Option<String>,
-    pub object_id: String,
+    pub id: String,
 }
 
 #[derive(Clone, Serialize, Deserialize, Debug)]
-pub struct HASwitch {
+pub struct UbiSwitch {
     pub name: String,
     pub platform: String,
     pub icon: Option<String>,
     pub device_class: Option<String>,
-    pub unique_id: Option<String>,
-    pub object_id: String,
+    pub id: String,
 }
 
 // impl HABinarySensor {
