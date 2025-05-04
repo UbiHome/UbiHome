@@ -69,21 +69,16 @@ sensor:
 
 binary_sensor:
   - platform: shell
-    name: "Bluetooth Speaker connected"
-    id: bluetooth_connected
+    name: "Binary Sensor"
+    id: binary_sensor
     icon: "mdi:bluetooth-settings"
     device_class: presence
     update_interval: 10s
     command: |-
-      echo true
-    # if hcitool con | grep -q "00:12:6F:F1:FF:61"; then
-    #     echo true
-    # else
-    #     echo false
-    # fi
-    filters:
-    #  - invert:
-     - delayed_off: 5s
+      cat binary_testfile
+    on_press:
+      then:
+        - switch.turn_on: "test_switch"
 
   # - platform: gpio
   #   name: "motion"
@@ -97,6 +92,7 @@ binary_sensor:
 switch:
   - platform: shell
     name: "Test Switch"
+    id: "test_switch"
     command_on: "echo true > testfile"
     command_off: "echo false > testfile"
     command_state: "cat testfile"

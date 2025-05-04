@@ -2,7 +2,7 @@ use flexi_logger::writers::FileLogWriter;
 use flexi_logger::{detailed_format, Age, Cleanup, Criterion, Duplicate, FileSpec, Logger, Naming};
 use inquire::Text;
 use ubihome::CoreConfig;
-use ubihome_core::binary_sensor::FilterType;
+use ubihome_core::binary_sensor::{ActionType, FilterType};
 use ubihome_core::home_assistant::sensors::Component;
 use ubihome_core::internal::sensors::InternalComponent;
 use ubihome_core::{ChangedMessage, Module, PublishedMessage};
@@ -288,24 +288,56 @@ pub(crate) fn run(
                                 }
                             }
                         }
+
+
+
+
+
                         // React to signal changes
 
                         signal
                             .for_each(|value| {
                                 let signal_tx_clone = internal_tx_clone.clone();
-                                let key = binary_sensor.ha.object_id.clone();
-                                async move {
-                                    if let Some(value) = value.and_then(|v| v) {
-                                        let pcmd = PublishedMessage::BinarySensorValueChanged {
-                                            key: key,
-                                            value: value,
-                                        };
-                                        debug!("Publishing command from signal: {:?}", pcmd);
-                                        // if signal_tx_clone.closed()..now_or_never().is_none() {
-                                        // }
 
-                                        signal_tx_clone.send(pcmd).unwrap();
+                                let key = binary_sensor.ha.object_id.clone();
+                                if let Some(value) = value.and_then(|v| v) {
+                                    if value == true {
+
+                                        if let Some(on_press) = binary_sensor.on_press.clone() {
+                                            for action in on_press.then {
+                                                match &action.action {
+                                                    ActionType::switch_turn_on(key) => {
+                                                        let pcmd = PublishedMessage::SwitchStateChange {
+                                                            key: key.clone(),
+                                                            state: true,
+                                                        };
+                                                        debug!("Publishing command from action {:?}: {:?}", action.clone(), pcmd);
+                                                        internal_tx_clone.send(pcmd).unwrap();
+                                                    }
+                                                    ActionType::switch_turn_off(key) => {
+                                                        let pcmd = PublishedMessage::SwitchStateChange {
+                                                            key: key.clone(),
+                                                            state: false,
+                                                        };
+                                                        debug!("Publishing command from action {:?}: {:?}", action.clone(), pcmd);
+                                                        internal_tx_clone.send(pcmd).unwrap();
+                                                    }
+                                                }
+                                            }
+                                        }
                                     }
+
+
+                                    let pcmd = PublishedMessage::BinarySensorValueChanged {
+                                        key: key,
+                                        value: value,
+                                    };
+                                    debug!("Publishing command from signal: {:?}", pcmd);
+                                        
+                                    signal_tx_clone.send(pcmd).unwrap();
+                                }
+
+                                async move {
                                 }
                             })
                             .await;

@@ -119,14 +119,15 @@ impl Module for Default {
                                             core_config.ubihome.name, switch.name
                                         ));
                                         let topic =
-                                            format!("{}/{}", base_topic_clone.clone(), id.clone());
+                                            format!("{}/{}/set", base_topic_clone.clone(), id.clone());
                                         topics.push(topic.clone());
                                         mqtt_components.insert(
                                             id.clone(),
                                             MqttComponent::Switch(HAMqttSwitch {
                                                 platform: "switch".to_string(),
                                                 unique_id: id.clone(),
-                                                command_topic: format!(
+                                                command_topic: topic,
+                                                state_topic: format!(
                                                     "{}/{}",
                                                     base_topic_clone.clone(),
                                                     switch.object_id.clone()
@@ -149,11 +150,7 @@ impl Module for Default {
                                             MqttComponent::Button(HAMqttButton {
                                                 platform: "button".to_string(),
                                                 unique_id: id.clone(),
-                                                command_topic: format!(
-                                                    "{}/{}",
-                                                    base_topic_clone.clone(),
-                                                    button.object_id.clone()
-                                                ),
+                                                command_topic: topic,
                                                 name: button.name.clone(),
                                                 object_id: button.object_id.clone(),
                                             }),
@@ -281,6 +278,23 @@ impl Module for Default {
                             debug!("Binary Sensor value published: {} = {}", key, value);
 
                             let payload = if value { "ON" } else { "OFF" };
+                            // Handle sensor value change
+                            if let Err(e) = client
+                                .publish(
+                                    format!("{}/{}", base_topic_clone, key),
+                                    QoS::AtMostOnce,
+                                    false,
+                                    payload,
+                                )
+                                .await
+                            {
+                                error!("{}", e)
+                            }
+                        }
+                        PublishedMessage::SwitchStateChange { key, state } => {
+                            debug!("Switch State change value published: {} = {}", key, state);
+
+                            let payload = if state { "ON" } else { "OFF" };
                             // Handle sensor value change
                             if let Err(e) = client
                                 .publish(

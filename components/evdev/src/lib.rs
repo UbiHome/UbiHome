@@ -16,7 +16,7 @@ pub struct EvdevConfig {
 }
 
 // TODO: Add events?
-config_template!(evdev, EvdevConfig, NoConfig, NoConfig, NoConfig);
+config_template!(evdev, EvdevConfig, NoConfig, NoConfig, NoConfig, NoConfig);
 
 #[derive(Clone, Debug)]
 pub struct Default {
@@ -58,6 +58,7 @@ impl Module for Default {
                             object_id: object_id.clone(),
                         },
                         filters: None,
+                        on_press: None
                     }));
                 }
                 _ => {}

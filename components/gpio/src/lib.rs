@@ -58,6 +58,7 @@ impl Default {
                             object_id: object_id.clone(),
                         },
                         filters: any_sensor.default.filters.clone(),
+                        on_press: any_sensor.default.on_press.clone(),
                     }));
                     binary_sensors.insert(
                         id,

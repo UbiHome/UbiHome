@@ -1,4 +1,4 @@
-use std::time::Duration;
+use std::{collections::HashMap, time::Duration};
 use duration_str::deserialize_duration;
 
 use serde::Deserialize;
@@ -32,6 +32,37 @@ pub struct BinarySensorFilter {
 
 }
 
+// #[derive(Clone, Deserialize, Debug, PartialEq, Eq, Hash)]
+// pub enum ActionTypeEnum {
+//     switch_turn_on,
+//     switch_turn_off,
+// }
+
+#[derive(Clone, Deserialize, Debug)]
+pub enum ActionType {
+    #[serde(rename = "switch.turn_on")]
+    switch_turn_on(String),
+
+    #[serde(rename = "switch.turn_off")]
+    switch_turn_off(String),
+}
+
+#[derive(Clone, Deserialize, Debug)]
+// #[serde(deny_unknown_fields)]
+
+pub struct Action {
+    #[serde(flatten)]
+    pub action: ActionType,
+
+}
+
+#[derive(Clone, Deserialize, Debug)]
+#[serde(deny_unknown_fields)]
+
+pub struct Trigger {
+    pub then: Vec<Action>,
+}
+
 #[derive(Clone, Deserialize, Debug)]
 #[serde(deny_unknown_fields)]
 pub struct BinarySensorBase {
@@ -41,6 +72,7 @@ pub struct BinarySensorBase {
     pub device_class: Option<String>,
 
     pub filters: Option<Vec<BinarySensorFilter>>,
+    pub on_press: Option<Trigger>,
 }
 
 // TODO implement as procedural macro

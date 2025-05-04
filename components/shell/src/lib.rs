@@ -1,5 +1,5 @@
 use duration_str::deserialize_duration;
-use log::{debug, error, info};
+use log::{debug, error, info, trace};
 use serde::{Deserialize, Deserializer};
 use shell_exec::{Execution, Shell, ShellError};
 use ubihome_core::home_assistant::sensors::HASwitch;
@@ -130,6 +130,7 @@ impl Default {
                             object_id: id.clone(),
                         },
                         filters: any_sensor.default.filters.clone(),
+                        on_press: any_sensor.default.on_press.clone(),
                     }));
                     binary_sensors.insert(id.clone(), binary_sensor);
                 }
@@ -238,9 +239,9 @@ impl Module for Default {
                                 .unwrap();
                                 // If output is empty report status code
                                 if output.is_empty() {
-                                    println!("Command executed successfully with no output.");
+                                    trace!("Command executed successfully with no output.");
                                 } else {
-                                    println!(
+                                    trace!(
                                         "Command executed successfully with output: {}",
                                         output
                                     );
@@ -264,9 +265,9 @@ impl Module for Default {
                                 .unwrap();
                                 // If output is empty report status code
                                 if output.is_empty() {
-                                    println!("Command executed successfully with no output.");
+                                    trace!("Command executed successfully with no output.");
                                 } else {
-                                    println!(
+                                    trace!(
                                         "Command executed successfully with output: {}",
                                         output
                                     );

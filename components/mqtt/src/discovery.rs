@@ -19,6 +19,7 @@ pub(crate) struct HAMqttSwitch {
     pub(crate) command_topic: String,
     pub(crate) name: String,
     pub(crate) object_id: String,
+    pub(crate) state_topic: String,
 }
 
 #[derive(Clone, Serialize, Deserialize, Debug)]
