@@ -18,7 +18,7 @@ pub struct MdnsConfig {
     pub mac: Option<String>,
 }
 
-config_template!(mdns, Option<MdnsConfig>, NoConfig, NoConfig, NoConfig);
+config_template!(mdns, Option<MdnsConfig>, NoConfig, NoConfig, NoConfig, NoConfig);
 
 #[derive(Clone, Debug)]
 pub struct Default {

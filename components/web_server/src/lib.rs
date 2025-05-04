@@ -37,7 +37,7 @@ use std::{future::Future, pin::Pin, str};
 use tokio::sync::broadcast::{Receiver, Sender};
 
 
-config_template!(web_server, Option<WebServerConfig>, NoConfig, NoConfig, NoConfig);
+config_template!(web_server, Option<WebServerConfig>, NoConfig, NoConfig, NoConfig, NoConfig);
 
 #[derive(Clone, Debug)]
 pub struct Default {

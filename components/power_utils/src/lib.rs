@@ -1,6 +1,6 @@
 use log::{debug, error};
 use ubihome_core::{
-    config_template, home_assistant::sensors::{Component, HAButton}, internal::sensors::{InternalButton, InternalComponent}, ChangedMessage, Module, NoConfig, PublishedMessage
+    config_template, home_assistant::sensors::HAButton, internal::sensors::{InternalButton, InternalComponent}, ChangedMessage, Module, NoConfig, PublishedMessage
 };
 use serde::{Deserialize, Deserializer};
 use std::collections::HashMap;
@@ -43,6 +43,7 @@ config_template!(
     power_utils,
     PowerUtilsConfig,
     PowerUtilsButtonConfig,
+    NoConfig,
     NoConfig,
     NoConfig
 );

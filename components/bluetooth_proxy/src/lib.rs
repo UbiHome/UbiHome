@@ -31,6 +31,7 @@ config_template!(
     Option<BluetoothProxyConfig>,
     NoConfig,
     NoConfig,
+    NoConfig,
     NoConfig
 );
 

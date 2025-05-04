@@ -2,6 +2,8 @@ use duration_str::deserialize_duration;
 use log::{debug, error, info};
 use serde::{Deserialize, Deserializer};
 use shell_exec::{Execution, Shell, ShellError};
+use ubihome_core::home_assistant::sensors::HASwitch;
+use ubihome_core::internal::sensors::InternalSwitch;
 use std::collections::HashMap;
 use std::{future::Future, pin::Pin, str, time::Duration};
 use tokio::{
@@ -10,7 +12,7 @@ use tokio::{
 };
 use ubihome_core::{
     config_template,
-    home_assistant::sensors::{Component, HABinarySensor, HAButton, HASensor},
+    home_assistant::sensors::{HABinarySensor, HAButton, HASensor},
     internal::sensors::{InternalBinarySensor, InternalButton, InternalComponent, InternalSensor},
     ChangedMessage, Module, PublishedMessage,
 };
@@ -59,12 +61,20 @@ pub struct ShellButtonConfig {
     pub command: String,
 }
 
+#[derive(Clone, Deserialize, Debug)]
+pub struct ShellSwitchConfig {
+    pub command_on: String,
+    pub command_off: String,
+    pub command_state: String,
+}
+
 config_template!(
     shell,
     ShellConfig,
     ShellButtonConfig,
     ShellBinarySensorConfig,
-    ShellSensorConfig
+    ShellSensorConfig,
+    ShellSwitchConfig
 );
 
 pub struct Default {
@@ -73,6 +83,7 @@ pub struct Default {
     binary_sensors: HashMap<String, ShellBinarySensorConfig>,
     buttons: HashMap<String, ShellButtonConfig>,
     sensors: HashMap<String, ShellSensorConfig>,
+    switches: HashMap<String, ShellSwitchConfig>,
 }
 
 impl Default {
@@ -145,12 +156,35 @@ impl Default {
                 _ => {}
             }
         }
+
+        let mut switches: HashMap<String, ShellSwitchConfig> = HashMap::new();
+        for (_, any_sensor) in config.switch.clone().unwrap_or_default() {
+            match any_sensor.extra {
+                SwitchKind::shell(switch) => {
+                    let id = any_sensor.default.get_object_id();
+                    components.push(InternalComponent::Switch(InternalSwitch {
+                        ha: HASwitch {
+                            // TODO
+                            platform: "sensor".to_string(),
+                            icon: any_sensor.default.icon.clone(),
+                            unique_id: Some(id.clone()),
+                            name: any_sensor.default.name.clone(),
+                            object_id: id.clone(),
+                            device_class: None,
+                        },
+                    }));
+                    switches.insert(id.clone(), switch);
+                }
+                _ => {}
+            }
+        }
         Default {
             config: config.shell,
             components,
             binary_sensors,
             buttons,
             sensors,
+            switches
         }
     }
 }
@@ -173,6 +207,7 @@ impl Module for Default {
         let config = self.config.clone();
         let binary_sensors = self.binary_sensors.clone();
         let buttons = self.buttons.clone();
+        let switches = self.switches.clone();
         let sensors = self.sensors.clone();
         Box::pin(async move {
             let cloned_config = config.clone();
@@ -180,6 +215,38 @@ impl Module for Default {
             tokio::spawn(async move {
                 while let Ok(cmd) = receiver.recv().await {
                     match cmd {
+                        PublishedMessage::SwitchStateChange { key, state } => {
+                            debug!("SwitchStateChanged: {} {}", key, state);
+                            if let Some(switch) = switches.get(&key) {
+                                // ButtonKind::shell(shell_button) => {
+                                let command: String;
+                                if state {
+                                    debug!("Turning on switch: {}", key);
+                                    command = switch.command_on.clone();
+                                } else{
+                                    debug!("Turning off switch: {}", key);
+                                    command = switch.command_off.clone();
+                                }
+                                debug!("Executing command: {}", command);
+
+                                let output = execute_command(
+                                    &cloned_config,
+                                    &command,
+                                    &cloned_config.timeout,
+                                )
+                                .await
+                                .unwrap();
+                                // If output is empty report status code
+                                if output.is_empty() {
+                                    println!("Command executed successfully with no output.");
+                                } else {
+                                    println!(
+                                        "Command executed successfully with output: {}",
+                                        output
+                                    );
+                                }
+                            }
+                        }
                         PublishedMessage::ButtonPressed { key } => {
                             debug!("Button pressed1: {}", key);
                             if let Some(shell_button) = buttons.get(&key) {

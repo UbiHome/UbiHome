@@ -6,6 +6,7 @@ pub enum Component {
     Button(HAButton),
     Sensor(HASensor),
     BinarySensor(HABinarySensor),
+    Switch(HASwitch),
 }
 
 // Icons: https://pictogrammers.com/library/mdi/
@@ -34,6 +35,16 @@ pub struct HASensor {
 
 #[derive(Clone, Serialize, Deserialize, Debug)]
 pub struct HABinarySensor {
+    pub name: String,
+    pub platform: String,
+    pub icon: Option<String>,
+    pub device_class: Option<String>,
+    pub unique_id: Option<String>,
+    pub object_id: String,
+}
+
+#[derive(Clone, Serialize, Deserialize, Debug)]
+pub struct HASwitch {
     pub name: String,
     pub platform: String,
     pub icon: Option<String>,

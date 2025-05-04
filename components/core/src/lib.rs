@@ -3,6 +3,7 @@ pub mod home_assistant;
 pub mod sensor;
 pub mod sensor_mapper;
 pub mod button;
+pub mod switch;
 pub mod mapper;
 pub mod utils;
 pub mod internal;
@@ -47,6 +48,7 @@ pub struct BluetoothProxyMessage {
 #[derive(Debug, Clone)]
 pub enum ChangedMessage {
     ButtonPress { key: String },
+    SwitchStateChange { key: String, state: bool },
     SensorValueChange { key: String, value: String },
     BinarySensorValueChange { key: String, value: bool },
     BluetoothProxyMessage(BluetoothProxyMessage),
@@ -57,6 +59,7 @@ pub enum ChangedMessage {
 pub enum PublishedMessage {
     Components { components: Vec<Component> },
     ButtonPressed { key: String },
+    SwitchStateChange { key: String, state: bool },
     SensorValueChanged { key: String, value: String },
     BinarySensorValueChanged { key: String, value: bool },
     BluetoothProxyMessage (BluetoothProxyMessage),
@@ -81,12 +84,14 @@ macro_rules! config_template {
         $component_config:ty, 
         $button_extension:ident, 
         $binary_sensor_extension:ident, 
-        $sensor_extension:ident) => {
+        $sensor_extension:ident,
+        $switch_extension:ident) => {
 
         use duration_str::deserialize_option_duration;
         use ubihome_core::template_button;
         use ubihome_core::template_binary_sensor;
         use ubihome_core::template_sensor;
+        use ubihome_core::template_switch;
         use ubihome_core::template_mapper;
         use ubihome_core::UbiHome;
 
@@ -94,6 +99,7 @@ macro_rules! config_template {
         template_button!($component_name, $button_extension);
         template_binary_sensor!($component_name, $binary_sensor_extension);
         template_sensor!($component_name, $sensor_extension);
+        template_switch!($component_name, $switch_extension);
         
 
 
@@ -102,6 +108,7 @@ macro_rules! config_template {
         template_mapper!(map_sensor, Sensor);
         template_mapper!(map_button, ButtonConfig);
         template_mapper!(map_binary_sensor, BinarySensor);
+        template_mapper!(map_switch, Switch);
 
 
         #[derive(Clone, Deserialize, Debug)]
@@ -118,6 +125,9 @@ macro_rules! config_template {
 
             #[serde(default, deserialize_with = "map_binary_sensor")]
             pub binary_sensor: Option<HashMap<String, BinarySensor>>,
+
+            #[serde(default, deserialize_with = "map_switch")]
+            pub switch: Option<HashMap<String, Switch>>,
         }
     };
 }

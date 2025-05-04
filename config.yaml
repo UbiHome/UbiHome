@@ -94,6 +94,13 @@ binary_sensor:
   #   update_interval: "0s"
 
 
+switch:
+  - platform: shell
+    name: "Test Switch"
+    command_on: "echo true > testfile"
+    command_off: "echo false > testfile"
+    command_state: "cat testfile"
+
 
 
 # TODO: Things still to implement...

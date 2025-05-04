@@ -39,7 +39,7 @@ fn mac_to_u64(mac: &str) -> Result<u64, ParseIntError> {
     u64::from_str_radix(&mac, 16)
 }
 
-config_template!(api, Option<ApiConfig>, NoConfig, NoConfig, NoConfig);
+config_template!(api, Option<ApiConfig>, NoConfig, NoConfig, NoConfig, NoConfig);
 
 #[derive(Clone, Debug)]
 pub struct UbiHomeDefault {
@@ -121,6 +121,9 @@ impl Module for UbiHomeDefault {
                     PublishedMessage::Components { components } => {
                         for (index, component) in components.iter().enumerate() {
                             match component.clone() {
+                                Component::Switch(switch) => {
+                                    // TODO: Add support for switches
+                                }
                                 Component::Button(button) => {
                                     let id = button.unique_id.unwrap_or(format!(
                                         "{}_{}",

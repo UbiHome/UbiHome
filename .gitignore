@@ -10,3 +10,7 @@
 # Dotnet
 bin/
 obj/
+
+# NPM
+node_modules/
+.angular/

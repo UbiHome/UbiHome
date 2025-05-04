@@ -1,21 +1,20 @@
 use log::{debug, error, info, warn};
 use rumqttc::{AsyncClient, ConnectionError, Event, MqttOptions, QoS, StateError};
-use serde::{Deserialize, Deserializer, Serialize};
+use serde::{Deserialize, Deserializer};
 use std::{
-    collections::HashMap,
-    future::{self, Future},
-    pin::Pin,
-    str,
-    time::Duration,
+    collections::HashMap, future::{self, Future}, pin::Pin, str, sync::Arc, time::Duration
 };
 use tokio::{
-    sync::broadcast::{Receiver, Sender},
+    sync::{broadcast::{Receiver, Sender}, RwLock},
     time::sleep,
 };
 use ubihome_core::{
     config_template, home_assistant::sensors::Component, internal::sensors::InternalComponent,
-    ChangedMessage, Module, PublishedMessage,
+    ChangedMessage, Module, NoConfig, PublishedMessage,
 };
+
+mod discovery;
+use discovery::*;
 
 #[derive(Clone, Deserialize, Debug)]
 pub struct MqttConfig {
@@ -26,106 +25,17 @@ pub struct MqttConfig {
     pub password: Option<String>,
 }
 
-#[derive(Clone, Serialize, Deserialize, Debug)]
-#[serde(untagged)]
-enum MqttComponent {
-    Button(HAMqttButton),
-    Sensor(HAMqttSensor),
-    BinarySensor(HAMqttBinarySensor),
-}
-
-#[derive(Clone, Serialize, Deserialize, Debug)]
-struct HAMqttButton {
-    #[serde(rename = "p")]
-    platform: String,
-    unique_id: String,
-    command_topic: String,
-    name: String,
-    object_id: String,
-}
-
-#[derive(Clone, Serialize, Deserialize, Debug)]
-struct HAMqttSensor {
-    #[serde(rename = "p")]
-    platform: String,
-    #[serde(rename = "ic")]
-    icon: Option<String>,
-    name: String,
-    device_class: String,
-    unit_of_measurement: String,
-    unique_id: String,
-    object_id: String,
-    state_topic: String,
-}
-
-#[derive(Clone, Serialize, Deserialize, Debug)]
-struct HAMqttBinarySensor {
-    #[serde(rename = "p")]
-    platform: String,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    #[serde(rename = "ic")]
-    icon: Option<String>,
-    name: String,
-    device_class: String,
-    unique_id: String,
-    object_id: String,
-    state_topic: String,
-}
-
-#[derive(Clone, Serialize, Deserialize, Debug)]
-struct Device {
-    identifiers: Vec<String>,
-    manufacturer: String,
-    name: String,
-    model: String,
-}
-
-#[derive(Clone, Serialize, Deserialize, Debug)]
-struct Origin {
-    name: String,
-    sw: String,
-    url: String,
-}
-
-#[derive(Clone, Serialize, Deserialize, Debug)]
-struct MqttDiscoveryMessage {
-    device: Device,
-    origin: Origin,
-    components: HashMap<String, MqttComponent>,
-}
+config_template!(mqtt, MqttConfig, NoConfig, NoConfig, NoConfig, NoConfig);
 
 #[derive(Clone, Debug)]
 pub struct Default {
-    config: Config,
+    config: CoreConfig,
     core: CoreConfig,
 }
 
-#[derive(Clone, Deserialize, Debug)]
-pub struct Config {
-    pub mqtt: MqttConfig,
-}
-
-#[derive(Clone, Deserialize, Debug)]
-pub struct MqttSensorConfig {
-    // pub bla: String
-}
-
-#[derive(Clone, Deserialize, Debug)]
-pub struct MqttButtonConfig {
-    // pub bla: String
-}
-
-config_template!(
-    mqtt,
-    MqttConfig,
-    MqttButtonConfig,
-    MqttSensorConfig,
-    MqttSensorConfig
-);
-
 impl Default {
     pub fn new(config_string: &String) -> Self {
-        let config = serde_yaml::from_str::<Config>(config_string).unwrap();
+        let config = serde_yaml::from_str::<CoreConfig>(config_string).unwrap();
         let core_config = serde_yaml::from_str::<CoreConfig>(config_string).unwrap();
 
         Default {
@@ -188,103 +98,51 @@ impl Module for Default {
             let discovery_topic =
                 format!("homeassistant/device/{}/config", core_config.ubihome.name);
 
-            // Handle incoming messages
-            let base_topic1 = base_topic.clone();
-            tokio::spawn(async move {
-                loop {
-                    match eventloop.poll().await {
-                        Ok(Event::Incoming(incoming)) => {
-                            if let rumqttc::Packet::Publish(publish) = incoming {
-                                let topic = publish
-                                    .topic
-                                    .clone()
-                                    .split_off(base_topic1.clone().len() + 1);
-                                debug!("Received message on topic: {}", topic);
-                                // if components.contains_key(&topic) {
-                                // let payload = str::from_utf8(&publish.payload).unwrap_or("");
-                                let msg = ChangedMessage::ButtonPress {
-                                    key: topic.to_string(),
-                                };
-
-                                sender.send(msg).unwrap();
-                                debug!("Received on '{}': {:?}", topic, publish.payload);
-                                // }
-                            }
-                        }
-                        Ok(Event::Outgoing(_)) => {}
-                        Err(e) => match e {
-                            ConnectionError::Io(e_io) => match e_io.kind() {
-                                std::io::ErrorKind::NetworkUnreachable => {
-                                    warn!("MQTT encountered an error, but will continue running: {:?}", e_io);
-                                    sleep(Duration::from_secs(60)).await;
-                                    continue;
-                                }
-                                std::io::ErrorKind::ConnectionAborted => {
-                                    warn!("MQTT encountered an error, but will continue running: {:?}", e_io);
-                                    sleep(Duration::from_secs(60)).await;
-                                    continue;
-                                }
-                                _ => {
-                                    error!("Network error: {:?}", e_io);
-                                    break;
-                                }
-                            },
-                            ConnectionError::MqttState(e_mqtt) => match e_mqtt {
-                                StateError::Io(io_error) => match io_error.kind() {
-                                    std::io::ErrorKind::NetworkUnreachable => {
-                                        warn!("Network unreachable, trying again...");
-                                        sleep(Duration::from_secs(60)).await;
-                                        continue;
-                                    }
-                                    std::io::ErrorKind::ConnectionAborted => {
-                                    warn!("MQTT encountered an error, but will continue running: {:?}", io_error);
-                                        sleep(Duration::from_secs(60)).await;
-                                        continue;
-                                    }
-                                    _ => {
-                                        error!("Network error: {:?}", io_error);
-                                        break;
-                                    }
-                                },
-                                StateError::AwaitPingResp => {
-                                    warn!("Ping response not received (maybe network is down?), trying again...");
-                                    sleep(Duration::from_secs(60)).await;
-                                    continue;
-                                }
-                                _ => {
-                                    error!("MqttState error: {:?}", e_mqtt);
-                                    break;
-                                }
-                            },
-                            _ => {
-                                error!("Error in MQTT event loop: {:?}", e);
-                                break;
-                            }
-                        },
-                    }
-                }
-                error!("MQTT Receiver terminated");
-            });
-
             // Handle Sensor Updates
-            let base_topic2 = base_topic.clone();
+            let base_topic_clone = base_topic.clone();
+            let map: HashMap<String, MqttComponent> = HashMap::new();
+            let all_mqtt_components= Arc::new(RwLock::new(map));
+
+            let all_mqtt_components_clone = all_mqtt_components.clone();
             tokio::spawn(async move {
                 while let Ok(cmd) = receiver.recv().await {
+                    let mut mqtt_components: HashMap<String, MqttComponent> = HashMap::new();
                     match cmd {
                         PublishedMessage::Components { components } => {
-                            let mut mqtt_components: HashMap<String, MqttComponent> =
-                                HashMap::new();
                             let mut topics: Vec<String> = vec![];
 
                             for component in components {
                                 match component {
+                                    Component::Switch(switch) => {
+                                        let id = switch.unique_id.unwrap_or(format!(
+                                            "{}_{}",
+                                            core_config.ubihome.name, switch.name
+                                        ));
+                                        let topic =
+                                            format!("{}/{}", base_topic_clone.clone(), id.clone());
+                                        topics.push(topic.clone());
+                                        mqtt_components.insert(
+                                            id.clone(),
+                                            MqttComponent::Switch(HAMqttSwitch {
+                                                platform: "switch".to_string(),
+                                                unique_id: id.clone(),
+                                                command_topic: format!(
+                                                    "{}/{}",
+                                                    base_topic_clone.clone(),
+                                                    switch.object_id.clone()
+                                                ),
+                                                name: switch.name.clone(),
+                                                object_id: switch.object_id.clone(),
+                                            }),
+                                        );
+                                    }
                                     Component::Button(button) => {
                                         let id = button.unique_id.unwrap_or(format!(
                                             "{}_{}",
                                             core_config.ubihome.name, button.name
                                         ));
                                         let topic =
-                                            format!("{}/{}", base_topic.clone(), id.clone());
+                                            format!("{}/{}", base_topic_clone.clone(), id.clone());
                                         topics.push(topic.clone());
                                         mqtt_components.insert(
                                             id.clone(),
@@ -293,7 +151,7 @@ impl Module for Default {
                                                 unique_id: id.clone(),
                                                 command_topic: format!(
                                                     "{}/{}",
-                                                    base_topic.clone(),
+                                                    base_topic_clone.clone(),
                                                     button.object_id.clone()
                                                 ),
                                                 name: button.name.clone(),
@@ -323,7 +181,7 @@ impl Module for Default {
                                                 name: sensor.name.clone(),
                                                 state_topic: format!(
                                                     "{}/{}",
-                                                    base_topic.clone(),
+                                                    base_topic_clone.clone(),
                                                     sensor.object_id.clone()
                                                 ),
                                                 object_id: sensor.object_id.clone(),
@@ -348,7 +206,7 @@ impl Module for Default {
                                                 name: sensor.name.clone(),
                                                 state_topic: format!(
                                                     "{}/{}",
-                                                    base_topic.clone(),
+                                                    base_topic_clone.clone(),
                                                     sensor.object_id.clone()
                                                 ),
                                                 object_id: sensor.object_id.clone(),
@@ -409,7 +267,7 @@ impl Module for Default {
                             // Handle sensor value change
                             if let Err(e) = client
                                 .publish(
-                                    format!("{}/{}", base_topic2, key),
+                                    format!("{}/{}", base_topic_clone, key),
                                     QoS::AtMostOnce,
                                     false,
                                     value,
@@ -426,7 +284,7 @@ impl Module for Default {
                             // Handle sensor value change
                             if let Err(e) = client
                                 .publish(
-                                    format!("{}/{}", base_topic2, key),
+                                    format!("{}/{}", base_topic_clone, key),
                                     QoS::AtMostOnce,
                                     false,
                                     payload,
@@ -438,8 +296,112 @@ impl Module for Default {
                         }
                         _ => {}
                     }
+                    {
+                        let mut all_mqtt_components = all_mqtt_components_clone.write().await;
+                        all_mqtt_components.extend(mqtt_components.clone());
+                        debug!("MQTT Components: {:?}", mqtt_components.keys());
+
+                    }
+
                 }
                 error!("MQTT Sender terminated");
+            });
+
+            // Handle incoming messages
+            let base_topic1 = base_topic.clone();
+            let all_mqtt_components_clone = all_mqtt_components.clone();
+            tokio::spawn(async move {
+                loop {
+                    let mqtt_components = all_mqtt_components_clone.read().await;
+                    match eventloop.poll().await {
+                        Ok(Event::Incoming(incoming)) => {
+                            if let rumqttc::Packet::Publish(received_message) = incoming {
+                                let topic = received_message
+                                    .topic
+                                    .clone()
+                                    .split_off(base_topic1.clone().len() + 1);
+                                debug!("Received message on topic: {}", topic);
+                                debug!("Available: {:?}", mqtt_components.keys());
+
+                                let component = mqtt_components.get(&topic);
+                                if let Some(component) = component {
+                                    let mut msg: Option<ChangedMessage> = None;
+                                    match component {
+                                        MqttComponent::Switch(switch) => {
+                                            msg = Some(ChangedMessage::SwitchStateChange {
+                                                key: topic.to_string(),
+                                                state: str::from_utf8(&received_message.payload.to_ascii_lowercase()).unwrap() == "on",
+                                            })
+                                        }
+                                        MqttComponent::Button(button) => {
+                                            msg = Some(ChangedMessage::ButtonPress {
+                                                key: topic.to_string(),
+                                            });
+                                        }
+                                        _ => {}
+                                    }
+                                    
+                                    if let Some(msg) = msg {
+                                        debug!("Received on '{}': {:?}", topic, &msg);
+                                        sender.send(msg).unwrap();
+                                    }
+                                }
+                            }
+                        }
+
+                        Ok(Event::Outgoing(_)) => {}
+                        Err(e) => match e {
+                            ConnectionError::Io(e_io) => match e_io.kind() {
+                                std::io::ErrorKind::NetworkUnreachable => {
+                                    warn!("MQTT encountered an error, but will continue running: {:?}", e_io);
+                                    sleep(Duration::from_secs(60)).await;
+                                    continue;
+                                }
+                                std::io::ErrorKind::ConnectionAborted => {
+                                    warn!("MQTT encountered an error, but will continue running: {:?}", e_io);
+                                    sleep(Duration::from_secs(60)).await;
+                                    continue;
+                                }
+                                _ => {
+                                    error!("Network error: {:?}", e_io);
+                                    break;
+                                }
+                            },
+                            ConnectionError::MqttState(e_mqtt) => match e_mqtt {
+                                StateError::Io(io_error) => match io_error.kind() {
+                                    std::io::ErrorKind::NetworkUnreachable => {
+                                        warn!("Network unreachable, trying again...");
+                                        sleep(Duration::from_secs(60)).await;
+                                        continue;
+                                    }
+                                    std::io::ErrorKind::ConnectionAborted => {
+                                        warn!("MQTT encountered an error, but will continue running: {:?}", io_error);
+                                        sleep(Duration::from_secs(60)).await;
+                                        continue;
+                                    }
+                                    _ => {
+                                        error!("Network error: {:?}", io_error);
+                                        break;
+                                    }
+                                },
+                                StateError::AwaitPingResp => {
+                                    warn!("Ping response not received (maybe network is down?), trying again...");
+                                    sleep(Duration::from_secs(60)).await;
+                                    continue;
+                                }
+                                _ => {
+                                    error!("MqttState error: {:?}", e_mqtt);
+                                    break;
+                                }
+                            },
+                            _ => {
+                                error!("Error in MQTT event loop: {:?}", e);
+                                break;
+                            }
+                        },
+                    }
+                }
+                error!("MQTT Receiver terminated");
             });
 
             // Wait indefinitely to keep the eventloop alive
