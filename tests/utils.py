@@ -3,6 +3,7 @@ import fcntl
 import os
 import signal
 from subprocess import PIPE, Popen
+import time
 
 DEFAULT_CONFIG = """
 ubihome:
@@ -57,12 +58,13 @@ class UbiHome(object):
     def __enter__(self):
         with open(self.configuration_file, "w") as f:
             f.write(self.config)
-
+            
         self.process = Popen(
             f"./ubihome -c " + self.configuration_file + " " + self.arguments,
             shell=True,
             stdout=PIPE,
             stderr=PIPE,
+            cwd=os.getcwd(),
             preexec_fn=os.setsid
         )
         return self
@@ -115,3 +117,15 @@ def run_ubihome(arguments, config = None) -> str:
           raise Exception(f"Error: {stderr.decode().strip()}")
 
       return stdout.decode()
+
+
+def wait_and_get_file(file_path, timeout=5):
+    """
+    Wait for a file to be created or modified.
+    """
+    start_time = time.time()
+    while not os.path.exists(file_path):
+        if time.time() - start_time > timeout:
+            raise TimeoutError(f"File {file_path} was not created within {timeout} seconds.")
+        time.sleep(0.1)
+    return open(file_path, "r").read()

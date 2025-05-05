@@ -2,8 +2,21 @@
     "folders": [
         {
             "path": "."
+        },
+        {
+            "name": "Tests",
+            "path": "./tests"
         }
     ],
+    "settings": {
+        "python.terminal.activateEnvironment": false,
+        "cSpell.words": [
+            "aioesphomeapi",
+            "Homeassistant",
+            "mkdocs",
+            "ubihome"
+        ],
+    },
     "extensions": {
         "recommendations": [
             "rust-lang.rust-analyzer",

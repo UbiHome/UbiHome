@@ -1,13 +1,14 @@
 from asyncio import sleep
 from pprint import pp
-from tests.utils import run_ubihome
+from utils import run_ubihome
 
 
-def test_help():
+def test_version_help():
+    version = run_ubihome("--version")
+
     output = run_ubihome("--help")
 
-    assert output == """UbiHome - 0.5.1
-
+    assert output == f"""{version}
 UbiHome is a system which allows you to integrate any device running an OS into your smart home.
 Documentation: https://ubihome.github.io/
 Homepage: https://github.com/UbiHome/UbiHome

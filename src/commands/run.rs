@@ -1,6 +1,5 @@
 use flexi_logger::writers::FileLogWriter;
 use flexi_logger::{detailed_format, Age, Cleanup, Criterion, Duplicate, FileSpec, Logger, Naming};
-use inquire::Text;
 use ubihome::CoreConfig;
 use ubihome_core::binary_sensor::{ActionType, FilterType};
 use ubihome_core::home_assistant::sensors::Component;
@@ -8,14 +7,13 @@ use ubihome_core::internal::sensors::InternalComponent;
 use ubihome_core::sensor::SensorFilterType;
 use ubihome_core::{ChangedMessage, Module, PublishedMessage};
 
-use clap::{Arg, ArgAction, Command};
-use futures_signals::signal::{MapFuture, Mutable, MutableSignal, Signal, SignalExt, SignalFuture};
+use futures_signals::signal::{Mutable, SignalExt};
 use log::{debug, error, info, trace, warn};
 use std::collections::HashMap;
 use std::path::Path;
 use std::sync::mpsc;
 use std::time::Duration;
-use std::{env, fs};
+use std::fs;
 use tokio::sync::broadcast::{self, Receiver, Sender};
 use tokio::{runtime::Runtime, signal};
 
@@ -209,15 +207,15 @@ pub(crate) fn run(
 
         // Double Option Workaround for https://github.com/Pauan/rust-signals/issues/75
         let mut signal_map_binary_sensor: HashMap<String, Mutable<Option<Option<bool>>>> = HashMap::new();
-        let mut signal_map_sensor: HashMap<String, Mutable<Option<Option<String>>>> = HashMap::new();
+        let mut signal_map_sensor: HashMap<String, Mutable<Option<Option<f32>>>> = HashMap::new();
 
-        for (component) in components.clone() {
+        for component in components.clone() {
             match component {
                 InternalComponent::Button(button) => {
                     println!("Button: {:?}", button);
                 }
                 InternalComponent::Sensor(sensor) => {
-                    let mutable: Mutable<Option<Option<String>>> = Mutable::new(Option::None);
+                    let mutable: Mutable<Option<Option<f32>>> = Mutable::new(Option::None);
                     signal_map_sensor
                         .insert(sensor.ha.id.clone(), mutable.clone());
                     let internal_tx_clone = internal_tx.clone();
@@ -235,8 +233,8 @@ pub(crate) fn run(
                                     .map(move |value| {
                                         
                                         if let Some(v) = value.clone().and_then(|v| v) {
-                                            let number: f64 = v.parse().unwrap();
-                                            let output = format!("{:.1$}", number, decimals);
+                                            // let number: f64 = v.parse().unwrap();
+                                            let output: f32 = format!("{:.1$}", v, decimals).parse().unwrap();
                                             warn!("Round: {}", output);
                                             return Some(Some(output))
                                         }
@@ -443,13 +441,10 @@ pub(crate) fn run(
                             publish_cmd = Some(PublishedMessage::ButtonPressed { key });
                         }
                         ChangedMessage::SensorValueChange { key, value } => {
-                            println!("SensorValueChange: {}", value);
-
                             signal_map_sensor.get(&key).map(|signal| {
                                 signal.set(Some(Some(value)));
                             });
                             publish_cmd = None;
-                            // publish_cmd = Some(PublishedMessage::SensorValueChanged { key, value });
                         }
                         ChangedMessage::BinarySensorValueChange { key, value } => {
                             debug!("BinarySensorValueChange: {}", value);

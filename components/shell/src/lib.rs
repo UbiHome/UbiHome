@@ -304,7 +304,7 @@ impl Module for Default {
 
                                     _ = cloned_sender.send(ChangedMessage::SensorValueChange {
                                         key: key.clone(),
-                                        value: value,
+                                        value: value.parse().unwrap(),
                                     });
                                 }
                                 Err(e) => {
