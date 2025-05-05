@@ -78,7 +78,7 @@ jobs:
 
   test:
     runs-on: ubuntu-latest
-    if: inputs.target == 'x86_64-unknown-linux-gnu'
+    if: ${{ inputs.target }} == 'x86_64-unknown-linux-gnu'
     needs: build
     steps:
       - uses: actions/checkout@v2
