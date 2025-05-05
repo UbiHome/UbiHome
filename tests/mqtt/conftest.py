@@ -9,7 +9,6 @@ async def mqtt_container():
     
 @pytest.fixture()
 def mqtt_client(mqtt_container: MosquittoContainer):
-    sleep(5)
     return mqtt_container.get_client()
 
 @pytest.fixture()

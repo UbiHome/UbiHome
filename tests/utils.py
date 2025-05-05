@@ -58,8 +58,7 @@ class UbiHome(object):
     def __enter__(self):
         with open(self.configuration_file, "w") as f:
             f.write(self.config)
-
-        print(os.getcwd())
+            
         self.process = Popen(
             f"./ubihome -c " + self.configuration_file + " " + self.arguments,
             shell=True,
@@ -120,7 +119,7 @@ def run_ubihome(arguments, config = None) -> str:
       return stdout.decode()
 
 
-def wait_and_get_file(file_path, timeout=10):
+def wait_and_get_file(file_path, timeout=5):
     """
     Wait for a file to be created or modified.
     """

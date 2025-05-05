@@ -298,7 +298,7 @@ impl Module for Default {
                                         debug!("Temperature: {}", measurements.temperature);
                                         let msg = ChangedMessage::SensorValueChange {
                                             key: id.clone(),
-                                            value: measurements.temperature.to_string(),
+                                            value: measurements.temperature,
                                         };
                                         cloned_sender.send(msg).unwrap();
                                     }
@@ -306,7 +306,7 @@ impl Module for Default {
                                         debug!("Pressure: {}", measurements.pressure);
                                         let msg = ChangedMessage::SensorValueChange {
                                             key: id.clone(),
-                                            value: measurements.pressure.to_string(),
+                                            value: measurements.pressure,
                                         };
                                         cloned_sender.send(msg).unwrap();
                                     }
@@ -314,7 +314,7 @@ impl Module for Default {
                                         debug!("Humidity: {}", measurements.humidity);
                                         let msg = ChangedMessage::SensorValueChange {
                                             key: id.clone(),
-                                            value: measurements.humidity.to_string(),
+                                            value: measurements.humidity,
                                         };
                                         cloned_sender.send(msg).unwrap();
                                     }

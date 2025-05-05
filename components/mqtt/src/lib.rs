@@ -264,7 +264,7 @@ impl Module for Default {
                                     format!("{}/{}", base_topic_clone, key),
                                     QoS::AtMostOnce,
                                     false,
-                                    value,
+                                    value.to_string(),
                                 )
                                 .await
                             {

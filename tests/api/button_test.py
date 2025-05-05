@@ -33,6 +33,7 @@ button:
     print("buttons", entities)
     entity = entities[0]
 
+    assert type(entity) == aioesphomeapi.ButtonInfo
     assert entity.unique_id == button_id
     assert entity.name == button_name
 

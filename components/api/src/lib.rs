@@ -1,35 +1,31 @@
 use esphome_native_api::parser;
 use esphome_native_api::parser::ProtoMessage;
 use esphome_native_api::proto;
-use esphome_native_api::proto::BluetoothLeRawAdvertisement;
 use esphome_native_api::proto::BluetoothServiceData;
 use esphome_native_api::proto::DeviceInfoResponse;
 use esphome_native_api::proto::EntityCategory;
-use esphome_native_api::proto::ListEntitiesSensorResponse;
 use esphome_native_api::proto::SensorLastResetType;
 use esphome_native_api::proto::SensorStateClass;
-use esphome_native_api::to_packet;
 use esphome_native_api::to_packet_from_ref;
 use log::debug;
+use log::error;
 use log::info;
 use log::trace;
 use log::warn;
-use ubihome_core::internal::sensors::InternalComponent;
-use ubihome_core::NoConfig;
-use ubihome_core::{
-    config_template, home_assistant::sensors::Component, ChangedMessage, Module, PublishedMessage,
-};
 use serde::{Deserialize, Deserializer};
-use tokio::select;
 use std::collections::HashMap;
 use std::num::ParseIntError;
-use std::sync::RwLock;
 use std::{future::Future, pin::Pin, str};
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::TcpListener;
 use tokio::sync::broadcast;
 use tokio::sync::broadcast::Receiver;
 use tokio::sync::broadcast::Sender;
+use ubihome_core::internal::sensors::InternalComponent;
+use ubihome_core::NoConfig;
+use ubihome_core::{
+    config_template, home_assistant::sensors::Component, ChangedMessage, Module, PublishedMessage,
+};
 
 #[derive(Clone, Deserialize, Debug)]
 pub struct ApiConfig {}
@@ -39,12 +35,20 @@ fn mac_to_u64(mac: &str) -> Result<u64, ParseIntError> {
     u64::from_str_radix(&mac, 16)
 }
 
-config_template!(api, Option<ApiConfig>, NoConfig, NoConfig, NoConfig, NoConfig);
+config_template!(
+    api,
+    Option<ApiConfig>,
+    NoConfig,
+    NoConfig,
+    NoConfig,
+    NoConfig
+);
 
 #[derive(Clone, Debug)]
 pub struct UbiHomeDefault {
     config: CoreConfig,
-    components: HashMap<u32, ProtoMessage>,
+    components_by_key: HashMap<u32, ProtoMessage>,
+    components_key_id: HashMap<String, u32>,
     device_info: DeviceInfoResponse,
 }
 
@@ -88,7 +92,8 @@ impl UbiHomeDefault {
 
         UbiHomeDefault {
             config: config,
-            components: HashMap::new(),
+            components_by_key: HashMap::new(),
+            components_key_id: HashMap::new(),
             device_info: device_info,
         }
     }
@@ -113,7 +118,8 @@ impl Module for UbiHomeDefault {
         let core_config = self.config.clone();
         // let mut api_components = self.components.();
         let device_info = self.device_info.clone();
-        let mut api_components = self.components.clone();
+        let mut api_components_by_key = self.components_by_key.clone();
+        let mut api_components_key_id = self.components_key_id.clone();
         info!("Starting API with config: {:?}", core_config.api);
         Box::pin(async move {
             while let Ok(cmd) = receiver.recv().await {
@@ -130,14 +136,17 @@ impl Module for UbiHomeDefault {
                                             object_id: button.id.clone(),
                                             key: index.try_into().unwrap(),
                                             name: button.name,
-                                            unique_id: button.id,
+                                            unique_id: button.id.clone(),
                                             icon: "".to_string(),
                                             device_class: "".to_string(), //button.device_class,
                                             disabled_by_default: false,
                                             entity_category: EntityCategory::None as i32,
                                         },
                                     );
-                                    api_components.insert(index.try_into().unwrap(), component_button);
+                                    api_components_by_key
+                                        .insert(index.try_into().unwrap(), component_button);
+                                    api_components_key_id
+                                        .insert(button.id.clone(), index.try_into().unwrap());
                                 }
                                 Component::Sensor(sensor) => {
                                     let component_sensor = ProtoMessage::ListEntitiesSensorResponse(
@@ -145,7 +154,7 @@ impl Module for UbiHomeDefault {
                                             object_id: sensor.id.clone(),
                                             key: index.try_into().unwrap(),
                                             name: sensor.name,
-                                            unique_id: sensor.id,
+                                            unique_id: sensor.id.clone(),
                                             icon: "".to_string(),
                                             unit_of_measurement: sensor
                                                 .unit_of_measurement
@@ -163,7 +172,10 @@ impl Module for UbiHomeDefault {
                                             entity_category: EntityCategory::None as i32,
                                         },
                                     );
-                                    api_components.insert(index.try_into().unwrap(), component_sensor);
+                                    api_components_by_key
+                                        .insert(index.try_into().unwrap(), component_sensor);
+                                    api_components_key_id
+                                        .insert(sensor.id.clone(), index.try_into().unwrap());
                                 }
                                 Component::BinarySensor(binary_sensor) => {
                                     let component_binary_sensor =
@@ -172,7 +184,7 @@ impl Module for UbiHomeDefault {
                                                 object_id: binary_sensor.id.clone(),
                                                 key: index.try_into().unwrap(),
                                                 name: binary_sensor.name,
-                                                unique_id: binary_sensor.id,
+                                                unique_id: binary_sensor.id.clone(),
                                                 icon: "".to_string(),
                                                 device_class: binary_sensor
                                                     .device_class
@@ -182,8 +194,12 @@ impl Module for UbiHomeDefault {
                                                 entity_category: EntityCategory::None as i32,
                                             },
                                         );
-                                    api_components
+                                    api_components_by_key
                                         .insert(index.try_into().unwrap(), component_binary_sensor);
+                                    api_components_key_id.insert(
+                                        binary_sensor.id.clone(),
+                                        index.try_into().unwrap(),
+                                    );
                                 }
                             }
                         }
@@ -194,31 +210,45 @@ impl Module for UbiHomeDefault {
             }
             let (answer_messages_tx, answer_messages_rx) = broadcast::channel::<ProtoMessage>(16);
             let (messages_tx, messages_rx) = broadcast::channel::<ProtoMessage>(16);
+            let api_components_key_id_clone = api_components_key_id.clone();
+
             tokio::spawn(async move {
                 while let Ok(cmd) = receiver.recv().await {
                     match cmd {
+                        PublishedMessage::SensorValueChanged { key, value } => {
+                            let key = api_components_key_id_clone.get(&key).unwrap();
+                            debug!("SensorValueChanged: {:?}", &value);
+
+                            messages_tx
+                                .send(ProtoMessage::SensorStateResponse(
+                                    proto::SensorStateResponse {
+                                        key: key.clone(),
+                                        state: value,
+                                        missing_state: false,
+                                    },
+                                ))
+                                .unwrap();
+                        }
                         PublishedMessage::BluetoothProxyMessage(msg) => {
                             debug!("BluetoothProxyMessage: {:?}", &msg);
                             let service_data: Vec<BluetoothServiceData> = msg
                                 .service_data
                                 .iter()
-                                .map(|(k, v)| {
-                                    BluetoothServiceData {
-                                        uuid: k.to_string(),
-                                        data: v.clone(),
-                                        legacy_data: Vec::new(),
-                                    }
-                                }).collect();
+                                .map(|(k, v)| BluetoothServiceData {
+                                    uuid: k.to_string(),
+                                    data: v.clone(),
+                                    legacy_data: Vec::new(),
+                                })
+                                .collect();
                             let manufacturer_data = msg
                                 .manufacturer_data
                                 .iter()
-                                .map(|(k, v)| {
-                                    BluetoothServiceData {
-                                        uuid: k.to_string(),
-                                        data: v.clone(),
-                                        legacy_data: Vec::new(),
-                                    }
-                                }).collect();
+                                .map(|(k, v)| BluetoothServiceData {
+                                    uuid: k.to_string(),
+                                    data: v.clone(),
+                                    legacy_data: Vec::new(),
+                                })
+                                .collect();
                             let test = proto::BluetoothLeAdvertisementResponse {
                                 address: mac_to_u64(&msg.mac).unwrap(),
                                 rssi: msg.rssi.try_into().unwrap(),
@@ -230,9 +260,7 @@ impl Module for UbiHomeDefault {
                             };
 
                             messages_tx
-                                .send(ProtoMessage::BluetoothLeAdvertisementResponse(
-                                    test
-                                ))
+                                .send(ProtoMessage::BluetoothLeAdvertisementResponse(test))
                                 .unwrap();
                         }
                         _ => {}
@@ -251,7 +279,7 @@ impl Module for UbiHomeDefault {
                 let (mut read, mut write) = tokio::io::split(socket);
 
                 let device_info_clone = device_info.clone();
-                let api_components_clone = api_components.clone();
+                let api_components_clone = api_components_by_key.clone();
                 // Read Loop
                 let answer_messages_tx_clone = answer_messages_tx.clone();
                 let cloned_sender = sender.clone();
@@ -424,14 +452,16 @@ impl Module for UbiHomeDefault {
                                 }
                                 ProtoMessage::ButtonCommandRequest(button_command_request) => {
                                     debug!("ButtonCommandRequest: {:?}", button_command_request);
-                                    let button = api_components_clone.get(&button_command_request.key).unwrap();
+                                    let button = api_components_clone
+                                        .get(&button_command_request.key)
+                                        .unwrap();
                                     match button {
                                         ProtoMessage::ListEntitiesButtonResponse(button) => {
                                             debug!("ButtonCommandRequest: {:?}", button);
                                             let msg = ChangedMessage::ButtonPress {
                                                 key: button.unique_id.clone(),
                                             };
-            
+
                                             cloned_sender.send(msg).unwrap();
                                         }
                                         _ => {}
@@ -461,10 +491,10 @@ impl Module for UbiHomeDefault {
                         let answer_message: ProtoMessage;
                         // Wait for any new message
                         tokio::select! {
-                            (message) = answer_messages => {
+                            message = answer_messages => {
                                 answer_message = message.unwrap();
                             }
-                            (message) = normal_messages => {
+                            message = normal_messages => {
                                 answer_message = message.unwrap();
                             }
                         };
