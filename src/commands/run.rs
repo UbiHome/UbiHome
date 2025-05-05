@@ -1,6 +1,5 @@
 use flexi_logger::writers::FileLogWriter;
 use flexi_logger::{detailed_format, Age, Cleanup, Criterion, Duplicate, FileSpec, Logger, Naming};
-use inquire::Text;
 use ubihome::CoreConfig;
 use ubihome_core::binary_sensor::{ActionType, FilterType};
 use ubihome_core::home_assistant::sensors::Component;
@@ -8,14 +7,13 @@ use ubihome_core::internal::sensors::InternalComponent;
 use ubihome_core::sensor::SensorFilterType;
 use ubihome_core::{ChangedMessage, Module, PublishedMessage};
 
-use clap::{Arg, ArgAction, Command};
-use futures_signals::signal::{MapFuture, Mutable, MutableSignal, Signal, SignalExt, SignalFuture};
+use futures_signals::signal::{Mutable, SignalExt};
 use log::{debug, error, info, trace, warn};
 use std::collections::HashMap;
 use std::path::Path;
 use std::sync::mpsc;
 use std::time::Duration;
-use std::{env, fs};
+use std::fs;
 use tokio::sync::broadcast::{self, Receiver, Sender};
 use tokio::{runtime::Runtime, signal};
 
@@ -211,7 +209,7 @@ pub(crate) fn run(
         let mut signal_map_binary_sensor: HashMap<String, Mutable<Option<Option<bool>>>> = HashMap::new();
         let mut signal_map_sensor: HashMap<String, Mutable<Option<Option<String>>>> = HashMap::new();
 
-        for (component) in components.clone() {
+        for component in components.clone() {
             match component {
                 InternalComponent::Button(button) => {
                     println!("Button: {:?}", button);

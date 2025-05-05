@@ -83,8 +83,8 @@ fn windows_service_main(_arguments: Vec<std::ffi::OsString>) {
 }
 
 fn cli() -> Command {
-    Command::new("ubihome")
-        .about(format!("UbiHome - {}\n\n{}\nDocumentation: https://ubihome.github.io/\nHomepage: {}" ,VERSION, DESCRIPTION, CARGO_PKG_HOMEPAGE))
+    Command::new("UbiHome")
+        .about(format!("UbiHome {}\n\n{}\nDocumentation: https://ubihome.github.io/\nHomepage: {}" ,VERSION, DESCRIPTION, CARGO_PKG_HOMEPAGE))
         .version(VERSION)
         .subcommand_required(true)
         .arg_required_else_help(true)

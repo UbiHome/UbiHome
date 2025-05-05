@@ -58,11 +58,13 @@ class UbiHome(object):
         with open(self.configuration_file, "w") as f:
             f.write(self.config)
 
+        print(os.getcwd())
         self.process = Popen(
             f"./ubihome -c " + self.configuration_file + " " + self.arguments,
             shell=True,
             stdout=PIPE,
             stderr=PIPE,
+            cwd=os.getcwd(),
             preexec_fn=os.setsid
         )
         return self

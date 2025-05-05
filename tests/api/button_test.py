@@ -21,7 +21,6 @@ button:
    id: {button_id}
    name: {button_name}
    command: "echo 'Hello World!' > test.log"
-
 """
 
   async with UbiHome("run", DEVICE_INFO_CONFIG) as ubihome:
@@ -36,7 +35,6 @@ button:
     assert entity.unique_id == button_id
     assert entity.name == button_name
 
-    # TODO: Not yet wired up?
     api.button_command(0)
     await sleep(1)
     assert open("test.log", "r").read() == "Hello World!\n"

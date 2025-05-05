@@ -59,9 +59,13 @@ jobs:
         if: matrix.runs-on == 'macOS-latest'
         run: rustup target add ${{ matrix.target }}
 
-      - name: Build
+      - name: Build (macOS)
         if: matrix.runs-on == 'macOS-latest'
         run: cargo build --release --target ${{ matrix.target }}
+
+      - name: Test (macOS)
+        if: matrix.runs-on == 'macOS-latest'
+        run: cargo test --target ${{ matrix.target }}
 
       - name: Build binary
         if: matrix.runs-on != 'macOS-latest'
@@ -73,6 +77,14 @@ jobs:
           args: "--release"
           strip: true
 
+      - name: Test
+        if: matrix.runs-on != 'macOS-latest'
+        uses: houseabsolute/actions-rust-cross@v1
+        with:
+          command: test
+          target: ${{ matrix.target }}
+          # Add "--locked" again when release please is not updating all Cargo.toml files
+          args: ""
 
       # Save executable
       - name: Archive artifacts
@@ -82,25 +94,15 @@ jobs:
           path: |
             target/${{ matrix.target }}/release/ubihome${{ matrix.fileending }}
 
-
-
-  # test:
-  #   runs-on: ${{ matrix.os }}
-  #   strategy:
-  #     matrix:
-  #       os: [ubuntu-latest, windows-latest, macos-latest]
+  # test-e2e:
+  #   needs: build
+  #   runs-on: ubuntu-latest
 
   #   steps:
   #   - uses: actions/checkout@v2
-  #   - name: Set up Rust
-  #     uses: actions-rs/toolchain@v1
+  #   - name: Download Artifact
+  #     uses: actions/download-artifact@v4
   #     with:
-  #       toolchain: stable
-
-  #   - name: Rust Cache
-  #     uses: Swatinem/rust-cache@v2.7.8
-  #     with:
-  #       key: test
-
-  #   - name: Run tests
-  #     run: cargo test
+  #       name: release-${{ matrix.target }}
+  #       path: |
+  #         target/${{ matrix.target }}/release/ubihome${{ matrix.fileending }}

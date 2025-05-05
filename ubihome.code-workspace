@@ -2,8 +2,22 @@
     "folders": [
         {
             "path": "."
+        },
+        {
+            "name": "Tests",
+            "path": "./tests"
         }
     ],
+    "settings": {
+        "python.testing.unittestEnabled": false,
+        "python.testing.pytestEnabled": false,
+        "cSpell.words": [
+            "aioesphomeapi",
+            "Homeassistant",
+            "mkdocs",
+            "ubihome"
+        ],
+    },
     "extensions": {
         "recommendations": [
             "rust-lang.rust-analyzer",
