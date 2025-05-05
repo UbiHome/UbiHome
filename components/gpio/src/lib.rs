@@ -1,6 +1,5 @@
 use log::{debug, warn};
 use serde::{Deserialize, Deserializer};
-use std::any;
 use std::{collections::HashMap, future};
 use std::{future::Future, pin::Pin, str};
 use tokio::sync::broadcast::{Receiver, Sender};
@@ -145,17 +144,13 @@ impl Module for Default {
                             let gpio_pin =
                                 gpio.get(binary_sensor.pin).expect("GPIO pin not found?");
                             let mut pin: rppal::gpio::InputPin;
-                            if let Some(pullup) = binary_sensor.pull_up {
-                                if pullup {
-                                    debug!("pullup");
-                                    pin = gpio_pin.into_input_pullup();
-                                } else {
-                                    debug!("pulldown");
-                                    pin = gpio_pin.into_input_pulldown();
-                                }
-                            } else {
+                            let pull_up = binary_sensor.pull_up.unwrap_or(true);
+                            if pull_up {
                                 debug!("pullup");
                                 pin = gpio_pin.into_input_pullup();
+                            } else {
+                                debug!("pulldown");
+                                pin = gpio_pin.into_input_pulldown();
                             }
 
                             // Errors?
@@ -183,18 +178,6 @@ impl Module for Default {
                                         debug!("Unknown trigger detected {:?}", event.trigger);
                                     }
                                 }
-
-                                // let cloned_sender2 = cloned_sender.clone();
-
-                                // let cloned_key = key.clone();
-                                // sleep(Duration::from_secs(5));
-                                // debug!("BinarySensor {} reset.", cloned_key);
-                                // cloned_sender2
-                                //     .send(ChangedMessage::BinarySensorValueChange {
-                                //         key: cloned_key,
-                                //         value: false,
-                                //     })
-                                //     .unwrap();
                             })
                             .expect("failed to set async interrupt");
                             debug!("Waiting for interrupts.");
@@ -202,11 +185,12 @@ impl Module for Default {
                             // Wait indefinitely for the interrupts
                             let future = future::pending();
                             let () = future.await;
+                            debug!("Interrupts stopped.");
                         }
-
                     }
                 }
             }
+            debug!("GPIO module stopped");
             Ok(())
         })
     }
