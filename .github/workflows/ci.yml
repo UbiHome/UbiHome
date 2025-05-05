@@ -33,7 +33,9 @@ jobs:
             fileending: ""
     uses: ./.github/workflows/build-and-test-template.yml
     with:
-      os: ${{ matrix.os }}
+      runs-on: ${{ matrix.runs-on }}
+      target: ${{ matrix.target }}
+      fileending: ${{ matrix.fileending }}
     # If you might want to use a secret in the build or test job then you would need to pass secrets, inherit disables secret isolation
     secrets: inherit
 
