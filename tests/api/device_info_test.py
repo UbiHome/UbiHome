@@ -1,5 +1,5 @@
 
-from tests.utils import UbiHome
+from utils import UbiHome
 import aioesphomeapi
 
 

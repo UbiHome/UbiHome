@@ -1,8 +1,9 @@
 
 from asyncio import sleep
 import os
-from tests.utils import UbiHome
+from utils import UbiHome
 import aioesphomeapi
+from utils import wait_and_get_file
 
 
 async def test_run():
@@ -36,6 +37,5 @@ button:
     assert entity.name == button_name
 
     api.button_command(0)
-    await sleep(1)
-    assert open("test.log", "r").read() == "Hello World!\n"
+    assert wait_and_get_file("test.log") == "Hello World!\n"
     os.remove("test.log")

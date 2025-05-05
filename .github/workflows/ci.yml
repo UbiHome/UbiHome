@@ -5,104 +5,35 @@ on:
   #   branches: [ main ]
       
   pull_request:
-      
 
+    
 jobs:
   build:
-    runs-on: ${{ matrix.runs-on }}
     strategy:
+      fail-fast: false
       matrix:
         include:
-        - target: x86_64-unknown-linux-gnu # tested in a debian container on a mac
-          runs-on: ubuntu-24.04
-          fileending: ""
-        # - target: aarch64-unknown-linux-gnu # tested on aws t4g.nano
-        #   os: ubuntu-latest
-        # - target: armv7-unknown-linux-gnueabihf # raspberry pi 2-3-4, not tested
-        #   os: ubuntu-latest
-        # - target: arm-unknown-linux-gnueabihf # raspberry pi 0-1, not tested
-        #   os: ubuntu-latest
-        - target: x86_64-apple-darwin # tested on a mac, is not properly signed so there are security warnings
-          runs-on: macOS-latest
-          fileending: ""
-        - target: x86_64-pc-windows-msvc # tested on a windows machine
-          runs-on: windows-latest
-          fileending: ".exe"
-        - target: armv7-unknown-linux-musleabi
-          runs-on: ubuntu-24.04
-          fileending: ""
+          - target: x86_64-unknown-linux-gnu
+            runs-on: ubuntu-24.04
+            fileending: ""
+          # - target: aarch64-unknown-linux-gnu # tested on aws t4g.nano
+          #   os: ubuntu-latest
+          # - target: armv7-unknown-linux-gnueabihf # raspberry pi 2-3-4, not tested
+          #   os: ubuntu-latest
+          # - target: arm-unknown-linux-gnueabihf # raspberry pi 0-1, not tested
+          #   os: ubuntu-latest
+          - target: x86_64-apple-darwin # tested on a mac, is not properly signed so there are security warnings
+            runs-on: macOS-latest
+            fileending: ""
+          - target: x86_64-pc-windows-msvc # tested on a windows machine
+            runs-on: windows-latest
+            fileending: ".exe"
+          - target: armv7-unknown-linux-musleabi
+            runs-on: ubuntu-24.04
+            fileending: ""
+    uses: ./.github/workflows/build-and-test-template.yml
+    with:
+      os: ${{ matrix.os }}
+    # If you might want to use a secret in the build or test job then you would need to pass secrets, inherit disables secret isolation
+    secrets: inherit
 
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Add extra packages (MacOS)
-        if: matrix.runs-on == 'macOS-latest'
-        run: brew install libmodbus
-
-      - name: Add extra packages (Linux)
-        if: matrix.runs-on == 'ubuntu-24.04'
-        run: sudo apt install -y libdbus-1-dev pkg-config
-
-      - name: Set up Rust
-        if: matrix.runs-on == 'macOS-latest'
-        uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
-  
-      - name: Rust Cache
-        if: matrix.runs-on == 'macOS-latest'
-        uses: Swatinem/rust-cache@v2.7.8
-        with:
-          key: release
-  
-      - name: Install rust target
-        if: matrix.runs-on == 'macOS-latest'
-        run: rustup target add ${{ matrix.target }}
-
-      - name: Build (macOS)
-        if: matrix.runs-on == 'macOS-latest'
-        run: cargo build --release --target ${{ matrix.target }}
-
-      - name: Test (macOS)
-        if: matrix.runs-on == 'macOS-latest'
-        run: cargo test --target ${{ matrix.target }}
-
-      - name: Build binary
-        if: matrix.runs-on != 'macOS-latest'
-        uses: houseabsolute/actions-rust-cross@v1
-        with:
-          command: build
-          target: ${{ matrix.target }}
-          # Add "--locked" again when release please is not updating all Cargo.toml files
-          args: "--release"
-          strip: true
-
-      - name: Test
-        if: matrix.runs-on != 'macOS-latest'
-        uses: houseabsolute/actions-rust-cross@v1
-        with:
-          command: test
-          target: ${{ matrix.target }}
-          # Add "--locked" again when release please is not updating all Cargo.toml files
-          args: ""
-
-      # Save executable
-      - name: Archive artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: release-${{ matrix.target }}
-          path: |
-            target/${{ matrix.target }}/release/ubihome${{ matrix.fileending }}
-
-  # test-e2e:
-  #   needs: build
-  #   runs-on: ubuntu-latest
-
-  #   steps:
-  #   - uses: actions/checkout@v2
-  #   - name: Download Artifact
-  #     uses: actions/download-artifact@v4
-  #     with:
-  #       name: release-${{ matrix.target }}
-  #       path: |
-  #         target/${{ matrix.target }}/release/ubihome${{ matrix.fileending }}

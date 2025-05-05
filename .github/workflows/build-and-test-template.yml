@@ -1,0 +1,98 @@
+name: build-and-test-template
+on:
+  workflow_call:
+    inputs:
+      runs-on:
+        type: string
+        required: true
+      target:
+        type: string
+        required: true
+      fileending:
+        type: string
+        required: true
+jobs:
+  build:
+    runs-on: ${{ inputs.runs-on }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Add extra packages (MacOS)
+        if: inputs.runs-on == 'macOS-latest'
+        run: brew install libmodbus
+
+      - name: Add extra packages (Linux)
+        if: inputs.runs-on == 'ubuntu-24.04'
+        run: sudo apt install -y libdbus-1-dev pkg-config
+
+      - name: Set up Rust
+        if: inputs.runs-on == 'macOS-latest'
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+
+      - name: Rust Cache
+        if: inputs.runs-on == 'macOS-latest'
+        uses: Swatinem/rust-cache@v2.7.8
+        with:
+          key: release
+
+      - name: Install rust target
+        if: inputs.runs-on == 'macOS-latest'
+        run: rustup target add ${{ inputs.target }}
+
+      - name: Build (macOS)
+        if: inputs.runs-on == 'macOS-latest'
+        run: cargo build --release --target ${{ inputs.target }}
+
+      - name: Test (macOS)
+        if: inputs.runs-on == 'macOS-latest'
+        run: cargo test --target ${{ inputs.target }}
+
+      - name: Build binary
+        if: inputs.runs-on != 'macOS-latest'
+        uses: houseabsolute/actions-rust-cross@v1
+        with:
+          command: build
+          target: ${{ inputs.target }}
+          # Add "--locked" again when release please is not updating all Cargo.toml files
+          args: '--release'
+          strip: true
+
+      - name: Test
+        if: inputs.runs-on != 'macOS-latest'
+        uses: houseabsolute/actions-rust-cross@v1
+        with:
+          command: test
+          target: ${{ inputs.target }}
+          # Add "--locked" again when release please is not updating all Cargo.toml files
+          args: ''
+
+      # Save executable
+      - name: Archive artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-${{ inputs.target }}
+          path: |
+            target/${{ inputs.target }}/release/ubihome${{ inputs.fileending }}
+
+  test:
+    runs-on: ubuntu-latest
+    if: inputs.target == 'x86_64-unknown-linux-gnu'
+    needs: build
+    steps:
+      - uses: actions/checkout@v2
+      - name: Download Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: release-${{ inputs.target }}
+          path: tests/
+      - uses: actions/setup-python@v5
+        with:
+          python-version: 3.12
+      - name: Run image
+        uses: abatilo/actions-poetry@v3
+        with:
+          poetry-version: 2.1.2
+      - name: Run tests
+        run: cd tests/ && poetry run pytest

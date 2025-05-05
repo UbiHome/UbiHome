@@ -1,7 +1,7 @@
 
 import json
 from unittest.mock import Mock
-from tests.utils import UbiHome
+from utils import UbiHome
 from paho.mqtt.client import Client
 
 async def test_run(mqtt_client: Client, mqtt_connection):

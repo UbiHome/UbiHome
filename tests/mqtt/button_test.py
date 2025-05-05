@@ -3,8 +3,9 @@ from asyncio import sleep
 import json
 import os
 from unittest.mock import Mock
-from tests.utils import UbiHome
+from utils import UbiHome
 from paho.mqtt.client import Client
+from utils import wait_and_get_file
 
 async def test_button_triggered(mqtt_client: Client, mqtt_connection):
   name = "test_device"
@@ -46,7 +47,6 @@ button:
 
     publish = mqtt_client.publish(command_topic, "ON")
     publish.wait_for_publish()
-    sleep(1)
 
-    assert open("test.log", "r").read() == "Hello World!\n"
+    assert wait_and_get_file("test.log") == "Hello World!\n"
     os.remove("test.log")

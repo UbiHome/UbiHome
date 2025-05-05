@@ -1,6 +1,6 @@
 from asyncio import sleep
 from pprint import pp
-from tests.utils import run_ubihome
+from utils import run_ubihome
 
 
 def test_version_help():
