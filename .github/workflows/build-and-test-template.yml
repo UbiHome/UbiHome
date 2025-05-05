@@ -1,3 +1,4 @@
+# Workaround for https://github.com/orgs/community/discussions/42335
 name: build-and-test-template
 on:
   workflow_call:
@@ -78,7 +79,7 @@ jobs:
 
   test:
     runs-on: ubuntu-latest
-    if: ${{ inputs.target }} == 'x86_64-unknown-linux-gnu'
+    if: inputs.target == 'x86_64-unknown-linux-gnu'
     needs: build
     steps:
       - uses: actions/checkout@v2
@@ -95,4 +96,7 @@ jobs:
         with:
           poetry-version: 2.1.2
       - name: Run tests
-        run: cd tests/ && poetry run pytest
+        run: |-
+          cd tests
+          poetry install
+          poetry run pytest
