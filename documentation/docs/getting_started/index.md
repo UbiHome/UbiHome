@@ -32,7 +32,7 @@ For now[^1] a single executable is provided. You can download them from the [Git
 
     2. Edit the configuration file `config.yaml` in the same directory as the executable. It could contain the following:
 
-        ```yaml
+        ```yaml title="config.yaml"
         --8<-- "getting_started/linux.yml"
         ```
 
@@ -89,7 +89,7 @@ For now[^1] a single executable is provided. You can download them from the [Git
 
     2. Edit the configuration file `config.yaml` in the same directory as the executable. It could contain the following:
 
-    ```yaml
+    ```yaml title="config.yaml"
     --8<-- "getting_started/windows.yml"
     ```
 
