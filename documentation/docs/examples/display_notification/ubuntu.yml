@@ -1,0 +1,8 @@
+shell:
+
+# This is a pure sample (not tested yet!)
+button:
+  - platform: shell
+    name: 'Display Notification'
+    command: |-
+      zenity --notification --text "Hello World from UbiHome!"

@@ -9,5 +9,6 @@ This example shows how to stop or reboot your system using UbiHome. This is usef
 
 
 Similar to ESPHome:
-- https://esphome.io/components/button/restart
-- https://esphome.io/components/button/shutdown
+
+- [https://esphome.io/components/button/restart](https://esphome.io/components/button/restart)
+- [https://esphome.io/components/button/shutdown](https://esphome.io/components/button/shutdown)

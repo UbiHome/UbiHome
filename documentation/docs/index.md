@@ -9,8 +9,8 @@ hide:
 UbiHome is a single executable that allows you to integrate any device running an OS into your smart home. 
 It is designed to be lightweight and easy to use - similar to ESPHome.
 
-- Execute a command on a device based on a trigger in home assistant. 
-- Monitor the status of a device with a custom command. 
+- [Execute a command on a device](./examples/display_notification/index.md) based on a trigger in home assistant. 
+- [Monitor the status of a device](./examples/system_ressources/index.md) with a custom command. 
 - Integrate all of your _one off python scripts^TM^_ without thinking about connectivity or setting up yet another service.
 
 See the [getting started](getting_started/index.md) guide for installation instructions.
