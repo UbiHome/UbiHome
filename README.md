@@ -1,7 +1,7 @@
 # UbiHome
 
 
-[Repository](https://github.com/DanielHabenicht/UbiHome) -- [Documentation](https://danielhabenicht.github.io/UbiHome/) -- [Issues](https://github.com/DanielHabenicht/UbiHome/issues)
+[Repository](https://github.com/UbiHome/UbiHome) -- [Documentation](https://ubihome.github.io/) -- [Issues](https://github.com/UbiHome/UbiHome/issues)
 
 ---
 
