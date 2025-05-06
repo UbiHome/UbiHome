@@ -1,0 +1,32 @@
+ubihome:
+  name: UbiHome Example
+
+gpio:
+  device: raspberryPi
+
+shell:
+
+switch:
+  - platform: shell #(1)!
+    name: "Screen"
+    id: screen
+    command_on: "vcgencmd display_power 1"
+    command_off: "vcgencmd display_power 0"
+    command_state: "vcgencmd display_power"
+
+binary_sensor:
+  - platform: gpio
+    name: "motion"
+    icon: "mdi:motion-sensor"
+    device_class: presence
+    pin: 23 
+    pull_up: true
+    update_interval: "0s"
+    filters:
+     - delayed_off: 20s
+    on_press:
+      then:
+        - switch.turn_on: "screen"
+    on_release:
+      then:
+        - switch.turn_off: "screen"

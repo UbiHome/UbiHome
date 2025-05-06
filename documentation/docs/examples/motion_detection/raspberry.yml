@@ -1,0 +1,16 @@
+ubihome:
+  name: UbiHome Example
+
+gpio:
+  device: raspberryPi
+
+binary_sensor:
+  - platform: gpio
+    name: "motion"
+    icon: "mdi:motion-sensor"
+    device_class: presence
+    pin: 23
+    pull_up: true
+    update_interval: "0s"
+    filters:
+     - delayed_off: 10s
