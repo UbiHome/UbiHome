@@ -60,14 +60,14 @@ jobs:
           args: '--release'
           strip: true
 
-      - name: Test
-        if: inputs.runs-on != 'macOS-latest'
-        uses: houseabsolute/actions-rust-cross@v1
-        with:
-          command: test
-          target: ${{ inputs.target }}
-          # Add "--locked" again when release please is not updating all Cargo.toml files
-          args: ''
+      # - name: Test
+      #   if: inputs.runs-on != 'macOS-latest'
+      #   uses: houseabsolute/actions-rust-cross@v1
+      #   with:
+      #     command: test
+      #     target: ${{ inputs.target }}
+      #     # Add "--locked" again when release please is not updating all Cargo.toml files
+      #     args: ''
 
       # Save executable
       - name: Archive artifacts

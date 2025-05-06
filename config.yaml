@@ -2,13 +2,14 @@ ubihome:
   name: new_awesome
 
 logger:
-  level: info
+  level: debug
   directory: ./logs
   logs:
-    libmdns: INFO
-    ubihome_mqtt: debug
-    ubihome_shell: debug
-    ubihome: debug
+    libmdns: info
+    rumqtt: info
+    ubihome_web_server: debug
+    # ubihome_mqtt: debug
+    # ubihome_shell: debug
     # ubihome_api: debug
     # ubihome_bluetooth_proxy: debug
     # rumqttc: debug
@@ -17,6 +18,8 @@ mdns:
   ip: "192.168.178.33"
   mac: "18:65:71:EB:5A:FB"
 
+web_server:
+  port: 8080
 # mqtt: 
 #   broker: 127.0.0.1
 #   port: 1883
@@ -76,7 +79,7 @@ binary_sensor:
     id: binary_sensor
     icon: "mdi:bluetooth-settings"
     device_class: presence
-    update_interval: 10s
+    update_interval: 1s
     command: |-
       cat binary_testfile
     on_press:
@@ -93,7 +96,9 @@ binary_sensor:
   #   pin: 23 # 17
   #   pull_up: true
   #   update_interval: "0s"
-
+    # filters:
+    #  - invert:
+    #  - delayed_off: 5s
 
 switch:
   - platform: shell
@@ -118,9 +123,9 @@ text_sensor:
 
 
 # Native Homeassistant API
-api:
-  encryption:
-    key: "token"
+# api:
+#   encryption:
+#     key: "token"
 
 # Enable Automatic updates
 ota:
