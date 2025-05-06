@@ -18,15 +18,20 @@ jobs:
         include:
           - runs-on: ubuntu-24.04
             target: x86_64-unknown-linux-musl
+            file: ubihome
             
           - runs-on: windows-latest
             target: x86_64-pc-windows-msvc
+            file: ubihome.exe
             
           - runs-on: macOS-latest
             target: x86_64-apple-darwin
+            file: ubihome
 
           - runs-on: ubuntu-24.04
             target: armv7-unknown-linux-musleabi
+            file: ubihome
+
           # - runs-on: ubuntu-24.04
           #   target: riscv64gc-unknown-linux-gnu
 
@@ -80,18 +85,8 @@ jobs:
             README.md
             config.yaml
 
-      # # https://octokit.github.io/rest.js/v21/
-      # - name: Update docs version numbers
-      #   uses: actions/github-script@v5
-      #   with:
-      #     github-token: ${{ secrets.CUSTOM_GITHUB_PAT }}
-      #     script: |
-      #       await github.rest.actions.createWorkflowDispatch({
-      #         owner: 'UbiHome',
-      #         repo: 'ubihome.github.io',
-      #         workflow_id: 'update_version.yml',
-      #         ref: 'main',
-      #         inputs: {
-      #           version: context.payload.ref.replace('refs/tags/v', ''),
-      #         }
-      #       });
+      # Upload binaries directly (for auto update)
+      - name: Upload Binary
+        uses: softprops/action-gh-release@v2
+        with:
+          files: target/${{ matrix.target }}/release/${{ matrix.file }}
