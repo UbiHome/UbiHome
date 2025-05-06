@@ -1,5 +1,4 @@
 logger:
   level: INFO
-  directory: ./logs
   logs:
     ubihome_api: debug
