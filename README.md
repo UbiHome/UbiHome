@@ -1,7 +1,7 @@
 # UbiHome
 
 
-[Repository](https://github.com/DanielHabenicht/UbiHome) -- [Documentation](https://danielhabenicht.github.io/UbiHome/) -- [Issues](https://github.com/DanielHabenicht/UbiHome/issues)
+[Repository](https://github.com/UbiHome/UbiHome) -- [Documentation](https://ubihome.github.io/UbiHome/) -- [Issues](https://github.com/UbiHome/UbiHome/issues)
 
 ---
 
@@ -10,7 +10,7 @@
 > Attention: This is a work in progress. The documentation is not complete and the project is still in development.
 > Still many things already work - so feel free to try it out.
 
-Simply [download](https://danielhabenicht.github.io/UbiHome/getting_started/index.html) the executable and configure it.
+Simply [download](https://ubihome.github.io/getting_started/index.html) the executable and configure it.
 
 ```yaml
 # Example configuration
@@ -47,4 +47,4 @@ Test it out:
 ./ubihome install
 ```
 
-Have a look at the [examples](https://danielhabenicht.github.io/UbiHome/examples/index.html) to get started.
+Have a look at the [examples](https://ubihome.github.io/examples/index.html) to get started.
