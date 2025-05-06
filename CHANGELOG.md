@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.8.1](https://github.com/UbiHome/UbiHome/compare/v0.8.0...v0.8.1) (2025-05-06)
+
+
+### Bug Fixes
+
+* add binary directly to release ([e9eea0c](https://github.com/UbiHome/UbiHome/commit/e9eea0c38e8dbb74ef6d0d7617b1054ec8b17ca8))
+
 ## [0.8.0](https://github.com/UbiHome/UbiHome/compare/v0.7.2...v0.8.0) (2025-05-06)
 
 
