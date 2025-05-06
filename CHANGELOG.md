@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.8.0](https://github.com/UbiHome/UbiHome/compare/v0.7.2...v0.8.0) (2025-05-06)
+
+
+### Features
+
+* Web server component ([#57](https://github.com/UbiHome/UbiHome/issues/57)) ([7489814](https://github.com/UbiHome/UbiHome/commit/7489814821233bbc0c98ccd2b8894d1693c7355a))
+
 ## [0.7.2](https://github.com/UbiHome/UbiHome/compare/v0.7.1...v0.7.2) (2025-05-04)
 
 ## [0.7.1](https://github.com/UbiHome/UbiHome/compare/v0.7.0...v0.7.1) (2025-05-04)
