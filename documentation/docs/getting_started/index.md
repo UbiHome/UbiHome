@@ -13,7 +13,7 @@ For now[^1] a single executable is provided. You can download them from the [Git
 
 === "Linux"
 
-    ## Download 
+    ## Download
 
     | Device         | Download                                                                                                          | Target                       |
     | -------------- | ----------------------------------------------------------------------------------------------------------------- | ---------------------------- |
@@ -74,6 +74,8 @@ For now[^1] a single executable is provided. You can download them from the [Git
 
 === "Windows"
 
+    ## Download
+
     | Device         | Download                                                                                                          | Target                       |
     | -------------- | ----------------------------------------------------------------------------------------------------------------- | ---------------------------- |
     | Windows 11        | [ZIP Link](https://github.com/UbiHome/UbiHome/releases/download/v0.8.1/ubihome-Windows-msvc-x86_64.zip)    | x86_64-pc-windows-msvc |
@@ -133,34 +135,63 @@ For now[^1] a single executable is provided. You can download them from the [Git
 
 === "MacOS"
 
+    ## Download
+
     | Device         | Download                                                                                                          | Target                       |
     | -------------- | ----------------------------------------------------------------------------------------------------------------- | ---------------------------- |
     | MacOS        | [TAR Link](https://github.com/UbiHome/UbiHome/releases/download/v0.8.1/ubihome-macOS-x86_64.tar.gz)    | x86_64-apple-darwin |
 
+    ## Installation
 
-    3.  Run the executable with the following command:
+    > Not yet tested. But you can try it out and create an issue if it doesn't work.
 
-        === "Linux"
+    
+    1. Download and extract the archive and place the ubihome executable in a directory of your choice.
 
-            ``` bash
-            sudo ./ubihome install
-            # The CLI will ask you where to install it. (You can just hit enter to install it in the default location)
-            ? Where do you want to install UbiHome? (/usr/bin/ubihome)
-            ```
+        ```bash
+        curl -L -o ubihome.tar.gz https://github.com/UbiHome/UbiHome/releases/download/v0.8.0/ubihome-Linux-musleabi-armv7.tar.gz
+        tar xvzf ./ubihome.tar.gz
+        ```
 
-        === "Windows"
+    2. Edit the configuration file `config.yaml` in the same directory as the executable. It could contain the following:
 
-            Press ++windows+x+a++ for the admin shell and run the following command:
+        ```yaml title="config.yaml"
+        --8<-- "getting_started/macos.yml"
+        ```
 
-            ``` powershell
-            ./ubihome.exe install
-            # The CLI will ask you where to install it. (You can just hit enter to install it in the default location)
-            ? Where do you want to install UbiHome? (C:\Program Files\ubihome)
-            ```
+    3.  Try it out:
+
+        ``` bash
+        ./ubihome run
+        UbiHome - 0.8.0
+        LogDirectory: /home/codespace/.local/share
+        Config file path: /workspaces/ubihome/config.yaml
+        Binary Sensor 'bluetooth_connected' output: false
+        Sensor 'ram_usage' output: 38.3144
+        Button 'my_button' pressed.
+        Command executed successfully with no output.
+        # End the process with ctrl+c
+        ```
+
+    4.  You should be able to see your device in Home Assistant now.
+
+    5.  To persistently run the executable install it as a service:
+
+        ``` bash
+        sudo ./ubihome install
+        # The CLI will ask you where to install it. (You can just hit enter to install it in the default location)
+        ? Where do you want to install UbiHome? (/usr/bin/ubihome)
+        ```
 
         > If you do this more often you can add the --install-path flag to the command to specify the path for the installation. Instead of the CLI asking for it.
 
-    4.  After the installation is complete you should be able to see your device in Home Assistant.:
+    ## Uninstallation
+
+    If you want to uninstall UbiHome you can run the following command:
+
+    ```bash
+    ./ubihome uninstall
+    ```
 
 
 <!-- x-release-please-end -->

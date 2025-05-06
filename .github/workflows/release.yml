@@ -73,7 +73,7 @@ jobs:
 
       - name: Copy example config (macOS)
         if: matrix.runs-on == 'macOS-latest'
-        run: cp documentation/docs/getting_started/linux.yml config.yaml
+        run: cp documentation/docs/getting_started/macos.yml config.yaml
 
       - name: Publish artifacts and release
         uses: houseabsolute/actions-rust-release@v0
