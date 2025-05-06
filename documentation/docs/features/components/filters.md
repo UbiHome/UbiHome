@@ -2,7 +2,7 @@
 
 On any entity you can add filters to modify the entity's data. 
 
-```
+```yaml
 sensor:
   - platform: shell
     name: "RAM Usage"
@@ -13,5 +13,5 @@ sensor:
 # Entity will be shown as 1.12
 ```
 
-Filters are specific to the component for now.
-Look at each [component](./index.md) for the available filters.
+Filters are specific to the entity for now.
+Look at each [entity](./index.md#entities) for the available filters.
