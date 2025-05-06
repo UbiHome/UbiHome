@@ -25,9 +25,8 @@ jobs:
           - runs-on: macOS-latest
             target: x86_64-apple-darwin
 
-          - target: armv7-unknown-linux-musleabi
-            runs-on: ubuntu-24.04
-
+          - runs-on: ubuntu-24.04
+            target: armv7-unknown-linux-musleabi
           # - runs-on: ubuntu-24.04
           #   target: riscv64gc-unknown-linux-gnu
 
@@ -58,6 +57,18 @@ jobs:
           # Add "--locked" again when release please is not updating all Cargo.toml files
           args: "--release"
           strip: true
+
+      - name: Copy example config (Linux)
+        if: matrix.runs-on == 'ubuntu-24.04'
+        run: cp documentation/docs/getting_started/linux.yml config.yaml
+
+      - name: Copy example config (Windows)
+        if: matrix.runs-on == 'windows-latest'
+        run: cp documentation/docs/getting_started/windows.yml config.yaml
+
+      - name: Copy example config (macOS)
+        if: matrix.runs-on == 'macOS-latest'
+        run: cp documentation/docs/getting_started/linux.yml config.yaml
 
       - name: Publish artifacts and release
         uses: houseabsolute/actions-rust-release@v0
