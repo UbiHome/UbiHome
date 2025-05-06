@@ -45,6 +45,7 @@ config_template!(
     Option<WebServerConfig>,
     NoConfig,
     NoConfig,
+    NoConfig,
     NoConfig
 );
 
