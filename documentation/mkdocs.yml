@@ -16,7 +16,8 @@ plugins:
       enable_creation_date: true
       enabled: !ENV [CI, false]
 
-
+hooks:
+  - hooks.py
 
 theme:
   name: material
