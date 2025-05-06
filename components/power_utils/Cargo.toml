@@ -1,6 +1,6 @@
 [package]
 name = "ubihome-power_utils"
-version = "0.7.2"
+version = "0.8.0"
 authors = ["Daniel Habenicht <daniel-habenicht@outlook.de>"]
 edition = "2024"
 
