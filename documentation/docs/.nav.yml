@@ -1,0 +1,21 @@
+nav:
+  - Home: index.md
+  - Getting started: getting_started/index.md
+  - Features: 
+    - features/index.md
+    - Connectivity:
+      - features/connectivity/index.md
+      - features/connectivity/*
+    - Platforms:
+      - features/platforms/index.md
+      - features/platforms/*
+    - Components:
+      - features/components/index.md
+      - features/components/*
+      - features/components/actions.md
+      - features/components/filters.md
+    - Utilities:
+      - features/utilities/index.md
+      - features/utilities/*
+  - Examples:
+    - "examples/*"

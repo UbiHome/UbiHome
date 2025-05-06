@@ -1,0 +1,41 @@
+name: docs
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - documentation/**
+      - .github/workflows/docs.yml
+        
+permissions:
+  contents: write
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Configure Git Credentials
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+      - uses: actions/setup-python@v5
+        with:
+          python-version: 3.x
+      - run: echo "cache_id=$(date --utc '+%V')" >> $GITHUB_ENV 
+      - uses: actions/cache@v4
+        with:
+          key: mkdocs-material-${{ env.cache_id }}
+          path: .cache 
+          restore-keys: |
+            mkdocs-material-
+      - run: pip install mkdocs-material[imaging] pillow cairosvg mkdocs-awesome-nav mkdocs-macros-plugin mkdocs-git-revision-date-localized-plugin
+      
+      # https://stackoverflow.com/questions/64374179/how-to-push-to-another-repository-in-github-actions
+      - name: Change deploy location
+        run: |- 
+          git config --unset-all http.https://github.com/.extraheader
+          git remote set-url origin https://danielhabenicht:${{ secrets.CUSTOM_GITHUB_PAT }}@github.com/UbiHome/ubihome.github.io
+          git remote -v
+      - run: mkdocs gh-deploy --force

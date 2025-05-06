@@ -1,0 +1,6 @@
+shell:
+
+button:
+  - platform: shell
+    name: 'Open new Chrome Tab'
+    command: "start chrome \"https://ubihome.github.io/\""

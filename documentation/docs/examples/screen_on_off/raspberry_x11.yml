@@ -1,0 +1,14 @@
+shell:
+
+switch:
+  - platform: shell
+    name: "Screen"
+    id: screen
+    command_on: "vcgencmd display_power 1"
+    command_off: "vcgencmd display_power 0"
+    command_state: |-
+      vcgencmd display_power | grep -q "display_power=1"; then
+          echo true
+      else
+          echo false
+      fi
