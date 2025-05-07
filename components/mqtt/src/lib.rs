@@ -2,10 +2,18 @@ use log::{debug, error, info, warn};
 use rumqttc::{AsyncClient, ConnectionError, Event, MqttOptions, QoS, StateError};
 use serde::{Deserialize, Deserializer};
 use std::{
-    collections::HashMap, future::{self, Future}, pin::Pin, str, sync::Arc, time::Duration
+    collections::HashMap,
+    future::{self, Future},
+    pin::Pin,
+    str,
+    sync::Arc,
+    time::Duration,
 };
 use tokio::{
-    sync::{broadcast::{Receiver, Sender}, RwLock},
+    sync::{
+        broadcast::{Receiver, Sender},
+        RwLock,
+    },
     time::sleep,
 };
 use ubihome_core::{
@@ -44,7 +52,7 @@ impl Module for Default {
         })
     }
 
-    fn components(&mut self) -> Vec<InternalComponent>{
+    fn components(&mut self) -> Vec<InternalComponent> {
         let components: Vec<InternalComponent> = Vec::new();
 
         components
@@ -95,213 +103,244 @@ impl Module for Default {
             // Handle Sensor Updates
             let base_topic_clone = base_topic.clone();
             let map: HashMap<String, MqttComponent> = HashMap::new();
-            let all_mqtt_components= Arc::new(RwLock::new(map));
+            let all_mqtt_components = Arc::new(RwLock::new(map));
 
             let all_mqtt_components_clone = all_mqtt_components.clone();
             tokio::spawn(async move {
-                while let Ok(cmd) = receiver.recv().await {
-                    match cmd {
-                        PublishedMessage::Components { components } => {
-                            let mut mqtt_components: HashMap<String, MqttComponent> = HashMap::new();
-                            let mut topics: Vec<String> = vec![];
+                loop {
+                    match receiver.recv().await {
+                        Ok(cmd) => {
+                            match cmd {
+                                PublishedMessage::Components { components } => {
+                                    let mut mqtt_components: HashMap<String, MqttComponent> =
+                                        HashMap::new();
+                                    let mut topics: Vec<String> = vec![];
 
-                            for component in components {
-                                match component {
-                                    // TODO: Use object_id generator
-                                    // let id = sensor.unique_id.unwrap_or(format!(
-                                    //     "{}_{}",
-                                    //     core_config.ubihome.name, sensor.name
-                                    // ));
-
-
-                                    Component::Switch(switch) => {
-                                        let topic =
-                                            format!("{}/{}/set", base_topic_clone.clone(), switch.id.clone());
-                                        topics.push(topic.clone());
-                                        
-                                        mqtt_components.insert(
-                                            switch.id.clone(),
-                                            MqttComponent::Switch(HAMqttSwitch {
-                                                platform: "switch".to_string(),
-                                                unique_id: switch.id.clone(),
-                                                command_topic: topic,
-                                                state_topic: format!(
-                                                    "{}/{}",
+                                    for component in components {
+                                        match component {
+                                            // TODO: Use object_id generator
+                                            // let id = sensor.unique_id.unwrap_or(format!(
+                                            //     "{}_{}",
+                                            //     core_config.ubihome.name, sensor.name
+                                            // ));
+                                            Component::Switch(switch) => {
+                                                let topic = format!(
+                                                    "{}/{}/set",
                                                     base_topic_clone.clone(),
                                                     switch.id.clone()
-                                                ),
-                                                name: switch.name.clone(),
-                                                object_id: switch.id.clone(),
-                                            }),
-                                        );
-                                    }
-                                    Component::Button(button) => {
-                                        let topic =
-                                            format!("{}/{}", base_topic_clone.clone(), button.id.clone());
-                                        topics.push(topic.clone());
-                                        mqtt_components.insert(
-                                            button.id.clone(),
-                                            MqttComponent::Button(HAMqttButton {
-                                                platform: "button".to_string(),
-                                                unique_id: button.id.clone(),
-                                                command_topic: topic,
-                                                name: button.name.clone(),
-                                                object_id: button.id.clone(),
-                                            }),
-                                        );
-                                    }
-                                    Component::Sensor(sensor) => {
-                                        mqtt_components.insert(
-                                            sensor.id.clone(),
-                                            MqttComponent::Sensor(HAMqttSensor {
-                                                platform: "sensor".to_string(),
-                                                icon: sensor.icon.clone(),
-                                                unique_id: sensor.id.clone(),
-                                                device_class: sensor
-                                                    .device_class
-                                                    .clone()
-                                                    .unwrap_or("".to_string()),
-                                                unit_of_measurement: sensor
-                                                    .unit_of_measurement
-                                                    .clone()
-                                                    .unwrap_or("".to_string()),
-                                                name: sensor.name.clone(),
-                                                state_topic: format!(
+                                                );
+                                                topics.push(topic.clone());
+
+                                                mqtt_components.insert(
+                                                    switch.id.clone(),
+                                                    MqttComponent::Switch(HAMqttSwitch {
+                                                        platform: "switch".to_string(),
+                                                        unique_id: switch.id.clone(),
+                                                        command_topic: topic,
+                                                        state_topic: format!(
+                                                            "{}/{}",
+                                                            base_topic_clone.clone(),
+                                                            switch.id.clone()
+                                                        ),
+                                                        name: switch.name.clone(),
+                                                        object_id: switch.id.clone(),
+                                                    }),
+                                                );
+                                            }
+                                            Component::Button(button) => {
+                                                let topic = format!(
                                                     "{}/{}",
                                                     base_topic_clone.clone(),
-                                                    sensor.id.clone()
-                                                ),
-                                                object_id: sensor.id.clone(),
-                                            }),
-                                        );
+                                                    button.id.clone()
+                                                );
+                                                topics.push(topic.clone());
+                                                mqtt_components.insert(
+                                                    button.id.clone(),
+                                                    MqttComponent::Button(HAMqttButton {
+                                                        platform: "button".to_string(),
+                                                        unique_id: button.id.clone(),
+                                                        command_topic: topic,
+                                                        name: button.name.clone(),
+                                                        object_id: button.id.clone(),
+                                                    }),
+                                                );
+                                            }
+                                            Component::Sensor(sensor) => {
+                                                mqtt_components.insert(
+                                                    sensor.id.clone(),
+                                                    MqttComponent::Sensor(HAMqttSensor {
+                                                        platform: "sensor".to_string(),
+                                                        icon: sensor.icon.clone(),
+                                                        unique_id: sensor.id.clone(),
+                                                        device_class: sensor
+                                                            .device_class
+                                                            .clone()
+                                                            .unwrap_or("".to_string()),
+                                                        unit_of_measurement: sensor
+                                                            .unit_of_measurement
+                                                            .clone()
+                                                            .unwrap_or("".to_string()),
+                                                        name: sensor.name.clone(),
+                                                        state_topic: format!(
+                                                            "{}/{}",
+                                                            base_topic_clone.clone(),
+                                                            sensor.id.clone()
+                                                        ),
+                                                        object_id: sensor.id.clone(),
+                                                    }),
+                                                );
+                                            }
+                                            Component::BinarySensor(sensor) => {
+                                                mqtt_components.insert(
+                                                    sensor.id.clone(),
+                                                    MqttComponent::BinarySensor(
+                                                        HAMqttBinarySensor {
+                                                            platform: "binary_sensor".to_string(),
+                                                            icon: sensor.icon.clone(),
+                                                            unique_id: sensor.id.clone(),
+                                                            device_class: sensor
+                                                                .device_class
+                                                                .clone()
+                                                                .unwrap_or("".to_string()),
+                                                            name: sensor.name.clone(),
+                                                            state_topic: format!(
+                                                                "{}/{}",
+                                                                base_topic_clone.clone(),
+                                                                sensor.id.clone()
+                                                            ),
+                                                            object_id: sensor.id.clone(),
+                                                        },
+                                                    ),
+                                                );
+                                            }
+                                        }
                                     }
-                                    Component::BinarySensor(sensor) => {
-                                        mqtt_components.insert(
-                                            sensor.id.clone(),
-                                            MqttComponent::BinarySensor(HAMqttBinarySensor {
-                                                platform: "binary_sensor".to_string(),
-                                                icon: sensor.icon.clone(),
-                                                unique_id: sensor.id.clone(),
-                                                device_class: sensor
-                                                    .device_class
-                                                    .clone()
-                                                    .unwrap_or("".to_string()),
-                                                name: sensor.name.clone(),
-                                                state_topic: format!(
-                                                    "{}/{}",
-                                                    base_topic_clone.clone(),
-                                                    sensor.id.clone()
-                                                ),
-                                                object_id: sensor.id.clone(),
-                                            }),
-                                        );
+                                    {
+                                        let mut all_mqtt_components =
+                                            all_mqtt_components_clone.write().await;
+                                        all_mqtt_components.extend(mqtt_components.clone());
+                                        debug!("MQTT Components: {:?}", mqtt_components.keys());
+                                    }
+
+                                    let device = Device {
+                                        identifiers: vec![core_config.ubihome.name.clone()],
+                                        manufacturer: format!(
+                                            "{} {} {}",
+                                            whoami::platform(),
+                                            whoami::distro(),
+                                            whoami::arch()
+                                        ),
+                                        name: core_config.ubihome.name.clone(),
+                                        model: whoami::devicename(),
+                                    };
+
+                                    let origin = Origin {
+                                        name: "ubihome".to_string(),
+                                        sw: "0.1".to_string(),
+                                        url: "https://test.com".to_string(),
+                                    };
+
+                                    let discovery_message = MqttDiscoveryMessage {
+                                        device,
+                                        origin,
+                                        components: mqtt_components.clone(),
+                                    };
+                                    let discovery_payload =
+                                        serde_json::to_string(&discovery_message).unwrap();
+
+                                    debug!(
+                                        "Publishing discovery message to topic: {}",
+                                        discovery_topic
+                                    );
+                                    debug!("Discovery payload: {}", discovery_payload);
+                                    client
+                                        .publish(
+                                            &discovery_topic,
+                                            QoS::AtLeastOnce,
+                                            false,
+                                            discovery_payload,
+                                        )
+                                        .await
+                                        .unwrap();
+
+                                    debug!("Discovery message published successfully");
+
+                                    // Subscribe to the discovery topic
+                                    for topic in topics {
+                                        debug!("Subscribing to topic: {}", topic);
+                                        client.subscribe(&topic, QoS::AtLeastOnce).await.unwrap();
                                     }
                                 }
-                            }
-                            {
-                                let mut all_mqtt_components = all_mqtt_components_clone.write().await;
-                                all_mqtt_components.extend(mqtt_components.clone());
-                                debug!("MQTT Components: {:?}", mqtt_components.keys());
-                            }
+                                PublishedMessage::SensorValueChanged { key, value } => {
+                                    debug!("Sensor value published: {} = {}", key, value);
+                                    // Handle sensor value change
+                                    if let Err(e) = client
+                                        .publish(
+                                            format!("{}/{}", base_topic_clone, key),
+                                            QoS::AtMostOnce,
+                                            false,
+                                            value.to_string(),
+                                        )
+                                        .await
+                                    {
+                                        error!("{}", e)
+                                    }
+                                }
+                                PublishedMessage::BinarySensorValueChanged { key, value } => {
+                                    debug!("Binary Sensor value published: {} = {}", key, value);
 
-                            let device = Device {
-                                identifiers: vec![core_config.ubihome.name.clone()],
-                                manufacturer: format!(
-                                    "{} {} {}",
-                                    whoami::platform(),
-                                    whoami::distro(),
-                                    whoami::arch()
-                                ),
-                                name: core_config.ubihome.name.clone(),
-                                model: whoami::devicename(),
-                            };
+                                    let payload = if value { "ON" } else { "OFF" };
+                                    // Handle sensor value change
+                                    if let Err(e) = client
+                                        .publish(
+                                            format!("{}/{}", base_topic_clone, key),
+                                            QoS::AtMostOnce,
+                                            false,
+                                            payload,
+                                        )
+                                        .await
+                                    {
+                                        error!("{}", e)
+                                    }
+                                }
+                                PublishedMessage::SwitchStateChange { key, state } => {
+                                    debug!(
+                                        "Switch State change value published: {} = {}",
+                                        key, state
+                                    );
 
-                            let origin = Origin {
-                                name: "ubihome".to_string(),
-                                sw: "0.1".to_string(),
-                                url: "https://test.com".to_string(),
-                            };
-
-                            let discovery_message = MqttDiscoveryMessage {
-                                device,
-                                origin,
-                                components: mqtt_components.clone(),
-                            };
-                            let discovery_payload =
-                                serde_json::to_string(&discovery_message).unwrap();
-
-                            debug!("Publishing discovery message to topic: {}", discovery_topic);
-                            debug!("Discovery payload: {}", discovery_payload);
-                            client
-                                .publish(
-                                    &discovery_topic,
-                                    QoS::AtLeastOnce,
-                                    false,
-                                    discovery_payload,
-                                )
-                                .await
-                                .unwrap();
-
-                            debug!("Discovery message published successfully");
-
-                            // Subscribe to the discovery topic
-                            for topic in topics {
-                                debug!("Subscribing to topic: {}", topic);
-                                client.subscribe(&topic, QoS::AtLeastOnce).await.unwrap();
-                            }
-                        }
-                        PublishedMessage::SensorValueChanged { key, value } => {
-                            debug!("Sensor value published: {} = {}", key, value);
-                            // Handle sensor value change
-                            if let Err(e) = client
-                                .publish(
-                                    format!("{}/{}", base_topic_clone, key),
-                                    QoS::AtMostOnce,
-                                    false,
-                                    value.to_string(),
-                                )
-                                .await
-                            {
-                                error!("{}", e)
+                                    let payload = if state { "ON" } else { "OFF" };
+                                    // Handle sensor value change
+                                    if let Err(e) = client
+                                        .publish(
+                                            format!("{}/{}", base_topic_clone, key),
+                                            QoS::AtMostOnce,
+                                            false,
+                                            payload,
+                                        )
+                                        .await
+                                    {
+                                        error!("{}", e)
+                                    }
+                                }
+                                _ => {}
                             }
                         }
-                        PublishedMessage::BinarySensorValueChanged { key, value } => {
-                            debug!("Binary Sensor value published: {} = {}", key, value);
-
-                            let payload = if value { "ON" } else { "OFF" };
-                            // Handle sensor value change
-                            if let Err(e) = client
-                                .publish(
-                                    format!("{}/{}", base_topic_clone, key),
-                                    QoS::AtMostOnce,
-                                    false,
-                                    payload,
-                                )
-                                .await
-                            {
-                                error!("{}", e)
+                        Err(e) => {
+                            match e {
+                                // tokio::sync::broadcast::error::RecvError::Closed => {
+                                //     warn!("MQTT encountered an error, but will continue running: {:?}", e);
+                                //     sleep(Duration::from_secs(60)).await;
+                                // }
+                                _ => {
+                                    error!("Error receiving message: {:?}", e);
+                                    break;
+                                }
                             }
                         }
-                        PublishedMessage::SwitchStateChange { key, state } => {
-                            debug!("Switch State change value published: {} = {}", key, state);
-
-                            let payload = if state { "ON" } else { "OFF" };
-                            // Handle sensor value change
-                            if let Err(e) = client
-                                .publish(
-                                    format!("{}/{}", base_topic_clone, key),
-                                    QoS::AtMostOnce,
-                                    false,
-                                    payload,
-                                )
-                                .await
-                            {
-                                error!("{}", e)
-                            }
-                        }
-                        _ => {}
                     }
                 }
+
                 error!("MQTT Sender terminated");
             });
 
@@ -317,7 +356,11 @@ impl Module for Default {
                                 let topic = received_message
                                     .topic
                                     .clone()
-                                    .split_off(base_topic1.clone().len() + 1).split("/").next().unwrap().to_string();
+                                    .split_off(base_topic1.clone().len() + 1)
+                                    .split("/")
+                                    .next()
+                                    .unwrap()
+                                    .to_string();
                                 debug!("Received message on topic: {}", topic);
                                 debug!("Available: {:?}", mqtt_components.keys());
 
@@ -328,7 +371,11 @@ impl Module for Default {
                                         MqttComponent::Switch(switch) => {
                                             msg = Some(ChangedMessage::SwitchStateChange {
                                                 key: topic.to_string(),
-                                                state: str::from_utf8(&received_message.payload.to_ascii_lowercase()).unwrap() == "on",
+                                                state: str::from_utf8(
+                                                    &received_message.payload.to_ascii_lowercase(),
+                                                )
+                                                .unwrap()
+                                                    == "on",
                                             })
                                         }
                                         MqttComponent::Button(button) => {
@@ -338,7 +385,7 @@ impl Module for Default {
                                         }
                                         _ => {}
                                     }
-                                    
+
                                     if let Some(msg) = msg {
                                         debug!("Received on '{}': {:?}", topic, &msg);
                                         sender.send(msg).unwrap();
