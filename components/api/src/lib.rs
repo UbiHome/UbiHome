@@ -12,21 +12,21 @@ use log::error;
 use log::info;
 use log::trace;
 use log::warn;
-use tokio::net::TcpSocket;
-use ubihome_core::internal::sensors::InternalComponent;
-use ubihome_core::NoConfig;
-use ubihome_core::{
-    config_template, home_assistant::sensors::Component, ChangedMessage, Module, PublishedMessage,
-};
 use serde::{Deserialize, Deserializer};
 use std::collections::HashMap;
 use std::net::SocketAddr;
 use std::num::ParseIntError;
 use std::{future::Future, pin::Pin, str};
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
+use tokio::net::TcpSocket;
 use tokio::sync::broadcast;
 use tokio::sync::broadcast::Receiver;
 use tokio::sync::broadcast::Sender;
+use ubihome_core::internal::sensors::InternalComponent;
+use ubihome_core::NoConfig;
+use ubihome_core::{
+    config_template, home_assistant::sensors::Component, ChangedMessage, Module, PublishedMessage,
+};
 
 #[derive(Clone, Deserialize, Debug)]
 pub struct ApiConfig {}
@@ -55,51 +55,56 @@ pub struct UbiHomeDefault {
 
 impl Module for UbiHomeDefault {
     fn new(config_string: &String) -> Result<Self, String> {
-        let config = serde_yaml::from_str::<CoreConfig>(config_string).unwrap();
-    
-        let device_info = DeviceInfoResponse {
-            uses_password: false,
-            name: config.ubihome.name.clone(),
-            // 186571EB5AFB
-            // mac_address: "aa:bb:cc:dd:ee:ff".to_owned(),
-            mac_address: "18:65:71:EB:5A:FB".to_owned(),
-            esphome_version: "2025.4.0".to_owned(),
-            compilation_time: "".to_owned(),
-            model: whoami::devicename(),
-            has_deep_sleep: false,
-            project_name: "".to_owned(),
-            project_version: "".to_owned(),
-            webserver_port: 8080,
-            // See https://github.com/esphome/aioesphomeapi/blob/c1fee2f4eaff84d13ca71996bb272c28b82314fc/aioesphomeapi/model.py#L154
-            legacy_bluetooth_proxy_version: 1,
-            bluetooth_proxy_feature_flags: 1,
-            manufacturer: "Test".to_string(),
-            // format!(
-            //     "{} {} {}",
-            //     whoami::platform(),
-            //     whoami::distro(),
-            //     whoami::arch()
-            // ),
-            friendly_name: config
-                .ubihome
-                .friendly_name
-                .clone()
-                .unwrap_or(config.ubihome.name.clone()),
-            legacy_voice_assistant_version: 0,
-            voice_assistant_feature_flags: 0,
-            suggested_area: "".to_owned(),
-            bluetooth_mac_address: "18:65:71:EB:5A:FB".to_owned(),
-        };
-    
-        Ok(UbiHomeDefault {
-            config: config,
-            components_by_key: HashMap::new(),
-            components_key_id: HashMap::new(),
-            device_info: device_info,
-        })
+        match serde_yaml::from_str::<CoreConfig>(config_string) {
+            Ok(config) => {
+                let device_info = DeviceInfoResponse {
+                    uses_password: false,
+                    name: config.ubihome.name.clone(),
+                    // 186571EB5AFB
+                    // mac_address: "aa:bb:cc:dd:ee:ff".to_owned(),
+                    mac_address: "18:65:71:EB:5A:FB".to_owned(),
+                    esphome_version: "2025.4.0".to_owned(),
+                    compilation_time: "".to_owned(),
+                    model: whoami::devicename(),
+                    has_deep_sleep: false,
+                    project_name: "".to_owned(),
+                    project_version: "".to_owned(),
+                    webserver_port: 8080,
+                    // See https://github.com/esphome/aioesphomeapi/blob/c1fee2f4eaff84d13ca71996bb272c28b82314fc/aioesphomeapi/model.py#L154
+                    legacy_bluetooth_proxy_version: 1,
+                    bluetooth_proxy_feature_flags: 1,
+                    manufacturer: "Test".to_string(),
+                    // format!(
+                    //     "{} {} {}",
+                    //     whoami::platform(),
+                    //     whoami::distro(),
+                    //     whoami::arch()
+                    // ),
+                    friendly_name: config
+                        .ubihome
+                        .friendly_name
+                        .clone()
+                        .unwrap_or(config.ubihome.name.clone()),
+                    legacy_voice_assistant_version: 0,
+                    voice_assistant_feature_flags: 0,
+                    suggested_area: "".to_owned(),
+                    bluetooth_mac_address: "18:65:71:EB:5A:FB".to_owned(),
+                };
+
+                Ok(UbiHomeDefault {
+                    config: config,
+                    components_by_key: HashMap::new(),
+                    components_key_id: HashMap::new(),
+                    device_info: device_info,
+                })
+            }
+            Err(e) => {
+                return Err(format!("Failed to parse API config: {:?}", e));
+            }
+        }
     }
-    
-    fn components(&mut self) -> Vec<InternalComponent>{
+
+    fn components(&mut self) -> Vec<InternalComponent> {
         Vec::new()
     }
 
@@ -122,23 +127,28 @@ impl Module for UbiHomeDefault {
                         for (index, component) in components.iter().enumerate() {
                             match component.clone() {
                                 Component::Switch(switch_entity) => {
-                                    let component_switch_entity = ProtoMessage::ListEntitiesSwitchResponse(
-                                        proto::ListEntitiesSwitchResponse {
-                                            object_id: switch_entity.id.clone(),
-                                            key: index.try_into().unwrap(),
-                                            name: switch_entity.name,
-                                            unique_id: switch_entity.id.clone(),
-                                            icon: switch_entity.icon.unwrap_or_default(),
-                                            device_class: switch_entity.device_class.unwrap_or_default(),
-                                            disabled_by_default: false,
-                                            entity_category: EntityCategory::None as i32,
-                                            assumed_state: false,
-                                        },
-                                    );
+                                    let component_switch_entity =
+                                        ProtoMessage::ListEntitiesSwitchResponse(
+                                            proto::ListEntitiesSwitchResponse {
+                                                object_id: switch_entity.id.clone(),
+                                                key: index.try_into().unwrap(),
+                                                name: switch_entity.name,
+                                                unique_id: switch_entity.id.clone(),
+                                                icon: switch_entity.icon.unwrap_or_default(),
+                                                device_class: switch_entity
+                                                    .device_class
+                                                    .unwrap_or_default(),
+                                                disabled_by_default: false,
+                                                entity_category: EntityCategory::None as i32,
+                                                assumed_state: false,
+                                            },
+                                        );
                                     api_components_by_key
                                         .insert(index.try_into().unwrap(), component_switch_entity);
-                                    api_components_key_id
-                                        .insert(switch_entity.id.clone(), index.try_into().unwrap());
+                                    api_components_key_id.insert(
+                                        switch_entity.id.clone(),
+                                        index.try_into().unwrap(),
+                                    );
                                 }
                                 Component::Button(button) => {
                                     let component_button = ProtoMessage::ListEntitiesButtonResponse(
@@ -285,7 +295,6 @@ impl Module for UbiHomeDefault {
             socket.bind(addr).unwrap();
             let listener = socket.listen(128).unwrap();
 
-            
             // let listener = TcpListener::bind(&addr).await?;
             debug!("Listening on: {}", addr);
 
@@ -491,7 +500,10 @@ impl Module for UbiHomeDefault {
                                         .unwrap();
                                     match switch_entity {
                                         ProtoMessage::ListEntitiesSwitchResponse(switch_entity) => {
-                                            debug!("switch_entityCommandRequest: {:?}", switch_entity);
+                                            debug!(
+                                                "switch_entityCommandRequest: {:?}",
+                                                switch_entity
+                                            );
                                             let msg = ChangedMessage::SwitchStateCommand {
                                                 key: switch_entity.unique_id.clone(),
                                                 state: switch_command_request.state,
