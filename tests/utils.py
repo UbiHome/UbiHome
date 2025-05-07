@@ -129,3 +129,23 @@ def wait_and_get_file(file_path, timeout=5):
             raise TimeoutError(f"File {file_path} was not created within {timeout} seconds.")
         time.sleep(0.1)
     return open(file_path, "r").read()
+
+
+def wait_for_mock_state(file_path, expected_state, timeout=5):
+    """
+    Wait for a file to be created or modified.
+    """
+    state = None
+    start_time = time.time()
+    while expected_state != state:
+      if time.time() - start_time > timeout:
+        raise TimeoutError(f"State does not match within {timeout} seconds: {expected_state} != {state}.")
+      while not os.path.exists(file_path):
+          if time.time() - start_time > timeout:
+              raise TimeoutError(f"File {file_path} was not created within {timeout} seconds.")
+          time.sleep(0.1)
+
+      state = open(file_path, "r").read()
+      time.sleep(0.1)
+
+    return True

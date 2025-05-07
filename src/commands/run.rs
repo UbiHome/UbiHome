@@ -355,7 +355,7 @@ pub(crate) fn run(
                                             for action in on_press.then {
                                                 match &action.action {
                                                     ActionType::switch_turn_on(key) => {
-                                                        let pcmd = PublishedMessage::SwitchStateChange {
+                                                        let pcmd = PublishedMessage::SwitchStateCommand {
                                                             key: key.clone(),
                                                             state: true,
                                                         };
@@ -363,7 +363,7 @@ pub(crate) fn run(
                                                         internal_tx_clone.send(pcmd).unwrap();
                                                     }
                                                     ActionType::switch_turn_off(key) => {
-                                                        let pcmd = PublishedMessage::SwitchStateChange {
+                                                        let pcmd = PublishedMessage::SwitchStateCommand {
                                                             key: key.clone(),
                                                             state: false,
                                                         };
@@ -378,7 +378,7 @@ pub(crate) fn run(
                                             for action in on_release.then {
                                                 match &action.action {
                                                     ActionType::switch_turn_on(key) => {
-                                                        let pcmd = PublishedMessage::SwitchStateChange {
+                                                        let pcmd = PublishedMessage::SwitchStateCommand {
                                                             key: key.clone(),
                                                             state: true,
                                                         };
@@ -386,7 +386,7 @@ pub(crate) fn run(
                                                         internal_tx_clone.send(pcmd).unwrap();
                                                     }
                                                     ActionType::switch_turn_off(key) => {
-                                                        let pcmd = PublishedMessage::SwitchStateChange {
+                                                        let pcmd = PublishedMessage::SwitchStateCommand {
                                                             key: key.clone(),
                                                             state: false,
                                                         };
@@ -436,6 +436,9 @@ pub(crate) fn run(
                     match cmd {
                         ChangedMessage::SwitchStateChange { key, state } => {
                             publish_cmd = Some(PublishedMessage::SwitchStateChange { key, state });
+                        }
+                        ChangedMessage::SwitchStateCommand { key, state } => {
+                            publish_cmd = Some(PublishedMessage::SwitchStateCommand { key, state });
                         }
                         ChangedMessage::ButtonPress { key } => {
                             publish_cmd = Some(PublishedMessage::ButtonPressed { key });

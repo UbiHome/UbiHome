@@ -49,6 +49,7 @@ pub struct BluetoothProxyMessage {
 pub enum ChangedMessage {
     ButtonPress { key: String },
     SwitchStateChange { key: String, state: bool },
+    SwitchStateCommand { key: String, state: bool },
     SensorValueChange { key: String, value: f32 },
     BinarySensorValueChange { key: String, value: bool },
     BluetoothProxyMessage(BluetoothProxyMessage),
@@ -60,6 +61,7 @@ pub enum PublishedMessage {
     Components { components: Vec<Component> },
     ButtonPressed { key: String },
     SwitchStateChange { key: String, state: bool },
+    SwitchStateCommand { key: String, state: bool },
     SensorValueChanged { key: String, value: f32 },
     BinarySensorValueChanged { key: String, value: bool },
     BluetoothProxyMessage (BluetoothProxyMessage),

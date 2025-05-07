@@ -1,5 +1,11 @@
 # E2E Testing
 
+## Installation
+
+```
+pipx install poetry
+```
+
 ## Just run them
 
 ```bash

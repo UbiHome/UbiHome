@@ -228,7 +228,7 @@ impl Module for Default {
             tokio::spawn(async move {
                 while let Ok(cmd) = receiver.recv().await {
                     match cmd {
-                        PublishedMessage::SwitchStateChange { key, state } => {
+                        PublishedMessage::SwitchStateCommand { key, state } => {
                             debug!("SwitchStateChanged: {} {}", key, state);
                             if let Some(switch) = switches_clone.get(&key) {
                                 // ButtonKind::shell(shell_button) => {
@@ -361,9 +361,9 @@ impl Module for Default {
                                 }
                                 Err(e) => {
                                     debug!("Error executing command: {}", e);
-                                    continue;
                                 }
                             };
+
                             interval.tick().await;
                         }
                     });
@@ -410,7 +410,6 @@ impl Module for Default {
                                 }
                                 Err(e) => {
                                     debug!("Error executing command: {}", e);
-                                    continue;
                                 }
                             };
                             interval.tick().await;

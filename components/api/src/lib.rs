@@ -128,8 +128,24 @@ impl Module for UbiHomeDefault {
                     PublishedMessage::Components { components } => {
                         for (index, component) in components.iter().enumerate() {
                             match component.clone() {
-                                Component::Switch(switch) => {
-                                    // TODO: Add support for switches
+                                Component::Switch(switch_entity) => {
+                                    let component_switch_entity = ProtoMessage::ListEntitiesSwitchResponse(
+                                        proto::ListEntitiesSwitchResponse {
+                                            object_id: switch_entity.id.clone(),
+                                            key: index.try_into().unwrap(),
+                                            name: switch_entity.name,
+                                            unique_id: switch_entity.id.clone(),
+                                            icon: switch_entity.icon.unwrap_or_default(),
+                                            device_class: switch_entity.device_class.unwrap_or_default(),
+                                            disabled_by_default: false,
+                                            entity_category: EntityCategory::None as i32,
+                                            assumed_state: false,
+                                        },
+                                    );
+                                    api_components_by_key
+                                        .insert(index.try_into().unwrap(), component_switch_entity);
+                                    api_components_key_id
+                                        .insert(switch_entity.id.clone(), index.try_into().unwrap());
                                 }
                                 Component::Button(button) => {
                                     let component_button = ProtoMessage::ListEntitiesButtonResponse(
@@ -468,6 +484,24 @@ impl Module for UbiHomeDefault {
                                             debug!("ButtonCommandRequest: {:?}", button);
                                             let msg = ChangedMessage::ButtonPress {
                                                 key: button.unique_id.clone(),
+                                            };
+
+                                            cloned_sender.send(msg).unwrap();
+                                        }
+                                        _ => {}
+                                    }
+                                }
+                                ProtoMessage::SwitchCommandRequest(switch_command_request) => {
+                                    debug!("SwitchCommandRequest: {:?}", switch_command_request);
+                                    let switch_entity = api_components_clone
+                                        .get(&switch_command_request.key)
+                                        .unwrap();
+                                    match switch_entity {
+                                        ProtoMessage::ListEntitiesSwitchResponse(switch_entity) => {
+                                            debug!("switch_entityCommandRequest: {:?}", switch_entity);
+                                            let msg = ChangedMessage::SwitchStateCommand {
+                                                key: switch_entity.unique_id.clone(),
+                                                state: switch_command_request.state,
                                             };
 
                                             cloned_sender.send(msg).unwrap();

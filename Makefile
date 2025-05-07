@@ -1,4 +1,4 @@
-.PHONY: prepare-test-linux test
+.PHONY: prepare-test-linux test prepare-test-linux-fast
 
 prepare-test-linux:
 	cargo build --release
@@ -8,5 +8,5 @@ prepare-test-linux-fast:
 	cargo build
 	cp target/debug/ubihome ./tests/ubihome
 
-test:
+test: prepare-test-linux-fast
 	cd tests && poetry run pytest -vvv

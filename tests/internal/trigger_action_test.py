@@ -1,6 +1,6 @@
 
 import os
-from utils import UbiHome, wait_and_get_file
+from utils import UbiHome, wait_and_get_file, wait_for_mock_state
 
 
 async def test_binary_sensor_triggers():
@@ -23,12 +23,12 @@ switch:
     id: test_switch
     command_on: "echo true > {switch_mock}"
     command_off: "echo false > {switch_mock}"
-    command_state: "cat {switch_mock}"
+    command_state: "cat {switch_mock} || echo false"
 
 binary_sensor:
   - platform: shell
     name: "Test Binary Sensor"
-    update_interval: 1s
+    update_interval: 2s
     command: |-
       cat {sensor_mock}
     on_press:
@@ -43,12 +43,15 @@ binary_sensor:
       f.write("false")
   async with UbiHome("run", DEVICE_INFO_CONFIG) as ubihome:
     
-    assert wait_and_get_file(switch_mock) == "false\n"
     with open(sensor_mock, "w") as f:
         f.write("true")
+    assert wait_for_mock_state(switch_mock, "true\n")
     os.remove(switch_mock)
 
-    assert wait_and_get_file(switch_mock) == "true\n"
+
+    with open(sensor_mock, "w") as f:
+        f.write("false")
+    assert wait_for_mock_state(switch_mock, "false\n")
 
     os.remove(sensor_mock)
     os.remove(switch_mock)
