@@ -2,6 +2,9 @@ site_name: UbiHome
 site_url: https://ubihome.github.io
 edit_uri: edit/main/documentation/docs/
 repo_url: https://github.com/UbiHome/UbiHome
+site_description: |
+  UbiHome is a single executable that allows you to integrate any device running an OS into your smart home. 
+  It is designed to be lightweight and easy to use - similar to ESPHome.
 strict: true
 extra:
   homepage: https://ubihome.github.io/
