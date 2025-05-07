@@ -8,6 +8,8 @@ site_description: |
 strict: true
 extra:
   homepage: https://ubihome.github.io/
+  analytics:
+    provider: custom
 plugins:
   - search
   - social
@@ -18,12 +20,14 @@ plugins:
   - git-revision-date-localized:
       enable_creation_date: true
       enabled: !ENV [CI, false]
+  - privacy
 
 hooks:
   - hooks.py
 
 theme:
   name: material
+  custom_dir: overrides
   language: en
   palette:
     # Palette toggle for automatic mode
