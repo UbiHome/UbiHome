@@ -35,8 +35,9 @@ pub struct Default {
     binary_sensors: HashMap<String, GpioBinarySensorConfig>,
 }
 
-impl Default {
-    pub fn new(config_string: &String) -> Self {
+
+impl Module for Default {
+    fn new(config_string: &String) -> Result<Self, String> {
         let config = serde_yaml::from_str::<CoreConfig>(config_string).unwrap();
         // info!("GPIO config: {:?}", config);
         let mut components: Vec<InternalComponent> = Vec::new();
@@ -68,20 +69,14 @@ impl Default {
             }
         }
 
-        Default {
+        Ok(Default {
             components,
             binary_sensors,
-        }
-    }
-}
-
-impl Module for Default {
-    fn validate(&mut self) -> Result<(), String> {
-        Ok(())
+        })
     }
 
-    fn init(&mut self) -> Result<Vec<InternalComponent>, String> {
-        Ok(self.components.clone())
+    fn components(&mut self) -> Vec<InternalComponent> {
+        self.components.clone()
     }
 
     fn run(

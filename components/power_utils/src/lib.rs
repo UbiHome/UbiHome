@@ -54,8 +54,8 @@ pub struct Default {
     buttons: HashMap<String, PowerUtilsButtonConfig>,
 }
 
-impl Default {
-    pub fn new(config_string: &String) -> Self {
+impl Module for Default {
+    fn new(config_string: &String) -> Result<Self, String> {
         let config = serde_yaml::from_str::<CoreConfig>(config_string).unwrap();
         // info!("PowerUtils config: {:?}", config);
         let mut components: Vec<InternalComponent> = Vec::new();
@@ -120,21 +120,15 @@ impl Default {
                 _ => {}
             }
         }
-        Default {
+Ok(        Default {
             config: config.power_utils,
             components,
             buttons,
-        }
-    }
-}
-
-impl Module for Default {
-    fn validate(&mut self) -> Result<(), String> {
-        Ok(())
+        })
     }
 
-    fn init(&mut self) -> Result<Vec<InternalComponent>, String> {
-        Ok(self.components.clone())
+    fn components(&mut self) -> Vec<InternalComponent> {
+        self.components.clone()
     }
 
     fn run(

@@ -54,14 +54,6 @@ pub struct Default {
     config: CoreConfig,
 }
 
-impl Default {
-    pub fn new(config_string: &String) -> Self {
-        let config = serde_yaml::from_str::<CoreConfig>(config_string).unwrap();
-
-        Default { config: config }
-    }
-}
-
 async fn handle_index_html(State(_): State<Arc<AppState>>) -> impl IntoResponse {
     debug!("Handling request index.html");
     let index = r#"<!DOCTYPE html>
@@ -186,14 +178,16 @@ async fn events_stream(
 }
 
 impl Module for Default {
-    fn validate(&mut self) -> Result<(), String> {
-        Ok(())
+    fn new(config_string: &String) -> Result<Self, String> {
+        let config = serde_yaml::from_str::<CoreConfig>(config_string).unwrap();
+
+        Ok(Default { config: config })
     }
 
-    fn init(&mut self) -> Result<Vec<InternalComponent>, String> {
+    fn components(&mut self) -> Vec<InternalComponent>{
         let components: Vec<InternalComponent> = Vec::new();
 
-        Ok(components)
+        components
     }
 
     fn run(

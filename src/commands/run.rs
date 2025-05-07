@@ -62,33 +62,33 @@ fn get_all_modules(yaml: &String) -> Vec<Box<dyn Module>> {
 
     let mut modules: Vec<Box<dyn Module>> = Vec::new();
     if modules_to_load.contains(&"bme280".to_string()) {
-        modules.push(Box::new(ubihome_bme280::Default::new(&yaml)));
+        modules.push(Box::new(ubihome_bme280::Default::new(&yaml).unwrap()));
     }
     if modules_to_load.contains(&"gpio".to_string()) {
-        modules.push(Box::new(ubihome_gpio::Default::new(&yaml)));
+        modules.push(Box::new(ubihome_gpio::Default::new(&yaml).unwrap()));
     }
     if modules_to_load.contains(&"shell".to_string()) {
-        modules.push(Box::new(ubihome_shell::Default::new(&yaml)));
+        modules.push(Box::new(ubihome_shell::Default::new(&yaml).unwrap()));
     }
-    if modules_to_load.contains(&"mdns".to_string()) {
-        modules.push(Box::new(ubihome_mdns::Default::new(&yaml)));
-    }
+    // if modules_to_load.contains(&"mdns".to_string()) {
+        modules.push(Box::new(ubihome_mdns::Default::new(&yaml).unwrap()));
+    // }
     if modules_to_load.contains(&"mqtt".to_string()) {
-        modules.push(Box::new(ubihome_mqtt::Default::new(&yaml)));
+        modules.push(Box::new(ubihome_mqtt::Default::new(&yaml).unwrap()));
     }
     if modules_to_load.contains(&"api".to_string()) {
-        modules.push(Box::new(ubihome_api::UbiHomeDefault::new(&yaml)));
+        modules.push(Box::new(ubihome_api::UbiHomeDefault::new(&yaml).unwrap()));
     }
     if modules_to_load.contains(&"power_utils".to_string()) {
-        modules.push(Box::new(ubihome_power_utils::Default::new(&yaml)));
+        modules.push(Box::new(ubihome_power_utils::Default::new(&yaml).unwrap()));
     }
     if modules_to_load.contains(&"web_server".to_string()) {
-        modules.push(Box::new(ubihome_web_server::Default::new(&yaml)));
+        modules.push(Box::new(ubihome_web_server::Default::new(&yaml).unwrap()));
     }
 
     // TODO: Throw error if platform is used in sensor but not configured
     if modules_to_load.contains(&"bluetooth_proxy".to_string()) {
-        modules.push(Box::new(ubihome_bluetooth_proxy::Default::new(&yaml)));
+        modules.push(Box::new(ubihome_bluetooth_proxy::Default::new(&yaml).unwrap()));
     }
     return modules;
 }
@@ -99,16 +99,9 @@ async fn initialize_modules(
 ) -> Result<Vec<InternalComponent>, String> {
     let mut all_components: Vec<InternalComponent> = Vec::new();
     for module in modules.iter_mut() {
-        let components = module.init();
-        match components {
-            Ok(mut components) => {
-                println!("Module: {:?}", components);
-                all_components.append(&mut components);
-            }
-            Err(e) => {
-                debug!("Error loading component: {}", e);
-            }
-        }
+        let mut components = module.components();
+        println!("Module: {:?}", &components);
+        all_components.append(&mut components);
     }
     Ok(all_components)
 }

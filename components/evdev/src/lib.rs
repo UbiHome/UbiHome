@@ -23,20 +23,16 @@ pub struct Default {
     config: CoreConfig,
 }
 
-impl Default {
-    pub fn new(config_string: &String) -> Self {
-        let config = serde_yaml::from_str::<CoreConfig>(config_string).unwrap();
-        info!("Evdev config: {:?}", config);
-        Default { config: config }
-    }
-}
+
 
 impl Module for Default {
-    fn validate(&mut self) -> Result<(), String> {
-        Ok(())
+    fn new(config_string: &String) -> Result<Self, String> {
+        let config = serde_yaml::from_str::<CoreConfig>(config_string).unwrap();
+        info!("Evdev config: {:?}", config);
+        Ok(Default { config: config })
     }
 
-    fn init(&mut self) -> Result<Vec<InternalComponent>, String> {
+    fn components(&mut self) -> Vec<InternalComponent> {
         let mut components: Vec<InternalComponent> = Vec::new();
 
         for (_, any_sensor) in self.config.binary_sensor.clone().unwrap_or_default() {
@@ -62,7 +58,7 @@ impl Module for Default {
                 _ => {}
             }
         }
-        Ok(components)
+        components
     }
 
     fn run(

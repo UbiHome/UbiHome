@@ -40,23 +40,17 @@ pub struct Default {
     config: CoreConfig,
 }
 
-impl Default {
-    pub fn new(config_string: &String) -> Self {
+impl Module for Default {
+    fn new(config_string: &String) -> Result<Self, String> {
         let config = serde_yaml::from_str::<CoreConfig>(config_string).unwrap();
 
-        Default { config: config }
-    }
-}
-
-impl Module for Default {
-    fn validate(&mut self) -> Result<(), String> {
-        Ok(())
+        Ok(Default { config: config })
     }
 
-    fn init(&mut self) -> Result<Vec<InternalComponent>, String> {
+    fn components(&mut self) -> Vec<InternalComponent>{
         let components: Vec<InternalComponent> = Vec::new();
 
-        Ok(components)
+        components
     }
 
     fn run(

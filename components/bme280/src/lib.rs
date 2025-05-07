@@ -68,13 +68,13 @@ pub struct Default {
     sensors: Vec<BME280Sensor>,
 }
 
-impl Default {
-    pub fn new(config_string: &String) -> Self {
+impl Module for Default {
+    fn new(config_string: &String) -> Result<Self, String> {
         let config = serde_yaml::from_str::<CoreConfig>(config_string).unwrap();
         // info!("BME280 config: {:?}", config);
         let mut components: Vec<InternalComponent> = Vec::new();
         let mut sensors: Vec<BME280Sensor> = Vec::new();
-
+    
         for n_sensor in config.sensor.clone() {
             match n_sensor.extra {
                 SensorKind::Bme280(sensor) => {
@@ -156,7 +156,7 @@ impl Default {
                                 .clone()
                                 .unwrap_or("Pa".to_string())
                         ),
-
+    
                         name: pressure.name.clone(),
                         id: id.clone(),
                     }, base: pressure}));
@@ -212,21 +212,15 @@ impl Default {
                 _ => {}
             }
         }
-        Default {
+        Ok(Default {
             // config,
             components,
             sensors,
-        }
-    }
-}
-
-impl Module for Default {
-    fn validate(&mut self) -> Result<(), String> {
-        Ok(())
+        })
     }
 
-    fn init(&mut self) -> Result<Vec<InternalComponent>, String> {
-        Ok(self.components.clone())
+    fn components(&mut self) -> Vec<InternalComponent> {
+        self.components.clone()
     }
 
     fn run(

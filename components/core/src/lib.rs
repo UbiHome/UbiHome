@@ -22,15 +22,22 @@ pub trait Module
 where
     Self: Send,
 {
-    fn validate(&mut self) -> Result<(), String>;
+    /// This is the main entry point for the module.
+    fn new(config_string: &String) -> Result<Self, String> where Self: Sized;
 
-    fn init(&mut self) -> Result<Vec<InternalComponent>, String>;
+    /// This will be called to validate the module configuration and set the module up for the later run command.
+    /// It is guaranteed to be be called before the run command.
+    /// Do not do any heavy lifting in this function, as it will block the main thread.
+    fn components(&mut self) -> Vec<InternalComponent>;
+
+    // This will be called in a separate Thread to run the module and its functionality.
     fn run(
         &self,
         sender: Sender<ChangedMessage>,
         receiver: Receiver<PublishedMessage>,
     ) -> Pin<Box<dyn Future<Output = Result<(), Box<dyn std::error::Error>>> + Send + 'static>>;
 }
+
 
 
 #[derive(Debug, Clone)]

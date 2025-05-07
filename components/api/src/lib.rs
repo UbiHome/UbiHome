@@ -53,10 +53,10 @@ pub struct UbiHomeDefault {
     device_info: DeviceInfoResponse,
 }
 
-impl UbiHomeDefault {
-    pub fn new(config_string: &String) -> Self {
+impl Module for UbiHomeDefault {
+    fn new(config_string: &String) -> Result<Self, String> {
         let config = serde_yaml::from_str::<CoreConfig>(config_string).unwrap();
-
+    
         let device_info = DeviceInfoResponse {
             uses_password: false,
             name: config.ubihome.name.clone(),
@@ -90,24 +90,17 @@ impl UbiHomeDefault {
             suggested_area: "".to_owned(),
             bluetooth_mac_address: "18:65:71:EB:5A:FB".to_owned(),
         };
-
-        UbiHomeDefault {
+    
+        Ok(UbiHomeDefault {
             config: config,
             components_by_key: HashMap::new(),
             components_key_id: HashMap::new(),
             device_info: device_info,
-        }
+        })
     }
-}
-
-impl Module for UbiHomeDefault {
-    fn validate(&mut self) -> Result<(), String> {
-        Ok(())
-    }
-
-    fn init(&mut self) -> Result<Vec<InternalComponent>, String> {
-        // Does not advertise any components
-        Ok(Vec::new())
+    
+    fn components(&mut self) -> Vec<InternalComponent>{
+        Vec::new()
     }
 
     fn run(
