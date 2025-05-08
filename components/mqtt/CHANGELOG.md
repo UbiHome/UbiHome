@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.7.3](https://github.com/UbiHome/UbiHome/compare/v0.7.2...ubihome-mqtt-v0.7.3) (2025-05-08)
+
+
+### Bug Fixes
+
+* log mqtt recv error messages ([2f38ffd](https://github.com/UbiHome/UbiHome/commit/2f38ffd38de70c8c58d82a4a952320decd064e8d))
+* mqtt logging and retry ([f9292cb](https://github.com/UbiHome/UbiHome/commit/f9292cb452f92361caa92a5047e6476efc1d8a9e))
+
 ## [0.7.2](https://github.com/UbiHome/UbiHome/compare/v0.7.1...ubihome-mqtt-v0.7.2) (2025-05-08)
 
 

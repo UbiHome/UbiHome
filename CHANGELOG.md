@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.8.3](https://github.com/UbiHome/UbiHome/compare/v0.8.2...v0.8.3) (2025-05-08)
+
+
+### Bug Fixes
+
+* automatically get ip address ([08e0a27](https://github.com/UbiHome/UbiHome/commit/08e0a276e239d554bc1a6415f7a70fb8ec6ba93a))
+* release file name ([2a18e99](https://github.com/UbiHome/UbiHome/commit/2a18e9959f2dd8dd4986a64e8bc715333bf020e3))
+
 ## [0.8.2](https://github.com/UbiHome/UbiHome/compare/v0.8.1...v0.8.2) (2025-05-08)
 
 
