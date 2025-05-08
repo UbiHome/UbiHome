@@ -1,5 +1,7 @@
 # Changelog
 
+## [0.8.2](https://github.com/UbiHome/UbiHome/compare/v0.7.0...ubihome-power_utils-v0.8.2) (2025-05-08)
+
 ## [0.7.0](https://github.com/UbiHome/UbiHome/compare/v0.6.0...ubihome-power_utils-v0.7.0) (2025-05-04)
 
 
