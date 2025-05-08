@@ -328,20 +328,19 @@ impl Module for Default {
                         }
                         Err(e) => {
                             match e {
-                                // tokio::sync::broadcast::error::RecvError::Closed => {
-                                //     warn!("MQTT encountered an error, but will continue running: {:?}", e);
-                                //     sleep(Duration::from_secs(60)).await;
-                                // }
+                                tokio::sync::broadcast::error::RecvError::Closed => {
+                                    warn!("MQTT send encountered an error, but will continue running: {:?}", e);
+                                    sleep(Duration::from_secs(60)).await;
+                                }
                                 _ => {
                                     error!("Error receiving message: {:?}", e);
+                                    error!("MQTT Sender terminated");
                                     break;
                                 }
                             }
                         }
                     }
                 }
-
-                error!("MQTT Sender terminated");
             });
 
             // Handle incoming messages
