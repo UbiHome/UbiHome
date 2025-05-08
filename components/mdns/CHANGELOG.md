@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.8.3](https://github.com/UbiHome/UbiHome/compare/v0.8.2...ubihome-mdns-v0.8.3) (2025-05-08)
+
+
+### Bug Fixes
+
+* automatically get ip address ([08e0a27](https://github.com/UbiHome/UbiHome/commit/08e0a276e239d554bc1a6415f7a70fb8ec6ba93a))
+
 ## [0.8.2](https://github.com/UbiHome/UbiHome/compare/v0.7.0...ubihome-mdns-v0.8.2) (2025-05-08)
 
 ## [0.7.0](https://github.com/UbiHome/UbiHome/compare/v0.6.0...ubihome-mdns-v0.7.0) (2025-05-04)
