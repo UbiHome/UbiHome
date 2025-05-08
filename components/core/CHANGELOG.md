@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.7.1](https://github.com/UbiHome/UbiHome/compare/v0.7.0...ubihome-core-v0.7.1) (2025-05-08)
+
+
+### Bug Fixes
+
+* add switch to native api ([7a947ad](https://github.com/UbiHome/UbiHome/commit/7a947ad3acdf891c713a654f74efb6ec6dfa21a1))
+
 ## [0.7.0](https://github.com/UbiHome/UbiHome/compare/v0.6.0...ubihome-core-v0.7.0) (2025-05-04)
 
 

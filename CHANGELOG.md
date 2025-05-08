@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.8.2](https://github.com/UbiHome/UbiHome/compare/v0.8.1...v0.8.2) (2025-05-08)
+
+
+### Bug Fixes
+
+* add switch to native api ([7a947ad](https://github.com/UbiHome/UbiHome/commit/7a947ad3acdf891c713a654f74efb6ec6dfa21a1))
+* log mqtt recv error messages ([2f38ffd](https://github.com/UbiHome/UbiHome/commit/2f38ffd38de70c8c58d82a4a952320decd064e8d))
+* mqtt logging and retry ([f9292cb](https://github.com/UbiHome/UbiHome/commit/f9292cb452f92361caa92a5047e6476efc1d8a9e))
+
 ## [0.8.1](https://github.com/UbiHome/UbiHome/compare/v0.8.0...v0.8.1) (2025-05-06)
 
 
