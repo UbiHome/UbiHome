@@ -1,24 +1,35 @@
-use log::info;
-use mac_address::get_mac_address;
+use log::{debug, info};
+use serde::{Deserialize, Deserializer};
+use std::collections::HashMap;
+use std::future;
+use std::net::IpAddr;
+use std::{future::Future, pin::Pin, str};
+use tokio::sync::broadcast::{Receiver, Sender};
+use ubihome_core::features::ip::get_ip_address;
+use ubihome_core::features::mac::get_mac_address;
 use ubihome_core::internal::sensors::InternalComponent;
 use ubihome_core::NoConfig;
 use ubihome_core::{
     config_template, home_assistant::sensors::Component, ChangedMessage, Module, PublishedMessage,
 };
-use serde::{Deserialize, Deserializer};
-use std::collections::HashMap;
-use std::future;
-use std::{future::Future, pin::Pin, str};
-use tokio::sync::broadcast::{Receiver, Sender};
 
 #[derive(Clone, Deserialize, Debug)]
 pub struct MdnsConfig {
     pub disabled: Option<bool>,
-    pub ip: Option<String>,
+    pub ip: Option<IpAddr>,
     pub mac: Option<String>,
+    pub ip_addresses: Option<Vec<String>>,
+    pub hostname: Option<String>,
 }
 
-config_template!(mdns, Option<MdnsConfig>, NoConfig, NoConfig, NoConfig, NoConfig);
+config_template!(
+    mdns,
+    Option<MdnsConfig>,
+    NoConfig,
+    NoConfig,
+    NoConfig,
+    NoConfig
+);
 
 #[derive(Clone, Debug)]
 pub struct Default {
@@ -46,59 +57,59 @@ impl Module for Default {
         let config = self.config.clone();
         info!("Starting MDNS with config: {:?}", config.mdns);
         Box::pin(async move {
-            match get_mac_address() {
-                Ok(Some(ma)) => {
-                    let mac_hex = ma.to_string().replace(":", "").to_uppercase();
-                    
-                    let responder: libmdns::Responder;
-                    if let Some(ip) = config.mdns.clone().and_then(|c| c.ip) {
-                        let ip_addr = ip.parse::<std::net::IpAddr>().map_err(|e| format!("Invalid IP address: {}", e))?;
-                        responder = libmdns::Responder::new_with_ip_list(vec![ip_addr]).unwrap();
+            let default_ip = get_ip_address().unwrap();
 
-                    }else{
-                        responder = libmdns::Responder::new().unwrap();
+            let default_mac = get_mac_address().unwrap();
 
-                    }
+            let ip = config.mdns.clone().and_then(|c| c.ip).unwrap_or(default_ip);
+            debug!("Advertising IP: {:?}", default_ip);
 
-                    let svc_name = config.ubihome.name;
-                    let friendly_name = config.ubihome.friendly_name.unwrap_or(svc_name.clone());
-                    // Native API
-                    let _svc = responder.register(
-                        "_esphomelib._tcp".to_owned(),
-                        svc_name.clone(),
-                        6053,
-                        &[
-                            &format!("friendly_name={}", friendly_name).to_string(),
-                            "version=2024.4.2",
-                            "network=wifi",
-                            &format!("mac={}", config.mdns.and_then(|c| c.mac).unwrap_or(mac_hex)),
-                            "platform=ESP32",
-                            "board=esp32dev",
-                        ],
-                    );
+            let mac = config
+                .mdns
+                .clone()
+                .and_then(|c| c.mac)
+                .unwrap_or(default_mac);
+            debug!("Advertising Mac: {:?}", default_ip);
 
-                    // HTTP API
-                    let _svc = responder.register(
-                        "_http._tcp".to_owned(),
-                        svc_name.clone(),
-                        80, // TODO: Get Port?
-                        &[
-                            &format!("friendly_name={}", friendly_name).to_string(),
-                            "version=1.0",
-                            "path=/",
-                        ],
-                    );
+            let responder: libmdns::Responder;
+            // let (responder, _) = libmdns::Responder::with_default_handle_and_ip_list_and_hostname(vec, "".to_string()).unwrap();
+            responder = libmdns::Responder::new_with_ip_list(vec![ip]).unwrap();
 
-                    // Gracefully shutdown the daemon
-                    // mdns.shutdown().unwrap();
+            let svc_name = config.ubihome.name;
+            let friendly_name = config.ubihome.friendly_name.unwrap_or(svc_name.clone());
+            // Native API
+            let _svc = responder.register(
+                "_esphomelib._tcp".to_owned(),
+                svc_name.clone(),
+                6053,
+                &[
+                    &format!("friendly_name={}", friendly_name).to_string(),
+                    "version=2024.4.2",
+                    "network=wifi",
+                    &format!("mac={}", mac),
+                    "platform=ESP32",
+                    "board=ubihome",
+                ],
+            );
 
-                    // Wait indefinitely for the interrupts
-                    let future = future::pending();
-                    let () = future.await;
-                }
-                Ok(None) => println!("No MAC address found."),
-                Err(e) => println!("{:?}", e),
-            }
+            // HTTP API
+            let _svc = responder.register(
+                "_http._tcp".to_owned(),
+                svc_name.clone(),
+                80, // TODO: Get Port?
+                &[
+                    &format!("friendly_name={}", friendly_name).to_string(),
+                    "version=1.0",
+                    "path=/",
+                ],
+            );
+
+            // Gracefully shutdown the daemon
+            // mdns.shutdown().unwrap();
+
+            // Wait indefinitely for the interrupts
+            let future = future::pending();
+            let () = future.await;
             Ok(())
         })
     }

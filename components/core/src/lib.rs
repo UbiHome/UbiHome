@@ -7,6 +7,7 @@ pub mod switch;
 pub mod mapper;
 pub mod utils;
 pub mod internal;
+pub mod features;
 pub extern crate paste;
 
 use home_assistant::sensors::Component;
@@ -140,3 +141,4 @@ macro_rules! config_template {
         }
     };
 }
+
