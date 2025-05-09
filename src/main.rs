@@ -3,6 +3,7 @@ mod constants;
 use commands::run;
 use commands::un_install::{install, uninstall};
 use commands::update::update;
+use flexi_logger::{Duplicate, Logger};
 use inquire::Text;
 
 use clap::{Arg, ArgAction, Command};
@@ -93,7 +94,11 @@ fn cli() -> Command {
                 .short('c')
                 .long("configuration")
                 .help("Optional configuration file. If not provided, the default configuration will be used.")
-                .default_value("config.yaml")
+                .default_value("config.yaml"),
+            Arg::new("log_level")
+                .long("log-level")
+                .help("The log level (overwrite config.yaml setting).")
+
         ])
         .subcommand(
             Command::new("run")
@@ -138,6 +143,7 @@ fn cli() -> Command {
 fn main() {
     let matches = cli().get_matches();
     let config_file = matches.try_get_one::<String>("configuration_file").unwrap();
+    let log_level = matches.try_get_one::<String>("log_level").unwrap();
 
     #[cfg(any(target_os = "linux", target_os = "macos"))]
     let default_installation_path = "/usr/bin/ubihome";
@@ -158,6 +164,12 @@ fn main() {
             }
         }
         Some(("update", sub_matches)) => {
+            if let Some(log_level) = log_level {
+                let mut logger_builder = Logger::try_with_env_or_str(log_level).unwrap();
+                logger_builder = logger_builder.duplicate_to_stdout(Duplicate::Debug);
+                logger_builder.start().unwrap();
+
+            }
             update().unwrap();
         }
         Some(("uninstall", sub_matches)) => {

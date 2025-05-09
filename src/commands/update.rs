@@ -1,28 +1,29 @@
-use std::io::{self, Read};
+use std::{env, fs::File, io::{self, Read}};
 
-use flate2::read::GzDecoder;
-
+use inquire::Confirm;
+use log::debug;
 use reqwest::header::USER_AGENT;
-use tar::Archive;
 
 use tokio::runtime::Runtime;
-use futures_lite::StreamExt;
 
 use serde::Deserialize;
+
+const VERSION: &str = env!("CARGO_PKG_VERSION");
+const DOWNLOAD_FILE_NAME: &str = env!("DOWNLOAD_FILE_NAME");
 
 #[derive(Clone, Deserialize, Debug)]
 struct Release {
     tag_name: String,
 }
 
-pub(crate) fn update() -> Result<(), reqwest::Error> {
+pub(crate) fn update() -> Result<(), String> {
     let rt = Runtime::new().unwrap();
     rt.block_on(async {
         let client = reqwest::Client::new();
 
         let resp = client
             .get("https://api.github.com/repos/UbiHome/UbiHome/releases")
-            .header(USER_AGENT, "UbiHome") // TODO: Add version
+            .header(USER_AGENT, format!("UbiHome {}", VERSION)) 
             .send()
             .await
             .unwrap();
@@ -30,81 +31,43 @@ pub(crate) fn update() -> Result<(), reqwest::Error> {
         let json = resp.json::<Vec<Release>>().await.unwrap();
         let new_version = json[0].tag_name.clone();
 
-        println!("{new_version:#?}");
 
-        // TODO: scrape that and release files directly to release.
+        let ans = Confirm::new(&format!("Update to version {}?", new_version))
+            .with_default(true)
+            .with_help_message("This will overwrite the current executable.")
+            .prompt();
 
-        let full_url = "https://github.com/UbiHome/UbiHome/releases/download/v0.5.2/ubihome-Linux-musl-x86_64.tar.gz";
-
-        let response;
-        match client.get(full_url).send().await {
-            Ok(res) => response = res,
-            Err(error) => {
-                return Err(io::Error::new(io::ErrorKind::InvalidData, error));
+        if ans.unwrap() {
+            let download_url = format!("https://github.com/UbiHome/UbiHome/releases/download/{}/{}", new_version, DOWNLOAD_FILE_NAME);
+            debug!("Download URL: {}", download_url);
+            
+            println!("Downloading...");
+            let resp = client.get(download_url).send().await.expect("request failed");
+            if resp.status() != reqwest::StatusCode::OK {
+                return Err(format!("Failed to download file: {}", resp.status()));
             }
-        };
-    
-        let (tx, rx) = flume::bounded(0);
-    
-        let decoder_thread = std::thread::spawn(move || {
-            let input = ChannelRead::new(rx);
-            let gz = GzDecoder::new(input);
-            let mut archive = Archive::new(gz);
-            archive.unpack("./").unwrap();
-        });
-    
-        if response.status() == reqwest::StatusCode::OK {
-            let mut stream = response.bytes_stream();
-    
-            while let Some(item) = stream.next().await {
-                let chunk = item
-                    .or(Err(format!("Error while downloading file")))
-                    .unwrap();
-                tx.send_async(chunk.to_vec()).await.unwrap();
-            }
-            drop(tx); // close the channel to signal EOF
+            let body = resp.bytes().await.expect("body invalid");
+            match env::current_exe() {
+                Ok(exe_path) => {
+                    let mut new_exe_path = exe_path.clone();
+                    new_exe_path.set_file_name(format!("new_{}", new_exe_path.file_name().unwrap_or_default().to_string_lossy()));
+                    std::fs::write(&new_exe_path, body).expect("Failed to create temporary file");
+
+                    println!("Updating executable...");
+                    self_replace::self_replace(&new_exe_path).unwrap();
+                    std::fs::remove_file(&new_exe_path).unwrap();
+                    println!("Updated: {}", exe_path.display());
+                }
+                Err(e) => println!("failed to get current exe path: {e}"),
+            };
+            return Ok(());
+        } else{
+            println!("Update cancelled.");
+            return Ok(());
         }
-    
-        tokio::task::spawn_blocking(|| decoder_thread.join())
-            .await
-            .unwrap()
-            .unwrap();
-
-        Ok(())
 
     }).unwrap();
 
     // TODO: 
     Ok(())
-}
-
-
-// Wrap a channel into something that impls `io::Read`
-struct ChannelRead {
-    rx: flume::Receiver<Vec<u8>>,
-    current: io::Cursor<Vec<u8>>,
-}
-
-impl ChannelRead {
-    fn new(rx: flume::Receiver<Vec<u8>>) -> ChannelRead {
-        ChannelRead {
-            rx,
-            current: io::Cursor::new(vec![]),
-        }
-    }
-}
-
-impl Read for ChannelRead {
-    fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
-        if self.current.position() == self.current.get_ref().len() as u64 {
-            // We've exhausted the previous chunk, get a new one.
-            if let Ok(vec) = self.rx.recv() {
-                self.current = io::Cursor::new(vec);
-            }
-            // If recv() "fails", it means the sender closed its part of
-            // the channel, which means EOF. Propagate EOF by allowing
-            // a read from the exhausted cursor.
-        }
-        self.current.read(buf)
-    }
 }
