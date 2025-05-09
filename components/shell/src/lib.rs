@@ -303,7 +303,6 @@ impl Module for Default {
                                 }
                                 Err(e) => {
                                     debug!("Error executing command: {}", e);
-                                    continue;
                                 }
                             };
                             interval.tick().await;
@@ -344,7 +343,8 @@ impl Module for Default {
                                     } else if output.trim().to_lowercase() == "false" {
                                         false
                                     } else {
-                                        debug!("Invalid binary sensor output: {}", output);
+                                        debug!("Invalid switch sensor output: {}", output);
+                                        interval.tick().await;
                                         continue;
                                     };
 

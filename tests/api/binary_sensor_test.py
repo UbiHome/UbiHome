@@ -3,7 +3,7 @@ from asyncio import sleep
 from unittest.mock import Mock
 
 import pytest
-from utils import UbiHome
+from utils import UbiHome, wait_for_mock_state
 import aioesphomeapi
 from utils import wait_and_get_file
 
@@ -20,7 +20,7 @@ api:
 
 shell:
   
-sensor:
+binary_sensor:
   - platform: shell
     id: {sensor_id}
     update_interval: 1s
@@ -28,7 +28,7 @@ sensor:
     command: "cat {sensor_mock}"
 """
   with open(sensor_mock, "w") as f:
-      f.write("0.1")
+      f.write("false")
 
   async with UbiHome("run", DEVICE_INFO_CONFIG) as ubihome:
     api = aioesphomeapi.APIClient("127.0.0.1", 6053, "MyPassword")
@@ -38,7 +38,7 @@ sensor:
     assert len(entities) == 1, entities
     entity = entities[0]
 
-    assert type(entity) == aioesphomeapi.SensorInfo
+    assert type(entity) == aioesphomeapi.BinarySensorInfo
     assert entity.unique_id == sensor_id
     assert entity.name == sensor_name
 
@@ -47,12 +47,22 @@ sensor:
     api.subscribe_states(mock)
 
     with open(sensor_mock, "w") as f:
-      f.write("0.2")
+      f.write("true")
 
     # Wait for the state change
     while not mock.called:
       await sleep(0.1)
 
     state = mock.call_args.args[0]
-    assert state.state == pytest.approx(0.2)
+    assert state.state == True
 
+    with open(sensor_mock, "w") as f:
+      f.write("false")
+
+    mock.reset_mock()
+    # Wait for the state change
+    while not mock.called:
+      await sleep(0.1)
+
+    state = mock.call_args.args[0]
+    assert state.state == False

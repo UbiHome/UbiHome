@@ -249,6 +249,20 @@ impl Module for UbiHomeDefault {
                                 ))
                                 .unwrap();
                         }
+                        PublishedMessage::BinarySensorValueChanged { key, value } => {
+                            let key = api_components_key_id_clone.get(&key).unwrap();
+                            debug!("SensorValueChanged: {:?}", &value);
+
+                            messages_tx
+                                .send(ProtoMessage::BinarySensorStateResponse(
+                                    proto::BinarySensorStateResponse {
+                                        key: key.clone(),
+                                        state: value,
+                                        missing_state: false,
+                                    },
+                                ))
+                                .unwrap();
+                        }
                         PublishedMessage::BluetoothProxyMessage(msg) => {
                             debug!("BluetoothProxyMessage: {:?}", &msg);
                             let service_data: Vec<BluetoothServiceData> = msg
