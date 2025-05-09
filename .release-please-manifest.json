@@ -1,15 +1,15 @@
 {
-    ".": "0.8.3",
-    "components/api": "0.8.2",
-    "components/bluetooth_proxy": "0.8.3",
-    "components/bme280": "0.8.3",
-    "components/core": "0.7.2",
-    "components/evdev": "0.8.3",
-    "components/gpio": "0.8.3",
-    "components/mdns": "0.8.3",
-    "components/mqtt": "0.7.3",
-    "components/power_utils": "0.8.3",
+    ".": "0.8.4",
+    "components/api": "0.8.3",
+    "components/bluetooth_proxy": "0.8.4",
+    "components/bme280": "0.8.4",
+    "components/core": "0.7.3",
+    "components/evdev": "0.8.4",
+    "components/gpio": "0.8.4",
+    "components/mdns": "0.8.4",
+    "components/mqtt": "0.8.0",
+    "components/power_utils": "0.8.4",
     "components/python": "0.4.9",
-    "components/shell": "0.7.3",
-    "components/web_server": "0.8.3"
+    "components/shell": "0.8.0",
+    "components/web_server": "0.8.4"
 }

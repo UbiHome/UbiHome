@@ -1,6 +1,6 @@
 [package]
 name = "ubihome"
-version = "0.8.3"
+version = "0.8.4"
 authors = ["Daniel Habenicht <daniel-habenicht@outlook.de>"]
 edition = "2021"
 description = "UbiHome is a system which allows you to integrate any device running an OS into your smart home."

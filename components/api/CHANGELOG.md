@@ -1,5 +1,7 @@
 # Changelog
 
+## [0.8.3](https://github.com/UbiHome/UbiHome/compare/v0.8.2...ubihome-api-v0.8.3) (2025-05-09)
+
 ## [0.8.2](https://github.com/UbiHome/UbiHome/compare/v0.8.1...ubihome-api-v0.8.2) (2025-05-08)
 
 

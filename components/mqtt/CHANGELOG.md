@@ -1,5 +1,24 @@
 # Changelog
 
+## [0.8.0](https://github.com/UbiHome/UbiHome/compare/ubihome-mqtt-v0.7.3...ubihome-mqtt-v0.8.0) (2025-05-09)
+
+
+### Features
+
+* add binary sensor ([2189379](https://github.com/UbiHome/UbiHome/commit/218937924b6f09f8bd9962c373a12b567fdad079))
+* switch shell entity via mqtt ([b0e4bd4](https://github.com/UbiHome/UbiHome/commit/b0e4bd45affcb8494ddc53903a132d9edb871509))
+* working basic binary filters ([52e0bc0](https://github.com/UbiHome/UbiHome/commit/52e0bc0f6b6c028165252675881714b6764bbdea))
+
+
+### Bug Fixes
+
+* build error and add more power utils ([12b2fd3](https://github.com/UbiHome/UbiHome/commit/12b2fd3df3266ed28bc0499f8e89968d2e9a9e79))
+* log mqtt recv error messages ([2f38ffd](https://github.com/UbiHome/UbiHome/commit/2f38ffd38de70c8c58d82a4a952320decd064e8d))
+* mqtt logging and retry ([f9292cb](https://github.com/UbiHome/UbiHome/commit/f9292cb452f92361caa92a5047e6476efc1d8a9e))
+* mqtt stability on errors ([e9780aa](https://github.com/UbiHome/UbiHome/commit/e9780aa0d18974832b38922fb824fedd8db132ca))
+* mqtt switch topic not recognized ([92b5f47](https://github.com/UbiHome/UbiHome/commit/92b5f475cbaa9e40161081a06e29ea843c7b8986))
+* retry mqtt connections ([3fe55de](https://github.com/UbiHome/UbiHome/commit/3fe55de3ba09bbfd938a7583eb92942f4b50bc26))
+
 ## [0.7.3](https://github.com/UbiHome/UbiHome/compare/v0.7.2...ubihome-mqtt-v0.7.3) (2025-05-08)
 
 
