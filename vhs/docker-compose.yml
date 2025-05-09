@@ -1,0 +1,12 @@
+services:
+  generate:
+    build: .
+    volumes:
+      - ./:/vhs
+    command: demo.tape
+
+  record:
+    build: .
+    volumes:
+      - ./:/vhs
+    entrypoint: /bin/bash
