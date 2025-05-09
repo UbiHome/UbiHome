@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.8.2](https://github.com/UbiHome/UbiHome/compare/v0.8.1...ubihome-shell-v0.8.2) (2025-05-09)
+
+
+### Bug Fixes
+
+* add api binary sensor ([b9a9ff7](https://github.com/UbiHome/UbiHome/commit/b9a9ff765eec377250dd5fd10ea816fb89ec010c))
+* add switch to native api ([7a947ad](https://github.com/UbiHome/UbiHome/commit/7a947ad3acdf891c713a654f74efb6ec6dfa21a1))
+
 ## [0.8.1](https://github.com/UbiHome/UbiHome/compare/v0.8.0...ubihome-shell-v0.8.1) (2025-05-09)
 
 

@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.8.6](https://github.com/UbiHome/UbiHome/compare/v0.8.5...v0.8.6) (2025-05-09)
+
+
+### Bug Fixes
+
+* add api binary sensor ([b9a9ff7](https://github.com/UbiHome/UbiHome/commit/b9a9ff765eec377250dd5fd10ea816fb89ec010c))
+
 ## [0.8.5](https://github.com/UbiHome/UbiHome/compare/v0.8.4...v0.8.5) (2025-05-09)
 
 
