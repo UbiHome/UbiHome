@@ -31,6 +31,11 @@ pub(crate) fn update() -> Result<(), String> {
         let json = resp.json::<Vec<Release>>().await.unwrap();
         let new_version = json[0].tag_name.clone();
 
+        if new_version == format!("v{}", VERSION) {
+            println!("Already on the latest version: {}", VERSION);
+            return Ok(());
+        }
+
 
         let ans = Confirm::new(&format!("Update to version {}?", new_version))
             .with_default(true)
@@ -67,7 +72,5 @@ pub(crate) fn update() -> Result<(), String> {
         }
 
     }).unwrap();
-
-    // TODO: 
     Ok(())
 }
