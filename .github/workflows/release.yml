@@ -93,7 +93,7 @@ jobs:
 
       - name: Rename Binary
         run: |
-          mv target/${{ matrix.target }}/release/${{ matrix.release_file_name }} target/${{ matrix.target }}/release/${{ matrix.release_file_name }}
+          mv target/${{ matrix.target }}/release/${{ matrix.file }} target/${{ matrix.target }}/release/${{ matrix.release_file_name }}
 
       # Upload binaries directly (for auto update)
       - name: Upload Binary
