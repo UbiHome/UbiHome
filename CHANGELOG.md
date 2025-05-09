@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.8.5](https://github.com/UbiHome/UbiHome/compare/v0.8.4...v0.8.5) (2025-05-09)
+
+
+### Bug Fixes
+
+* do not update of already on latest ([149b367](https://github.com/UbiHome/UbiHome/commit/149b367c1651c5ac689222e221fe970828765986))
+* make update command work ([afde5bc](https://github.com/UbiHome/UbiHome/commit/afde5bcdf1a155a4674f4c6f324b10ecb318d229))
+
 ## [0.8.4](https://github.com/UbiHome/UbiHome/compare/v0.8.3...v0.8.4) (2025-05-09)
 
 
