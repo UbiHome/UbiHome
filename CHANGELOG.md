@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.8.4](https://github.com/UbiHome/UbiHome/compare/v0.8.3...v0.8.4) (2025-05-09)
+
+
+### Bug Fixes
+
+* ci file names ([86e38a8](https://github.com/UbiHome/UbiHome/commit/86e38a8086eaeb18eb7eb7af68c73326f2643e74))
+
 ## [0.8.3](https://github.com/UbiHome/UbiHome/compare/v0.8.2...v0.8.3) (2025-05-08)
 
 

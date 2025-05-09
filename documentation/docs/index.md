@@ -21,7 +21,7 @@ Explore the [examples](examples/index.md) to see how to use UbiHome.
 
 ```bash
 pi@raspberrypi:~/ $ ubihome
-UbiHome - 0.8.3
+UbiHome - 0.8.4
 
 UbiHome is a system which allows you to integrate any device running an OS into your smart home.
 https://github.com/UbiHome/UbiHome
