@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.8.3](https://github.com/UbiHome/UbiHome/compare/v0.8.2...ubihome-core-v0.8.3) (2025-05-10)
+
+
+### Bug Fixes
+
+* api switch ([#76](https://github.com/UbiHome/UbiHome/issues/76)) ([c27b34c](https://github.com/UbiHome/UbiHome/commit/c27b34cf57e886dc54878e064cd907c5c1463bc4))
+* automatically get ip address ([08e0a27](https://github.com/UbiHome/UbiHome/commit/08e0a276e239d554bc1a6415f7a70fb8ec6ba93a))
+
 ## [0.8.2](https://github.com/UbiHome/UbiHome/compare/v0.8.1...ubihome-core-v0.8.2) (2025-05-10)
 
 

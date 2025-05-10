@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.8.8](https://github.com/UbiHome/UbiHome/compare/v0.8.7...ubihome-mdns-v0.8.8) (2025-05-10)
+
+
+### Bug Fixes
+
+* api switch ([#76](https://github.com/UbiHome/UbiHome/issues/76)) ([c27b34c](https://github.com/UbiHome/UbiHome/commit/c27b34cf57e886dc54878e064cd907c5c1463bc4))
+
 ## [0.8.7](https://github.com/UbiHome/UbiHome/compare/v0.8.6...ubihome-mdns-v0.8.7) (2025-05-10)
 
 ## [0.8.6](https://github.com/UbiHome/UbiHome/compare/v0.8.5...ubihome-mdns-v0.8.6) (2025-05-09)
