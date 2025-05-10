@@ -13,6 +13,8 @@ use log::info;
 use log::trace;
 use log::warn;
 use serde::{Deserialize, Deserializer};
+use ubihome_core::features::ip::get_ip_address;
+use ubihome_core::features::ip::get_network_mac_address;
 use std::collections::HashMap;
 use std::net::SocketAddr;
 use std::num::ParseIntError;
@@ -57,12 +59,14 @@ impl Module for UbiHomeDefault {
     fn new(config_string: &String) -> Result<Self, String> {
         match serde_yaml::from_str::<CoreConfig>(config_string) {
             Ok(config) => {
+                let ip = get_ip_address().unwrap();
+                let mac = get_network_mac_address(ip).unwrap();
+
+
                 let device_info = DeviceInfoResponse {
                     uses_password: false,
                     name: config.ubihome.name.clone(),
-                    // 186571EB5AFB
-                    // mac_address: "aa:bb:cc:dd:ee:ff".to_owned(),
-                    mac_address: "18:65:71:EB:5A:FB".to_owned(),
+                    mac_address: mac,
                     esphome_version: "2025.4.0".to_owned(),
                     compilation_time: "".to_owned(),
                     model: whoami::devicename(),
@@ -140,7 +144,7 @@ impl Module for UbiHomeDefault {
                                                     .unwrap_or_default(),
                                                 disabled_by_default: false,
                                                 entity_category: EntityCategory::None as i32,
-                                                assumed_state: true,
+                                                assumed_state: switch_entity.assumed_state,
                                             },
                                         );
                                     api_components_by_key
