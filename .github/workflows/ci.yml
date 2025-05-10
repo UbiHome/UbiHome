@@ -18,7 +18,7 @@ jobs:
             fileending: ""
 
           - target: arm-unknown-linux-musleabi
-            os: ubuntu-24.04
+            runs-on: ubuntu-24.04
             fileending: ""
 
           - target: x86_64-apple-darwin 
