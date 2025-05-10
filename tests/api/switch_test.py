@@ -26,6 +26,7 @@ switch:
    command_on: "echo true > {switch_mock}"
    command_off: "echo false > {switch_mock}"
    command_state: "cat {switch_mock} || echo false"
+   update_interval: 1s
 """
 
   async with UbiHome("run", DEVICE_INFO_CONFIG) as ubihome:
@@ -45,32 +46,36 @@ switch:
     # Subscribe to the state changes
     api.subscribe_states(mock)
     
+    # Test switching the switch on via command
     api.switch_command(0, True)
     assert wait_and_get_file(switch_mock) == "true\n"
-    os.remove(switch_mock)
 
+    # State update should be send back
+    while not mock.called:
+      await sleep(0.1)
+    state = mock.call_args.args[0]
+    assert state.state == True
+    os.remove(switch_mock)
+    mock.reset_mock()
+
+    # Test switching the switch off via command
     api.switch_command(0, False)
     assert wait_and_get_file(switch_mock) == "false\n"
+    # State update should be send back
+    while not mock.called:
+      await sleep(0.1)
+    state = mock.call_args.args[0]
+    assert state.state == False
+    mock.reset_mock()
     os.remove(switch_mock)
 
-    # # TODO: Switch State!
-    # with open(sensor_mock, "w") as f:
-    #   f.write("true")
+    # Test switching the switch on via local change
+    with open(switch_mock, "w") as f:
+      f.write("true")
 
     # Wait for the state change
     while not mock.called:
       await sleep(0.1)
-
     state = mock.call_args.args[0]
     assert state.state == True
 
-    # with open(sensor_mock, "w") as f:
-    #   f.write("false")
-
-    # mock.reset_mock()
-    # # Wait for the state change
-    # while not mock.called:
-    #   await sleep(0.1)
-
-    # state = mock.call_args.args[0]
-    # assert state.state == False
