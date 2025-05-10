@@ -65,6 +65,7 @@ Options:
 - [ ] Self update (https://github.com/jaemk/self_update)
 - [x] GPIO https://github.com/golemparts/rppal
 - [ ] Kernel events (e.g. Keyboard press) https://docs.rs/evdev/latest/evdev/
+- [ ] Music Assistant Media Player integration for Windows / Linux (https://docs.rs/souvlaki/latest/souvlaki/)
 
 ... Control USB Devices?
 

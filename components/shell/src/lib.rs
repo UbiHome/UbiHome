@@ -55,7 +55,7 @@ pub struct ShellBinarySensorConfig {
 #[derive(Clone, Deserialize, Debug)]
 pub struct ShellSensorConfig {
     pub command: String,
-    
+
     #[serde(default = "default_timeout_none")]
     #[serde(deserialize_with = "deserialize_option_duration")]
     pub update_interval: Option<Duration>,
@@ -77,11 +77,9 @@ pub struct ShellSwitchConfig {
     pub update_interval: Option<Duration>,
 }
 
-fn default_timeout_none() -> Option<Duration>{
+fn default_timeout_none() -> Option<Duration> {
     None
 }
-
-
 
 config_template!(
     shell,
@@ -183,6 +181,7 @@ impl Module for Default {
                             name: any_sensor.default.name.clone(),
                             id: id.clone(),
                             device_class: None,
+                            assumed_state: !switch.command_state.is_some(),
                         },
                     }));
                     switches.insert(id.clone(), switch);
@@ -217,9 +216,13 @@ impl Module for Default {
         let sensors = self.sensors.clone();
         Box::pin(async move {
             let cloned_config = config.clone();
+            let csender = sender.clone();
+
             let switches_clone = switches.clone();
             // Handle Button Presses
             tokio::spawn(async move {
+                let cloned_sender = csender.clone();
+
                 while let Ok(cmd) = receiver.recv().await {
                     match cmd {
                         PublishedMessage::SwitchStateCommand { key, state } => {
@@ -248,6 +251,39 @@ impl Module for Default {
                                     trace!("Command executed successfully with no output.");
                                 } else {
                                     trace!("Command executed successfully with output: {}", output);
+                                }
+
+                                if let Some(command_state) = &switch.command_state {
+                                    let output = execute_command(
+                                        &cloned_config,
+                                        &command_state,
+                                        &cloned_config.timeout,
+                                    )
+                                    .await;
+                                
+                                    match output {
+                                        Ok(output) => {
+                                            debug!("Switch {} output: {}", key, &output);
+                                            let value = if output.trim().to_lowercase() == "true" {
+                                                true
+                                            } else if output.trim().to_lowercase() == "false" {
+                                                false
+                                            } else {
+                                                debug!("Invalid switch sensor output: {}", output);
+                                                continue;
+                                            };
+
+                                            _ = cloned_sender.send(
+                                                ChangedMessage::SwitchStateChange {
+                                                    key: key.clone(),
+                                                    state: value,
+                                                },
+                                            );
+                                        }
+                                        Err(e) => {
+                                            debug!("Error executing command: {}", e);
+                                        }
+                                    };
                                 }
                             }
                         }
@@ -287,9 +323,12 @@ impl Module for Default {
                         let mut interval = time::interval(duration);
                         debug!("Sensor {} has update interval: {:?}", key, interval);
                         loop {
-                            let output =
-                                execute_command(&cloned_config, sensor.command.as_str(), &cloned_config.timeout)
-                                    .await;
+                            let output = execute_command(
+                                &cloned_config,
+                                sensor.command.as_str(),
+                                &cloned_config.timeout,
+                            )
+                            .await;
                             // TODO: Handle long running commands (e.g. newline per value) and multivalued outputs (e.g. json)
                             match output {
                                 Ok(output) => {
@@ -326,15 +365,14 @@ impl Module for Default {
                             .unwrap_or_else(|| Duration::from_secs(60));
 
                         let mut interval = time::interval(duration);
-                        debug!("Switch {} has update interval: {:?}", key, interval);
+                        debug!("Switch {} has update interval: {:?}", key, interval.period());
                         loop {
                             let output = execute_command(
                                 &cloned_config,
-                                    &command_state,
-                                    &cloned_config.timeout,
+                                &command_state,
+                                &cloned_config.timeout,
                             )
                             .await;
-                            // TODO: Handle long running commands (e.g. newline per value) and multivalued outputs (e.g. json)
                             match output {
                                 Ok(output) => {
                                     debug!("Switch {} output: {}", key, &output);
@@ -439,8 +477,9 @@ async fn execute_command(
         .timeout(*timeout)
         .build();
 
+    trace!("Executing command: {}", command);
     let output = execution.execute(b"").await?;
     let output_string = str::from_utf8(&output).unwrap_or("");
-    debug!("Command '{}' executed: {}", command, output_string);
+    trace!("Command '{}' executed: {}", command, output_string);
     Ok(output_string.to_string())
 }

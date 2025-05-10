@@ -57,6 +57,9 @@ impl Logger {
         if !logs.contains_key("libmdns") {
             logs.insert("libmdns".to_string(), LogLevel::Info);
         }
+        if !logs.contains_key("neli") {
+            logs.insert("neli".to_string(), LogLevel::Info);
+        }
 
         for (log, level) in logs.iter() {
             match level {

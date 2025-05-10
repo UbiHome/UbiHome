@@ -8,7 +8,7 @@ edition = "2018"
 log = "0.4"
 serde = { version = "1.0", features = ["derive"] }
 tokio = { version = "1", features = ["full"] }
-ubihome-core = { path = "../core", features = ["ip", "mac"] }
+ubihome-core = { path = "../core", features = ["ip"] }
 libmdns = "0.9"
 mdns-sd = "0.13.5"
 serde_yaml = "0.9.34"

@@ -6,8 +6,7 @@ edition = "2024"
 description = "Core package"
 
 [features]
-mac = ["dep:mac_address"]
-ip = ["dep:local-ip-address"]
+ip = ["dep:network-interface"]
 
 [dependencies]
 log = "0.4"
@@ -16,5 +15,4 @@ duration-str = "0.16.1"
 tokio = { version = "1", features = ["full"] }
 paste = "1.0.15"
 convert_case = "0.8.0"
-local-ip-address = {version = "0.6.3", optional = true}
-mac_address = { version = "1.1.8", optional = true }
+network-interface = { version = "2.0.1", optional = true } 

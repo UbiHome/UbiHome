@@ -5,8 +5,7 @@ use std::future;
 use std::net::IpAddr;
 use std::{future::Future, pin::Pin, str};
 use tokio::sync::broadcast::{Receiver, Sender};
-use ubihome_core::features::ip::get_ip_address;
-use ubihome_core::features::mac::get_mac_address;
+use ubihome_core::features::ip::{get_ip_address, get_network_mac_address};
 use ubihome_core::internal::sensors::InternalComponent;
 use ubihome_core::NoConfig;
 use ubihome_core::{
@@ -59,17 +58,18 @@ impl Module for Default {
         Box::pin(async move {
             let default_ip = get_ip_address().unwrap();
 
-            let default_mac = get_mac_address().unwrap();
 
             let ip = config.mdns.clone().and_then(|c| c.ip).unwrap_or(default_ip);
-            debug!("Advertising IP: {:?}", default_ip);
+            debug!("Advertising IP: {:?}", ip);
+
+            let default_mac = get_network_mac_address(ip).unwrap();
 
             let mac = config
                 .mdns
                 .clone()
                 .and_then(|c| c.mac)
                 .unwrap_or(default_mac);
-            debug!("Advertising Mac: {:?}", default_ip);
+            debug!("Advertising Mac: {:?}", mac);
 
             let responder: libmdns::Responder;
             // let (responder, _) = libmdns::Responder::with_default_handle_and_ip_list_and_hostname(vec, "".to_string()).unwrap();

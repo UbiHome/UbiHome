@@ -47,6 +47,8 @@ pub struct UbiSwitch {
     pub icon: Option<String>,
     pub device_class: Option<String>,
     pub id: String,
+    // If the state must be assumed or can be determined
+    pub assumed_state: bool,
 }
 
 // impl HABinarySensor {
