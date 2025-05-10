@@ -26,6 +26,8 @@ Commands:
 Options:
   -c, --configuration <configuration_file>
           Optional configuration file. If not provided, the default configuration will be used. [default: config.yaml]
+      --log-level <log_level>
+          The log level (overwrites the setting from config.yaml).
   -h, --help
           Print help
   -V, --version
