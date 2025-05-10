@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.8.11](https://github.com/UbiHome/UbiHome/compare/v0.8.10...v0.8.11) (2025-05-10)
+
+
+### Bug Fixes
+
+* address not found on linux ([1b6315d](https://github.com/UbiHome/UbiHome/commit/1b6315de0a8267c630358c105b45580f57bef32f))
+
 ## [0.8.10](https://github.com/UbiHome/UbiHome/compare/v0.8.9...v0.8.10) (2025-05-10)
 
 

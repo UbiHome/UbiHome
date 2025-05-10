@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.8.6](https://github.com/UbiHome/UbiHome/compare/v0.8.5...ubihome-core-v0.8.6) (2025-05-10)
+
+
+### Bug Fixes
+
+* address not found on linux ([1b6315d](https://github.com/UbiHome/UbiHome/commit/1b6315de0a8267c630358c105b45580f57bef32f))
+* api switch ([#76](https://github.com/UbiHome/UbiHome/issues/76)) ([c27b34c](https://github.com/UbiHome/UbiHome/commit/c27b34cf57e886dc54878e064cd907c5c1463bc4))
+
 ## [0.8.5](https://github.com/UbiHome/UbiHome/compare/v0.8.4...ubihome-core-v0.8.5) (2025-05-10)
 
 
