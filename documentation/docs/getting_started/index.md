@@ -15,10 +15,11 @@ For now[^1] a single executable is provided. You can download them from the [Git
 
     ## Download
 
-    | Device         | Download                                                                                                          | Target                       |
+    | Devices         | Download                                                                                                          | Target                       |
     | -------------- | ----------------------------------------------------------------------------------------------------------------- | ---------------------------- |
-    | Default        | [TAR Link](https://github.com/UbiHome/UbiHome/releases/download/v0.8.6/ubihome-Linux-musl-x86_64.tar.gz)    | x86_64-unknown-linux-musl |
-    | Raspberry Pi 3 | [TAR Link](https://github.com/UbiHome/UbiHome/releases/download/v0.8.6/ubihome-Linux-musleabi-armv7.tar.gz) | armv7-unknown-linux-musleabi |
+    | Any Linux         | [TAR Link](https://github.com/UbiHome/UbiHome/releases/download/v0.8.6/ubihome-Linux-musl-x86_64.tar.gz)    | x86_64-unknown-linux-musl |
+    | Raspberry Pi 3  | [TAR Link](https://github.com/UbiHome/UbiHome/releases/download/v0.8.6/ubihome-Linux-musleabi-armv7.tar.gz) | armv7-unknown-linux-musleabi |
+    | Raspberry Pi Zero 2 | [TAR Link](https://github.com/UbiHome/UbiHome/releases/download/v0.8.6/ubihome-Linux-musleabi-arm.tar.gz) | arm-unknown-linux-musleabi |
 
     ## Installation
 

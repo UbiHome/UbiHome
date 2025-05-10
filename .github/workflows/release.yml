@@ -36,6 +36,12 @@ jobs:
             file: ubihome
             release_file_name: ubihome-linux-armv7
 
+          - runs-on: ubuntu-24.04
+            target: arm-unknown-linux-musleabi
+            file: ubihome
+            release_file_name: ubihome-linux-arm
+
+
           # - runs-on: ubuntu-24.04
           #   target: aarch64-unknown-linux-musl
 
