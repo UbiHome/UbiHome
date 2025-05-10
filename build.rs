@@ -10,22 +10,6 @@ use cargo_toml::Manifest;
 // const RESERVED_KEYWORDS: [&str; 5] = ["ubihome", "button", "sensor", "binary_sensor", "text_sensor"];
 
 fn main() {
-
-    let target_arch = env::var("CARGO_CFG_TARGET_ARCH").unwrap();
-    let target_os = env::var("CARGO_CFG_TARGET_OS").unwrap();
-    #[cfg(not(target_os = "windows"))]
-    let file_ending = "";
-    #[cfg(target_os = "windows")]
-    let file_ending = ".exe";
-
-    let download_file_name = format!("ubihome-{}-{}{}", target_os, target_arch, file_ending);
-
-    println!(
-        "cargo:rustc-env=DOWNLOAD_FILE_NAME={}",
-        download_file_name
-    );
-
-
     // println!("cargo:rerun-if-changed=NULL");
 
     println!("cargo::rerun-if-changed=build.rs");

@@ -1,6 +1,6 @@
 [package]
 name = "ubihome"
-version = "0.8.6"
+version = "0.8.4"
 authors = ["Daniel Habenicht <daniel-habenicht@outlook.de>"]
 edition = "2021"
 description = "UbiHome is a system which allows you to integrate any device running an OS into your smart home."
@@ -31,6 +31,7 @@ directories = "6.0.0"
 futures-signals = "0.3.34"
 reqwest = { version = "0.12.15", features = ["json", "rustls-tls", "stream"], default-features = false}
 self-replace = "1.5.0"
+current_platform = "0.2.0"
 
 
 [build-dependencies]

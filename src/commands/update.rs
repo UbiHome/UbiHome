@@ -7,9 +7,9 @@ use reqwest::header::USER_AGENT;
 use tokio::runtime::Runtime;
 
 use serde::Deserialize;
+use current_platform::CURRENT_PLATFORM;
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
-const DOWNLOAD_FILE_NAME: &str = env!("DOWNLOAD_FILE_NAME");
 
 #[derive(Clone, Deserialize, Debug)]
 struct Release {
@@ -43,7 +43,18 @@ pub(crate) fn update() -> Result<(), String> {
             .prompt();
 
         if ans.unwrap() {
-            let download_url = format!("https://github.com/UbiHome/UbiHome/releases/download/{}/{}", new_version, DOWNLOAD_FILE_NAME);
+            // e.g. x86_64-unknown-linux-gnu
+            let target_tuple = CURRENT_PLATFORM.split("-").collect::<Vec<_>>(); 
+            let target_arch = target_tuple[0];
+            let target_os = target_tuple[2];
+            #[cfg(not(target_os = "windows"))]
+            let file_ending = "";
+            #[cfg(target_os = "windows")]
+            let file_ending = ".exe";
+        
+            let download_file_name = format!("ubihome-{}-{}{}", target_os, target_arch, file_ending);
+        
+            let download_url = format!("https://github.com/UbiHome/UbiHome/releases/download/{}/{}", new_version, download_file_name);
             debug!("Download URL: {}", download_url);
             
             println!("Downloading...");
