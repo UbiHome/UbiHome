@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.8.9](https://github.com/UbiHome/UbiHome/compare/v0.8.8...v0.8.9) (2025-05-10)
+
+
+### Bug Fixes
+
+* allow yml file ending too ([b5250fc](https://github.com/UbiHome/UbiHome/commit/b5250fc6e6cb6f4975a0f2e3b8f7fa78d30072b5))
+* bluetooth proxy addresses are wrong ([23c787e](https://github.com/UbiHome/UbiHome/commit/23c787ef2b51604831c0a3cda2b10026d0859798))
+* unix build ([694d651](https://github.com/UbiHome/UbiHome/commit/694d6510be5dab416366a5994c576397482675b1))
+
+
+### Performance Improvements
+
+* **mqtt:** refactor and use abbreviations ([6504ea3](https://github.com/UbiHome/UbiHome/commit/6504ea30f0632707c4ebe87d576bbe3d09fc3551))
+
 ## [0.8.8](https://github.com/UbiHome/UbiHome/compare/v0.8.7...v0.8.8) (2025-05-10)
 
 

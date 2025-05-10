@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.8.9](https://github.com/UbiHome/UbiHome/compare/v0.8.8...ubihome-bluetooth_proxy-v0.8.9) (2025-05-10)
+
+
+### Bug Fixes
+
+* bluetooth proxy addresses are wrong ([23c787e](https://github.com/UbiHome/UbiHome/commit/23c787ef2b51604831c0a3cda2b10026d0859798))
+
 ## [0.8.8](https://github.com/UbiHome/UbiHome/compare/v0.8.7...ubihome-bluetooth_proxy-v0.8.8) (2025-05-10)
 
 ## [0.8.7](https://github.com/UbiHome/UbiHome/compare/v0.8.6...ubihome-bluetooth_proxy-v0.8.7) (2025-05-10)
