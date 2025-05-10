@@ -17,6 +17,7 @@ node_modules/
 
 # Testing
 config.yaml
+config.yml
 testfile
 *testfile
 *.mock

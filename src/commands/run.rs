@@ -17,19 +17,18 @@ use std::fs;
 use tokio::sync::broadcast::{self, Receiver, Sender};
 use tokio::{runtime::Runtime, signal};
 
-// Embed the default configuration file at compile time
-// const DEFAULT_CONFIG: &str = include_str!("../config.yaml");
 
-fn read_base_config(path: Option<&String>) -> Result<String, String> {
+
+fn read_base_config(path: Option<String>) -> Result<String, String> {
     if let Some(path) = path {
-        println!("Config: {}", path);
-        let config_file_path = fs::canonicalize(path).unwrap();
+        println!("Config: {}", &path);
+        let config_file_path = fs::canonicalize(&path).unwrap();
         if let Ok(content) = fs::read_to_string(config_file_path) {
             return Ok(content);
         } else {
             warn!(
                 "Failed to read the configuration file at '{}'.", //, falling back to default.",
-                path
+                &path
             );
         }
     }
@@ -123,7 +122,7 @@ async fn run_modules(
 }
 
 pub(crate) fn run(
-    config_path: Option<&String>,
+    config_path: Option<String>,
     shutdown_signal: Option<mpsc::Receiver<()>>,
 ) -> Result<(), Box<dyn std::error::Error>> {
 
