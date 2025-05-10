@@ -140,7 +140,7 @@ impl Module for UbiHomeDefault {
                                                     .unwrap_or_default(),
                                                 disabled_by_default: false,
                                                 entity_category: EntityCategory::None as i32,
-                                                assumed_state: false,
+                                                assumed_state: true,
                                             },
                                         );
                                     api_components_by_key
@@ -259,6 +259,19 @@ impl Module for UbiHomeDefault {
                                         key: key.clone(),
                                         state: value,
                                         missing_state: false,
+                                    },
+                                ))
+                                .unwrap();
+                        }
+                        PublishedMessage::SwitchStateChange { key, state } => {
+                            let key = api_components_key_id_clone.get(&key).unwrap();
+                            debug!("SensorValueChanged: {:?}", &state);
+
+                            messages_tx
+                                .send(ProtoMessage::SwitchStateResponse(
+                                    proto::SwitchStateResponse {
+                                        key: key.clone(),
+                                        state: state,
                                     },
                                 ))
                                 .unwrap();

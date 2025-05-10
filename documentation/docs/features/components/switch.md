@@ -2,7 +2,7 @@
 
 ```yaml title="Base Example"
 switch:
- - platform: ... #(1)!
+  - platform: ... #(1)!
     name: "My Switch"
 ```
 
