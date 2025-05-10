@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.8.5](https://github.com/UbiHome/UbiHome/compare/v0.8.4...ubihome-mqtt-v0.8.5) (2025-05-10)
+
+
+### Performance Improvements
+
+* **mqtt:** refactor and use abbreviations ([6504ea3](https://github.com/UbiHome/UbiHome/commit/6504ea30f0632707c4ebe87d576bbe3d09fc3551))
+
 ## [0.8.4](https://github.com/UbiHome/UbiHome/compare/v0.8.3...ubihome-mqtt-v0.8.4) (2025-05-10)
 
 ## [0.8.3](https://github.com/UbiHome/UbiHome/compare/v0.8.2...ubihome-mqtt-v0.8.3) (2025-05-10)
