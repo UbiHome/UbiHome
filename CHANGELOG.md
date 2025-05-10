@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.8.7](https://github.com/UbiHome/UbiHome/compare/v0.8.6...v0.8.7) (2025-05-10)
+
+
+### Bug Fixes
+
+* update on armv7 (raspberry) ([50df4c4](https://github.com/UbiHome/UbiHome/commit/50df4c427dc7d40eccc54cb55a8d327751388d75))
+
 ## [0.8.6](https://github.com/UbiHome/UbiHome/compare/v0.8.5...v0.8.6) (2025-05-09)
 
 
