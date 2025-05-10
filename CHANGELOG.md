@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.8.10](https://github.com/UbiHome/UbiHome/compare/v0.8.9...v0.8.10) (2025-05-10)
+
+
+### Bug Fixes
+
+* linux start panic ([a6bf2b2](https://github.com/UbiHome/UbiHome/commit/a6bf2b22e53eb91a1642e8bf06249cbd75f21f0e))
+
 ## [0.8.9](https://github.com/UbiHome/UbiHome/compare/v0.8.8...v0.8.9) (2025-05-10)
 
 
