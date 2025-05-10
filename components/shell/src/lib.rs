@@ -2,6 +2,7 @@ use duration_str::deserialize_duration;
 use log::{debug, error, info, trace, warn};
 use serde::{Deserialize, Deserializer};
 use shell_exec::{Execution, Shell, ShellError};
+use ubihome_core::NoConfig;
 use std::any;
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -87,7 +88,8 @@ config_template!(
     ShellButtonConfig,
     ShellBinarySensorConfig,
     ShellSensorConfig,
-    ShellSwitchConfig
+    ShellSwitchConfig,
+    NoConfig
 );
 
 pub struct Default {
