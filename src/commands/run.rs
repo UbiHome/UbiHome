@@ -134,7 +134,7 @@ pub(crate) fn run(
     let log_directory = base_dirs.data_local_dir();
 
     #[cfg(debug_assertions)]
-    let log_directory = Path::new("./");
+    let log_directory = Path::new("./logs");
 
     #[cfg(not(debug_assertions))]
     let log_level = "info";

@@ -24,7 +24,7 @@ pub fn install(user_specified_location: Option<String>) {
     // Spawn the root task
     rt.block_on(async {
         #[cfg(any(target_os = "linux", target_os = "macos"))]
-        linux::install(user_specified_location).await;
+        linux::install(&location).await;
 
         #[cfg(target_os = "windows")]
         windows::install(&location).await.unwrap();
