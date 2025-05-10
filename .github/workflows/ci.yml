@@ -16,15 +16,19 @@ jobs:
           - target: x86_64-unknown-linux-gnu
             runs-on: ubuntu-24.04
             fileending: ""
+
           - target: arm-unknown-linux-musleabi
-            os: ubuntu-latest
+            os: ubuntu-24.04
             fileending: ""
+
           - target: x86_64-apple-darwin 
             runs-on: macOS-latest
             fileending: ""
+
           - target: x86_64-pc-windows-msvc
             runs-on: windows-latest
             fileending: ".exe"
+
           - target: armv7-unknown-linux-musleabi
             runs-on: ubuntu-24.04
             fileending: ""
