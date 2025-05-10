@@ -179,8 +179,10 @@ fn main() {
                 }
                 Some(("run", sub_matches)) => {
                     println!("UbiHome - {}", VERSION);
+                    #[cfg(target_os = "windows")]
                     let is_windows_service =
                         sub_matches.get_one::<bool>("as-windows-service").unwrap();
+                    #[cfg(target_os = "windows")]
                     if *is_windows_service {
                         // Run as a Windows service
                         info!("Running as Windows service");
@@ -193,6 +195,8 @@ fn main() {
                         // Run normally
                         run::run(config_file, None).unwrap();
                     }
+                    #[cfg(not(target_os = "windows"))]
+                    run::run(config_file, None).unwrap();
                 }
                 _ => {
                     println!("No subcommand was used");
