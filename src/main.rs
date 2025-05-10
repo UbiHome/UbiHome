@@ -97,7 +97,7 @@ fn cli() -> Command {
                 .default_value("config.yaml"),
             Arg::new("log_level")
                 .long("log-level")
-                .help("The log level (overwrite config.yaml setting).")
+                .help("The log level (overwrites the setting from config.yaml).")
 
         ])
         .subcommand(
