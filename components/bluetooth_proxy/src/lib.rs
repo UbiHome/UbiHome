@@ -112,14 +112,19 @@ impl Module for Default {
                             .as_ref()
                             .and_then(|p| Some(p.manufacturer_data.clone()))
                             .unwrap_or_default();
-                        trace!("DeviceUpdated: {:?}, {:?}, {:?}", id, rssi, properties);
+                        let mac_address = properties
+                            .as_ref()
+                            .and_then(|p| Some(p.address.clone()))
+                            .unwrap_or_default();
+
+                        trace!("DeviceUpdated: {:?}, {:?}, {:?}", mac_address, rssi, properties);
 
                         sender
                             .send(ChangedMessage::BluetoothProxyMessage(
                                 BluetoothProxyMessage {
                                     reason: "DeviceUpdated".to_string(),
                                     name: name,
-                                    mac: id.to_string(),
+                                    mac: mac_address.to_string(),
                                     rssi: rssi,
                                     service_data: service_data
                                         .iter()
