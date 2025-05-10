@@ -26,5 +26,6 @@ button:
 ```
 
 Similar to ESPHome:
+
 - https://esphome.io/components/button/restart.html
 - https://esphome.io/components/button/shutdown

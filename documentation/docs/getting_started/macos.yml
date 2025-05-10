@@ -1,10 +1,7 @@
 ubihome:
   name: New Awesome UbiHome Device
 
-mqtt:
-  broker: 192.168.178.167
-  username: test
-  password: a887aeda-7248-4b0f-a2e7-6f4ee0026f5e
+api:
 
 shell:
 
