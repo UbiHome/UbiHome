@@ -17,8 +17,7 @@ use tokio::{
     time::sleep,
 };
 use ubihome_core::{
-    config_template, home_assistant::sensors::Component, internal::sensors::InternalComponent,
-    ChangedMessage, Module, NoConfig, PublishedMessage,
+    config_template, features::ip::{get_ip_address, get_network_mac_address}, home_assistant::sensors::Component, internal::sensors::InternalComponent, ChangedMessage, Module, NoConfig, PublishedMessage
 };
 
 mod discovery;
@@ -102,7 +101,7 @@ impl Module for Default {
 
             // Handle Sensor Updates
             let base_topic_clone = base_topic.clone();
-            let map: HashMap<String, MqttComponent> = HashMap::new();
+            let map: HashMap<String, HAMqttComponent> = HashMap::new();
             let all_mqtt_components = Arc::new(RwLock::new(map));
 
             let all_mqtt_components_clone = all_mqtt_components.clone();
@@ -112,7 +111,7 @@ impl Module for Default {
                         Ok(cmd) => {
                             match cmd {
                                 PublishedMessage::Components { components } => {
-                                    let mut mqtt_components: HashMap<String, MqttComponent> =
+                                    let mut mqtt_components: HashMap<String, HAMqttComponent> =
                                         HashMap::new();
                                     let mut topics: Vec<String> = vec![];
 
@@ -133,7 +132,7 @@ impl Module for Default {
 
                                                 mqtt_components.insert(
                                                     switch.id.clone(),
-                                                    MqttComponent::Switch(HAMqttSwitch {
+                                                    HAMqttComponent::Switch(HAMqttSwitch {
                                                         platform: "switch".to_string(),
                                                         unique_id: switch.id.clone(),
                                                         command_topic: topic,
@@ -143,6 +142,7 @@ impl Module for Default {
                                                             switch.id.clone()
                                                         ),
                                                         name: switch.name.clone(),
+                                                        icon: switch.icon.clone(),
                                                         object_id: switch.id.clone(),
                                                     }),
                                                 );
@@ -156,11 +156,12 @@ impl Module for Default {
                                                 topics.push(topic.clone());
                                                 mqtt_components.insert(
                                                     button.id.clone(),
-                                                    MqttComponent::Button(HAMqttButton {
+                                                    HAMqttComponent::Button(HAMqttButton {
                                                         platform: "button".to_string(),
                                                         unique_id: button.id.clone(),
                                                         command_topic: topic,
                                                         name: button.name.clone(),
+                                                        icon: button.icon.clone(),
                                                         object_id: button.id.clone(),
                                                     }),
                                                 );
@@ -168,7 +169,7 @@ impl Module for Default {
                                             Component::Sensor(sensor) => {
                                                 mqtt_components.insert(
                                                     sensor.id.clone(),
-                                                    MqttComponent::Sensor(HAMqttSensor {
+                                                    HAMqttComponent::Sensor(HAMqttSensor {
                                                         platform: "sensor".to_string(),
                                                         icon: sensor.icon.clone(),
                                                         unique_id: sensor.id.clone(),
@@ -193,7 +194,7 @@ impl Module for Default {
                                             Component::BinarySensor(sensor) => {
                                                 mqtt_components.insert(
                                                     sensor.id.clone(),
-                                                    MqttComponent::BinarySensor(
+                                                    HAMqttComponent::BinarySensor(
                                                         HAMqttBinarySensor {
                                                             platform: "binary_sensor".to_string(),
                                                             icon: sensor.icon.clone(),
@@ -222,7 +223,9 @@ impl Module for Default {
                                         debug!("MQTT Components: {:?}", mqtt_components.keys());
                                     }
 
-                                    let device = Device {
+                                    let ip = get_ip_address().unwrap();
+                                    let mac = get_network_mac_address(ip).unwrap();
+                                    let device = HAMqttDevice {
                                         identifiers: vec![core_config.ubihome.name.clone()],
                                         manufacturer: format!(
                                             "{} {} {}",
@@ -232,15 +235,19 @@ impl Module for Default {
                                         ),
                                         name: core_config.ubihome.name.clone(),
                                         model: whoami::devicename(),
+                                        connections: vec![HAMqttConnection {
+                                            r#type: "mac".to_string(),
+                                            value: mac,
+                                        }],
                                     };
 
-                                    let origin = Origin {
+                                    let origin = HAMqttOrigin {
                                         name: "ubihome".to_string(),
                                         sw: "0.1".to_string(),
                                         url: "https://test.com".to_string(),
                                     };
 
-                                    let discovery_message = MqttDiscoveryMessage {
+                                    let discovery_message = HAMqttDiscoveryMessage {
                                         device,
                                         origin,
                                         components: mqtt_components.clone(),
@@ -367,7 +374,7 @@ impl Module for Default {
                                 if let Some(component) = component {
                                     let mut msg: Option<ChangedMessage> = None;
                                     match component {
-                                        MqttComponent::Switch(switch) => {
+                                        HAMqttComponent::Switch(switch) => {
                                             msg = Some(ChangedMessage::SwitchStateChange {
                                                 key: topic.to_string(),
                                                 state: str::from_utf8(
@@ -377,7 +384,7 @@ impl Module for Default {
                                                     == "on",
                                             })
                                         }
-                                        MqttComponent::Button(button) => {
+                                        HAMqttComponent::Button(button) => {
                                             msg = Some(ChangedMessage::ButtonPress {
                                                 key: topic.to_string(),
                                             });
