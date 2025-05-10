@@ -21,7 +21,7 @@ sensor:
     icon: mdi:memory
     state_class: "measurement"
     unit_of_measurement: "%"
-    update_interval: 30s # 0 only executes it once and assumes a long running processes.
+    update_interval: 30s
     command: |-
       cat testfile
 
