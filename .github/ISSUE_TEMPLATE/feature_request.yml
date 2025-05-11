@@ -1,0 +1,54 @@
+name: Feature Request
+description: Suggest a new feature or improvement for the project
+title: "[Feature Request]: "
+labels: ["enhancement"]
+assignees: []
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for suggesting a feature! Please provide the following details to help us understand your request.
+
+  - type: input
+    id: title
+    attributes:
+      label: Feature Title
+      description: Provide a short and descriptive title for the feature.
+      placeholder: "e.g., 'Add dark mode support'"
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Feature Description
+      description: Describe the feature or improvement you are suggesting.
+      placeholder: "Explain your idea here..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: benefits
+    attributes:
+      label: Benefits
+      description: Explain how this feature will benefit users or the project.
+      placeholder: "e.g., Improves user experience by..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives Considered
+      description: Describe any alternative solutions or features you considered.
+      placeholder: "e.g., Instead of this, we could..."
+    validations:
+      required: false
+
+  - type: input
+    id: additional
+    attributes:
+      label: Additional Context
+      description: Provide any additional context or resources related to the feature.
+      placeholder: "e.g., Links to designs, documentation, etc."
