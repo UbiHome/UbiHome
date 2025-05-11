@@ -15,7 +15,7 @@ body:
     attributes:
       label: Bug Title
       description: Provide a short and descriptive title for the bug.
-      placeholder: "e.g., 'App crashes on login'"
+      placeholder: "e.g., 'CLI crashes with special config'"
     validations:
       required: true
 
