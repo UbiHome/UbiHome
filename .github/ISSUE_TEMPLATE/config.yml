@@ -2,4 +2,7 @@ blank_issues_enabled: false
 contact_links:
   - name: Documentation
     url: https://ubihome.github.io/
-    about: Please ask and answer questions here.
+    about: Please have a through look there first.
+  - name: Discussions
+    url: https://github.com/UbiHome/UbiHome/discussions
+    about: Please ask questions there and only use issues for problems and feature requests. If you are unsure open a discussion first!
