@@ -78,4 +78,4 @@ body:
     attributes:
       label: Workarounds
       description: Describe what currently can be done to circumvent the issue
-      placeholder: ""
+      placeholder: "Using the flag --magic make the error go away"
