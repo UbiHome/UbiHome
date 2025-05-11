@@ -1,5 +1,7 @@
 # Changelog
 
+## [0.8.12](https://github.com/UbiHome/UbiHome/compare/v0.8.11...ubihome-gpio-v0.8.12) (2025-05-11)
+
 ## [0.8.11](https://github.com/UbiHome/UbiHome/compare/v0.8.10...ubihome-gpio-v0.8.11) (2025-05-10)
 
 ## [0.8.10](https://github.com/UbiHome/UbiHome/compare/v0.8.9...ubihome-gpio-v0.8.10) (2025-05-10)
