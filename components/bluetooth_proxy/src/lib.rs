@@ -71,6 +71,7 @@ impl Module for Default {
             // get the first bluetooth adapter
             // connect to the adapter
             let central = get_central(&manager).await;
+            info!("CentralNac: {:?}", central.adapter_mac().await);
 
             let central_state = central.adapter_state().await.expect("No adapter found");
             info!("CentralState: {:?}", central_state);
@@ -116,6 +117,9 @@ impl Module for Default {
                             .as_ref()
                             .and_then(|p| Some(p.address.clone()))
                             .unwrap_or_default();
+
+                    
+                            
 
                         trace!("DeviceUpdated: {:?}, {:?}, {:?}", mac_address, rssi, properties);
 
