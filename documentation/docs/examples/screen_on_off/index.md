@@ -18,6 +18,8 @@ Control the screen power state of a Raspberry Pi using the `vcgencmd` command or
 
     Try it out before by running `vcgencmd display_power 0` to turn off the screen and `vcgencmd display_power 1` to turn it back on.
 
+    > Be sure to have [`dtoverlay=vc4-fkms-v3d`](https://github.com/raspberrypi/firmware/issues/1224) activated.
+
     ```yaml
     --8<-- "examples/screen_on_off/raspberry_x11.yml"
     ```
