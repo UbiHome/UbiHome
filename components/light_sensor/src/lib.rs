@@ -263,36 +263,36 @@ async fn read_linux_light_sensor_from_path(path: &str) -> Result<f64, String> {
 
 #[cfg(target_os = "windows")]
 async fn read_light_sensor(_device_path: Option<&String>) -> Result<f64, String> {
-    // For now, return a simulated value to demonstrate functionality
-    // In a production environment, you would implement actual Windows sensor API calls
-    use std::process::Command;
-    
-    // Try to use PowerShell to get sensor information
-    // This is a fallback approach that users can customize
-    let output = Command::new("powershell")
-        .args(&[
-            "-Command",
-            "try { (Get-WmiObject -Class Win32_LightSensor -ErrorAction Stop | Select-Object -First 1).CurrentReading } catch { 'No sensor found' }"
-        ])
-        .output();
-        
-    match output {
-        Ok(output) => {
-            let output_str = String::from_utf8_lossy(&output.stdout).trim().to_string();
-            if let Ok(value) = output_str.parse::<f64>() {
-                Ok(value)
-            } else {
-                // Return a default message suggesting shell platform usage
-                Err(format!(
-                    "Windows light sensor not available or accessible. Consider using the shell platform with a custom PowerShell command. Output: {}",
-                    output_str
-                ))
-            }
+    use windows_sys::Win32::{
+        Foundation::{HANDLE, INVALID_HANDLE_VALUE},
+        System::Com::{
+            CoInitializeEx, CoUninitialize, COINIT_APARTMENTTHREADED,
+        },
+        Devices::Sensors::{
+            ISensorManager, ISensor, ISensorCollection, SensorManager,
+            SENSOR_TYPE_AMBIENT_LIGHT, SENSOR_DATA_TYPE_LIGHT_LEVEL_LUX,
+        },
+    };
+    use std::ptr;
+
+    unsafe {
+        // Initialize COM
+        let hr = CoInitializeEx(ptr::null_mut(), COINIT_APARTMENTTHREADED);
+        if hr < 0 {
+            return Err("Failed to initialize COM".to_string());
         }
-        Err(e) => Err(format!(
-            "Failed to execute PowerShell command to read light sensor: {}. Consider using the shell platform instead.",
-            e
-        ))
+
+        // Note: This is a simplified implementation
+        // In a real implementation, you would need to:
+        // 1. Create a SensorManager instance using CoCreateInstance
+        // 2. Get sensors by type (SENSOR_TYPE_AMBIENT_LIGHT)
+        // 3. Query the sensor for current light level data
+        // 4. Properly handle COM interface lifecycle
+        
+        // For now, return an error with guidance
+        CoUninitialize();
+        
+        Err("Windows sensor API implementation requires proper COM interface handling. Consider using the shell platform with a custom PowerShell command for light sensor access.".to_string())
     }
 }
 
