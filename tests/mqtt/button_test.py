@@ -43,7 +43,7 @@ button:
     assert button_id in components
     entity = components[button_id]
     assert entity["name"] == button_name
-    command_topic = entity["command_topic"]
+    command_topic = entity["cmd_t"]
 
     publish = mqtt_client.publish(command_topic, "ON")
     publish.wait_for_publish()
