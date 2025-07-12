@@ -99,11 +99,6 @@ fn cli() -> Command {
             .hide(true)
             .action(ArgAction::SetTrue)
             .num_args(0),
-        Arg::new("configuration_file")
-            .short('c')
-            .long("configuration")
-            .help("Optional configuration file. If not provided, the default configuration will be used.")
-            .default_values(vec![DEFAULT_CONFIG_FILE_YML, DEFAULT_CONFIG_FILE_YAML]),
     ];
 
     Command::new("UbiHome")
@@ -111,10 +106,16 @@ fn cli() -> Command {
         .version(VERSION)
         .subcommand_required(true)
         .arg_required_else_help(true)
-        .args([Arg::new("log_level")
+        .args([
+            Arg::new("configuration_file")
+            .short('c')
+            .long("configuration")
+            .help("Optional configuration file. If not provided, the default configuration will be used.")
+            .default_values(vec![DEFAULT_CONFIG_FILE_YML, DEFAULT_CONFIG_FILE_YAML]),
+            Arg::new("log_level")
             .long("log-level")
             .global(true)
-            .help("The log level (overwrites the config file).")])
+            .help("The log level (overwrites the config).")])
         .subcommand(
             Command::new("run")
                 .about("Run UbiHome manually.")
@@ -204,9 +205,8 @@ fn main() {
             }
             std::process::exit(0);
         }
-        Err(_) => {
-            // User does not need to specify command, it just displays the help message.
-            std::process::exit(0);
+        Err(err) => {
+            err.exit()
         }
     };
 }

@@ -11,6 +11,8 @@ async def test_run():
   button_id = "my_switch"
   button_name = "Switch it"
   switch_mock = "test_switch.mock"
+  os.remove(switch_mock)
+
   DEVICE_INFO_CONFIG = f"""
 ubihome:
   name: test_device
