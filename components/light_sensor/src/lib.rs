@@ -265,30 +265,31 @@ async fn read_linux_light_sensor_from_path(path: &str) -> Result<f64, String> {
 async fn read_light_sensor(_device_path: Option<&String>) -> Result<f64, String> {
     use windows::{
         Win32::Devices::Sensors::{
-            ISensorManager, ISensor, ISensorCollection, ISensorDataReport,
+            ISensorManager, ISensorDataReport,
             SENSOR_TYPE_AMBIENT_LIGHT, SENSOR_DATA_TYPE_LIGHT_LEVEL_LUX,
         },
         Win32::System::Com::{
-            CoInitializeEx, CoUninitialize, CoCreateInstance, COINIT_APARTMENTTHREADED,
+            CoInitializeEx, CoUninitialize, CoCreateInstance,
             CLSCTX_INPROC_SERVER,
         },
-        Win32::System::Ole::{PROPVARIANT, VT_R4, VT_R8},
-        core::{GUID, Interface},
     };
+    // use windows::Win32::Devices::Sensors::SENSOR_DATA_TYPE_LIGHT_TEMPERATURE_KELVIN;
+    // use windows::Win32::Devices::Sensors::SENSOR_DATA_TYPE_LIGHT_GUID;
+    // use windows::Win32::Devices::Sensors::SENSOR_DATA_TYPE_LIGHT_CHROMACITY;
+
 
     unsafe {
         // Initialize COM
-        let hr = CoInitializeEx(None, COINIT_APARTMENTTHREADED);
+
+        use windows::Win32::{Devices::Sensors::{SensorManager, SENSOR_DATA_TYPE_LIGHT_GUID}, System::Com::COINIT_MULTITHREADED};
+        let hr = CoInitializeEx(None, COINIT_MULTITHREADED);
         if hr.is_err() {
             return Err("Failed to initialize COM".to_string());
         }
 
-        // Create SensorManager CLSID 
-        let sensor_manager_clsid = GUID::from("77A1C827-FCD2-4689-8915-9D613CC5FA3E");
-        
         // Create a SensorManager instance
         let sensor_manager: ISensorManager = CoCreateInstance(
-            &sensor_manager_clsid,
+            &SensorManager,
             None,
             CLSCTX_INPROC_SERVER,
         ).map_err(|e| {
@@ -308,6 +309,8 @@ async fn read_light_sensor(_device_path: Option<&String>) -> Result<f64, String>
             CoUninitialize();
             format!("Failed to get sensor count: {}", e)
         })?;
+
+        debug!("Found {} ambient light sensors", count);
         
         if count == 0 {
             CoUninitialize();
@@ -321,32 +324,49 @@ async fn read_light_sensor(_device_path: Option<&String>) -> Result<f64, String>
         })?;
 
         // Get sensor data
-        let sensor_data_report = sensor.GetData().map_err(|e| {
+        let sensor_data_report: ISensorDataReport = sensor.GetData().map_err(|e| {
             CoUninitialize();
             format!("Failed to get sensor data: {}", e)
         })?;
 
+        debug!("Sensor data: {:?}", sensor_data_report);
+
         // Get the light level value
-        let prop_value = sensor_data_report.GetSensorValue(&SENSOR_DATA_TYPE_LIGHT_LEVEL_LUX)
+        let lux_value = sensor_data_report.GetSensorValue(&SENSOR_DATA_TYPE_LIGHT_LEVEL_LUX)
             .map_err(|e| {
                 CoUninitialize();
                 format!("Failed to get light level value: {}", e)
             })?;
 
+            
+
+        debug!("LUX sensor value {}", lux_value);
+
+        
+        // debug!("VT_R4: {}, VT_R8: {}", lux_value.Anonymous.Anonymous.Anonymous.fltVal as f64, lux_value.Anonymous.Anonymous.Anonymous.dblVal);
+        
+        // let kelvin_value = sensor_data_report.GetSensorValue(&SENSOR_DATA_TYPE_LIGHT_CHROMACITY)
+        //     .map_err(|e| {
+        //         CoUninitialize();
+        //         format!("Failed to get light level value: {}", e)
+        //     })?;
+
+        // debug!("Kelvin sensor value {}", kelvin_value);
+        
         // Extract the float value from PROPVARIANT
-        let light_value = match prop_value.Anonymous.Anonymous.vt {
-            x if x == VT_R4.0 => prop_value.Anonymous.Anonymous.Anonymous.fltVal as f64,
-            x if x == VT_R8.0 => prop_value.Anonymous.Anonymous.Anonymous.dblVal,
-            _ => {
-                CoUninitialize();
-                return Err("Unexpected data type for light sensor value".to_string());
-            }
-        };
+        // let light_value = match prop_value.Anonymous.Anonymous.vt {
+        //     x if x == VT_R4.0 => prop_value.Anonymous.Anonymous.Anonymous.fltVal as f64,
+        //     x if x == VT_R8.0 => prop_value.Anonymous.Anonymous.Anonymous.dblVal,
+        //     _ => {
+        //         CoUninitialize();
+        //         return Err("Unexpected data type for light sensor value".to_string());
+        //     }
+        // };
 
         // Clean up
-        CoUninitialize();
+        // CoUninitialize();
 
-        Ok(light_value)
+        Ok(0.0)
     }
 }
 
