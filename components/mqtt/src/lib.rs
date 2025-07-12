@@ -214,6 +214,10 @@ impl Module for Default {
                                                     ),
                                                 );
                                             }
+                                            Component::Light(_light) => {
+                                                // TODO: Add MQTT light support if needed
+                                                // For now, just skip light components for MQTT
+                                            }
                                         }
                                     }
                                     {

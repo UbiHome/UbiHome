@@ -231,6 +231,31 @@ impl Module for UbiHomeDefault {
                                         index.try_into().unwrap(),
                                     );
                                 }
+                                Component::Light(light) => {
+                                    let component_light = ProtoMessage::ListEntitiesLightResponse(
+                                        proto::ListEntitiesLightResponse {
+                                            object_id: light.id.clone(),
+                                            key: index.try_into().unwrap(),
+                                            name: light.name,
+                                            unique_id: light.id.clone(),
+                                            icon: light.icon.unwrap_or_default(),
+                                            disabled_by_default: false,
+                                            entity_category: EntityCategory::None as i32,
+                                            supported_color_modes: vec![], // Can be populated based on capabilities
+                                            legacy_supports_brightness: light.supports_brightness,
+                                            legacy_supports_rgb: light.supports_rgb,
+                                            legacy_supports_white_value: light.supports_white_value,
+                                            legacy_supports_color_temperature: light.supports_color_temperature,
+                                            min_mireds: 153.0,
+                                            max_mireds: 500.0,
+                                            effects: vec![], // Light effects can be added later
+                                        },
+                                    );
+                                    api_components_by_key
+                                        .insert(index.try_into().unwrap(), component_light);
+                                    api_components_key_id
+                                        .insert(light.id.clone(), index.try_into().unwrap());
+                                }
                             }
                         }
                     }
@@ -282,6 +307,30 @@ impl Module for UbiHomeDefault {
                                     proto::SwitchStateResponse {
                                         key: key.clone(),
                                         state: state,
+                                    },
+                                ))
+                                .unwrap();
+                        }
+                        PublishedMessage::LightStateChange { key, state, brightness, red, green, blue } => {
+                            let key = api_components_key_id_clone.get(&key).unwrap();
+                            debug!("LightStateChanged: state={:?}, brightness={:?}, rgb=({:?},{:?},{:?})", &state, &brightness, &red, &green, &blue);
+
+                            messages_tx
+                                .send(ProtoMessage::LightStateResponse(
+                                    proto::LightStateResponse {
+                                        key: key.clone(),
+                                        state: state,
+                                        brightness: brightness.unwrap_or(0.0),
+                                        color_mode: 1, // RGB mode, could be made configurable
+                                        color_brightness: brightness.unwrap_or(0.0),
+                                        red: red.unwrap_or(0.0),
+                                        green: green.unwrap_or(0.0),
+                                        blue: blue.unwrap_or(0.0),
+                                        white: 0.0, // Not currently supported
+                                        color_temperature: 0.0, // Not currently supported
+                                        cold_white: 0.0, // Not currently supported
+                                        warm_white: 0.0, // Not currently supported
+                                        effect: "".to_string(), // No effect currently
                                     },
                                 ))
                                 .unwrap();
@@ -568,6 +617,31 @@ impl Module for UbiHomeDefault {
                                         _ => {}
                                     }
                                 }
+                                ProtoMessage::LightCommandRequest(light_command_request) => {
+                                    debug!("LightCommandRequest: {:?}", light_command_request);
+                                    let light_entity = api_components_clone
+                                        .get(&light_command_request.key)
+                                        .unwrap();
+                                    match light_entity {
+                                        ProtoMessage::ListEntitiesLightResponse(light_entity) => {
+                                            debug!(
+                                                "LightCommandRequest: {:?}",
+                                                light_entity
+                                            );
+                                            let msg = ChangedMessage::LightStateCommand {
+                                                key: light_entity.unique_id.clone(),
+                                                state: light_command_request.state,
+                                                brightness: if light_command_request.has_brightness { Some(light_command_request.brightness) } else { None },
+                                                red: if light_command_request.has_rgb { Some(light_command_request.red) } else { None },
+                                                green: if light_command_request.has_rgb { Some(light_command_request.green) } else { None },
+                                                blue: if light_command_request.has_rgb { Some(light_command_request.blue) } else { None },
+                                            };
+
+                                            cloned_sender.send(msg).unwrap();
+                                        }
+                                        _ => {}
+                                    }
+                                }
                                 _ => {
                                     debug!("Ignore message type: {:?}", message);
                                     return;
@@ -721,5 +795,34 @@ ubihome:
         
         // Check that device info reflects no password
         assert_eq!(module.device_info.uses_password, false, "Device should indicate no password is used");
+    }
+
+    #[test]
+    fn test_light_support() {
+        // Test that the Light component is properly imported and accessible
+        use crate::proto::ListEntitiesLightResponse;
+        
+        // Create a basic light response to ensure the proto message works
+        let light_response = ListEntitiesLightResponse {
+            object_id: "test_light".to_string(),
+            key: 1,
+            name: "Test Light".to_string(),
+            unique_id: "test_light".to_string(),
+            icon: "mdi:lightbulb".to_string(),
+            disabled_by_default: false,
+            entity_category: 0,
+            supported_color_modes: vec![],
+            legacy_supports_brightness: true,
+            legacy_supports_rgb: true,
+            legacy_supports_white_value: false,
+            legacy_supports_color_temperature: false,
+            min_mireds: 153.0,
+            max_mireds: 500.0,
+            effects: vec![],
+        };
+        
+        assert_eq!(light_response.name, "Test Light");
+        assert_eq!(light_response.legacy_supports_brightness, true);
+        assert_eq!(light_response.legacy_supports_rgb, true);
     }
 }

@@ -7,6 +7,7 @@ pub enum Component {
     Sensor(UbiSensor),
     BinarySensor(UbiBinarySensor),
     Switch(UbiSwitch),
+    Light(UbiLight),
 }
 
 // Icons: https://pictogrammers.com/library/mdi/
@@ -49,6 +50,19 @@ pub struct UbiSwitch {
     pub id: String,
     // If the state must be assumed or can be determined
     pub assumed_state: bool,
+}
+
+#[derive(Clone, Serialize, Deserialize, Debug)]
+pub struct UbiLight {
+    pub name: String,
+    pub platform: String,
+    pub icon: Option<String>,
+    pub id: String,
+    // Light capabilities
+    pub supports_brightness: bool,
+    pub supports_rgb: bool,
+    pub supports_white_value: bool,
+    pub supports_color_temperature: bool,
 }
 
 // impl HABinarySensor {

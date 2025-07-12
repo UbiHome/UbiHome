@@ -60,6 +60,8 @@ pub enum ChangedMessage {
     SwitchStateCommand { key: String, state: bool },
     SensorValueChange { key: String, value: f32 },
     BinarySensorValueChange { key: String, value: bool },
+    LightStateChange { key: String, state: bool, brightness: Option<f32>, red: Option<f32>, green: Option<f32>, blue: Option<f32> },
+    LightStateCommand { key: String, state: bool, brightness: Option<f32>, red: Option<f32>, green: Option<f32>, blue: Option<f32> },
     BluetoothProxyMessage(BluetoothProxyMessage),
 }
 
@@ -72,6 +74,8 @@ pub enum PublishedMessage {
     SwitchStateCommand { key: String, state: bool },
     SensorValueChanged { key: String, value: f32 },
     BinarySensorValueChanged { key: String, value: bool },
+    LightStateChange { key: String, state: bool, brightness: Option<f32>, red: Option<f32>, green: Option<f32>, blue: Option<f32> },
+    LightStateCommand { key: String, state: bool, brightness: Option<f32>, red: Option<f32>, green: Option<f32>, blue: Option<f32> },
     BluetoothProxyMessage (BluetoothProxyMessage),
 }
 

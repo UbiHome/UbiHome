@@ -262,6 +262,9 @@ pub(crate) fn run(
                 InternalComponent::Switch(switch) => {
                     println!("Switch: {:?}", switch);
                 }
+                InternalComponent::Light(light) => {
+                    println!("Light: {:?}", light);
+                }
                 InternalComponent::BinarySensor(binary_sensor) => {
                     let mutable: Mutable<Option<Option<bool>>> = Mutable::new(Option::None);
                     signal_map_binary_sensor
@@ -432,6 +435,12 @@ pub(crate) fn run(
                         ChangedMessage::SwitchStateCommand { key, state } => {
                             publish_cmd = Some(PublishedMessage::SwitchStateCommand { key, state });
                         }
+                        ChangedMessage::LightStateChange { key, state, brightness, red, green, blue } => {
+                            publish_cmd = Some(PublishedMessage::LightStateChange { key, state, brightness, red, green, blue });
+                        }
+                        ChangedMessage::LightStateCommand { key, state, brightness, red, green, blue } => {
+                            publish_cmd = Some(PublishedMessage::LightStateCommand { key, state, brightness, red, green, blue });
+                        }
                         ChangedMessage::ButtonPress { key } => {
                             publish_cmd = Some(PublishedMessage::ButtonPressed { key });
                         }
@@ -474,6 +483,7 @@ pub(crate) fn run(
                         InternalComponent::BinarySensor(binary_sensor) => {
                             Component::BinarySensor(binary_sensor.ha.clone())
                         }
+                        InternalComponent::Light(light) => Component::Light(light.ha.clone()),
                     })
                     .collect(),
             })
