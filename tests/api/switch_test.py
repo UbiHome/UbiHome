@@ -1,5 +1,6 @@
 
 from asyncio import sleep
+import contextlib
 import os
 from unittest.mock import Mock
 from utils import UbiHome
@@ -10,7 +11,10 @@ from utils import wait_and_get_file
 async def test_run():
   button_id = "my_switch"
   button_name = "Switch it"
-  switch_mock = "test_switch.mock"
+  switch_mock = "switch_test.mock"
+  with contextlib.suppress(FileNotFoundError):
+    os.remove(switch_mock)
+
   DEVICE_INFO_CONFIG = f"""
 ubihome:
   name: test_device
