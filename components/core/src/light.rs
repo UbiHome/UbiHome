@@ -8,6 +8,7 @@ pub struct LightBase {
     pub id: Option<String>,
     pub name: String,
     pub icon: Option<String>,
+    pub disabled_by_default: Option<bool>,
 }
 
 // TODO implement as procedural macro

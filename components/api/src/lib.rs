@@ -243,13 +243,13 @@ impl Module for UbiHomeDefault {
                                             disabled_by_default: false,
                                             entity_category: EntityCategory::None as i32,
                                             supported_color_modes: vec![], // Can be populated based on capabilities
-                                            legacy_supports_brightness: light.supports_brightness,
-                                            legacy_supports_rgb: light.supports_rgb,
-                                            legacy_supports_white_value: light.supports_white_value,
-                                            legacy_supports_color_temperature: light.supports_color_temperature,
                                             min_mireds: 153.0,
                                             max_mireds: 500.0,
                                             effects: vec![], // Light effects can be added later
+                                            legacy_supports_brightness: false,
+                                            legacy_supports_rgb: false,
+                                            legacy_supports_white_value: false,
+                                            legacy_supports_color_temperature: false
                                         },
                                     );
                                     api_components_by_key

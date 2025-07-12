@@ -3709,7 +3709,6 @@ dependencies = [
  "ubihome-bme280",
  "ubihome-core",
  "ubihome-gpio",
- "ubihome-light",
  "ubihome-mdns",
  "ubihome-mqtt",
  "ubihome-power_utils",
@@ -3800,19 +3799,6 @@ dependencies = [
  "rppal",
  "serde",
  "serde_yaml",
- "tokio",
- "ubihome-core",
-]
-
-[[package]]
-name = "ubihome-light"
-version = "0.8.7"
-dependencies = [
- "duration-str",
- "log",
- "serde",
- "serde_yaml",
- "shell_exec",
  "tokio",
  "ubihome-core",
 ]
