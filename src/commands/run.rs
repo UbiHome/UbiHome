@@ -69,6 +69,9 @@ fn get_all_modules(yaml: &String) -> Vec<Box<dyn Module>> {
     if modules_to_load.contains(&"shell".to_string()) {
         modules.push(Box::new(ubihome_shell::Default::new(&yaml).unwrap()));
     }
+    if modules_to_load.contains(&"light".to_string()) {
+        modules.push(Box::new(ubihome_light::Default::new(&yaml).unwrap()));
+    }
     // if modules_to_load.contains(&"mdns".to_string()) {
         modules.push(Box::new(ubihome_mdns::Default::new(&yaml).unwrap()));
     // }

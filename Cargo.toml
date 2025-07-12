@@ -24,6 +24,7 @@ ubihome-mqtt = { path = "components/mqtt" }
 ubihome-power_utils = { path = "components/power_utils" }
 ubihome-shell = { path = "components/shell" }
 ubihome-web_server = { path = "components/web_server" }
+ubihome-light = { path = "components/light" }
 inquire = "0.7.5"
 shell_exec = "0.2.0"
 flexi_logger = "0.29.8"
@@ -50,4 +51,4 @@ windows-sys = "0.59"
 
 [workspace]
 resolver = "2"
-members = ["components/api", "components/bluetooth_proxy", "components/bme280", "components/core", "components/evdev", "components/gpio", "components/mdns", "components/mqtt", "components/power_utils", "components/shell", "components/web_server"]
+members = ["components/api", "components/bluetooth_proxy", "components/bme280", "components/core", "components/evdev", "components/gpio", "components/light", "components/mdns", "components/mqtt", "components/power_utils", "components/shell", "components/web_server"]

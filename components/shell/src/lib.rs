@@ -81,13 +81,17 @@ fn default_timeout_none() -> Option<Duration> {
     None
 }
 
+#[derive(Clone, Deserialize, Debug)]
+pub struct NoLightExtension {}
+
 config_template!(
     shell,
     ShellConfig,
     ShellButtonConfig,
     ShellBinarySensorConfig,
     ShellSensorConfig,
-    ShellSwitchConfig
+    ShellSwitchConfig,
+    NoLightExtension
 );
 
 pub struct Default {
