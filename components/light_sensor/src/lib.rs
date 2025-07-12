@@ -266,10 +266,14 @@ async fn read_light_sensor(_device_path: Option<&String>) -> Result<f64, String>
     use windows_sys::Win32::{
         Foundation::{HANDLE, INVALID_HANDLE_VALUE},
         System::Com::{
-            CoInitializeEx, CoUninitialize, COINIT_APARTMENTTHREADED,
+            CoInitializeEx, CoUninitialize, CoCreateInstance, COINIT_APARTMENTTHREADED,
+            CLSCTX_INPROC_SERVER,
+        },
+        System::Ole::{
+            PropVariantClear, PROPVARIANT, VT_R4, VT_R8,
         },
         Devices::Sensors::{
-            ISensorManager, ISensor, ISensorCollection, SensorManager,
+            ISensorManager, ISensor, ISensorCollection, ISensorDataReport, SensorManager,
             SENSOR_TYPE_AMBIENT_LIGHT, SENSOR_DATA_TYPE_LIGHT_LEVEL_LUX,
         },
     };
@@ -282,17 +286,95 @@ async fn read_light_sensor(_device_path: Option<&String>) -> Result<f64, String>
             return Err("Failed to initialize COM".to_string());
         }
 
-        // Note: This is a simplified implementation
-        // In a real implementation, you would need to:
-        // 1. Create a SensorManager instance using CoCreateInstance
-        // 2. Get sensors by type (SENSOR_TYPE_AMBIENT_LIGHT)
-        // 3. Query the sensor for current light level data
-        // 4. Properly handle COM interface lifecycle
+        // Create a SensorManager instance
+        let mut sensor_manager: Option<ISensorManager> = None;
+        let hr = CoCreateInstance(
+            &SensorManager as *const _ as *const _,
+            ptr::null_mut(),
+            CLSCTX_INPROC_SERVER,
+            &ISensorManager::IID,
+            &mut sensor_manager as *mut _ as *mut *mut _,
+        );
+
+        if hr < 0 {
+            CoUninitialize();
+            return Err("Failed to create SensorManager instance".to_string());
+        }
+
+        let sensor_manager = sensor_manager.unwrap();
+
+        // Get sensors by type (SENSOR_TYPE_AMBIENT_LIGHT)
+        let mut sensor_collection: Option<ISensorCollection> = None;
+        let hr = sensor_manager.GetSensorsByType(
+            &SENSOR_TYPE_AMBIENT_LIGHT,
+            &mut sensor_collection as *mut _ as *mut *mut _,
+        );
+
+        if hr < 0 {
+            CoUninitialize();
+            return Err("Failed to get ambient light sensors".to_string());
+        }
+
+        let sensor_collection = sensor_collection.unwrap();
+
+        // Get the count of sensors
+        let mut count: u32 = 0;
+        let hr = sensor_collection.GetCount(&mut count);
         
-        // For now, return an error with guidance
+        if hr < 0 || count == 0 {
+            CoUninitialize();
+            return Err("No ambient light sensors found".to_string());
+        }
+
+        // Get the first sensor
+        let mut sensor: Option<ISensor> = None;
+        let hr = sensor_collection.GetAt(0, &mut sensor as *mut _ as *mut *mut _);
+        
+        if hr < 0 {
+            CoUninitialize();
+            return Err("Failed to get ambient light sensor".to_string());
+        }
+
+        let sensor = sensor.unwrap();
+
+        // Get sensor data
+        let mut sensor_data_report: Option<ISensorDataReport> = None;
+        let hr = sensor.GetData(&mut sensor_data_report as *mut _ as *mut *mut _);
+        
+        if hr < 0 {
+            CoUninitialize();
+            return Err("Failed to get sensor data".to_string());
+        }
+
+        let sensor_data_report = sensor_data_report.unwrap();
+
+        // Get the light level value
+        let mut prop_value = std::mem::zeroed::<PROPVARIANT>();
+        let hr = sensor_data_report.GetSensorValue(
+            &SENSOR_DATA_TYPE_LIGHT_LEVEL_LUX,
+            &mut prop_value,
+        );
+
+        if hr < 0 {
+            CoUninitialize();
+            return Err("Failed to get light level value".to_string());
+        }
+
+        // Extract the float value from PROPVARIANT
+        let light_value = if prop_value.vt == VT_R4 as u16 {
+            prop_value.Anonymous.Anonymous.fltVal as f64
+        } else if prop_value.vt == VT_R8 as u16 {
+            prop_value.Anonymous.Anonymous.dblVal
+        } else {
+            CoUninitialize();
+            return Err("Unexpected data type for light sensor value".to_string());
+        };
+
+        // Clean up
+        PropVariantClear(&mut prop_value);
         CoUninitialize();
-        
-        Err("Windows sensor API implementation requires proper COM interface handling. Consider using the shell platform with a custom PowerShell command for light sensor access.".to_string())
+
+        Ok(light_value)
     }
 }
 

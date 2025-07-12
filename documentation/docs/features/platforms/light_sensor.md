@@ -32,8 +32,9 @@ The light sensor platform allows you to integrate laptop ambient light sensors i
   - `/sys/devices/platform/applesmc.768/light` (Apple devices)
 
 ### Windows
-- Basic Windows sensor framework support (work in progress)
-- For immediate use, consider using the [shell platform](shell.md) with PowerShell commands
+- Native Windows Sensor API support using COM interfaces
+- Automatic detection of ambient light sensors through Windows Sensor Manager
+- Direct sensor data access without external dependencies
 
 ## Configuration
 
@@ -118,7 +119,7 @@ light_sensor:
 
 ### Windows
 
-For Windows systems, consider using the [shell platform](shell.md) as an alternative:
+The component now provides native Windows sensor API support. If you encounter issues, you can still use the [shell platform](shell.md) as an alternative:
 
 ```yaml
 sensor:
