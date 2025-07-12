@@ -3909,7 +3909,7 @@ dependencies = [
  "serde_yaml",
  "tokio",
  "ubihome-core",
- "windows-sys 0.52.0",
+ "windows 0.61.3",
 ]
 
 [[package]]

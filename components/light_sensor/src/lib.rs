@@ -263,115 +263,87 @@ async fn read_linux_light_sensor_from_path(path: &str) -> Result<f64, String> {
 
 #[cfg(target_os = "windows")]
 async fn read_light_sensor(_device_path: Option<&String>) -> Result<f64, String> {
-    use windows_sys::Win32::{
-        Foundation::{HANDLE, INVALID_HANDLE_VALUE},
-        System::Com::{
+    use windows::{
+        Win32::Devices::Sensors::{
+            ISensorManager, ISensor, ISensorCollection, ISensorDataReport,
+            SENSOR_TYPE_AMBIENT_LIGHT, SENSOR_DATA_TYPE_LIGHT_LEVEL_LUX,
+        },
+        Win32::System::Com::{
             CoInitializeEx, CoUninitialize, CoCreateInstance, COINIT_APARTMENTTHREADED,
             CLSCTX_INPROC_SERVER,
         },
-        System::Ole::{
-            PropVariantClear, PROPVARIANT, VT_R4, VT_R8,
-        },
-        Devices::Sensors::{
-            ISensorManager, ISensor, ISensorCollection, ISensorDataReport, SensorManager,
-            SENSOR_TYPE_AMBIENT_LIGHT, SENSOR_DATA_TYPE_LIGHT_LEVEL_LUX,
-        },
+        Win32::System::Ole::{PROPVARIANT, VT_R4, VT_R8},
+        core::{GUID, Interface},
     };
-    use std::ptr;
 
     unsafe {
         // Initialize COM
-        let hr = CoInitializeEx(ptr::null_mut(), COINIT_APARTMENTTHREADED);
-        if hr < 0 {
+        let hr = CoInitializeEx(None, COINIT_APARTMENTTHREADED);
+        if hr.is_err() {
             return Err("Failed to initialize COM".to_string());
         }
 
+        // Create SensorManager CLSID 
+        let sensor_manager_clsid = GUID::from("77A1C827-FCD2-4689-8915-9D613CC5FA3E");
+        
         // Create a SensorManager instance
-        let mut sensor_manager: Option<ISensorManager> = None;
-        let hr = CoCreateInstance(
-            &SensorManager as *const _ as *const _,
-            ptr::null_mut(),
+        let sensor_manager: ISensorManager = CoCreateInstance(
+            &sensor_manager_clsid,
+            None,
             CLSCTX_INPROC_SERVER,
-            &ISensorManager::IID,
-            &mut sensor_manager as *mut _ as *mut *mut _,
-        );
-
-        if hr < 0 {
+        ).map_err(|e| {
             CoUninitialize();
-            return Err("Failed to create SensorManager instance".to_string());
-        }
-
-        let sensor_manager = sensor_manager.unwrap();
+            format!("Failed to create SensorManager instance: {}", e)
+        })?;
 
         // Get sensors by type (SENSOR_TYPE_AMBIENT_LIGHT)
-        let mut sensor_collection: Option<ISensorCollection> = None;
-        let hr = sensor_manager.GetSensorsByType(
-            &SENSOR_TYPE_AMBIENT_LIGHT,
-            &mut sensor_collection as *mut _ as *mut *mut _,
-        );
-
-        if hr < 0 {
-            CoUninitialize();
-            return Err("Failed to get ambient light sensors".to_string());
-        }
-
-        let sensor_collection = sensor_collection.unwrap();
+        let sensor_collection = sensor_manager.GetSensorsByType(&SENSOR_TYPE_AMBIENT_LIGHT)
+            .map_err(|e| {
+                CoUninitialize();
+                format!("Failed to get ambient light sensors: {}", e)
+            })?;
 
         // Get the count of sensors
-        let mut count: u32 = 0;
-        let hr = sensor_collection.GetCount(&mut count);
+        let count = sensor_collection.GetCount().map_err(|e| {
+            CoUninitialize();
+            format!("Failed to get sensor count: {}", e)
+        })?;
         
-        if hr < 0 || count == 0 {
+        if count == 0 {
             CoUninitialize();
             return Err("No ambient light sensors found".to_string());
         }
 
         // Get the first sensor
-        let mut sensor: Option<ISensor> = None;
-        let hr = sensor_collection.GetAt(0, &mut sensor as *mut _ as *mut *mut _);
-        
-        if hr < 0 {
+        let sensor = sensor_collection.GetAt(0).map_err(|e| {
             CoUninitialize();
-            return Err("Failed to get ambient light sensor".to_string());
-        }
-
-        let sensor = sensor.unwrap();
+            format!("Failed to get ambient light sensor: {}", e)
+        })?;
 
         // Get sensor data
-        let mut sensor_data_report: Option<ISensorDataReport> = None;
-        let hr = sensor.GetData(&mut sensor_data_report as *mut _ as *mut *mut _);
-        
-        if hr < 0 {
+        let sensor_data_report = sensor.GetData().map_err(|e| {
             CoUninitialize();
-            return Err("Failed to get sensor data".to_string());
-        }
-
-        let sensor_data_report = sensor_data_report.unwrap();
+            format!("Failed to get sensor data: {}", e)
+        })?;
 
         // Get the light level value
-        let mut prop_value = std::mem::zeroed::<PROPVARIANT>();
-        let hr = sensor_data_report.GetSensorValue(
-            &SENSOR_DATA_TYPE_LIGHT_LEVEL_LUX,
-            &mut prop_value,
-        );
-
-        if hr < 0 {
-            CoUninitialize();
-            return Err("Failed to get light level value".to_string());
-        }
+        let prop_value = sensor_data_report.GetSensorValue(&SENSOR_DATA_TYPE_LIGHT_LEVEL_LUX)
+            .map_err(|e| {
+                CoUninitialize();
+                format!("Failed to get light level value: {}", e)
+            })?;
 
         // Extract the float value from PROPVARIANT
-        let light_value = if prop_value.vt == VT_R4 as u16 {
-            prop_value.Anonymous.Anonymous.fltVal as f64
-        } else if prop_value.vt == VT_R8 as u16 {
-            prop_value.Anonymous.Anonymous.dblVal
-        } else {
-            CoUninitialize();
-            return Err("Unexpected data type for light sensor value".to_string());
+        let light_value = match prop_value.Anonymous.Anonymous.vt {
+            x if x == VT_R4.0 => prop_value.Anonymous.Anonymous.Anonymous.fltVal as f64,
+            x if x == VT_R8.0 => prop_value.Anonymous.Anonymous.Anonymous.dblVal,
+            _ => {
+                CoUninitialize();
+                return Err("Unexpected data type for light sensor value".to_string());
+            }
         };
 
         // Clean up
-        PropVariantClear(&mut prop_value);
         CoUninitialize();
 
         Ok(light_value)

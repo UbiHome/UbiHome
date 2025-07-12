@@ -16,9 +16,9 @@ duration-str = "0.16.1"
 industrial-io = "0.6.0"
 
 [target.'cfg(target_os = "windows")'.dependencies]
-windows-sys = { version = "0.52", features = [
+windows = { version = "0.61", features = [
+    "Win32_Devices_Sensors",
     "Win32_Foundation",
     "Win32_System_Com",
-    "Win32_System_Ole",
-    "Win32_Devices_Sensors"
+    "Win32_System_Ole"
 ] }
