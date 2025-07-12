@@ -3,8 +3,9 @@ services:
     build: .
     volumes:
       - ./:/vhs
+      - ./../target/release/ubihome:/vhs/ubihome
     command: demo.tape
-
+  
   record:
     build: .
     volumes:
