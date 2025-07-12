@@ -7,6 +7,7 @@ pub enum Component {
     Sensor(UbiSensor),
     BinarySensor(UbiBinarySensor),
     Switch(UbiSwitch),
+    Light(UbiLight),
 }
 
 // Icons: https://pictogrammers.com/library/mdi/
@@ -31,6 +32,7 @@ pub struct UbiSensor {
     pub id: String,
 }
 
+// https://developers.home-assistant.io/docs/core/entity/binary-sensor
 #[derive(Clone, Serialize, Deserialize, Debug)]
 pub struct UbiBinarySensor {
     pub name: String,
@@ -40,6 +42,7 @@ pub struct UbiBinarySensor {
     pub id: String,
 }
 
+// https://developers.home-assistant.io/docs/core/entity/switch
 #[derive(Clone, Serialize, Deserialize, Debug)]
 pub struct UbiSwitch {
     pub name: String,
@@ -51,15 +54,17 @@ pub struct UbiSwitch {
     pub assumed_state: bool,
 }
 
-// impl HABinarySensor {
-//     pub fn new(name: String, platform: String, icon: Option<String>, device_class: Option<String>, unique_id: String, object_id: String) -> Self {
-//         HABinarySensor {
-//             name,
-//             platform,
-//             icon,
-//             device_class,
-//             unique_id,
-//             object_id,
-//         }
-//     }
-// }
+// https://developers.home-assistant.io/docs/core/entity/light
+#[derive(Clone, Serialize, Deserialize, Debug)]
+pub struct UbiLight {
+    pub name: String,
+    pub platform: String,
+    pub icon: Option<String>,
+    pub id: String,
+    pub disabled_by_default: bool,
+    // Light capabilities
+    // pub supports_brightness: bool,
+    // pub supports_rgb: bool,
+    // pub supports_white_value: bool,
+    // pub supports_color_temperature: bool,
+}

@@ -27,7 +27,7 @@ pub struct GpioBinarySensorConfig {
     pub pull_up: Option<bool>,
 }
 
-config_template!(gpio, GpioConfig, NoConfig, GpioBinarySensorConfig, NoConfig, NoConfig);
+config_template!(gpio, GpioConfig, NoConfig, GpioBinarySensorConfig, NoConfig, NoConfig, NoConfig);
 
 #[derive(Clone, Debug)]
 pub struct Default {

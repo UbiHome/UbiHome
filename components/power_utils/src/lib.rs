@@ -45,6 +45,7 @@ config_template!(
     PowerUtilsButtonConfig,
     NoConfig,
     NoConfig,
+    NoConfig,
     NoConfig
 );
 

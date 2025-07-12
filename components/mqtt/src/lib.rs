@@ -32,7 +32,7 @@ pub struct MqttConfig {
     pub password: Option<String>,
 }
 
-config_template!(mqtt, MqttConfig, NoConfig, NoConfig, NoConfig, NoConfig);
+config_template!(mqtt, MqttConfig, NoConfig, NoConfig, NoConfig, NoConfig, NoConfig);
 
 #[derive(Clone, Debug)]
 pub struct Default {
@@ -213,6 +213,10 @@ impl Module for Default {
                                                         },
                                                     ),
                                                 );
+                                            }
+                                            Component::Light(_light) => {
+                                                // TODO: Add MQTT light support if needed
+                                                // For now, just skip light components for MQTT
                                             }
                                         }
                                     }

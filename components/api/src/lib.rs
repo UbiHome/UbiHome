@@ -8,7 +8,6 @@ use esphome_native_api::proto::SensorLastResetType;
 use esphome_native_api::proto::SensorStateClass;
 use esphome_native_api::to_packet_from_ref;
 use log::debug;
-use log::error;
 use log::info;
 use log::trace;
 use log::warn;
@@ -31,7 +30,10 @@ use ubihome_core::{
 };
 
 #[derive(Clone, Deserialize, Debug)]
-pub struct ApiConfig {}
+pub struct ApiConfig {
+    pub port: Option<u16>,
+    pub password: Option<String>,
+}
 
 fn mac_to_u64(mac: &str) -> Result<u64, ParseIntError> {
     let mac = mac.replace(":", "");
@@ -44,27 +46,30 @@ config_template!(
     NoConfig,
     NoConfig,
     NoConfig,
+    NoConfig,
     NoConfig
 );
 
 #[derive(Clone, Debug)]
 pub struct UbiHomeDefault {
     config: CoreConfig,
+    pub api_config: Option<ApiConfig>,
     components_by_key: HashMap<u32, ProtoMessage>,
     components_key_id: HashMap<String, u32>,
-    device_info: DeviceInfoResponse,
+    pub device_info: DeviceInfoResponse,
 }
 
 impl Module for UbiHomeDefault {
     fn new(config_string: &String) -> Result<Self, String> {
         match serde_yaml::from_str::<CoreConfig>(config_string) {
             Ok(config) => {
+                let api_config = config.api.clone();
+                
                 let ip = get_ip_address().unwrap();
                 let mac = get_network_mac_address(ip).unwrap();
 
-
                 let device_info = DeviceInfoResponse {
-                    uses_password: false,
+                    uses_password: api_config.as_ref().and_then(|c| c.password.as_ref()).is_some(),
                     name: config.ubihome.name.clone(),
                     mac_address: mac,
                     esphome_version: "2025.4.0".to_owned(),
@@ -97,6 +102,7 @@ impl Module for UbiHomeDefault {
 
                 Ok(UbiHomeDefault {
                     config: config,
+                    api_config: api_config,
                     components_by_key: HashMap::new(),
                     components_key_id: HashMap::new(),
                     device_info: device_info,
@@ -119,6 +125,7 @@ impl Module for UbiHomeDefault {
     ) -> Pin<Box<dyn Future<Output = Result<(), Box<dyn std::error::Error>>> + Send + 'static>>
     {
         let core_config = self.config.clone();
+        let api_config = self.api_config.clone();
         // let mut api_components = self.components.();
         let device_info = self.device_info.clone();
         let mut api_components_by_key = self.components_by_key.clone();
@@ -225,6 +232,31 @@ impl Module for UbiHomeDefault {
                                         index.try_into().unwrap(),
                                     );
                                 }
+                                Component::Light(light) => {
+                                    let component_light = ProtoMessage::ListEntitiesLightResponse(
+                                        proto::ListEntitiesLightResponse {
+                                            object_id: light.id.clone(),
+                                            key: index.try_into().unwrap(),
+                                            name: light.name,
+                                            unique_id: light.id.clone(),
+                                            icon: light.icon.unwrap_or_default(),
+                                            disabled_by_default: false,
+                                            entity_category: EntityCategory::None as i32,
+                                            supported_color_modes: vec![], // Can be populated based on capabilities
+                                            min_mireds: 153.0,
+                                            max_mireds: 500.0,
+                                            effects: vec![], // Light effects can be added later
+                                            legacy_supports_brightness: false,
+                                            legacy_supports_rgb: false,
+                                            legacy_supports_white_value: false,
+                                            legacy_supports_color_temperature: false
+                                        },
+                                    );
+                                    api_components_by_key
+                                        .insert(index.try_into().unwrap(), component_light);
+                                    api_components_key_id
+                                        .insert(light.id.clone(), index.try_into().unwrap());
+                                }
                             }
                         }
                     }
@@ -280,6 +312,30 @@ impl Module for UbiHomeDefault {
                                 ))
                                 .unwrap();
                         }
+                        PublishedMessage::LightStateChange { key, state, brightness, red, green, blue } => {
+                            let key = api_components_key_id_clone.get(&key).unwrap();
+                            debug!("LightStateChanged: state={:?}, brightness={:?}, rgb=({:?},{:?},{:?})", &state, &brightness, &red, &green, &blue);
+
+                            messages_tx
+                                .send(ProtoMessage::LightStateResponse(
+                                    proto::LightStateResponse {
+                                        key: key.clone(),
+                                        state: state,
+                                        brightness: brightness.unwrap_or(0.0),
+                                        color_mode: 1, // RGB mode, could be made configurable
+                                        color_brightness: brightness.unwrap_or(0.0),
+                                        red: red.unwrap_or(0.0),
+                                        green: green.unwrap_or(0.0),
+                                        blue: blue.unwrap_or(0.0),
+                                        white: 0.0, // Not currently supported
+                                        color_temperature: 0.0, // Not currently supported
+                                        cold_white: 0.0, // Not currently supported
+                                        warm_white: 0.0, // Not currently supported
+                                        effect: "".to_string(), // No effect currently
+                                    },
+                                ))
+                                .unwrap();
+                        }
                         PublishedMessage::BluetoothProxyMessage(msg) => {
                             debug!("BluetoothProxyMessage: {:?}", &msg);
                             let service_data: Vec<BluetoothServiceData> = msg
@@ -319,7 +375,10 @@ impl Module for UbiHomeDefault {
                 }
             });
 
-            let addr: SocketAddr = "0.0.0.0:6053".parse().unwrap();
+            let port = api_config.as_ref()
+                .and_then(|c| c.port)
+                .unwrap_or(6053);
+            let addr: SocketAddr = format!("0.0.0.0:{}", port).parse().unwrap();
             let socket = TcpSocket::new_v4().unwrap();
             socket.set_reuseaddr(true).unwrap();
 
@@ -337,6 +396,7 @@ impl Module for UbiHomeDefault {
 
                 let device_info_clone = device_info.clone();
                 let api_components_clone = api_components_by_key.clone();
+                let api_config_clone = api_config.clone();
                 // Read Loop
                 let answer_messages_tx_clone = answer_messages_tx.clone();
                 let cloned_sender = sender.clone();
@@ -395,8 +455,21 @@ impl Module for UbiHomeDefault {
                                 }
                                 ProtoMessage::ConnectRequest(connect_request) => {
                                     debug!("ConnectRequest: {:?}", connect_request);
+                                    
+                                    let mut invalid_password = false;
+                                    
+                                    // Check password if one is configured
+                                    if let Some(ref config) = api_config_clone {
+                                        if let Some(ref expected_password) = config.password {
+                                            if connect_request.password != *expected_password {
+                                                invalid_password = true;
+                                                warn!("Invalid password provided for API connection");
+                                            }
+                                        }
+                                    }
+                                    
                                     let response_message = proto::ConnectResponse {
-                                        invalid_password: false,
+                                        invalid_password,
                                     };
                                     answer_messages_tx_clone
                                         .send(ProtoMessage::ConnectResponse(response_message))
@@ -545,6 +618,31 @@ impl Module for UbiHomeDefault {
                                         _ => {}
                                     }
                                 }
+                                ProtoMessage::LightCommandRequest(light_command_request) => {
+                                    debug!("LightCommandRequest: {:?}", light_command_request);
+                                    let light_entity = api_components_clone
+                                        .get(&light_command_request.key)
+                                        .unwrap();
+                                    match light_entity {
+                                        ProtoMessage::ListEntitiesLightResponse(light_entity) => {
+                                            debug!(
+                                                "LightCommandRequest: {:?}",
+                                                light_entity
+                                            );
+                                            let msg = ChangedMessage::LightStateCommand {
+                                                key: light_entity.unique_id.clone(),
+                                                state: light_command_request.state,
+                                                brightness: if light_command_request.has_brightness { Some(light_command_request.brightness) } else { None },
+                                                red: if light_command_request.has_rgb { Some(light_command_request.red) } else { None },
+                                                green: if light_command_request.has_rgb { Some(light_command_request.green) } else { None },
+                                                blue: if light_command_request.has_rgb { Some(light_command_request.blue) } else { None },
+                                            };
+
+                                            cloned_sender.send(msg).unwrap();
+                                        }
+                                        _ => {}
+                                    }
+                                }
                                 _ => {
                                     debug!("Ignore message type: {:?}", message);
                                     return;
@@ -624,5 +722,108 @@ impl Module for UbiHomeDefault {
                 });
             }
         })
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_api_config_parsing() {
+        let config = r#"
+ubihome:
+  name: "Test API Config"
+
+api:
+  port: 8053
+  password: "test_password"
+"#;
+
+        let api_module = UbiHomeDefault::new(&config.to_string());
+        assert!(api_module.is_ok(), "API module should parse successfully");
+        
+        let module = api_module.unwrap();
+        
+        // Check that the API config is parsed correctly
+        assert!(module.api_config.is_some(), "API config should be present");
+        let api_config = module.api_config.unwrap();
+        assert_eq!(api_config.port, Some(8053), "Port should be 8053");
+        assert_eq!(api_config.password, Some("test_password".to_string()), "Password should be test_password");
+        
+        // Check that device info reflects password configuration
+        assert_eq!(module.device_info.uses_password, true, "Device should indicate password is used");
+    }
+
+    #[test]
+    fn test_api_config_defaults() {
+        let config = r#"
+ubihome:
+  name: "Test API Config"
+
+api: {}
+"#;
+
+        let api_module = UbiHomeDefault::new(&config.to_string());
+        assert!(api_module.is_ok(), "API module should parse successfully");
+        
+        let module = api_module.unwrap();
+        
+        // Check that the API config uses defaults when empty object
+        assert!(module.api_config.is_some(), "API config should be present");
+        let api_config = module.api_config.unwrap();
+        assert_eq!(api_config.port, None, "Port should be None (default)");
+        assert_eq!(api_config.password, None, "Password should be None (default)");
+        
+        // Check that device info reflects no password
+        assert_eq!(module.device_info.uses_password, false, "Device should indicate no password is used");
+    }
+
+    #[test]
+    fn test_api_config_no_api_section() {
+        let config = r#"
+ubihome:
+  name: "Test API Config"
+"#;
+
+        let api_module = UbiHomeDefault::new(&config.to_string());
+        assert!(api_module.is_ok(), "API module should parse successfully");
+        
+        let module = api_module.unwrap();
+        
+        // Check that the API config is None when no api section
+        assert!(module.api_config.is_none(), "API config should be None when no api section");
+        
+        // Check that device info reflects no password
+        assert_eq!(module.device_info.uses_password, false, "Device should indicate no password is used");
+    }
+
+    #[test]
+    fn test_light_support() {
+        // Test that the Light component is properly imported and accessible
+        use crate::proto::ListEntitiesLightResponse;
+        
+        // Create a basic light response to ensure the proto message works
+        let light_response = ListEntitiesLightResponse {
+            object_id: "test_light".to_string(),
+            key: 1,
+            name: "Test Light".to_string(),
+            unique_id: "test_light".to_string(),
+            icon: "mdi:lightbulb".to_string(),
+            disabled_by_default: false,
+            entity_category: 0,
+            supported_color_modes: vec![],
+            legacy_supports_brightness: true,
+            legacy_supports_rgb: true,
+            legacy_supports_white_value: false,
+            legacy_supports_color_temperature: false,
+            min_mireds: 153.0,
+            max_mireds: 500.0,
+            effects: vec![],
+        };
+        
+        assert_eq!(light_response.name, "Test Light");
+        assert_eq!(light_response.legacy_supports_brightness, true);
+        assert_eq!(light_response.legacy_supports_rgb, true);
     }
 }
