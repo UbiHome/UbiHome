@@ -11,6 +11,6 @@ tokio = { version = "1", features = ["full"] }
 ubihome-core = { path = "../core", features = ["ip"] }
 serde_yaml = "0.9.34"
 duration-str = "0.16.1"
-esphome-native-api = "1.0.1"
+esphome-native-api = "1.1.0"
 whoami = "1.6.0"
 

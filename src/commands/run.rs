@@ -99,7 +99,7 @@ async fn initialize_modules(
     let mut all_components: Vec<InternalComponent> = Vec::new();
     for module in modules.iter_mut() {
         let mut components = module.components();
-        println!("Module: {:?}", &components);
+        // println!("Module: {:?}", &components);
         all_components.append(&mut components);
     }
     Ok(all_components)
