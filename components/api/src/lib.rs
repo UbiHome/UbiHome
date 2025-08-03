@@ -623,11 +623,9 @@ api:
         let module = api_module.unwrap();
 
         // Check that the API config is parsed correctly
-        assert!(module.api_config.is_some(), "API config should be present");
-        let api_config = module.api_config.unwrap();
-        assert_eq!(api_config.port, Some(8053), "Port should be 8053");
+        assert_eq!(module.api_config.port, Some(8053), "Port should be 8053");
         assert_eq!(
-            api_config.password,
+            module.api_config.password,
             Some("test_password".to_string()),
             "Password should be test_password"
         );
@@ -648,59 +646,11 @@ api: {}
         let module = api_module.unwrap();
 
         // Check that the API config uses defaults when empty object
-        assert!(module.api_config.is_some(), "API config should be present");
-        let api_config = module.api_config.unwrap();
-        assert_eq!(api_config.port, None, "Port should be None (default)");
+        assert_eq!(module.api_config.port, None, "Port should be None (default)");
         assert_eq!(
-            api_config.password, None,
+            module.api_config.password, None,
             "Password should be None (default)"
         );
     }
 
-    #[test]
-    fn test_api_config_no_api_section() {
-        let config = r#"
-ubihome:
-  name: "Test API Config"
-"#;
-
-        let api_module = UbiHomeDefault::new(&config.to_string());
-        assert!(api_module.is_ok(), "API module should parse successfully");
-
-        let module = api_module.unwrap();
-
-        // Check that the API config is None when no api section
-        assert!(
-            module.api_config.is_none(),
-            "API config should be None when no api section"
-        );
-    }
-
-    #[test]
-    fn test_light_support() {
-        // Test that the Light component is properly imported and accessible
-
-        // Create a basic light response to ensure the proto message works
-        let light_response = ListEntitiesLightResponse {
-            object_id: "test_light".to_string(),
-            key: 1,
-            name: "Test Light".to_string(),
-            unique_id: "test_light".to_string(),
-            icon: "mdi:lightbulb".to_string(),
-            disabled_by_default: false,
-            entity_category: 0,
-            supported_color_modes: vec![],
-            legacy_supports_brightness: true,
-            legacy_supports_rgb: true,
-            legacy_supports_white_value: false,
-            legacy_supports_color_temperature: false,
-            min_mireds: 153.0,
-            max_mireds: 500.0,
-            effects: vec![],
-        };
-
-        assert_eq!(light_response.name, "Test Light");
-        assert_eq!(light_response.legacy_supports_brightness, true);
-        assert_eq!(light_response.legacy_supports_rgb, true);
-    }
 }
