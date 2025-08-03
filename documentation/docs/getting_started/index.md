@@ -28,6 +28,7 @@ For now[^1] a single executable is provided. You can download them from the [Git
     1. Download and extract the archive and place the ubihome executable in a directory of your choice.
 
         ```bash
+        # You might have to use a different link from the table above depending on your device type
         curl -L -o ubihome.tar.gz https://github.com/UbiHome/UbiHome/releases/download/v0.8.11/ubihome-Linux-musleabi-armv7.tar.gz
         tar xvzf ./ubihome.tar.gz
         ```
