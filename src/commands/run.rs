@@ -204,7 +204,7 @@ pub(crate) fn run(
         for component in components.clone() {
             match component {
                 InternalComponent::Button(button) => {
-                    println!("Button: {:?}", button);
+                    // println!("Button: {:?}", button);
                 }
                 InternalComponent::Sensor(sensor) => {
                     let mutable: Mutable<Option<Option<f32>>> = Mutable::new(Option::None);
@@ -260,10 +260,10 @@ pub(crate) fn run(
                     });
                 }
                 InternalComponent::Switch(switch) => {
-                    println!("Switch: {:?}", switch);
+                    // println!("Switch: {:?}", switch);
                 }
                 InternalComponent::Light(light) => {
-                    println!("Light: {:?}", light);
+                    // println!("Light: {:?}", light);
                 }
                 InternalComponent::BinarySensor(binary_sensor) => {
                     let mutable: Mutable<Option<Option<bool>>> = Mutable::new(Option::None);

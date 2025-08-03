@@ -31,8 +31,8 @@ binary_sensor:
       f.write("false")
 
   async with UbiHome("run", DEVICE_INFO_CONFIG) as ubihome:
-    api = aioesphomeapi.APIClient("127.0.0.1", 6053, "MyPassword")
-    await api.connect(login=True)
+    api = aioesphomeapi.APIClient("127.0.0.1", 6053, "")
+    await api.connect(login=False)
 
     entities, services = await api.list_entities_services()
     assert len(entities) == 1, entities

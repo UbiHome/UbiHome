@@ -27,9 +27,7 @@ use std::collections::HashMap;
 use std::net::SocketAddr;
 use std::num::ParseIntError;
 use std::{future::Future, pin::Pin, str};
-use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::TcpSocket;
-use tokio::sync::broadcast;
 use tokio::sync::broadcast::Receiver;
 use tokio::sync::broadcast::Sender;
 use ubihome_core::features::ip::get_ip_address;
@@ -45,6 +43,7 @@ pub struct ApiConfig {
     pub port: Option<u16>,
     pub password: Option<String>,
     pub encryption_key: Option<String>,
+    pub suggested_area: Option<String>,
 }
 
 fn mac_to_u64(mac: &str) -> Result<u64, ParseIntError> {
@@ -54,7 +53,7 @@ fn mac_to_u64(mac: &str) -> Result<u64, ParseIntError> {
 
 config_template!(
     api,
-    Option<ApiConfig>,
+    ApiConfig,
     NoConfig,
     NoConfig,
     NoConfig,
@@ -65,7 +64,7 @@ config_template!(
 #[derive(Clone, Debug)]
 pub struct UbiHomeDefault {
     config: CoreConfig,
-    pub api_config: Option<ApiConfig>,
+    pub api_config: ApiConfig,
     components_by_key: HashMap<u32, ProtoMessage>,
     components_key_id: HashMap<String, u32>,
 }
@@ -74,11 +73,10 @@ impl Module for UbiHomeDefault {
     fn new(config_string: &String) -> Result<Self, String> {
         match serde_yaml::from_str::<CoreConfig>(config_string) {
             Ok(config) => {
-                let api_config = config.api.clone();
-
+                let config_clone = config.clone();
                 Ok(UbiHomeDefault {
                     config: config,
-                    api_config: api_config,
+                    api_config: config_clone.api,
                     components_by_key: HashMap::new(),
                     components_key_id: HashMap::new(),
                 })
@@ -105,9 +103,10 @@ impl Module for UbiHomeDefault {
         let mut server = EspHomeApi::builder()
             .api_version_major(1)
             .api_version_minor(42)
-            // .password("password".to_string())
+            .password_opt(self.config.api.password.clone())
+            .encryption_key_opt(self.config.api.encryption_key.clone())
             // uses_password: api_config.as_ref().and_then(|c| c.password.as_ref()).is_some(),
-            // .server_info("test_server_info".to_string())
+            .server_info("UbiHome".to_string())
             .name(self.config.ubihome.name.clone())
             .friendly_name(
                 self.config
@@ -118,19 +117,22 @@ impl Module for UbiHomeDefault {
             )
             .bluetooth_mac_address("18:65:71:EB:5A:FB".to_string())
             .mac(mac)
-            // .manufacturer("Test".to_string())
+            .manufacturer(whoami::distro().to_string() + " " + &whoami::arch().to_string())
             .model(whoami::devicename())
-            // .suggested_area("Test Area".to_string())
-            .encryption_key("px7tsbK3C7bpXHr2OevEV2ZMg/FrNBw2+O2pNPbedtA=".to_string())
-            // legacy_voice_assistant_version: 0,
-            // voice_assistant_feature_flags: 0,
-            // legacy_bluetooth_proxy_version: 1,
-            // bluetooth_proxy_feature_flags: 1,
+            .legacy_voice_assistant_version(0)
+            .voice_assistant_feature_flags(0)
+            .legacy_bluetooth_proxy_version(1)
+            .bluetooth_proxy_feature_flags(1)
             // project_name: "".to_owned(),
-            // has_deep_sleep: false,
             // compilation_time: "".to_owned(),
             // project_version: "".to_owned(),
-            // esphome_version: "2025.4.0".to_owned(),
+            .suggested_area(
+                self.config
+                    .api
+                    .suggested_area
+                    .clone()
+                    .unwrap_or("".to_string()),
+            )
             .build();
 
         let core_config = self.config.clone();
@@ -274,7 +276,7 @@ impl Module for UbiHomeDefault {
                 break;
             }
 
-            let port = api_config.as_ref().and_then(|c| c.port).unwrap_or(6053);
+            let port = api_config.port.unwrap_or(6053);
             let addr: SocketAddr = format!("0.0.0.0:{}", port).parse().unwrap();
             let socket = TcpSocket::new_v4().unwrap();
             socket.set_reuseaddr(true).unwrap();

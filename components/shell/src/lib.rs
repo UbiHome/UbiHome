@@ -2,9 +2,7 @@ use duration_str::deserialize_duration;
 use log::{debug, error, info, trace, warn};
 use serde::{Deserialize, Deserializer};
 use shell_exec::{Execution, Shell, ShellError};
-use std::any;
 use std::collections::HashMap;
-use std::sync::Arc;
 use std::{future::Future, pin::Pin, str, time::Duration};
 use tokio::{
     sync::broadcast::{Receiver, Sender},
@@ -82,13 +80,13 @@ pub struct ShellLightConfig {
     pub command_on: String,
     pub command_off: String,
     pub command_state: Option<String>,
-    pub command_brightness: Option<String>,
-    pub command_rgb: Option<String>,
+    // pub command_brightness: Option<String>,
+    // pub command_rgb: Option<String>,
 
-    pub supports_brightness: Option<bool>,
-    pub supports_rgb: Option<bool>,
-    pub supports_white_value: Option<bool>,
-    pub supports_color_temperature: Option<bool>,
+    // pub supports_brightness: Option<bool>,
+    // pub supports_rgb: Option<bool>,
+    // pub supports_white_value: Option<bool>,
+    // pub supports_color_temperature: Option<bool>,
 
     #[serde(default = "default_timeout_none")]
     #[serde(deserialize_with = "deserialize_option_duration")]
@@ -383,33 +381,33 @@ impl Module for Default {
                                 }
 
                                 // Handle brightness command if provided and supported
-                                if let (Some(brightness_val), Some(brightness_cmd)) = (brightness, &light.command_brightness) {
-                                    if light.supports_brightness.unwrap_or(false) {
-                                        let brightness_command = brightness_cmd.replace("{brightness}", &brightness_val.to_string());
-                                        debug!("Executing brightness command: {}", brightness_command);
-                                        let _ = execute_command(
-                                            &cloned_config,
-                                            &brightness_command,
-                                            &cloned_config.timeout,
-                                        ).await;
-                                    }
-                                }
+                                // if let (Some(brightness_val), Some(brightness_cmd)) = (brightness, &light.command_brightness) {
+                                //     if light.supports_brightness.unwrap_or(false) {
+                                //         let brightness_command = brightness_cmd.replace("{brightness}", &brightness_val.to_string());
+                                //         debug!("Executing brightness command: {}", brightness_command);
+                                //         let _ = execute_command(
+                                //             &cloned_config,
+                                //             &brightness_command,
+                                //             &cloned_config.timeout,
+                                //         ).await;
+                                //     }
+                                // }
 
                                 // Handle RGB color command if provided and supported
-                                if let (Some(r), Some(g), Some(b), Some(rgb_cmd)) = (red, green, blue, &light.command_rgb) {
-                                    if light.supports_rgb.unwrap_or(false) {
-                                        let rgb_command = rgb_cmd
-                                            .replace("{red}", &r.to_string())
-                                            .replace("{green}", &g.to_string())
-                                            .replace("{blue}", &b.to_string());
-                                        debug!("Executing RGB command: {}", rgb_command);
-                                        let _ = execute_command(
-                                            &cloned_config,
-                                            &rgb_command,
-                                            &cloned_config.timeout,
-                                        ).await;
-                                    }
-                                }
+                                // if let (Some(r), Some(g), Some(b), Some(rgb_cmd)) = (red, green, blue, &light.command_rgb) {
+                                //     if light.supports_rgb.unwrap_or(false) {
+                                //         let rgb_command = rgb_cmd
+                                //             .replace("{red}", &r.to_string())
+                                //             .replace("{green}", &g.to_string())
+                                //             .replace("{blue}", &b.to_string());
+                                //         debug!("Executing RGB command: {}", rgb_command);
+                                //         let _ = execute_command(
+                                //             &cloned_config,
+                                //             &rgb_command,
+                                //             &cloned_config.timeout,
+                                //         ).await;
+                                //     }
+                                // }
 
                                 // Check state after command if state command is available
                                 if let Some(command_state) = &light.command_state {
