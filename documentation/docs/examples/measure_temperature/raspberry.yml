@@ -1,0 +1,13 @@
+ubihome:
+  name: UbiHome Example
+
+bme280:
+
+sensor:
+  - platform: bme280
+    update_interval: 30s
+    name: "bla"
+
+# Native Homeassistant API
+api:
+  # encryption_key: "set your own!"
