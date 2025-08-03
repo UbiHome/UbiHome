@@ -9,7 +9,7 @@ prepare-test-linux-fast:
 	cp target/debug/ubihome ./tests/ubihome
 
 test-fast: prepare-test-linux-fast
-	cd tests && poetry run pytest -vvv
+	cd tests && uv run pytest -vvv
 
 test: prepare-test-linux
-	cd tests && poetry run pytest -vvv
+	cd tests && uv run pytest -vvv
