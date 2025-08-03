@@ -406,11 +406,15 @@ impl Module for UbiHomeDefault {
                 let cloned_sender = sender.clone();
                 tokio::spawn(async move {
                     loop {
-                        let message = rx.recv().await.unwrap();
+                        let message = rx.recv().await;
+                        if message.as_ref().is_err() {
+                            debug!("Connection closed or error: {:?}", &message);
+                            return;
+                        }
                         // Process the received message
                         debug!("Received message: {:?}", message);
 
-                        match message {
+                        match message.as_ref().unwrap() {
                             ProtoMessage::ListEntitiesRequest(list_entities_request) => {
                                 debug!("ListEntitiesRequest: {:?}", list_entities_request);
 
