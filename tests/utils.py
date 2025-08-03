@@ -49,10 +49,11 @@ api:
 
 class UbiHome(object):
     
-    def __init__(self, arguments, config = None):
+    def __init__(self, arguments, config = None, throw_on_error=True):
         self.config = config if config else DEFAULT_CONFIG
         self.arguments = arguments
         self.configuration_file = f"config{os.getpid()}.yaml"
+        self.throw_on_error = throw_on_error
 
 
     def __enter__(self):
@@ -89,7 +90,7 @@ class UbiHome(object):
           os.killpg(os.getpgid(self.process.pid), signal.SIGTERM)  # Send the signal to all the process groups
         except Exception:
           pass
-        if stderr:
+        if stderr and self.throw_on_error:
             raise Exception(f"Error: {stderr}")
 
     def get_stdout(self):

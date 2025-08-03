@@ -2,8 +2,11 @@
 
 ## Installation
 
-```
-pipx install poetry
+1. Install [`uv`](https://docs.astral.sh/uv/getting-started/installation/)
+
+```bash
+cd tests
+uv sync
 ```
 
 ## Just run them
