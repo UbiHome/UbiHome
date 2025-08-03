@@ -24,6 +24,8 @@ pytest
 ## If something is not working
 
 ```bash
-ps saux | grep ubihome
+# Linux
 pkill -8  ubihome
+# Check that no processes are running
+ps aux | grep ubihome
 ```
