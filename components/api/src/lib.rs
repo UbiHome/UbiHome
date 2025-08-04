@@ -298,6 +298,7 @@ impl Module for UbiHomeDefault {
                 let mut receiver_clone = receiver.resubscribe();
                 let api_components_key_id_clone = api_components_key_id.clone();
 
+                // Send Messages
                 tokio::spawn(async move {
                     while let Ok(cmd) = receiver_clone.recv().await {
                         match cmd {
@@ -405,16 +406,11 @@ impl Module for UbiHomeDefault {
                 // Read Loop
                 let cloned_sender = sender.clone();
                 tokio::spawn(async move {
-                    loop {
-                        let message = rx.recv().await;
-                        if message.as_ref().is_err() {
-                            debug!("Connection closed or error: {:?}", &message);
-                            return;
-                        }
+                    while let Ok(message) = rx.recv().await {
                         // Process the received message
                         debug!("Received message: {:?}", message);
 
-                        match message.as_ref().unwrap() {
+                        match message {
                             ProtoMessage::ListEntitiesRequest(list_entities_request) => {
                                 debug!("ListEntitiesRequest: {:?}", list_entities_request);
 
@@ -567,38 +563,13 @@ impl Module for UbiHomeDefault {
                             }
                             _ => {
                                 debug!("Ignore message type: {:?}", message);
-                                return;
                             }
-                            _ => {}
                         }
                     }
+                    debug!("Connection closed or error");
+                
                 });
 
-                // // Write Loop
-                // let mut answer_messages_rx_clone = answer_messages_rx.resubscribe();
-                // let mut messages_rx_clone = messages_rx.resubscribe();
-                // tokio::spawn(async move {
-                //     let mut disconnect = false;
-                //     loop {
-                //         let mut answer_buf: Vec<u8> = vec![];
-
-                //         let answer_messages = answer_messages_rx_clone.recv();
-                //         let normal_messages = messages_rx_clone.recv();
-
-                //         trace!("Send response: {:?}", answer_buf);
-                //         write
-                //             .write_all(&answer_buf)
-                //             .await
-                //             .expect("failed to write data to socket");
-
-                //         if disconnect {
-                //             // Close the socket
-                //             debug!("Disconnecting");
-                //             write.shutdown().await.expect("failed to shutdown socket");
-                //             break;
-                //         }
-                //     }
-                // });
             }
         })
     }
