@@ -895,7 +895,7 @@ checksum = "f46882e17999c6cc590af592290432be3bce0428cb0d5f8b6715e4dc7b383eb3"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.104",
+ "syn 2.0.100",
 ]
 
 [[package]]
@@ -2440,12 +2440,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "42f5e15c9953c5e4ccceeb2e7382a716482c34515315f7b03532b8b4e8393d2d"
 
 [[package]]
-name = "once_cell_polyfill"
-version = "1.70.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a4895175b425cb1f87721b59f0f286c2092bd4af812243672510e1ac53e2e0ad"
-
-[[package]]
 name = "opaque-debug"
 version = "0.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2621,15 +2615,6 @@ dependencies = [
  "cpufeatures",
  "opaque-debug",
  "universal-hash",
-]
-
-[[package]]
-name = "potential_utf"
-version = "0.1.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e5a7c30837279ca13e7c867e9e40053bc68740f988cb07f7ca6df43cc734b585"
-dependencies = [
- "zerovec",
 ]
 
 [[package]]
@@ -4024,7 +4009,7 @@ checksum = "60d8d828da2a3d759d3519cdf29a5bac49c77d039ad36d0782edadbf9cd5415b"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.104",
+ "syn 2.0.100",
 ]
 
 [[package]]
@@ -4084,7 +4069,7 @@ dependencies = [
 
 [[package]]
 name = "ubihome-bluetooth_proxy"
-version = "0.9.1"
+version = "0.9.2"
 dependencies = [
  "anyhow",
  "btleplug",
@@ -4100,7 +4085,7 @@ dependencies = [
 
 [[package]]
 name = "ubihome-bme280"
-version = "0.9.0"
+version = "0.9.2"
 dependencies = [
  "bme280",
  "duration-str",
@@ -4114,7 +4099,7 @@ dependencies = [
 
 [[package]]
 name = "ubihome-core"
-version = "0.9.1"
+version = "0.9.2"
 dependencies = [
  "convert_case",
  "duration-str",
@@ -4127,7 +4112,7 @@ dependencies = [
 
 [[package]]
 name = "ubihome-evdev"
-version = "0.9.1"
+version = "0.9.2"
 dependencies = [
  "async-trait",
  "duration-str",
@@ -4141,7 +4126,7 @@ dependencies = [
 
 [[package]]
 name = "ubihome-gpio"
-version = "0.9.1"
+version = "0.9.2"
 dependencies = [
  "async-trait",
  "duration-str",
@@ -4169,7 +4154,7 @@ dependencies = [
 
 [[package]]
 name = "ubihome-mdns"
-version = "0.9.1"
+version = "0.9.2"
 dependencies = [
  "duration-str",
  "libmdns",
@@ -4183,7 +4168,7 @@ dependencies = [
 
 [[package]]
 name = "ubihome-mqtt"
-version = "0.9.1"
+version = "0.9.2"
 dependencies = [
  "duration-str",
  "log",
@@ -4199,7 +4184,7 @@ dependencies = [
 
 [[package]]
 name = "ubihome-power_utils"
-version = "0.9.1"
+version = "0.9.2"
 dependencies = [
  "duration-str",
  "log",
@@ -4212,7 +4197,7 @@ dependencies = [
 
 [[package]]
 name = "ubihome-shell"
-version = "0.9.1"
+version = "0.9.2"
 dependencies = [
  "duration-str",
  "log",
@@ -4225,7 +4210,7 @@ dependencies = [
 
 [[package]]
 name = "ubihome-web_server"
-version = "0.9.1"
+version = "0.9.2"
 dependencies = [
  "async-stream",
  "axum",
@@ -5269,7 +5254,7 @@ checksum = "ce36e65b0d2999d2aafac989fb249189a141aee1f53c612c1f37d72631959f69"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.104",
+ "syn 2.0.100",
 ]
 
 [[package]]
