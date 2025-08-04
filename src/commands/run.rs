@@ -102,7 +102,7 @@ async fn initialize_modules(
     let mut all_components: Vec<InternalComponent> = Vec::new();
     for module in modules.iter_mut() {
         let mut components = module.components();
-        println!("Module: {:?}", &components);
+        // println!("Module: {:?}", &components);
         all_components.append(&mut components);
     }
     Ok(all_components)
@@ -207,7 +207,7 @@ pub(crate) fn run(
         for component in components.clone() {
             match component {
                 InternalComponent::Button(button) => {
-                    println!("Button: {:?}", button);
+                    // println!("Button: {:?}", button);
                 }
                 InternalComponent::Sensor(sensor) => {
                     let mutable: Mutable<Option<Option<f32>>> = Mutable::new(Option::None);
@@ -263,7 +263,10 @@ pub(crate) fn run(
                     });
                 }
                 InternalComponent::Switch(switch) => {
-                    println!("Switch: {:?}", switch);
+                    // println!("Switch: {:?}", switch);
+                }
+                InternalComponent::Light(light) => {
+                    // println!("Light: {:?}", light);
                 }
                 InternalComponent::BinarySensor(binary_sensor) => {
                     let mutable: Mutable<Option<Option<bool>>> = Mutable::new(Option::None);
@@ -435,6 +438,12 @@ pub(crate) fn run(
                         ChangedMessage::SwitchStateCommand { key, state } => {
                             publish_cmd = Some(PublishedMessage::SwitchStateCommand { key, state });
                         }
+                        ChangedMessage::LightStateChange { key, state, brightness, red, green, blue } => {
+                            publish_cmd = Some(PublishedMessage::LightStateChange { key, state, brightness, red, green, blue });
+                        }
+                        ChangedMessage::LightStateCommand { key, state, brightness, red, green, blue } => {
+                            publish_cmd = Some(PublishedMessage::LightStateCommand { key, state, brightness, red, green, blue });
+                        }
                         ChangedMessage::ButtonPress { key } => {
                             publish_cmd = Some(PublishedMessage::ButtonPressed { key });
                         }
@@ -477,6 +486,7 @@ pub(crate) fn run(
                         InternalComponent::BinarySensor(binary_sensor) => {
                             Component::BinarySensor(binary_sensor.ha.clone())
                         }
+                        InternalComponent::Light(light) => Component::Light(light.ha.clone()),
                     })
                     .collect(),
             })

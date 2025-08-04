@@ -1,5 +1,27 @@
 # Changelog
 
+## [0.9.2](https://github.com/UbiHome/UbiHome/compare/v0.9.1...v0.9.2) (2025-08-04)
+
+
+### Bug Fixes
+
+* connection issues with HA ([3ef8009](https://github.com/UbiHome/UbiHome/commit/3ef80090d6bfdbef9e4afbe51b02be19c137b549))
+* tests ([c9dbdba](https://github.com/UbiHome/UbiHome/commit/c9dbdba13b2a723e64e74a8677cc9abe11917af7))
+
+## [0.9.1](https://github.com/UbiHome/UbiHome/compare/v0.9.0...v0.9.1) (2025-08-04)
+
+
+### Bug Fixes
+
+* connection issues with hassio ([80b5e00](https://github.com/UbiHome/UbiHome/commit/80b5e00968f447f219ef56a5f26700089bf17c59))
+
+## [0.9.0](https://github.com/UbiHome/UbiHome/compare/v0.8.11...v0.9.0) (2025-08-03)
+
+
+### Features
+
+* add password and key authentcation + light sensor ([#82](https://github.com/UbiHome/UbiHome/issues/82)) ([89c11f2](https://github.com/UbiHome/UbiHome/commit/89c11f2aeec96048663c64edc0b351c8ba7df911))
+
 ## [0.8.11](https://github.com/UbiHome/UbiHome/compare/v0.8.10...v0.8.11) (2025-05-10)
 
 

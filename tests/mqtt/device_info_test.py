@@ -1,4 +1,5 @@
 
+from asyncio import sleep
 import json
 from unittest.mock import Mock
 from utils import UbiHome
@@ -18,7 +19,8 @@ mqtt:
   mqtt_client.subscribe("#")
   mock = Mock()
   mqtt_client._on_message = mock
-  async with UbiHome("run", DEVICE_INFO_CONFIG) as ubihome:
+  async with UbiHome("run", config=DEVICE_INFO_CONFIG) as ubihome:
+    await sleep(1)
     mock.assert_called_once()
     message = mock.call_args.args[2]
     assert message.topic == f"homeassistant/device/{name}/config"

@@ -1,6 +1,6 @@
 
 import os
-from utils import UbiHome, wait_and_get_file, wait_for_mock_state
+from utils import UbiHome, wait_for_mock_state
 
 
 async def test_binary_sensor_triggers():
@@ -41,7 +41,7 @@ binary_sensor:
   
   with open(sensor_mock, "w") as f:
       f.write("false")
-  async with UbiHome("run", DEVICE_INFO_CONFIG) as ubihome:
+  async with UbiHome("run", config=DEVICE_INFO_CONFIG) as ubihome:
     
     with open(sensor_mock, "w") as f:
         f.write("true")

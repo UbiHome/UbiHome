@@ -1,9 +1,9 @@
-from asyncio import sleep
-import fcntl
+import asyncio
+from asyncio.subprocess import Process
 import os
-import signal
-from subprocess import PIPE, Popen
+import socket
 import time
+from typing import Optional
 
 DEFAULT_CONFIG = """
 ubihome:
@@ -47,76 +47,127 @@ api:
     key: "token"
 """
 
+
 class UbiHome(object):
+    process: Optional[Process] = None
+    _stdout_task = None
+    _stderr_task = None
+    port = 6053
+    stdout: str | None = None
+    stderr: str | None = None
     
-    def __init__(self, arguments, config = None):
+    def __init__(self, *arguments, config=None, throw_on_error=True, wait_for_api=False):
         self.config = config if config else DEFAULT_CONFIG
         self.arguments = arguments
         self.configuration_file = f"config{os.getpid()}.yaml"
+        self.throw_on_error = throw_on_error
+        self.wait_for_api = wait_for_api
 
-
-    def __enter__(self):
+    async def __aenter__(self):
+        my_env = os.environ.copy()
+        my_env["RUST_LOG"] = "debug"
+        my_env["RUSTFLAGS"] = "-Awarnings"
         with open(self.configuration_file, "w") as f:
             f.write(self.config)
-            
-        self.process = Popen(
-            f"./ubihome -c " + self.configuration_file + " " + self.arguments,
-            shell=True,
-            stdout=PIPE,
-            stderr=PIPE,
-            cwd=os.getcwd(),
-            preexec_fn=os.setsid
-        )
-        return self
-    
-    async def __aenter__(self):
-        self.__enter__()
-        await sleep(0.5)
+
+        executable = os.path.join(os.getcwd(), "ubihome")
+        if os.path.exists(executable):
+            # Use pre-build binaries
+            self.process = await asyncio.create_subprocess_exec(
+                executable,
+                "-c",
+                self.configuration_file,
+                *self.arguments,
+                env=my_env,
+                stderr=asyncio.subprocess.PIPE,
+                stdout=asyncio.subprocess.PIPE,
+            )
+        else:
+            raise Exception(f"{executable} does not exist. Please build UbiHome first.")
+
+        self._stdout_task = asyncio.create_task(self._read_stdout())
+        self._stderr_task = asyncio.create_task(self._read_stderr())
+
+        if self.wait_for_api:
+          print("Waiting for server to start...")
+          sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+          while True:
+              result = sock.connect_ex(("127.0.0.1", self.port))
+              if result == 0:
+                  print("Port is open")
+                  break
+              else:
+                  await asyncio.sleep(0.1)
+          sock.close()
+
         return self
 
     async def __aexit__(self, exctype, value, tb):
-        await sleep(1)
-        self.__exit__(exctype, value, tb)
-
-    def __exit__(self, exctype, value, tb):
         os.remove(self.configuration_file)
-        stderr = self.get_stderr()
-        print(self.get_stdout())
-            
-        self.process.terminate()
-        # Make sure its really dead:
-        try: 
-          os.killpg(os.getpgid(self.process.pid), signal.SIGTERM)  # Send the signal to all the process groups
-        except Exception:
-          pass
-        if stderr:
-            raise Exception(f"Error: {stderr}")
+        if self.process:
 
-    def get_stdout(self):
-        return self.__non_block_read(self.process.stdout)
+            # Try to terminate gracefully
+            try:
+                self.process.terminate()
+            except ProcessLookupError:
+                pass
+            try:
+                await asyncio.wait_for(self.process.wait(), timeout=5)
+            except asyncio.TimeoutError:
+                self.process.kill()
+                await self.process.wait()
 
-    def get_stderr(self):
-        return self.__non_block_read(self.process.stderr)
-    
-    @staticmethod
-    def __non_block_read(output):
-        if output.closed:
-            return ""
-        fd = output.fileno()
-        fl = fcntl.fcntl(fd, fcntl.F_GETFL)
-        fcntl.fcntl(fd, fcntl.F_SETFL, fl | os.O_NONBLOCK)
-        try:
-            return output.read().decode()
-        except:
-            return ""
+            # Cancel the stdout/stderr reading tasks
+            if self._stdout_task:
+                self._stdout_task.cancel()
+                try:
+                    await self._stdout_task
+                except asyncio.CancelledError:
+                    pass
 
-def run_ubihome(arguments, config = None) -> str: 
-    with UbiHome(arguments, config) as ubihome:
-      stdout, stderr = ubihome.process.communicate()
-      if stderr:
-          raise Exception(f"Error: {stderr.decode().strip()}")
+            if self._stderr_task:
+                self._stderr_task.cancel()
+                try:
+                    await self._stderr_task
+                except asyncio.CancelledError:
+                    pass
+            # Works on windows?!
+            # os.kill(self.process.pid, signal.CTRL_BREAK_EVENT)
 
-      return stdout.decode()
+            # self.process = None
+
+    async def _read_stdout(self):
+        """Read and print stdout from the server process."""
+        self.stdout = ""
+
+        while True:
+            if not self.process or not self.process.stdout:
+                return
+            line = await self.process.stdout.readline()
+            if not line:
+                break
+            message = line.decode("utf-8")
+            self.stdout += message
+            print(message.rstrip())
+
+    async def _read_stderr(self):
+        """Read and print stderr from the server process."""
+        self.stderr = ""
+        while True:
+            if not self.process or not self.process.stderr:
+                return
+            line = await self.process.stderr.readline()
+            if not line:
+                break
+            message = line.decode("utf-8")
+            self.stderr += message
+            print(message.rstrip())
+
+
+async def run_ubihome(*arguments, config=None) -> str:
+    async with UbiHome(*arguments, config=config) as ubihome:
+        await asyncio.sleep(1)
+        return ubihome.stdout or ""
 
 
 def wait_and_get_file(file_path, timeout=5):
@@ -126,7 +177,9 @@ def wait_and_get_file(file_path, timeout=5):
     start_time = time.time()
     while not os.path.exists(file_path):
         if time.time() - start_time > timeout:
-            raise TimeoutError(f"File {file_path} was not created within {timeout} seconds.")
+            raise TimeoutError(
+                f"File {file_path} was not created within {timeout} seconds."
+            )
         time.sleep(0.1)
     return open(file_path, "r").read()
 
@@ -138,14 +191,18 @@ def wait_for_mock_state(file_path, expected_state, timeout=5):
     state = None
     start_time = time.time()
     while expected_state != state:
-      if time.time() - start_time > timeout:
-        raise TimeoutError(f"State does not match within {timeout} seconds: {expected_state} != {state}.")
-      while not os.path.exists(file_path):
-          if time.time() - start_time > timeout:
-              raise TimeoutError(f"File {file_path} was not created within {timeout} seconds.")
-          time.sleep(0.1)
+        if time.time() - start_time > timeout:
+            raise TimeoutError(
+                f"State does not match within {timeout} seconds: {expected_state} != {state}."
+            )
+        while not os.path.exists(file_path):
+            if time.time() - start_time > timeout:
+                raise TimeoutError(
+                    f"File {file_path} was not created within {timeout} seconds."
+                )
+            time.sleep(0.1)
 
-      state = open(file_path, "r").read()
-      time.sleep(0.1)
+        state = open(file_path, "r").read()
+        time.sleep(0.1)
 
     return True

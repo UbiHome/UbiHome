@@ -1,3 +1,8 @@
+ubihome:
+  name: UbiHome Example
+
+power_utils:
+
 button:
   - platform: power_utils
     name: "Reboot"
