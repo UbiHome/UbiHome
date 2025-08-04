@@ -19,6 +19,7 @@ ubihome-bluetooth_proxy = { path = "components/bluetooth_proxy" }
 ubihome-bme280 = { path = "components/bme280" }
 ubihome-core = { path = "components/core" }
 ubihome-gpio = { path = "components/gpio" }
+ubihome-light_sensor = { path = "components/light_sensor" }
 ubihome-mdns = { path = "components/mdns" }
 ubihome-mqtt = { path = "components/mqtt" }
 ubihome-power_utils = { path = "components/power_utils" }
@@ -50,4 +51,4 @@ windows-sys = "0.59"
 
 [workspace]
 resolver = "2"
-members = ["components/api", "components/bluetooth_proxy", "components/bme280", "components/core", "components/evdev", "components/gpio", "components/mdns", "components/mqtt", "components/power_utils", "components/shell", "components/web_server"]
+members = ["components/api", "components/bluetooth_proxy", "components/bme280", "components/core", "components/evdev", "components/gpio", "components/light_sensor", "components/mdns", "components/mqtt", "components/power_utils", "components/shell", "components/web_server"]
