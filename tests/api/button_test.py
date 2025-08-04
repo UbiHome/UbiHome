@@ -24,7 +24,7 @@ button:
    command: "echo 'Hello World!' > test.log"
 """
 
-  async with UbiHome("run", DEVICE_INFO_CONFIG) as ubihome:
+  async with UbiHome("run", config=DEVICE_INFO_CONFIG, wait_for_api=True) as ubihome:
     api = aioesphomeapi.APIClient("127.0.0.1", 6053, "")
     await api.connect(login=False)
 
