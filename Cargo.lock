@@ -3926,7 +3926,7 @@ checksum = "1dccffe3ce07af9386bfd29e80c0ab1a8205a2fc34e4bcd40364df902cfa8f3f"
 
 [[package]]
 name = "ubihome"
-version = "0.9.0"
+version = "0.9.1"
 dependencies = [
  "cargo_toml",
  "clap",
@@ -3960,7 +3960,7 @@ dependencies = [
 
 [[package]]
 name = "ubihome-api"
-version = "0.9.0"
+version = "0.9.1"
 dependencies = [
  "duration-str",
  "esphome-native-api",
@@ -3990,7 +3990,7 @@ dependencies = [
 
 [[package]]
 name = "ubihome-bme280"
-version = "0.8.12"
+version = "0.9.0"
 dependencies = [
  "bme280",
  "duration-str",
