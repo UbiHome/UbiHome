@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.9.2](https://github.com/UbiHome/UbiHome/compare/v0.9.1...ubihome-api-v0.9.2) (2025-08-04)
+
+
+### Bug Fixes
+
+* connection issues with HA ([3ef8009](https://github.com/UbiHome/UbiHome/commit/3ef80090d6bfdbef9e4afbe51b02be19c137b549))
+
 ## [0.9.1](https://github.com/UbiHome/UbiHome/compare/v0.9.0...ubihome-api-v0.9.1) (2025-08-04)
 
 
