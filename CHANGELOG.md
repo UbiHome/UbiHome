@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.9.1](https://github.com/UbiHome/UbiHome/compare/v0.9.0...v0.9.1) (2025-08-04)
+
+
+### Bug Fixes
+
+* connection issues with hassio ([80b5e00](https://github.com/UbiHome/UbiHome/commit/80b5e00968f447f219ef56a5f26700089bf17c59))
+
 ## [0.9.0](https://github.com/UbiHome/UbiHome/compare/v0.8.11...v0.9.0) (2025-08-03)
 
 
