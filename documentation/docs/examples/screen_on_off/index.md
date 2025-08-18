@@ -2,11 +2,15 @@
 
 Control the screen power state of a Raspberry Pi using the `vcgencmd` command or `wlr-randr` for Wayland.
 
+> If you are unsure which you are using run `loginctl show-session 1 | grep "Desktop"`
+
 === "Raspberry Pi"
     
     ## Wayland
 
     Try it out before by running `wlr-randr --output HDMI-A-1 --off` to turn off the screen and `wlr-randr --output HDMI-A-1 --on` to turn it back on.
+
+    > Run `kmsprint` to show all connected displays. 
 
     
     
