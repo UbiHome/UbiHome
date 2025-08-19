@@ -66,6 +66,7 @@ Options:
 - [x] GPIO https://github.com/golemparts/rppal
 - [ ] Kernel events (e.g. Keyboard press) https://docs.rs/evdev/latest/evdev/
 - [ ] Music Assistant Media Player integration for Windows / Linux (https://docs.rs/souvlaki/latest/souvlaki/)
+- [ ] Read Lightsensor from a laptop
 
 ... Control USB Devices?
 
