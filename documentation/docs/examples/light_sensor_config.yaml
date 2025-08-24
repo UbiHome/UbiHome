@@ -1,0 +1,23 @@
+# UbiHome Light Sensor Example Configuration
+
+ubihome:
+  name: "My Laptop Light Sensor"
+
+mqtt: 
+  broker: 192.168.1.100
+  username: ubihome-laptop
+  password: secure_password
+
+# Global light sensor configuration
+light_sensor:
+  update_interval: 30s
+
+# Individual light sensor
+sensor:
+  - platform: light_sensor
+    name: "Ambient Light Sensor"
+    icon: mdi:brightness-6
+    state_class: "measurement"
+    device_class: "illuminance"
+    unit_of_measurement: "lx"
+    update_interval: 15s
