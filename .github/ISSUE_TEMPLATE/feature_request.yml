@@ -10,15 +10,6 @@ body:
       value: |
         Thank you for suggesting a feature! Please provide the following details to help us understand your request.
 
-  - type: input
-    id: title
-    attributes:
-      label: Feature Title
-      description: Provide a short and descriptive title for the feature.
-      placeholder: "e.g., 'Add dark mode support'"
-    validations:
-      required: true
-
   - type: textarea
     id: description
     attributes:
