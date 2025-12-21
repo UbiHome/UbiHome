@@ -10,15 +10,6 @@ body:
       value: |
         Thank you for reporting a bug! Please provide the following details to help us resolve the issue.
 
-  - type: input
-    id: title
-    attributes:
-      label: Bug Title
-      description: Provide a short and descriptive title for the bug.
-      placeholder: "e.g., 'CLI crashes with special config'"
-    validations:
-      required: true
-
   - type: textarea
     id: description
     attributes:
