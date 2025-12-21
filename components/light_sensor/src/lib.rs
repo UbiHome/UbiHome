@@ -7,7 +7,7 @@ use tokio::{
     time,
 };
 use ubihome_core::{
-    home_assistant::sensors::{UbiSensor},
+    home_assistant::sensors::UbiSensor,
     internal::sensors::{InternalComponent, InternalSensor},
     sensor::{SensorBase, UnknownSensor},
     ChangedMessage, Module, PublishedMessage, UbiHome,
@@ -75,9 +75,9 @@ impl Module for Default {
     fn new(config_string: &String) -> Result<Self, String> {
         let config = serde_yaml::from_str::<CoreConfig>(config_string)
             .map_err(|e| format!("Failed to parse light sensor config: {}", e))?;
-        
+
         debug!("Light sensor config: {:?}", config);
-        
+
         let mut components: Vec<InternalComponent> = Vec::new();
         let mut sensors: HashMap<String, LightSensorInternalConfig> = HashMap::new();
 
@@ -89,13 +89,25 @@ impl Module for Default {
                         components.push(InternalComponent::Sensor(InternalSensor {
                             ha: UbiSensor {
                                 platform: "sensor".to_string(),
-                                icon: sensor_config.default.icon.clone()
+                                icon: sensor_config
+                                    .default
+                                    .icon
+                                    .clone()
                                     .or_else(|| Some("mdi:brightness-6".to_string())),
-                                device_class: sensor_config.default.device_class.clone()
+                                device_class: sensor_config
+                                    .default
+                                    .device_class
+                                    .clone()
                                     .or_else(|| Some("illuminance".to_string())),
-                                state_class: sensor_config.default.state_class.clone()
+                                state_class: sensor_config
+                                    .default
+                                    .state_class
+                                    .clone()
                                     .or_else(|| Some("measurement".to_string())),
-                                unit_of_measurement: sensor_config.default.unit_of_measurement.clone()
+                                unit_of_measurement: sensor_config
+                                    .default
+                                    .unit_of_measurement
+                                    .clone()
                                     .or_else(|| Some("lx".to_string())),
                                 name: sensor_config.default.name.clone(),
                                 id: id.clone(),
@@ -128,7 +140,7 @@ impl Module for Default {
     {
         let sensors = self.sensors.clone();
         let global_config = self.config.clone();
-        
+
         Box::pin(async move {
             if sensors.is_empty() {
                 debug!("No light sensors configured");
@@ -138,26 +150,31 @@ impl Module for Default {
             for (sensor_id, sensor_config) in sensors {
                 let cloned_sender = sender.clone();
                 let cloned_global_config = global_config.clone();
-                
+
                 tokio::spawn(async move {
-                    let update_interval = sensor_config.update_interval
+                    let update_interval = sensor_config
+                        .update_interval
                         .or(cloned_global_config.update_interval)
                         .unwrap_or(Duration::from_secs(30));
-                    
+
                     let mut interval = time::interval(update_interval);
-                    
-                    info!("Starting light sensor {} with update interval: {:?}", 
-                          sensor_id, update_interval);
+
+                    info!(
+                        "Starting light sensor {} with update interval: {:?}",
+                        sensor_id, update_interval
+                    );
 
                     loop {
                         match read_light_sensor(sensor_config.device_path.as_ref()).await {
                             Ok(illuminance) => {
                                 debug!("Light sensor {} reading: {} lx", sensor_id, illuminance);
-                                
-                                if let Err(e) = cloned_sender.send(ChangedMessage::SensorValueChange {
-                                    key: sensor_id.clone(),
-                                    value: illuminance as f32,
-                                }) {
+
+                                if let Err(e) =
+                                    cloned_sender.send(ChangedMessage::SensorValueChange {
+                                        key: sensor_id.clone(),
+                                        value: illuminance as f32,
+                                    })
+                                {
                                     error!("Failed to send light sensor value: {}", e);
                                     break;
                                 }
@@ -166,12 +183,12 @@ impl Module for Default {
                                 warn!("Failed to read light sensor {}: {}", sensor_id, e);
                             }
                         }
-                        
+
                         interval.tick().await;
                     }
                 });
             }
-            
+
             Ok(())
         })
     }
@@ -190,18 +207,18 @@ impl std::default::Default for LightSensorConfig {
 #[cfg(target_os = "linux")]
 async fn read_light_sensor(device_path: Option<&String>) -> Result<f64, String> {
     use std::{fs, path::Path};
-    
+
     // If a specific device path is provided, use it
     if let Some(path) = device_path {
         return read_linux_light_sensor_from_path(path).await;
     }
-    
+
     // Auto-detect light sensor devices
     let iio_base = "/sys/bus/iio/devices";
     if Path::new(iio_base).exists() {
         let entries = fs::read_dir(iio_base)
             .map_err(|e| format!("Failed to read IIO devices directory: {}", e))?;
-            
+
         for entry in entries {
             if let Ok(entry) = entry {
                 let device_path = entry.path();
@@ -210,17 +227,21 @@ async fn read_light_sensor(device_path: Option<&String>) -> Result<f64, String> 
                         // Check if this device has illuminance capabilities
                         let illuminance_raw_path = device_path.join("in_illuminance_raw");
                         let illuminance_input_path = device_path.join("in_illuminance_input");
-                        
+
                         if illuminance_raw_path.exists() {
                             if let Ok(value) = read_linux_light_sensor_from_path(
-                                &illuminance_raw_path.to_string_lossy().to_string()
-                            ).await {
+                                &illuminance_raw_path.to_string_lossy().to_string(),
+                            )
+                            .await
+                            {
                                 return Ok(value);
                             }
                         } else if illuminance_input_path.exists() {
                             if let Ok(value) = read_linux_light_sensor_from_path(
-                                &illuminance_input_path.to_string_lossy().to_string()
-                            ).await {
+                                &illuminance_input_path.to_string_lossy().to_string(),
+                            )
+                            .await
+                            {
                                 return Ok(value);
                             }
                         }
@@ -229,14 +250,14 @@ async fn read_light_sensor(device_path: Option<&String>) -> Result<f64, String> 
             }
         }
     }
-    
+
     // Try alternative paths for some hardware
     let hwmon_paths = [
         "/sys/class/hwmon/hwmon0/device/als",
         "/sys/class/hwmon/hwmon1/device/als",
         "/sys/devices/platform/applesmc.768/light",
     ];
-    
+
     for path in &hwmon_paths {
         if Path::new(path).exists() {
             if let Ok(value) = read_linux_light_sensor_from_path(&path.to_string()).await {
@@ -244,20 +265,25 @@ async fn read_light_sensor(device_path: Option<&String>) -> Result<f64, String> 
             }
         }
     }
-    
+
     Err("No light sensor found on this system".to_string())
 }
 
 #[cfg(target_os = "linux")]
 async fn read_linux_light_sensor_from_path(path: &str) -> Result<f64, String> {
     use std::fs;
-    
+
     let content = fs::read_to_string(path)
         .map_err(|e| format!("Failed to read light sensor from {}: {}", path, e))?;
-    
-    let value: f64 = content.trim().parse()
-        .map_err(|e| format!("Failed to parse light sensor value '{}': {}", content.trim(), e))?;
-    
+
+    let value: f64 = content.trim().parse().map_err(|e| {
+        format!(
+            "Failed to parse light sensor value '{}': {}",
+            content.trim(),
+            e
+        )
+    })?;
+
     Ok(value)
 }
 
@@ -265,40 +291,40 @@ async fn read_linux_light_sensor_from_path(path: &str) -> Result<f64, String> {
 async fn read_light_sensor(_device_path: Option<&String>) -> Result<f64, String> {
     use windows::{
         Win32::Devices::Sensors::{
-            ISensorManager, ISensorDataReport,
-            SENSOR_TYPE_AMBIENT_LIGHT, SENSOR_DATA_TYPE_LIGHT_LEVEL_LUX,
+            ISensorDataReport, ISensorManager, SENSOR_DATA_TYPE_LIGHT_LEVEL_LUX,
+            SENSOR_TYPE_AMBIENT_LIGHT,
         },
+        Win32::System::Com::StructuredStorage::{PropVariantToDouble, PROPVARIANT},
         Win32::System::Com::{
-            CoInitializeEx, CoUninitialize, CoCreateInstance,
-            CLSCTX_INPROC_SERVER,
+            CoCreateInstance, CoInitializeEx, CoUninitialize, CLSCTX_INPROC_SERVER,
         },
     };
     // use windows::Win32::Devices::Sensors::SENSOR_DATA_TYPE_LIGHT_TEMPERATURE_KELVIN;
     // use windows::Win32::Devices::Sensors::SENSOR_DATA_TYPE_LIGHT_GUID;
     // use windows::Win32::Devices::Sensors::SENSOR_DATA_TYPE_LIGHT_CHROMACITY;
 
-
     unsafe {
         // Initialize COM
 
-        use windows::Win32::{Devices::Sensors::{SensorManager, SENSOR_DATA_TYPE_LIGHT_GUID}, System::Com::COINIT_MULTITHREADED};
+        use windows::Win32::{
+            Devices::Sensors::{SensorManager, SENSOR_DATA_TYPE_LIGHT_GUID},
+            System::Com::COINIT_MULTITHREADED,
+        };
         let hr = CoInitializeEx(None, COINIT_MULTITHREADED);
         if hr.is_err() {
             return Err("Failed to initialize COM".to_string());
         }
 
         // Create a SensorManager instance
-        let sensor_manager: ISensorManager = CoCreateInstance(
-            &SensorManager,
-            None,
-            CLSCTX_INPROC_SERVER,
-        ).map_err(|e| {
-            CoUninitialize();
-            format!("Failed to create SensorManager instance: {}", e)
-        })?;
+        let sensor_manager: ISensorManager =
+            CoCreateInstance(&SensorManager, None, CLSCTX_INPROC_SERVER).map_err(|e| {
+                CoUninitialize();
+                format!("Failed to create SensorManager instance: {}", e)
+            })?;
 
         // Get sensors by type (SENSOR_TYPE_AMBIENT_LIGHT)
-        let sensor_collection = sensor_manager.GetSensorsByType(&SENSOR_TYPE_AMBIENT_LIGHT)
+        let sensor_collection = sensor_manager
+            .GetSensorsByType(&SENSOR_TYPE_AMBIENT_LIGHT)
             .map_err(|e| {
                 CoUninitialize();
                 format!("Failed to get ambient light sensors: {}", e)
@@ -311,7 +337,7 @@ async fn read_light_sensor(_device_path: Option<&String>) -> Result<f64, String>
         })?;
 
         debug!("Found {} ambient light sensors", count);
-        
+
         if count == 0 {
             CoUninitialize();
             return Err("No ambient light sensors found".to_string());
@@ -332,41 +358,22 @@ async fn read_light_sensor(_device_path: Option<&String>) -> Result<f64, String>
         debug!("Sensor data: {:?}", sensor_data_report);
 
         // Get the light level value
-        let lux_value = sensor_data_report.GetSensorValue(&SENSOR_DATA_TYPE_LIGHT_LEVEL_LUX)
+        let lux_value = sensor_data_report
+            .GetSensorValue(&SENSOR_DATA_TYPE_LIGHT_LEVEL_LUX)
             .map_err(|e| {
                 CoUninitialize();
                 format!("Failed to get light level value: {}", e)
             })?;
 
-            
-
         debug!("LUX sensor value {}", lux_value);
-
-        
-        // debug!("VT_R4: {}, VT_R8: {}", lux_value.Anonymous.Anonymous.Anonymous.fltVal as f64, lux_value.Anonymous.Anonymous.Anonymous.dblVal);
-        
-        // let kelvin_value = sensor_data_report.GetSensorValue(&SENSOR_DATA_TYPE_LIGHT_CHROMACITY)
-        //     .map_err(|e| {
-        //         CoUninitialize();
-        //         format!("Failed to get light level value: {}", e)
-        //     })?;
-
-        // debug!("Kelvin sensor value {}", kelvin_value);
-        
-        // Extract the float value from PROPVARIANT
-        // let light_value = match prop_value.Anonymous.Anonymous.vt {
-        //     x if x == VT_R4.0 => prop_value.Anonymous.Anonymous.Anonymous.fltVal as f64,
-        //     x if x == VT_R8.0 => prop_value.Anonymous.Anonymous.Anonymous.dblVal,
-        //     _ => {
-        //         CoUninitialize();
-        //         return Err("Unexpected data type for light sensor value".to_string());
-        //     }
-        // };
-
-        // Clean up
-        // CoUninitialize();
-
-        Ok(0.0)
+        let mut value = 0.0;
+        PropVariantToDouble(&lux_value)
+            .map(|v| value = v)
+            .map_err(|e| {
+                CoUninitialize();
+                format!("Failed to convert PROPVARIANT to double: {}", e)
+            })?;
+        Ok(value)
     }
 }
 
