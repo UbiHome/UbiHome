@@ -6,11 +6,11 @@ hide:
 
 # Welcome to UbiHome!
 
-UbiHome is a single executable that allows you to integrate any device running an OS into your smart home. 
+UbiHome is a single executable that allows you to integrate any device running an OS into your smart home.
 It is designed to be lightweight and easy to use - similar to ESPHome.
 
-- [Execute a command on a device](./examples/display_notification/index.md) based on a trigger in home assistant. 
-- [Monitor the status of a device](./examples/system_ressources/index.md) with a custom command. 
+- [Execute a command on a device](./examples/display_notification/index.md) based on a trigger in home assistant.
+- [Monitor the status of a device](./examples/system_ressources/index.md) with a custom command.
 - Integrate all of your _one off python scripts^TM^_ without thinking about connectivity or setting up yet another service.
 
 See the [getting started](getting_started/index.md) guide for installation instructions.
@@ -42,6 +42,7 @@ Options:
   -V, --version
           Print version
 ```
+
 <!-- x-release-please-end -->
 
 ## Roadmap
@@ -56,7 +57,7 @@ Options:
 - [ ] Additional Components:
   - [ ] HTTP and Web Enpoint
   - [ ] BLE (https://github.com/deviceplug/btleplug)
-  - [ ] Bluetooth Proxy (https://esphome.io/components/bluetooth_proxy.html)     https://docs.rs/bluer/latest/bluer/
+  - [ ] Bluetooth Proxy (https://esphome.io/components/bluetooth_proxy.html) https://docs.rs/bluer/latest/bluer/
 - [ ] Online Sensor
 - [ ] Custom compilation for modular builds and custom extensions.
 - [ ] Homeassistant Native API
@@ -67,12 +68,12 @@ Options:
 - [ ] Kernel events (e.g. Keyboard press) https://docs.rs/evdev/latest/evdev/
 - [ ] Music Assistant Media Player integration for Windows / Linux (https://docs.rs/souvlaki/latest/souvlaki/)
 - [ ] Read Lightsensor from a laptop
+- [ ] Windows Current User https://docs.rs/wmi/latest/wmi/
 
 ... Control USB Devices?
 
-Rust clippy: 
+Rust clippy:
 https://github.com/rust-lang/rust-clippy
 
-
-Add Badges? 
+Add Badges?
 https://github.com/squidfunk/mkdocs-material/discussions/7137
