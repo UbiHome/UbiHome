@@ -1,4 +1,4 @@
-use std::{env, fs::File, io::{self, Read}};
+use std::{cmp::min, env};
 
 use inquire::Confirm;
 use log::debug;
@@ -8,6 +8,8 @@ use tokio::runtime::Runtime;
 
 use serde::Deserialize;
 use current_platform::CURRENT_PLATFORM;
+use indicatif::{ProgressBar, ProgressStyle};
+use futures_util::StreamExt;
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 
@@ -62,12 +64,51 @@ pub(crate) fn update() -> Result<(), String> {
             if resp.status() != reqwest::StatusCode::OK {
                 return Err(format!("Failed to download file: {}", resp.status()));
             }
-            let body = resp.bytes().await.expect("body invalid");
+            
+            let total_size = resp.content_length().unwrap_or(0);
+            
+            // Setup progress bar
+            let pb = if total_size > 0 {
+                let pb = ProgressBar::new(total_size);
+                pb.set_style(ProgressStyle::default_bar()
+                    .template("{msg}\n{spinner:.green} [{elapsed_precise}] [{wide_bar:.cyan/blue}] {bytes}/{total_bytes} ({bytes_per_sec}, {eta})")
+                    .unwrap()
+                    .progress_chars("#>-"));
+                pb.set_message(format!("Downloading {}", download_file_name));
+                pb
+            } else {
+                let pb = ProgressBar::new_spinner();
+                pb.set_style(ProgressStyle::default_spinner()
+                    .template("{msg}\n{spinner:.green} [{elapsed_precise}] {bytes} ({bytes_per_sec})")
+                    .unwrap());
+                pb.set_message(format!("Downloading {}", download_file_name));
+                pb
+            };
+
+            // Download chunks with progress bar
+            let mut downloaded: u64 = 0;
+            let mut stream = resp.bytes_stream();
+            let mut body_data = Vec::new();
+
+            while let Some(item) = stream.next().await {
+                let chunk = item.map_err(|e| format!("Error while downloading file: {}", e))?;
+                body_data.extend_from_slice(&chunk);
+                let new = if total_size > 0 {
+                    min(downloaded + (chunk.len() as u64), total_size)
+                } else {
+                    downloaded + (chunk.len() as u64)
+                };
+                downloaded = new;
+                pb.set_position(new);
+            }
+
+            pb.finish_with_message(format!("Downloaded {}", download_file_name));
+            
             match env::current_exe() {
                 Ok(exe_path) => {
                     let mut new_exe_path = exe_path.clone();
                     new_exe_path.set_file_name(format!("new_{}", new_exe_path.file_name().unwrap_or_default().to_string_lossy()));
-                    std::fs::write(&new_exe_path, body).expect("Failed to create temporary file");
+                    std::fs::write(&new_exe_path, body_data).expect("Failed to create temporary file");
 
                     println!("Updating executable...");
                     self_replace::self_replace(&new_exe_path).unwrap();
