@@ -28,6 +28,9 @@
         "components/gpio": {
             "skip-github-release": true
         },
+        "components/illuminance": {
+            "skip-github-release": true
+        },
         "components/mdns": {
             "skip-github-release": true
         },
