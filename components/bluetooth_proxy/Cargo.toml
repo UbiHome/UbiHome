@@ -11,7 +11,7 @@ tokio = { version = "1", features = ["full"] }
 ubihome-core = { path = "../core" }
 serde_yaml = "0.9.34"
 # Use as long as https://github.com/deviceplug/btleplug/issues/432 is not resolved
-btleplug = { git = "https://github.com/DanielHabenicht/fork.btleplug", branch = "adapter-mac-address" }
+btleplug = { git = "https://github.com/DanielHabenicht/fork.btleplug", branch = "adapter-mac-address", rev = "7e2df6f" }
 duration-str = "0.16.1"
 futures = "0.3.31"
 anyhow = "1.0.98"
