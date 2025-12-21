@@ -1,6 +1,6 @@
 [package]
 name = "ubihome-api"
-version = "0.9.2"
+version = "0.9.3"
 authors = ["Daniel Habenicht <daniel-habenicht@outlook.de>"]
 edition = "2021"
 
@@ -11,7 +11,7 @@ tokio = { version = "1", features = ["full"] }
 ubihome-core = { path = "../core", features = ["ip"] }
 serde_yaml = "0.9.34"
 duration-str = "0.16.1"
-esphome-native-api = "1.1.6"
+esphome-native-api = "1.2.0"
 # esphome-native-api = {path = "../../../esphome-native-api/"}
 whoami = "1.6.0"
 

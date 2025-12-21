@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.9.3](https://github.com/UbiHome/UbiHome/compare/v0.9.2...v0.9.3) (2025-12-21)
+
+
+### Bug Fixes
+
+* update native api ([#89](https://github.com/UbiHome/UbiHome/issues/89)) ([6fed56f](https://github.com/UbiHome/UbiHome/commit/6fed56f0e7ab97338715e26d61215a7818070743))
+
 ## [0.9.2](https://github.com/UbiHome/UbiHome/compare/v0.9.1...v0.9.2) (2025-08-04)
 
 

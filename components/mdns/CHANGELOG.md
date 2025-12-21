@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.9.1](https://github.com/UbiHome/UbiHome/compare/v0.9.0...ubihome-mdns-v0.9.1) (2025-12-21)
+
+
+### Bug Fixes
+
+* update native api ([#89](https://github.com/UbiHome/UbiHome/issues/89)) ([6fed56f](https://github.com/UbiHome/UbiHome/commit/6fed56f0e7ab97338715e26d61215a7818070743))
+
 ## [0.9.0](https://github.com/UbiHome/UbiHome/compare/v0.8.11...ubihome-mdns-v0.9.0) (2025-08-03)
 
 
