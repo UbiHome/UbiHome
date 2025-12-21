@@ -17,9 +17,9 @@ For now[^1] a single executable is provided. You can download them from the [Git
 
     | Devices         | Download                                                                                                          | Target                       |
     | -------------- | ----------------------------------------------------------------------------------------------------------------- | ---------------------------- |
-    | Any Linux         | [TAR Link](https://github.com/UbiHome/UbiHome/releases/download/v0.9.3/ubihome-Linux-musl-x86_64.tar.gz)    | x86_64-unknown-linux-musl |
-    | Raspberry Pi 3  | [TAR Link](https://github.com/UbiHome/UbiHome/releases/download/v0.9.3/ubihome-Linux-musleabi-armv7.tar.gz) | armv7-unknown-linux-musleabi |
-    | Raspberry Pi Zero 2 | [TAR Link](https://github.com/UbiHome/UbiHome/releases/download/v0.9.3/ubihome-Linux-musleabi-arm.tar.gz) | arm-unknown-linux-musleabi |
+    | Any Linux         | [TAR Link](https://github.com/UbiHome/UbiHome/releases/download/v0.10.0/ubihome-Linux-musl-x86_64.tar.gz)    | x86_64-unknown-linux-musl |
+    | Raspberry Pi 3  | [TAR Link](https://github.com/UbiHome/UbiHome/releases/download/v0.10.0/ubihome-Linux-musleabi-armv7.tar.gz) | armv7-unknown-linux-musleabi |
+    | Raspberry Pi Zero 2 | [TAR Link](https://github.com/UbiHome/UbiHome/releases/download/v0.10.0/ubihome-Linux-musleabi-arm.tar.gz) | arm-unknown-linux-musleabi |
 
 
     ## Installation
@@ -29,7 +29,7 @@ For now[^1] a single executable is provided. You can download them from the [Git
 
         ```bash
         # You might have to use a different link from the table above depending on your device type
-        curl -L -o ubihome.tar.gz https://github.com/UbiHome/UbiHome/releases/download/v0.9.3/ubihome-Linux-musleabi-armv7.tar.gz
+        curl -L -o ubihome.tar.gz https://github.com/UbiHome/UbiHome/releases/download/v0.10.0/ubihome-Linux-musleabi-armv7.tar.gz
         tar xvzf ./ubihome.tar.gz
         ```
 
@@ -43,7 +43,7 @@ For now[^1] a single executable is provided. You can download them from the [Git
 
         ``` bash
         ./ubihome run
-        UbiHome - 0.9.3
+        UbiHome - 0.10.0
         LogDirectory: /home/codespace/.local/share
         Config file path: /workspaces/ubihome/config.yaml
         Binary Sensor 'bluetooth_connected' output: false
@@ -81,14 +81,14 @@ For now[^1] a single executable is provided. You can download them from the [Git
 
     | Device         | Download                                                                                                          | Target                       |
     | -------------- | ----------------------------------------------------------------------------------------------------------------- | ---------------------------- |
-    | Windows 11        | [ZIP Link](https://github.com/UbiHome/UbiHome/releases/download/v0.9.3/ubihome-Windows-msvc-x86_64.zip)    | x86_64-pc-windows-msvc |
+    | Windows 11        | [ZIP Link](https://github.com/UbiHome/UbiHome/releases/download/v0.10.0/ubihome-Windows-msvc-x86_64.zip)    | x86_64-pc-windows-msvc |
 
     ## Installation
 
     1. Download and extract the archive and place the ubihome executable in a directory of your choice.
 
     ```powershell
-    Invoke-WebRequest -OutFile ubihome.zip -Uri https://github.com/UbiHome/UbiHome/releases/download/v0.9.3/ubihome-Windows-msvc-x86_64.zip
+    Invoke-WebRequest -OutFile ubihome.zip -Uri https://github.com/UbiHome/UbiHome/releases/download/v0.10.0/ubihome-Windows-msvc-x86_64.zip
     Expand-Archive -Force ubihome.zip ./
     ```
 
@@ -102,7 +102,7 @@ For now[^1] a single executable is provided. You can download them from the [Git
 
         ``` bash
         ./ubihome.exe run
-        UbiHome - 0.9.3
+        UbiHome - 0.10.0
         LogDirectory: /home/codespace/.local/share
         Config file path: /workspaces/UbiHome/config.yaml
         Binary Sensor 'bluetooth_connected' output: false
@@ -142,7 +142,7 @@ For now[^1] a single executable is provided. You can download them from the [Git
 
     | Device         | Download                                                                                                          | Target                       |
     | -------------- | ----------------------------------------------------------------------------------------------------------------- | ---------------------------- |
-    | MacOS        | [TAR Link](https://github.com/UbiHome/UbiHome/releases/download/v0.9.3/ubihome-macOS-x86_64.tar.gz)    | x86_64-apple-darwin |
+    | MacOS        | [TAR Link](https://github.com/UbiHome/UbiHome/releases/download/v0.10.0/ubihome-macOS-x86_64.tar.gz)    | x86_64-apple-darwin |
 
     ## Installation
 
@@ -152,7 +152,7 @@ For now[^1] a single executable is provided. You can download them from the [Git
     1. Download and extract the archive and place the ubihome executable in a directory of your choice.
 
         ```bash
-        curl -L -o ubihome.tar.gz https://github.com/UbiHome/UbiHome/releases/download/v0.9.3/ubihome-Linux-musleabi-armv7.tar.gz
+        curl -L -o ubihome.tar.gz https://github.com/UbiHome/UbiHome/releases/download/v0.10.0/ubihome-Linux-musleabi-armv7.tar.gz
         tar xvzf ./ubihome.tar.gz
         ```
 
@@ -166,7 +166,7 @@ For now[^1] a single executable is provided. You can download them from the [Git
 
         ``` bash
         ./ubihome run
-        UbiHome - 0.9.3
+        UbiHome - 0.10.0
         LogDirectory: /home/codespace/.local/share
         Config file path: /workspaces/ubihome/config.yaml
         Binary Sensor 'bluetooth_connected' output: false

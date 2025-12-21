@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.10.0](https://github.com/UbiHome/UbiHome/compare/v0.9.3...v0.10.0) (2025-12-21)
+
+
+### Features
+
+* add illuminance sensor ([#83](https://github.com/UbiHome/UbiHome/issues/83)) ([fc24c29](https://github.com/UbiHome/UbiHome/commit/fc24c2945849140969b0d7cf6a308fd91852d027))
+
+
+### Bug Fixes
+
+* show version in update prompt ([a857089](https://github.com/UbiHome/UbiHome/commit/a8570891b85b792fe7739b03ec041418ba92e731))
+
 ## [0.9.3](https://github.com/UbiHome/UbiHome/compare/v0.9.2...v0.9.3) (2025-12-21)
 
 
