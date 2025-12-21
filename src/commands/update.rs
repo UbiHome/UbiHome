@@ -65,15 +65,25 @@ pub(crate) fn update() -> Result<(), String> {
                 return Err(format!("Failed to download file: {}", resp.status()));
             }
             
-            let total_size = resp.content_length().ok_or("Failed to get content length")?;
+            let total_size = resp.content_length().unwrap_or(0);
             
             // Setup progress bar
-            let pb = ProgressBar::new(total_size);
-            pb.set_style(ProgressStyle::default_bar()
-                .template("{msg}\n{spinner:.green} [{elapsed_precise}] [{wide_bar:.cyan/blue}] {bytes}/{total_bytes} ({bytes_per_sec}, {eta})")
-                .unwrap()
-                .progress_chars("#>-"));
-            pb.set_message(format!("Downloading {}", download_file_name));
+            let pb = if total_size > 0 {
+                let pb = ProgressBar::new(total_size);
+                pb.set_style(ProgressStyle::default_bar()
+                    .template("{msg}\n{spinner:.green} [{elapsed_precise}] [{wide_bar:.cyan/blue}] {bytes}/{total_bytes} ({bytes_per_sec}, {eta})")
+                    .unwrap()
+                    .progress_chars("#>-"));
+                pb.set_message(format!("Downloading {}", download_file_name));
+                pb
+            } else {
+                let pb = ProgressBar::new_spinner();
+                pb.set_style(ProgressStyle::default_spinner()
+                    .template("{msg}\n{spinner:.green} [{elapsed_precise}] {bytes} ({bytes_per_sec})")
+                    .unwrap());
+                pb.set_message(format!("Downloading {}", download_file_name));
+                pb
+            };
 
             // Download chunks with progress bar
             let mut downloaded: u64 = 0;
@@ -81,9 +91,13 @@ pub(crate) fn update() -> Result<(), String> {
             let mut body_data = Vec::new();
 
             while let Some(item) = stream.next().await {
-                let chunk = item.expect("Error while downloading file");
+                let chunk = item.map_err(|e| format!("Error while downloading file: {}", e))?;
                 body_data.extend_from_slice(&chunk);
-                let new = min(downloaded + (chunk.len() as u64), total_size);
+                let new = if total_size > 0 {
+                    min(downloaded + (chunk.len() as u64), total_size)
+                } else {
+                    downloaded + (chunk.len() as u64)
+                };
                 downloaded = new;
                 pb.set_position(new);
             }
