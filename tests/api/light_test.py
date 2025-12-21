@@ -42,7 +42,7 @@ light:
     entity = entities[0]
 
     assert type(entity) == aioesphomeapi.LightInfo
-    assert entity.unique_id == light_id
+    assert entity.object_id == light_id
     assert entity.name == light_name
 
     mock = Mock()

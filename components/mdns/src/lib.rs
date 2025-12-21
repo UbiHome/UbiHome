@@ -59,7 +59,6 @@ impl Module for Default {
         Box::pin(async move {
             let default_ip = get_ip_address().unwrap();
 
-
             let ip = config.mdns.clone().and_then(|c| c.ip).unwrap_or(default_ip);
             debug!("Advertising IP: {:?}", ip);
 
@@ -87,9 +86,10 @@ impl Module for Default {
                     &format!("friendly_name={}", friendly_name).to_string(),
                     "version=2024.4.2",
                     "network=wifi",
-                    &format!("mac={}", mac),
+                    &format!("mac={}", str::replace(&mac, ":", "").to_ascii_lowercase()),
                     "platform=ESP32",
                     "board=ubihome",
+                    // api_encryption=Noise_NNpsk0_25519_ChaChaPoly_SHA256
                 ],
             );
 

@@ -39,7 +39,7 @@ sensor:
     entity = entities[0]
 
     assert type(entity) == aioesphomeapi.SensorInfo
-    assert entity.unique_id == sensor_id
+    assert entity.object_id == sensor_id
     assert entity.name == sensor_name
 
     mock = Mock()
