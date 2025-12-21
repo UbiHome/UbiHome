@@ -1,12 +1,13 @@
-from asyncio import sleep
-from pprint import pp
+import pytest
+
 from utils import run_ubihome
 
 
-def test_version_help():
-    version = run_ubihome("--version")
+@pytest.mark.asyncio
+async def test_version_help():
+    version = await run_ubihome("--version")
 
-    output = run_ubihome("--help")
+    output = await run_ubihome("--help")
 
     assert output == f"""{version}
 UbiHome is a system which allows you to integrate any device running an OS into your smart home.
@@ -25,14 +26,12 @@ Commands:
 
 Options:
   -c, --configuration <configuration_file>
-          Optional configuration file. If not provided, the default configuration will be used. [default: config.yaml]
+          Optional configuration file. If not provided, the default configuration will be used. [default: config.yml config.yaml]
       --log-level <log_level>
-          The log level (overwrites the setting from config.yaml).
+          The log level (overwrites the config).
   -h, --help
           Print help
   -V, --version
           Print version
 """
-
-
   

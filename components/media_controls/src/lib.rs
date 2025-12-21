@@ -32,6 +32,7 @@ config_template!(
     NoConfig,
     NoConfig,
     NoConfig,
+    NoConfig,
     NoConfig
 );
 
@@ -159,7 +160,10 @@ impl Module for UbiHomeDefault {
 
             // The closure must be Send and have a static lifetime.
             let sender_clone = sender.clone();
-            let event = events.iter().next().map(|(id, event)| (id.clone(), event.clone()));
+            let event = events
+                .iter()
+                .next()
+                .map(|(id, event)| (id.clone(), event.clone()));
             if let Some((id, event)) = event {
                 controls
                     .attach(move |event: MediaControlEvent| {

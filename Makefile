@@ -8,5 +8,8 @@ prepare-test-linux-fast:
 	cargo build
 	cp target/debug/ubihome ./tests/ubihome
 
-test: prepare-test-linux-fast
-	cd tests && poetry run pytest -vvv
+test-fast: prepare-test-linux-fast
+	cd tests && uv run pytest -vvv
+
+test: prepare-test-linux
+	cd tests && uv run pytest -vvv

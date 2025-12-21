@@ -16,7 +16,7 @@ UbiHome is built in a modular way. The modules can be split into the following c
 
     ---
 
-    Use the built-in platforms to access and control a devices sensor, a program, GPIO or create your own. 
+    Use the built-in platforms to access device sensors (e.g. GPIO) or control them. Execute a program. Or create your own platform. 
 
     [:octicons-arrow-right-24: Getting started](./platforms/index.md)
 

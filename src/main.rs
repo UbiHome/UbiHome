@@ -99,11 +99,6 @@ fn cli() -> Command {
             .hide(true)
             .action(ArgAction::SetTrue)
             .num_args(0),
-        Arg::new("configuration_file")
-            .short('c')
-            .long("configuration")
-            .help("Optional configuration file. If not provided, the default configuration will be used.")
-            .default_values(vec![DEFAULT_CONFIG_FILE_YML, DEFAULT_CONFIG_FILE_YAML]),
     ];
 
     Command::new("UbiHome")
@@ -111,10 +106,16 @@ fn cli() -> Command {
         .version(VERSION)
         .subcommand_required(true)
         .arg_required_else_help(true)
-        .args([Arg::new("log_level")
+        .args([
+            Arg::new("configuration_file")
+            .short('c')
+            .long("configuration")
+            .help("Optional configuration file. If not provided, the default configuration will be used.")
+            .default_values(vec![DEFAULT_CONFIG_FILE_YML, DEFAULT_CONFIG_FILE_YAML]),
+            Arg::new("log_level")
             .long("log-level")
             .global(true)
-            .help("The log level (overwrites the config file).")])
+            .help("The log level (overwrites the config).")])
         .subcommand(
             Command::new("run")
                 .about("Run UbiHome manually.")
@@ -179,8 +180,10 @@ fn main() {
                 }
                 Some(("run", sub_matches)) => {
                     println!("UbiHome - {}", VERSION);
+                    #[cfg(target_os = "windows")]
                     let is_windows_service =
                         sub_matches.get_one::<bool>("as-windows-service").unwrap();
+                    #[cfg(target_os = "windows")]
                     if *is_windows_service {
                         // Run as a Windows service
                         info!("Running as Windows service");
@@ -193,6 +196,8 @@ fn main() {
                         // Run normally
                         run::run(config_file, None).unwrap();
                     }
+                    #[cfg(not(target_os = "windows"))]
+                    run::run(config_file, None).unwrap();
                 }
                 _ => {
                     println!("No subcommand was used");
@@ -200,9 +205,8 @@ fn main() {
             }
             std::process::exit(0);
         }
-        Err(_) => {
-            // User does not need to specify command, it just displays the help message.
-            std::process::exit(0);
+        Err(err) => {
+            err.exit()
         }
     };
 }

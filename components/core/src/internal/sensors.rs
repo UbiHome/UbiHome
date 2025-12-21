@@ -1,4 +1,10 @@
-use crate::{binary_sensor::BinarySensorBase, home_assistant::sensors::{UbiBinarySensor, UbiButton, UbiEvent, UbiSensor, UbiSwitch}, sensor::SensorBase};
+use crate::{
+    binary_sensor::BinarySensorBase,
+    home_assistant::sensors::{
+        UbiBinarySensor, UbiButton, UbiEvent, UbiLight, UbiSensor, UbiSwitch,
+    },
+    sensor::SensorBase,
+};
 
 #[derive(Clone, Debug)]
 pub enum InternalComponent {
@@ -6,6 +12,7 @@ pub enum InternalComponent {
     Sensor(InternalSensor),
     BinarySensor(InternalBinarySensor),
     Switch(InternalSwitch),
+    Light(InternalLight),
     Event(InternalEvent),
 }
 
@@ -31,6 +38,11 @@ pub struct InternalBinarySensor {
 pub struct InternalSwitch {
     pub ha: UbiSwitch,
     // pub filters: Option<Vec<BinarySensorFilter>>,
+}
+
+#[derive(Clone, Debug)]
+pub struct InternalLight {
+    pub ha: UbiLight,
 }
 
 #[derive(Clone, Debug)]

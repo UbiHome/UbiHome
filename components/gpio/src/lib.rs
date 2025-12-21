@@ -27,14 +27,22 @@ pub struct GpioBinarySensorConfig {
     pub pull_up: Option<bool>,
 }
 
-config_template!(gpio, GpioConfig, NoConfig, GpioBinarySensorConfig, NoConfig, NoConfig, NoConfig);
+config_template!(
+    gpio,
+    GpioConfig,
+    NoConfig,
+    GpioBinarySensorConfig,
+    NoConfig,
+    NoConfig,
+    NoConfig,
+    NoConfig
+);
 
 #[derive(Clone, Debug)]
 pub struct Default {
     components: Vec<InternalComponent>,
     binary_sensors: HashMap<String, GpioBinarySensorConfig>,
 }
-
 
 impl Module for Default {
     fn new(config_string: &String) -> Result<Self, String> {
@@ -158,16 +166,20 @@ impl Module for Default {
 
                                 match event.trigger {
                                     Trigger::RisingEdge => {
-                                        _ = cloned_sender.send(ChangedMessage::BinarySensorValueChange {
-                                            key: cloned_key.clone(),
-                                            value: true,
-                                        });
+                                        _ = cloned_sender.send(
+                                            ChangedMessage::BinarySensorValueChange {
+                                                key: cloned_key.clone(),
+                                                value: true,
+                                            },
+                                        );
                                     }
                                     Trigger::FallingEdge => {
-                                        _ = cloned_sender.send(ChangedMessage::BinarySensorValueChange {
-                                            key: cloned_key.clone(),
-                                            value: false,
-                                        });
+                                        _ = cloned_sender.send(
+                                            ChangedMessage::BinarySensorValueChange {
+                                                key: cloned_key.clone(),
+                                                value: false,
+                                            },
+                                        );
                                     }
                                     _ => {
                                         debug!("Unknown trigger detected {:?}", event.trigger);

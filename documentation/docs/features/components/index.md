@@ -1,6 +1,8 @@
 # Components
 
-Components are the building blocks of the system. Many Platform features use the base configuration options of these.
+Components make data or functionality available for external systems via the [Connectivity Features](../connectivity/index.md) or for reuse in other components.
+
+[Platforms](../platforms/index.md) offer extended functionality for any component.
 
 ## Entities
 

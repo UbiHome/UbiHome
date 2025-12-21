@@ -2,19 +2,19 @@ use btleplug::api::BDAddr;
 use btleplug::api::{
     bleuuid::BleUuid, Central, CentralEvent, Manager as _, Peripheral, ScanFilter,
 };
+use btleplug::platform::{Adapter, Manager, PeripheralId};
+use futures::stream::StreamExt;
 use log::{debug, info, trace};
-use ubihome_core::internal::sensors::InternalComponent;
-use ubihome_core::{
-    config_template, home_assistant::sensors::Component, ChangedMessage, Module, PublishedMessage,
-};
-use ubihome_core::{BluetoothProxyMessage, NoConfig};
 use serde::{ser, Deserialize, Deserializer};
 use std::collections::HashMap;
 use std::future;
 use std::{future::Future, pin::Pin, str};
 use tokio::sync::broadcast::{Receiver, Sender};
-use btleplug::platform::{Adapter, Manager, PeripheralId};
-use futures::stream::StreamExt;
+use ubihome_core::internal::sensors::InternalComponent;
+use ubihome_core::{
+    config_template, home_assistant::sensors::Component, ChangedMessage, Module, PublishedMessage,
+};
+use ubihome_core::{BluetoothProxyMessage, NoConfig};
 
 async fn get_central(manager: &Manager) -> Adapter {
     let adapters = manager.adapters().await.unwrap();
@@ -29,6 +29,7 @@ pub struct BluetoothProxyConfig {
 config_template!(
     mdns,
     Option<BluetoothProxyConfig>,
+    NoConfig,
     NoConfig,
     NoConfig,
     NoConfig,
@@ -48,7 +49,7 @@ impl Module for Default {
         Ok(Default { config: config })
     }
 
-    fn components(&mut self) -> Vec<InternalComponent>{
+    fn components(&mut self) -> Vec<InternalComponent> {
         let components: Vec<InternalComponent> = Vec::new();
 
         components
@@ -72,6 +73,7 @@ impl Module for Default {
             // get the first bluetooth adapter
             // connect to the adapter
             let central = get_central(&manager).await;
+            info!("CentralNac: {:?}", central.adapter_mac().await);
 
             let central_state = central.adapter_state().await.expect("No adapter found");
             info!("CentralState: {:?}", central_state);
@@ -84,10 +86,7 @@ impl Module for Default {
             // start scanning for devices
             central.start_scan(ScanFilter::default()).await?;
 
-            while let Some(event) = events
-                .next()
-                .await
-            {
+            while let Some(event) = events.next().await {
                 match event {
                     CentralEvent::DeviceUpdated(id) => {
                         let peripheral = central.peripheral(&id).await?;
@@ -118,7 +117,12 @@ impl Module for Default {
                             .and_then(|p| Some(p.address.clone()))
                             .unwrap_or_default();
 
-                        trace!("DeviceUpdated: {:?}, {:?}, {:?}", mac_address, rssi, properties);
+                        trace!(
+                            "DeviceUpdated: {:?}, {:?}, {:?}",
+                            mac_address,
+                            rssi,
+                            properties
+                        );
 
                         sender
                             .send(ChangedMessage::BluetoothProxyMessage(

@@ -1,5 +1,38 @@
 # Changelog
 
+## [0.9.0](https://github.com/UbiHome/UbiHome/compare/v0.8.7...ubihome-mqtt-v0.9.0) (2025-08-03)
+
+
+### Features
+
+* add password and key authentcation + light sensor ([#82](https://github.com/UbiHome/UbiHome/issues/82)) ([89c11f2](https://github.com/UbiHome/UbiHome/commit/89c11f2aeec96048663c64edc0b351c8ba7df911))
+
+
+### Performance Improvements
+
+* **mqtt:** refactor and use abbreviations ([6504ea3](https://github.com/UbiHome/UbiHome/commit/6504ea30f0632707c4ebe87d576bbe3d09fc3551))
+
+## [0.8.7](https://github.com/UbiHome/UbiHome/compare/v0.8.6...ubihome-mqtt-v0.8.7) (2025-05-10)
+
+
+### Performance Improvements
+
+* **mqtt:** refactor and use abbreviations ([6504ea3](https://github.com/UbiHome/UbiHome/commit/6504ea30f0632707c4ebe87d576bbe3d09fc3551))
+
+## [0.8.6](https://github.com/UbiHome/UbiHome/compare/v0.8.5...ubihome-mqtt-v0.8.6) (2025-05-10)
+
+
+### Performance Improvements
+
+* **mqtt:** refactor and use abbreviations ([6504ea3](https://github.com/UbiHome/UbiHome/commit/6504ea30f0632707c4ebe87d576bbe3d09fc3551))
+
+## [0.8.5](https://github.com/UbiHome/UbiHome/compare/v0.8.4...ubihome-mqtt-v0.8.5) (2025-05-10)
+
+
+### Performance Improvements
+
+* **mqtt:** refactor and use abbreviations ([6504ea3](https://github.com/UbiHome/UbiHome/commit/6504ea30f0632707c4ebe87d576bbe3d09fc3551))
+
 ## [0.8.4](https://github.com/UbiHome/UbiHome/compare/v0.8.3...ubihome-mqtt-v0.8.4) (2025-05-10)
 
 ## [0.8.3](https://github.com/UbiHome/UbiHome/compare/v0.8.2...ubihome-mqtt-v0.8.3) (2025-05-10)

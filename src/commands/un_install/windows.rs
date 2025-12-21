@@ -10,14 +10,18 @@ pub async fn install(location: &str) -> Result<(), Box<dyn std::error::Error>> {
     fs::create_dir_all(location).expect("Unable to create directory");
 
     let new_path = Path::new(location).join("ubihome.exe");
+    // TODO: Error if executed in the same location
     println!(" - Copying Binary to {}", new_path.display());
     fs::copy(env::current_exe().unwrap(), &new_path).expect("Unable to copy file");
 
     let current_dir = env::current_dir().unwrap().to_string_lossy().to_string();
     let config_file_path = Path::new(&current_dir).join("config.yaml");
     let new_config_file_path = Path::new(location).join("config.yaml");
-    
-    println!(" - Copying config.yml to {}", new_config_file_path.display());
+
+    println!(
+        " - Copying config.yml to {}",
+        new_config_file_path.display()
+    );
     fs::copy(config_file_path, &new_config_file_path).expect("Unable to copy file");
 
     println!(" - Creating Windows Service");
@@ -38,7 +42,12 @@ pub async fn install(location: &str) -> Result<(), Box<dyn std::error::Error>> {
         start_type: ServiceStartType::AutoStart,
         error_control: ServiceErrorControl::Normal,
         executable_path: new_path,
-        launch_arguments: vec![OsString::from("-c"), OsString::from(new_config_file_path), OsString::from("run"), OsString::from("--as-windows-service")],
+        launch_arguments: vec![
+            OsString::from("-c"),
+            OsString::from(new_config_file_path),
+            OsString::from("run"),
+            OsString::from("--as-windows-service"),
+        ],
         dependencies: vec![],
         account_name: None, // run as System
         account_password: None,
@@ -65,9 +74,7 @@ pub async fn uninstall(location: &str) -> Result<(), Box<dyn std::error::Error>>
 
     println!("Uninstalling UbiHome to");
 
-    
     println!(" - TODO: Cleanup Logs...");
-
 
     println!(" - Deleting Folder at {}", location);
     fs::remove_dir_all(location).expect("Unable to delete directory");

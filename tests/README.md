@@ -2,8 +2,11 @@
 
 ## Installation
 
-```
-pipx install poetry
+1. Install [`uv`](https://docs.astral.sh/uv/getting-started/installation/)
+
+```bash
+cd tests
+uv sync
 ```
 
 ## Just run them
@@ -24,6 +27,8 @@ pytest
 ## If something is not working
 
 ```bash
-ps saux | grep ubihome
+# Linux
 pkill -8  ubihome
+# Check that no processes are running
+ps aux | grep ubihome
 ```

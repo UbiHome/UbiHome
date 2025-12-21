@@ -1,5 +1,32 @@
 # Changelog
 
+## [0.9.2](https://github.com/UbiHome/UbiHome/compare/v0.9.1...ubihome-mdns-v0.9.2) (2025-12-21)
+
+
+### Bug Fixes
+
+* update native api ([#89](https://github.com/UbiHome/UbiHome/issues/89)) ([6fed56f](https://github.com/UbiHome/UbiHome/commit/6fed56f0e7ab97338715e26d61215a7818070743))
+
+## [0.9.1](https://github.com/UbiHome/UbiHome/compare/v0.9.0...ubihome-mdns-v0.9.1) (2025-12-21)
+
+
+### Bug Fixes
+
+* update native api ([#89](https://github.com/UbiHome/UbiHome/issues/89)) ([6fed56f](https://github.com/UbiHome/UbiHome/commit/6fed56f0e7ab97338715e26d61215a7818070743))
+
+## [0.9.0](https://github.com/UbiHome/UbiHome/compare/v0.8.11...ubihome-mdns-v0.9.0) (2025-08-03)
+
+
+### Features
+
+* add password and key authentcation + light sensor ([#82](https://github.com/UbiHome/UbiHome/issues/82)) ([89c11f2](https://github.com/UbiHome/UbiHome/commit/89c11f2aeec96048663c64edc0b351c8ba7df911))
+
+## [0.8.11](https://github.com/UbiHome/UbiHome/compare/v0.8.10...ubihome-mdns-v0.8.11) (2025-05-10)
+
+## [0.8.10](https://github.com/UbiHome/UbiHome/compare/v0.8.9...ubihome-mdns-v0.8.10) (2025-05-10)
+
+## [0.8.9](https://github.com/UbiHome/UbiHome/compare/v0.8.8...ubihome-mdns-v0.8.9) (2025-05-10)
+
 ## [0.8.8](https://github.com/UbiHome/UbiHome/compare/v0.8.7...ubihome-mdns-v0.8.8) (2025-05-10)
 
 

@@ -1,5 +1,6 @@
 
 from asyncio import sleep
+import contextlib
 import os
 from unittest.mock import Mock
 from utils import UbiHome
@@ -10,7 +11,10 @@ from utils import wait_and_get_file
 async def test_run():
   button_id = "my_switch"
   button_name = "Switch it"
-  switch_mock = "test_switch.mock"
+  switch_mock = "switch_test.mock"
+  with contextlib.suppress(FileNotFoundError):
+    os.remove(switch_mock)
+
   DEVICE_INFO_CONFIG = f"""
 ubihome:
   name: test_device
@@ -29,9 +33,9 @@ switch:
    update_interval: 1s
 """
 
-  async with UbiHome("run", DEVICE_INFO_CONFIG) as ubihome:
-    api = aioesphomeapi.APIClient("127.0.0.1", 6053, "MyPassword")
-    await api.connect(login=True)
+  async with UbiHome("run", config=DEVICE_INFO_CONFIG, wait_for_api=True) as ubihome:
+    api = aioesphomeapi.APIClient("127.0.0.1", 6053, "")
+    await api.connect(login=False)
 
     entities, services = await api.list_entities_services()
     print("switches", entities, services)
@@ -39,7 +43,7 @@ switch:
     entity = entities[0]
 
     assert type(entity) == aioesphomeapi.SwitchInfo
-    assert entity.unique_id == button_id
+    assert entity.object_id == button_id
     assert entity.name == button_name
 
     mock = Mock()

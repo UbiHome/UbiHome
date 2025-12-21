@@ -1,19 +1,19 @@
 use log::{debug, error};
-use ubihome_core::{
-    config_template, home_assistant::sensors::UbiButton, internal::sensors::{InternalButton, InternalComponent}, ChangedMessage, Module, NoConfig, PublishedMessage
-};
 use serde::{Deserialize, Deserializer};
 use std::collections::HashMap;
 use std::{future::Future, pin::Pin, str};
 use tokio::sync::broadcast::{Receiver, Sender};
+use ubihome_core::{
+    ChangedMessage, Module, NoConfig, PublishedMessage, config_template,
+    home_assistant::sensors::UbiButton,
+    internal::sensors::{InternalButton, InternalComponent},
+};
 
-use system_shutdown::shutdown;
-use system_shutdown::reboot;
 use system_shutdown::hibernate;
-use system_shutdown::sleep;
 use system_shutdown::logout;
-
-
+use system_shutdown::reboot;
+use system_shutdown::shutdown;
+use system_shutdown::sleep;
 
 #[derive(Clone, Deserialize, Debug)]
 pub struct PowerUtilsConfig {}
@@ -33,16 +33,16 @@ pub enum PowerAction {
     Sleep,
 }
 
-
 #[derive(Clone, Deserialize, Debug)]
 pub struct PowerUtilsButtonConfig {
-    pub action: PowerAction
+    pub action: PowerAction,
 }
 
 config_template!(
     power_utils,
     PowerUtilsConfig,
     PowerUtilsButtonConfig,
+    NoConfig,
     NoConfig,
     NoConfig,
     NoConfig,
@@ -71,47 +71,68 @@ impl Module for Default {
                         PowerAction::Reboot => {
                             button_component = InternalButton {
                                 ha: UbiButton {
-                                platform: "sensor".to_string(),
-                                icon: Some(any_sensor.default.icon.unwrap_or("mdi:restart".to_string())),
-                                name: any_sensor.default.name.clone(),
-                                id: id.clone(),
-                            }};
+                                    platform: "sensor".to_string(),
+                                    icon: Some(
+                                        any_sensor
+                                            .default
+                                            .icon
+                                            .unwrap_or("mdi:restart".to_string()),
+                                    ),
+                                    name: any_sensor.default.name.clone(),
+                                    id: id.clone(),
+                                },
+                            };
                         }
                         PowerAction::Shutdown => {
                             button_component = InternalButton {
                                 ha: UbiButton {
-                                platform: "sensor".to_string(),
-                                icon: Some(any_sensor.default.icon.unwrap_or("mdi:power".to_string())),
-                                name: any_sensor.default.name.clone(),
-                                id: id.clone(),
-                            }};
+                                    platform: "sensor".to_string(),
+                                    icon: Some(
+                                        any_sensor.default.icon.unwrap_or("mdi:power".to_string()),
+                                    ),
+                                    name: any_sensor.default.name.clone(),
+                                    id: id.clone(),
+                                },
+                            };
                         }
                         PowerAction::Hibernate => {
                             button_component = InternalButton {
                                 ha: UbiButton {
-                                platform: "sensor".to_string(),
-                                icon: Some(any_sensor.default.icon.unwrap_or("mdi:snowflake".to_string())),
-                                name: any_sensor.default.name.clone(),
-                                id: id.clone(),
-                            }};
+                                    platform: "sensor".to_string(),
+                                    icon: Some(
+                                        any_sensor
+                                            .default
+                                            .icon
+                                            .unwrap_or("mdi:snowflake".to_string()),
+                                    ),
+                                    name: any_sensor.default.name.clone(),
+                                    id: id.clone(),
+                                },
+                            };
                         }
                         PowerAction::Logout => {
                             button_component = InternalButton {
                                 ha: UbiButton {
-                                platform: "sensor".to_string(),
-                                icon: Some(any_sensor.default.icon.unwrap_or("mdi:logout".to_string())),
-                                name: any_sensor.default.name.clone(),
-                                id: id.clone(),
-                            }};
+                                    platform: "sensor".to_string(),
+                                    icon: Some(
+                                        any_sensor.default.icon.unwrap_or("mdi:logout".to_string()),
+                                    ),
+                                    name: any_sensor.default.name.clone(),
+                                    id: id.clone(),
+                                },
+                            };
                         }
                         PowerAction::Sleep => {
                             button_component = InternalButton {
                                 ha: UbiButton {
-                                platform: "sensor".to_string(),
-                                icon: Some(any_sensor.default.icon.unwrap_or("mdi:sleep".to_string())),
-                                name: any_sensor.default.name.clone(),
-                                id: id.clone(),
-                            }};
+                                    platform: "sensor".to_string(),
+                                    icon: Some(
+                                        any_sensor.default.icon.unwrap_or("mdi:sleep".to_string()),
+                                    ),
+                                    name: any_sensor.default.name.clone(),
+                                    id: id.clone(),
+                                },
+                            };
                         }
                     }
 
@@ -121,7 +142,7 @@ impl Module for Default {
                 _ => {}
             }
         }
-Ok(        Default {
+        Ok(Default {
             config: config.power_utils,
             components,
             buttons,

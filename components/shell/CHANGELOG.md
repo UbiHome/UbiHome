@@ -1,5 +1,40 @@
 # Changelog
 
+## [0.9.0](https://github.com/UbiHome/UbiHome/compare/v0.8.7...ubihome-shell-v0.9.0) (2025-08-03)
+
+
+### Features
+
+* add password and key authentcation + light sensor ([#82](https://github.com/UbiHome/UbiHome/issues/82)) ([89c11f2](https://github.com/UbiHome/UbiHome/commit/89c11f2aeec96048663c64edc0b351c8ba7df911))
+
+
+### Bug Fixes
+
+* api switch ([#76](https://github.com/UbiHome/UbiHome/issues/76)) ([c27b34c](https://github.com/UbiHome/UbiHome/commit/c27b34cf57e886dc54878e064cd907c5c1463bc4))
+
+## [0.8.7](https://github.com/UbiHome/UbiHome/compare/v0.8.6...ubihome-shell-v0.8.7) (2025-05-10)
+
+
+### Bug Fixes
+
+* api switch ([#76](https://github.com/UbiHome/UbiHome/issues/76)) ([c27b34c](https://github.com/UbiHome/UbiHome/commit/c27b34cf57e886dc54878e064cd907c5c1463bc4))
+
+## [0.8.6](https://github.com/UbiHome/UbiHome/compare/v0.8.5...ubihome-shell-v0.8.6) (2025-05-10)
+
+
+### Bug Fixes
+
+* add api binary sensor ([b9a9ff7](https://github.com/UbiHome/UbiHome/commit/b9a9ff765eec377250dd5fd10ea816fb89ec010c))
+* api switch ([#76](https://github.com/UbiHome/UbiHome/issues/76)) ([c27b34c](https://github.com/UbiHome/UbiHome/commit/c27b34cf57e886dc54878e064cd907c5c1463bc4))
+
+## [0.8.5](https://github.com/UbiHome/UbiHome/compare/v0.8.4...ubihome-shell-v0.8.5) (2025-05-10)
+
+
+### Bug Fixes
+
+* add api binary sensor ([b9a9ff7](https://github.com/UbiHome/UbiHome/commit/b9a9ff765eec377250dd5fd10ea816fb89ec010c))
+* api switch ([#76](https://github.com/UbiHome/UbiHome/issues/76)) ([c27b34c](https://github.com/UbiHome/UbiHome/commit/c27b34cf57e886dc54878e064cd907c5c1463bc4))
+
 ## [0.8.4](https://github.com/UbiHome/UbiHome/compare/v0.8.3...ubihome-shell-v0.8.4) (2025-05-10)
 
 

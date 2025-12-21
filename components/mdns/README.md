@@ -7,7 +7,7 @@ avahi-browse -at
 
 ```
 
-In Homeassistant add the following to `configuration.yaml`: 
+In Homeassistant add the following to `configuration.yaml`:
 
 ```yaml
 logger:
@@ -18,10 +18,8 @@ logger:
 or
 
 ```bash
-python3 -m venv .venv
-.\.venv\Scripts\activate.bat
-pip install aioesphomeapi
-aioesphomeapi-discover -v
+uv run --with aioesphomeapi aioesphomeapi-discover
+uv run --python 3.14 --with aioesphomeapi aioesphomeapi-discover -v
 ```
 
 ```

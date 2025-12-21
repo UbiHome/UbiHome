@@ -32,7 +32,8 @@ button:
   mqtt_client.subscribe("#")
   mock = Mock()
   mqtt_client._on_message = mock
-  async with UbiHome("run", DEVICE_INFO_CONFIG) as ubihome:
+  async with UbiHome("run", config=DEVICE_INFO_CONFIG) as ubihome:
+    await sleep(1)
     mock.assert_called_once()
     message = mock.call_args.args[2]
     assert message.topic == f"homeassistant/device/{name}/config"
@@ -43,7 +44,7 @@ button:
     assert button_id in components
     entity = components[button_id]
     assert entity["name"] == button_name
-    command_topic = entity["command_topic"]
+    command_topic = entity["cmd_t"]
 
     publish = mqtt_client.publish(command_topic, "ON")
     publish.wait_for_publish()

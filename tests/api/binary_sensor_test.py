@@ -30,16 +30,16 @@ binary_sensor:
   with open(sensor_mock, "w") as f:
       f.write("false")
 
-  async with UbiHome("run", DEVICE_INFO_CONFIG) as ubihome:
-    api = aioesphomeapi.APIClient("127.0.0.1", 6053, "MyPassword")
-    await api.connect(login=True)
+  async with UbiHome("run", config=DEVICE_INFO_CONFIG, wait_for_api=True) as ubihome:
+    api = aioesphomeapi.APIClient("127.0.0.1", 6053, "")
+    await api.connect(login=False)
 
     entities, services = await api.list_entities_services()
     assert len(entities) == 1, entities
     entity = entities[0]
 
     assert type(entity) == aioesphomeapi.BinarySensorInfo
-    assert entity.unique_id == sensor_id
+    assert entity.object_id == sensor_id
     assert entity.name == sensor_name
 
     mock = Mock()

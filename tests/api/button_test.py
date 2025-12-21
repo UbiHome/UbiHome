@@ -24,9 +24,9 @@ button:
    command: "echo 'Hello World!' > test.log"
 """
 
-  async with UbiHome("run", DEVICE_INFO_CONFIG) as ubihome:
-    api = aioesphomeapi.APIClient("127.0.0.1", 6053, "MyPassword")
-    await api.connect(login=True)
+  async with UbiHome("run", config=DEVICE_INFO_CONFIG, wait_for_api=True) as ubihome:
+    api = aioesphomeapi.APIClient("127.0.0.1", 6053, "")
+    await api.connect(login=False)
 
     entities, services = await api.list_entities_services()
     assert len(entities) == 1, entities
@@ -34,7 +34,7 @@ button:
     entity = entities[0]
 
     assert type(entity) == aioesphomeapi.ButtonInfo
-    assert entity.unique_id == button_id
+    assert entity.object_id == button_id
     assert entity.name == button_name
 
     api.button_command(0)
