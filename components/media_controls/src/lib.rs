@@ -102,6 +102,10 @@ impl Module for UbiHomeDefault {
         Box::pin(async move {
             if let Some(display_entity) = config.display_entity {
                 sleep(std::time::Duration::from_secs(10)).await;
+                debug!(
+                    "Subscribing to media control display entity: {}",
+                    display_entity
+                );
                 sender
                     .send(ChangedMessage::APISubscribeEntity {
                         entity: display_entity.clone(),
@@ -158,6 +162,7 @@ impl Module for UbiHomeDefault {
 
             let mut controls = MediaControls::new(config).unwrap();
 
+            debug!("Create MediaControls instance");
             // The closure must be Send and have a static lifetime.
             let sender_clone = sender.clone();
             let event = events
@@ -224,6 +229,11 @@ impl Module for UbiHomeDefault {
                             attribute,
                             state,
                         } => {
+                            debug!(
+                                "Received entity change: {}.{} = {}",
+                                entity, attribute, state
+                            );
+
                             if attribute == "media_title" {
                                 title = state.clone()
                             } else if attribute == "media_artist" {
