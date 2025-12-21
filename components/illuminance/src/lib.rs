@@ -256,7 +256,7 @@ async fn read_illuminance(_device_path: Option<&String>) -> Result<f64, String> 
     use windows::{
         Win32::Devices::Sensors::{
             ISensorDataReport, ISensorManager, SENSOR_DATA_TYPE_LIGHT_LEVEL_LUX,
-            SENSOR_TYPE_illuminance,
+            SENSOR_TYPE_AMBIENT_LIGHT,
         },
         Win32::System::Com::StructuredStorage::{PropVariantToDouble, PROPVARIANT},
         Win32::System::Com::{
@@ -283,9 +283,9 @@ async fn read_illuminance(_device_path: Option<&String>) -> Result<f64, String> 
                 format!("Failed to create SensorManager instance: {}", e)
             })?;
 
-        // Get sensors by type (SENSOR_TYPE_illuminance)
+        // Get sensors by type (SENSOR_TYPE_AMBIENT_LIGHT)
         let sensor_collection = sensor_manager
-            .GetSensorsByType(&SENSOR_TYPE_illuminance)
+            .GetSensorsByType(&SENSOR_TYPE_AMBIENT_LIGHT)
             .map_err(|e| {
                 CoUninitialize();
                 format!("Failed to get ambient light sensors: {}", e)
