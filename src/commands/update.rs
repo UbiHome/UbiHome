@@ -113,10 +113,10 @@ pub(crate) fn update() -> Result<(), String> {
                     new_exe_path.set_file_name(format!("new_{}", new_exe_path.file_name().unwrap_or_default().to_string_lossy()));
                     std::fs::write(&new_exe_path, body_data).expect("Failed to create temporary file");
 
-                    println!("Updating executable...");
+                    print!("Updating {}. ", exe_path.display());
                     self_replace::self_replace(&new_exe_path).unwrap();
                     std::fs::remove_file(&new_exe_path).unwrap();
-                    println!("Updated: {}", exe_path.display());
+                    println!("Updated!");
                 }
                 Err(e) => println!("failed to get current exe path: {e}"),
             };
