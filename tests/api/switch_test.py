@@ -43,7 +43,7 @@ switch:
     entity = entities[0]
 
     assert type(entity) == aioesphomeapi.SwitchInfo
-    assert entity.unique_id == button_id
+    assert entity.object_id == button_id
     assert entity.name == button_name
 
     mock = Mock()
