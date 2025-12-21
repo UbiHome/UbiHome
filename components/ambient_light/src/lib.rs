@@ -1,3 +1,4 @@
+use duration_str::deserialize_duration;
 use log::{debug, error, info, warn};
 use serde::Deserialize;
 use serde::Deserializer;
@@ -15,25 +16,20 @@ use ubihome_core::{
 
 #[derive(Clone, Deserialize, Debug)]
 pub struct AmbientLightSensorConfig {
-    pub name: Option<String>,
     /// Update interval for reading light sensor values
     #[serde(default = "default_update_interval")]
-    #[serde(deserialize_with = "deserialize_option_duration")]
-    pub update_interval: Option<Duration>,
+    #[serde(deserialize_with = "deserialize_duration")]
+    pub update_interval: Duration,
     /// Device path (Linux only) - auto-detected if not specified
     pub device_path: Option<String>,
 }
 
-fn default_update_interval() -> Option<Duration> {
-    Some(Duration::from_secs(30))
+fn default_update_interval() -> Duration {
+    Duration::from_secs(30)
 }
 
 #[derive(Clone, Deserialize, Debug)]
-struct AmbientLightConfig {
-    #[serde(default = "default_update_interval")]
-    #[serde(deserialize_with = "deserialize_option_duration")]
-    pub update_interval: Option<Duration>,
-}
+struct AmbientLightConfig {}
 
 config_template!(
     ambient_light,
@@ -132,10 +128,8 @@ impl Module for Default {
                 let cloned_global_config = global_config.clone();
 
                 tokio::spawn(async move {
-                    let update_interval = sensor_config
-                        .update_interval
-                        .or(cloned_global_config.update_interval)
-                        .unwrap_or(Duration::from_secs(30));
+                    let update_interval = sensor_config.update_interval;
+                    // .unwrap_or(cloned_global_config.update_interval);
 
                     let mut interval = time::interval(update_interval);
 
