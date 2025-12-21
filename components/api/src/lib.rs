@@ -1,23 +1,23 @@
 use esphome_native_api::esphomeapi::EspHomeApi;
 use esphome_native_api::parser;
 use esphome_native_api::parser::ProtoMessage;
-use esphome_native_api::proto::version_2025_6_3::BinarySensorStateResponse;
-use esphome_native_api::proto::version_2025_6_3::BluetoothLeAdvertisementResponse;
-use esphome_native_api::proto::version_2025_6_3::BluetoothServiceData;
-use esphome_native_api::proto::version_2025_6_3::EntityCategory;
-use esphome_native_api::proto::version_2025_6_3::LightStateResponse;
-use esphome_native_api::proto::version_2025_6_3::ListEntitiesBinarySensorResponse;
-use esphome_native_api::proto::version_2025_6_3::ListEntitiesButtonResponse;
-use esphome_native_api::proto::version_2025_6_3::ListEntitiesDoneResponse;
-use esphome_native_api::proto::version_2025_6_3::ListEntitiesLightResponse;
-use esphome_native_api::proto::version_2025_6_3::ListEntitiesSensorResponse;
-use esphome_native_api::proto::version_2025_6_3::ListEntitiesSwitchResponse;
-use esphome_native_api::proto::version_2025_6_3::SensorLastResetType;
-use esphome_native_api::proto::version_2025_6_3::SensorStateClass;
-use esphome_native_api::proto::version_2025_6_3::SensorStateResponse;
-use esphome_native_api::proto::version_2025_6_3::SubscribeHomeAssistantStateResponse;
-use esphome_native_api::proto::version_2025_6_3::SubscribeLogsResponse;
-use esphome_native_api::proto::version_2025_6_3::SwitchStateResponse;
+use esphome_native_api::proto::version_2025_12_1::BinarySensorStateResponse;
+use esphome_native_api::proto::version_2025_12_1::BluetoothLeAdvertisementResponse;
+use esphome_native_api::proto::version_2025_12_1::BluetoothServiceData;
+use esphome_native_api::proto::version_2025_12_1::EntityCategory;
+use esphome_native_api::proto::version_2025_12_1::LightStateResponse;
+use esphome_native_api::proto::version_2025_12_1::ListEntitiesBinarySensorResponse;
+use esphome_native_api::proto::version_2025_12_1::ListEntitiesButtonResponse;
+use esphome_native_api::proto::version_2025_12_1::ListEntitiesDoneResponse;
+use esphome_native_api::proto::version_2025_12_1::ListEntitiesLightResponse;
+use esphome_native_api::proto::version_2025_12_1::ListEntitiesSensorResponse;
+use esphome_native_api::proto::version_2025_12_1::ListEntitiesSwitchResponse;
+use esphome_native_api::proto::version_2025_12_1::SensorLastResetType;
+use esphome_native_api::proto::version_2025_12_1::SensorStateClass;
+use esphome_native_api::proto::version_2025_12_1::SensorStateResponse;
+use esphome_native_api::proto::version_2025_12_1::SubscribeHomeAssistantStateResponse;
+use esphome_native_api::proto::version_2025_12_1::SubscribeLogsResponse;
+use esphome_native_api::proto::version_2025_12_1::SwitchStateResponse;
 use log::debug;
 use log::info;
 use log::trace;
@@ -51,15 +51,7 @@ fn mac_to_u64(mac: &str) -> Result<u64, ParseIntError> {
     u64::from_str_radix(&mac, 16)
 }
 
-config_template!(
-    api,
-    ApiConfig,
-    NoConfig,
-    NoConfig,
-    NoConfig,
-    NoConfig,
-    NoConfig
-);
+config_template!(api, ApiConfig, NoConfig, NoConfig, NoConfig, NoConfig, NoConfig);
 
 #[derive(Clone, Debug)]
 pub struct UbiHomeDefault {
@@ -155,7 +147,7 @@ impl Module for UbiHomeDefault {
                                                 object_id: switch_entity.id.clone(),
                                                 key: index.try_into().unwrap(),
                                                 name: switch_entity.name,
-                                                unique_id: switch_entity.id.clone(),
+                                                device_id: 0,
                                                 icon: switch_entity.icon.unwrap_or_default(),
                                                 device_class: switch_entity
                                                     .device_class
@@ -178,7 +170,7 @@ impl Module for UbiHomeDefault {
                                             object_id: button.id.clone(),
                                             key: index.try_into().unwrap(),
                                             name: button.name,
-                                            unique_id: button.id.clone(),
+                                            device_id: 0,
                                             icon: "".to_string(),
                                             device_class: "".to_string(), //button.device_class,
                                             disabled_by_default: false,
@@ -196,7 +188,7 @@ impl Module for UbiHomeDefault {
                                             object_id: sensor.id.clone(),
                                             key: index.try_into().unwrap(),
                                             name: sensor.name,
-                                            unique_id: sensor.id.clone(),
+                                            device_id: 0,
                                             icon: "".to_string(),
                                             unit_of_measurement: sensor
                                                 .unit_of_measurement
@@ -208,8 +200,8 @@ impl Module for UbiHomeDefault {
                                                 .unwrap_or("".to_string()), //sensor.device_class,
                                             state_class: SensorStateClass::StateClassMeasurement
                                                 as i32,
-                                            legacy_last_reset_type: SensorLastResetType::LastResetNone
-                                                as i32,
+                                            legacy_last_reset_type:
+                                                SensorLastResetType::LastResetNone as i32,
                                             disabled_by_default: false,
                                             entity_category: EntityCategory::None as i32,
                                         },
@@ -226,7 +218,7 @@ impl Module for UbiHomeDefault {
                                                 object_id: binary_sensor.id.clone(),
                                                 key: index.try_into().unwrap(),
                                                 name: binary_sensor.name,
-                                                unique_id: binary_sensor.id.clone(),
+                                                device_id: 0,
                                                 icon: "".to_string(),
                                                 device_class: binary_sensor
                                                     .device_class
@@ -249,7 +241,7 @@ impl Module for UbiHomeDefault {
                                             object_id: light.id.clone(),
                                             key: index.try_into().unwrap(),
                                             name: light.name,
-                                            unique_id: light.id.clone(),
+                                            device_id: 0,
                                             icon: light.icon.unwrap_or_default(),
                                             disabled_by_default: false,
                                             entity_category: EntityCategory::None as i32,
@@ -306,35 +298,41 @@ impl Module for UbiHomeDefault {
                                 let key = api_components_key_id_clone.get(&key).unwrap();
                                 debug!("SensorValueChanged: {:?}", &value);
 
-                                tx_clone.send(ProtoMessage::SensorStateResponse(SensorStateResponse {
-                                    key: key.clone(),
-                                    state: value,
-                                    missing_state: false,
-                                }))
-                                .unwrap();
+                                tx_clone
+                                    .send(ProtoMessage::SensorStateResponse(SensorStateResponse {
+                                        key: key.clone(),
+                                        device_id: 0,
+                                        state: value,
+                                        missing_state: false,
+                                    }))
+                                    .unwrap();
                             }
                             PublishedMessage::BinarySensorValueChanged { key, value } => {
                                 let key = api_components_key_id_clone.get(&key).unwrap();
                                 debug!("SensorValueChanged: {:?}", &value);
 
-                                tx_clone.send(ProtoMessage::BinarySensorStateResponse(
-                                    BinarySensorStateResponse {
-                                        key: key.clone(),
-                                        state: value,
-                                        missing_state: false,
-                                    },
-                                ))
-                                .unwrap();
+                                tx_clone
+                                    .send(ProtoMessage::BinarySensorStateResponse(
+                                        BinarySensorStateResponse {
+                                            key: key.clone(),
+                                            device_id: 0,
+                                            state: value,
+                                            missing_state: false,
+                                        },
+                                    ))
+                                    .unwrap();
                             }
                             PublishedMessage::SwitchStateChange { key, state } => {
                                 let key = api_components_key_id_clone.get(&key).unwrap();
                                 debug!("SensorValueChanged: {:?}", &state);
 
-                                tx_clone.send(ProtoMessage::SwitchStateResponse(SwitchStateResponse {
-                                    key: key.clone(),
-                                    state: state,
-                                }))
-                                .unwrap();
+                                tx_clone
+                                    .send(ProtoMessage::SwitchStateResponse(SwitchStateResponse {
+                                        key: key.clone(),
+                                        device_id: 0,
+                                        state: state,
+                                    }))
+                                    .unwrap();
                             }
                             PublishedMessage::LightStateChange {
                                 key,
@@ -347,22 +345,24 @@ impl Module for UbiHomeDefault {
                                 let key = api_components_key_id_clone.get(&key).unwrap();
                                 debug!("LightStateChanged: state={:?}, brightness={:?}, rgb=({:?},{:?},{:?})", &state, &brightness, &red, &green, &blue);
 
-                                tx_clone.send(ProtoMessage::LightStateResponse(LightStateResponse {
-                                    key: key.clone(),
-                                    state: state,
-                                    brightness: brightness.unwrap_or(0.0),
-                                    color_mode: 1, // RGB mode, could be made configurable
-                                    color_brightness: brightness.unwrap_or(0.0),
-                                    red: red.unwrap_or(0.0),
-                                    green: green.unwrap_or(0.0),
-                                    blue: blue.unwrap_or(0.0),
-                                    white: 0.0,             // Not currently supported
-                                    color_temperature: 0.0, // Not currently supported
-                                    cold_white: 0.0,        // Not currently supported
-                                    warm_white: 0.0,        // Not currently supported
-                                    effect: "".to_string(), // No effect currently
-                                }))
-                                .unwrap();
+                                tx_clone
+                                    .send(ProtoMessage::LightStateResponse(LightStateResponse {
+                                        key: key.clone(),
+                                        device_id: 0,
+                                        state: state,
+                                        brightness: brightness.unwrap_or(0.0),
+                                        color_mode: 1, // RGB mode, could be made configurable
+                                        color_brightness: brightness.unwrap_or(0.0),
+                                        red: red.unwrap_or(0.0),
+                                        green: green.unwrap_or(0.0),
+                                        blue: blue.unwrap_or(0.0),
+                                        white: 0.0,             // Not currently supported
+                                        color_temperature: 0.0, // Not currently supported
+                                        cold_white: 0.0,        // Not currently supported
+                                        warm_white: 0.0,        // Not currently supported
+                                        effect: "".to_string(), // No effect currently
+                                    }))
+                                    .unwrap();
                             }
                             PublishedMessage::BluetoothProxyMessage(msg) => {
                                 debug!("BluetoothProxyMessage: {:?}", &msg);
@@ -394,7 +394,8 @@ impl Module for UbiHomeDefault {
                                     manufacturer_data: manufacturer_data,
                                 };
 
-                                tx_clone.send(ProtoMessage::BluetoothLeAdvertisementResponse(test))
+                                tx_clone
+                                    .send(ProtoMessage::BluetoothLeAdvertisementResponse(test))
                                     .unwrap();
                             }
                             _ => {}
@@ -427,7 +428,6 @@ impl Module for UbiHomeDefault {
                                 let response_message = SubscribeLogsResponse {
                                     level: 0,
                                     message: "Test log".to_string().into_bytes(),
-                                    send_failed: false,
                                 };
                                 tx.send(ProtoMessage::SubscribeLogsResponse(response_message))
                                     .unwrap();
@@ -497,7 +497,7 @@ impl Module for UbiHomeDefault {
                                     ProtoMessage::ListEntitiesButtonResponse(button) => {
                                         debug!("ButtonCommandRequest: {:?}", button);
                                         let msg = ChangedMessage::ButtonPress {
-                                            key: button.unique_id.clone(),
+                                            key: button.object_id.clone(),
                                         };
 
                                         cloned_sender.send(msg).unwrap();
@@ -514,7 +514,7 @@ impl Module for UbiHomeDefault {
                                     ProtoMessage::ListEntitiesSwitchResponse(switch_entity) => {
                                         debug!("switch_entityCommandRequest: {:?}", switch_entity);
                                         let msg = ChangedMessage::SwitchStateCommand {
-                                            key: switch_entity.unique_id.clone(),
+                                            key: switch_entity.object_id.clone(),
                                             state: switch_command_request.state,
                                         };
 
@@ -532,7 +532,7 @@ impl Module for UbiHomeDefault {
                                     ProtoMessage::ListEntitiesLightResponse(light_entity) => {
                                         debug!("LightCommandRequest: {:?}", light_entity);
                                         let msg = ChangedMessage::LightStateCommand {
-                                            key: light_entity.unique_id.clone(),
+                                            key: light_entity.object_id.clone(),
                                             state: light_command_request.state,
                                             brightness: if light_command_request.has_brightness {
                                                 Some(light_command_request.brightness)
@@ -567,9 +567,7 @@ impl Module for UbiHomeDefault {
                         }
                     }
                     debug!("Connection closed or error");
-                
                 });
-
             }
         })
     }
@@ -577,7 +575,7 @@ impl Module for UbiHomeDefault {
 
 #[cfg(test)]
 mod tests {
-    use esphome_native_api::proto::version_2025_6_3::ListEntitiesLightResponse;
+    use esphome_native_api::proto::version_2025_12_1::ListEntitiesLightResponse;
 
     use super::*;
 
@@ -621,11 +619,13 @@ api: {}
         let module = api_module.unwrap();
 
         // Check that the API config uses defaults when empty object
-        assert_eq!(module.api_config.port, None, "Port should be None (default)");
+        assert_eq!(
+            module.api_config.port, None,
+            "Port should be None (default)"
+        );
         assert_eq!(
             module.api_config.password, None,
             "Password should be None (default)"
         );
     }
-
 }
