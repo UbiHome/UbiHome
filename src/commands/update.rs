@@ -41,7 +41,10 @@ pub(crate) fn update() -> Result<(), String> {
 
         let ans = Confirm::new(&format!("Update to version {}?", new_version))
             .with_default(true)
-            .with_help_message("This will overwrite the current executable.")
+            .with_help_message(format!(
+                "This will overwrite the current ({}) executable.",
+                VERSION
+            ).as_str())
             .prompt();
 
         if ans.unwrap() {
