@@ -1,6 +1,6 @@
 [package]
-name = "ubihome-light_sensor"
-version = "0.8.11"
+name = "ubihome-ambient_light"
+version = "0.9.0"
 authors = ["Daniel Habenicht <daniel-habenicht@outlook.de>"]
 edition = "2021"
 

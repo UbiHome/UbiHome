@@ -8,7 +8,7 @@ homepage = "https://github.com/UbiHome/UbiHome"
 
 [dependencies]
 tokio = { version = "1", features = ["full"] }
-clap = { version = "4.5.21", features = [ "derive" ] }
+clap = { version = "4.5.21", features = ["derive"] }
 rust-embed = "6.8"
 log = "0.4"
 rumqttc = "0.24.0"
@@ -19,7 +19,7 @@ ubihome-bluetooth_proxy = { path = "components/bluetooth_proxy" }
 ubihome-bme280 = { path = "components/bme280" }
 ubihome-core = { path = "components/core" }
 ubihome-gpio = { path = "components/gpio" }
-ubihome-light_sensor = { path = "components/light_sensor" }
+ubihome-ambient_light = { path = "components/ambient_light" }
 ubihome-mdns = { path = "components/mdns" }
 ubihome-mqtt = { path = "components/mqtt" }
 ubihome-power_utils = { path = "components/power_utils" }
@@ -30,7 +30,11 @@ shell_exec = "0.2.0"
 flexi_logger = "0.29.8"
 directories = "6.0.0"
 futures-signals = "0.3.34"
-reqwest = { version = "0.12.15", features = ["json", "rustls-tls", "stream"], default-features = false}
+reqwest = { version = "0.12.15", features = [
+    "json",
+    "rustls-tls",
+    "stream",
+], default-features = false }
 self-replace = "1.5.0"
 current_platform = "0.2.0"
 
@@ -51,4 +55,17 @@ windows-sys = "0.59"
 
 [workspace]
 resolver = "2"
-members = ["components/api", "components/bluetooth_proxy", "components/bme280", "components/core", "components/evdev", "components/gpio", "components/light_sensor", "components/mdns", "components/mqtt", "components/power_utils", "components/shell", "components/web_server"]
+members = [
+    "components/api",
+    "components/bluetooth_proxy",
+    "components/bme280",
+    "components/core",
+    "components/evdev",
+    "components/gpio",
+    "components/ambient_light",
+    "components/mdns",
+    "components/mqtt",
+    "components/power_utils",
+    "components/shell",
+    "components/web_server",
+]

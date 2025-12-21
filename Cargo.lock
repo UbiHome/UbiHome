@@ -4043,7 +4043,7 @@ dependencies = [
  "ubihome-bme280",
  "ubihome-core",
  "ubihome-gpio",
- "ubihome-light_sensor",
+ "ubihome-ambient_light",
  "ubihome-mdns",
  "ubihome-mqtt",
  "ubihome-power_utils",
@@ -4139,7 +4139,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "ubihome-light_sensor"
+name = "ubihome-ambient_light"
 version = "0.8.11"
 dependencies = [
  "duration-str",
