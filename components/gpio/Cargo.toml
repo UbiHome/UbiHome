@@ -1,6 +1,6 @@
 [package]
 name = "ubihome-gpio"
-version = "0.9.2"
+version = "0.9.3"
 authors = ["Daniel Habenicht <daniel-habenicht@outlook.de>"]
 edition = "2021"
 
