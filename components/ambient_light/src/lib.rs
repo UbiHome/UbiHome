@@ -1,20 +1,20 @@
-use duration_str::deserialize_option_duration;
 use log::{debug, error, info, warn};
 use serde::Deserialize;
+use serde::Deserializer;
 use std::{collections::HashMap, future::Future, pin::Pin, time::Duration};
 use tokio::{
     sync::broadcast::{Receiver, Sender},
     time,
 };
 use ubihome_core::{
+    config_template,
     home_assistant::sensors::UbiSensor,
     internal::sensors::{InternalComponent, InternalSensor},
-    sensor::{SensorBase, UnknownSensor},
-    ChangedMessage, Module, PublishedMessage, UbiHome,
+    ChangedMessage, Module, NoConfig, PublishedMessage,
 };
 
 #[derive(Clone, Deserialize, Debug)]
-pub struct LightSensorConfig {
+pub struct AmbientLightSensorConfig {
     pub name: Option<String>,
     /// Update interval for reading light sensor values
     #[serde(default = "default_update_interval")]
@@ -29,46 +29,26 @@ fn default_update_interval() -> Option<Duration> {
 }
 
 #[derive(Clone, Deserialize, Debug)]
-#[serde(tag = "platform")]
-#[serde(rename_all = "camelCase")]
-pub enum SensorKind {
-    #[serde(alias = "ambient_light")]
-    LightSensor(LightSensorInternalConfig),
-    #[serde(untagged)]
-    Unknown(UnknownSensor),
-}
-
-#[derive(Clone, Deserialize, Debug)]
-pub struct SensorConfig {
-    #[serde(flatten)]
-    pub default: SensorBase,
-    #[serde(flatten)]
-    pub extra: SensorKind,
-}
-
-#[derive(Clone, Deserialize, Debug)]
-pub struct LightSensorInternalConfig {
-    /// Update interval for reading light sensor values
+struct AmbientLightConfig {
     #[serde(default = "default_update_interval")]
     #[serde(deserialize_with = "deserialize_option_duration")]
     pub update_interval: Option<Duration>,
-    /// Device path (Linux only) - auto-detected if not specified
-    pub device_path: Option<String>,
 }
 
-#[derive(Clone, Deserialize, Debug)]
-struct CoreConfig {
-    pub ubihome: UbiHome,
-    #[serde(default)]
-    pub ambient_light: Option<LightSensorConfig>,
-    #[serde(default)]
-    pub sensor: Option<Vec<SensorConfig>>,
-}
+config_template!(
+    ambient_light,
+    AmbientLightConfig,
+    NoConfig,
+    NoConfig,
+    AmbientLightSensorConfig,
+    NoConfig,
+    NoConfig
+);
 
 pub struct Default {
-    config: LightSensorConfig,
+    config: AmbientLightConfig,
     components: Vec<InternalComponent>,
-    sensors: HashMap<String, LightSensorInternalConfig>,
+    sensors: HashMap<String, AmbientLightSensorConfig>,
 }
 
 impl Module for Default {
@@ -76,15 +56,15 @@ impl Module for Default {
         let config = serde_yaml::from_str::<CoreConfig>(config_string)
             .map_err(|e| format!("Failed to parse light sensor config: {}", e))?;
 
-        debug!("Light sensor config: {:?}", config);
+        debug!("AmbientLight sensor config: {:?}", config);
 
         let mut components: Vec<InternalComponent> = Vec::new();
-        let mut sensors: HashMap<String, LightSensorInternalConfig> = HashMap::new();
+        let mut sensors: HashMap<String, AmbientLightSensorConfig> = HashMap::new();
 
         if let Some(sensor_configs) = config.sensor {
-            for sensor_config in sensor_configs {
+            for (_, sensor_config) in sensor_configs {
                 match sensor_config.extra {
-                    SensorKind::LightSensor(sensor) => {
+                    SensorKind::ambient_light(sensor) => {
                         let id = sensor_config.default.get_object_id();
                         components.push(InternalComponent::Sensor(InternalSensor {
                             ha: UbiSensor {
@@ -122,7 +102,7 @@ impl Module for Default {
         }
 
         Ok(Default {
-            config: config.ambient_light.unwrap_or_default(),
+            config: config.ambient_light,
             components,
             sensors,
         })
@@ -191,16 +171,6 @@ impl Module for Default {
 
             Ok(())
         })
-    }
-}
-
-impl std::default::Default for LightSensorConfig {
-    fn default() -> Self {
-        Self {
-            name: None,
-            update_interval: default_update_interval(),
-            device_path: None,
-        }
     }
 }
 

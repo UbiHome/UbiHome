@@ -1,0 +1,26 @@
+ubihome:
+  name: test
+
+logger:
+  level: debug
+  directory: ./logs
+
+api:
+
+switch:
+  - platform: shell
+    name: 'Screen'
+    id: screen
+    command_on: 'wlr-randr --output HDMI-A-1 --on'
+    command_off: echo "false" > switch.mock
+    # command_state: cat switch.mock
+# ambient_light:
+#   update_interval: 2s
+
+# sensor:
+#   - platform: ambient_light
+#     name: 'Ambient Light'
+#     icon: mdi:brightness-6
+#     unit_of_measurement: 'lx'
+#     device_class: illuminance
+#     state_class: measurement

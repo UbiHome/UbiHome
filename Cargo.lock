@@ -544,7 +544,7 @@ dependencies = [
 [[package]]
 name = "btleplug"
 version = "0.11.8"
-source = "git+https://github.com/DanielHabenicht/fork.btleplug?branch=adapter-mac-address#2f58b572cafe9fb68d454292bd9b5ec82e31250e"
+source = "git+https://github.com/DanielHabenicht/fork.btleplug?rev=7e2df6f#7e2df6fb2919c4d27e86612cb70b12aa9d6ffea0"
 dependencies = [
  "async-trait",
  "bitflags 2.9.0",
@@ -4038,12 +4038,12 @@ dependencies = [
  "serde_yaml",
  "shell_exec",
  "tokio",
+ "ubihome-ambient_light",
  "ubihome-api",
  "ubihome-bluetooth_proxy",
  "ubihome-bme280",
  "ubihome-core",
  "ubihome-gpio",
- "ubihome-ambient_light",
  "ubihome-mdns",
  "ubihome-mqtt",
  "ubihome-power_utils",
@@ -4051,6 +4051,20 @@ dependencies = [
  "ubihome-web_server",
  "windows-service",
  "windows-sys 0.59.0",
+]
+
+[[package]]
+name = "ubihome-ambient_light"
+version = "0.9.0"
+dependencies = [
+ "duration-str",
+ "industrial-io",
+ "log",
+ "serde",
+ "serde_yaml",
+ "tokio",
+ "ubihome-core",
+ "windows 0.61.3",
 ]
 
 [[package]]
@@ -4136,20 +4150,6 @@ dependencies = [
  "serde_yaml",
  "tokio",
  "ubihome-core",
-]
-
-[[package]]
-name = "ubihome-ambient_light"
-version = "0.8.11"
-dependencies = [
- "duration-str",
- "industrial-io",
- "log",
- "serde",
- "serde_yaml",
- "tokio",
- "ubihome-core",
- "windows 0.61.3",
 ]
 
 [[package]]
