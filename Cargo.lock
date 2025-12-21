@@ -4038,12 +4038,12 @@ dependencies = [
  "serde_yaml",
  "shell_exec",
  "tokio",
- "ubihome-ambient_light",
  "ubihome-api",
  "ubihome-bluetooth_proxy",
  "ubihome-bme280",
  "ubihome-core",
  "ubihome-gpio",
+ "ubihome-illuminance",
  "ubihome-mdns",
  "ubihome-mqtt",
  "ubihome-power_utils",
@@ -4051,20 +4051,6 @@ dependencies = [
  "ubihome-web_server",
  "windows-service",
  "windows-sys 0.59.0",
-]
-
-[[package]]
-name = "ubihome-ambient_light"
-version = "0.9.0"
-dependencies = [
- "duration-str",
- "industrial-io",
- "log",
- "serde",
- "serde_yaml",
- "tokio",
- "ubihome-core",
- "windows 0.61.3",
 ]
 
 [[package]]
@@ -4150,6 +4136,20 @@ dependencies = [
  "serde_yaml",
  "tokio",
  "ubihome-core",
+]
+
+[[package]]
+name = "ubihome-illuminance"
+version = "0.9.0"
+dependencies = [
+ "duration-str",
+ "industrial-io",
+ "log",
+ "serde",
+ "serde_yaml",
+ "tokio",
+ "ubihome-core",
+ "windows 0.61.3",
 ]
 
 [[package]]

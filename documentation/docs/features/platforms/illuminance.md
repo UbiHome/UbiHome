@@ -1,13 +1,13 @@
 ---
 tags:
-  - Light
+  - Illuminance
   - Linux
   - Windows
 ---
 
-# Ambient Light Sensor
+# Illuminance Sensor
 
-The ambient light sensor platform allows you to integrate laptop ambient light / illuminance sensors into UbiHome. It supports both Linux and Windows systems.
+The illuminance sensor platform allows you to integrate a laptop ambient light sensors into UbiHome. It supports both Linux and Windows systems.
 
 ## Supported Platforms
 
@@ -33,7 +33,7 @@ The ambient light sensor platform allows you to integrate laptop ambient light /
 Enable the platform:
 
 ```yaml
-ambient_light:
+illuminance:
   update_interval: 30s # Default update interval for all sensors
 ```
 
@@ -41,7 +41,7 @@ ambient_light:
 
 ```yaml
 sensor:
-  - platform: ambient_light
+  - platform: illuminance
     name: 'Ambient Light'
     icon: mdi:brightness-6
     unit_of_measurement: 'lx'
@@ -53,7 +53,7 @@ sensor:
 
 ```yaml
 sensor:
-  - platform: ambient_light
+  - platform: illuminance
     name: 'Ambient Light Sensor'
     device_path: '/sys/bus/iio/devices/iio:device0/in_illuminance_raw'
     update_interval: 15s
@@ -69,7 +69,7 @@ sensor:
 
 | Property              | Type     | Default            | Description                     |
 | --------------------- | -------- | ------------------ | ------------------------------- |
-| `platform`            | string   | **Required**       | Must be `ambient_light`         |
+| `platform`            | string   | **Required**       | Must be `illuminance`           |
 | `name`                | string   | **Required**       | Display name for the sensor     |
 | `device_path`         | string   | Optional           | Manual device path (Linux only) |
 | `update_interval`     | duration | 30s                | How often to read the sensor    |
@@ -81,7 +81,7 @@ sensor:
 ### Global Configuration
 
 ```yaml
-ambient_light:
+illuminance:
   update_interval: 30s # Default update interval for all sensors
   device_path: '/custom/path' # Default device path (Linux only)
 ```
@@ -101,7 +101,7 @@ ambient_light:
 
    ```yaml
    sensor:
-     - platform: ambient_light
+     - platform: illuminance
        name: 'Light Sensor'
        device_path: '/sys/bus/iio/devices/iio:device0/in_illuminance_raw'
    ```

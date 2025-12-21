@@ -1,15 +1,13 @@
-# UbiHome Light Sensor Example Configuration
+# UbiHome Illuminance Sensor Example Configuration
 
 ubihome:
   name: 'My Laptop'
 
-# Global light sensor configuration
-ambient_light:
-  update_interval: 30s
+illuminance:
 
-# Individual light sensor
+# Individual illuminance sensor
 sensor:
-  - platform: ambient_light
+  - platform: illuminance
     name: 'Ambient Light Sensor'
     icon: mdi:brightness-6
     state_class: 'measurement'

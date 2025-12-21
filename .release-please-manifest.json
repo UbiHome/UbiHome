@@ -6,7 +6,7 @@
     "components/core": "0.9.0",
     "components/evdev": "0.9.0",
     "components/gpio": "0.9.0",
-    "components/ambient_light": "0.9.0",
+    "components/illuminance": "0.9.0",
     "components/mdns": "0.9.0",
     "components/mqtt": "0.9.0",
     "components/power_utils": "0.9.0",

@@ -1,5 +1,5 @@
 [package]
-name = "ubihome-ambient_light"
+name = "ubihome-illuminance"
 version = "0.9.0"
 authors = ["Daniel Habenicht <daniel-habenicht@outlook.de>"]
 edition = "2021"

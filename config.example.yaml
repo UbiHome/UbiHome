@@ -14,11 +14,11 @@ switch:
     command_on: 'wlr-randr --output HDMI-A-1 --on'
     command_off: echo "false" > switch.mock
     # command_state: cat switch.mock
-# ambient_light:
+# illuminance:
 #   update_interval: 2s
 
 # sensor:
-#   - platform: ambient_light
+#   - platform: illuminance
 #     name: 'Ambient Light'
 #     icon: mdi:brightness-6
 #     unit_of_measurement: 'lx'

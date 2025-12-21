@@ -32,7 +32,7 @@ fn default_update_interval() -> Duration {
 struct AmbientLightConfig {}
 
 config_template!(
-    ambient_light,
+    illuminance,
     AmbientLightConfig,
     NoConfig,
     NoConfig,
@@ -60,7 +60,7 @@ impl Module for Default {
         if let Some(sensor_configs) = config.sensor {
             for (_, sensor_config) in sensor_configs {
                 match sensor_config.extra {
-                    SensorKind::ambient_light(sensor) => {
+                    SensorKind::illuminance(sensor) => {
                         let id = sensor_config.default.get_object_id();
                         components.push(InternalComponent::Sensor(InternalSensor {
                             ha: UbiSensor {
@@ -98,7 +98,7 @@ impl Module for Default {
         }
 
         Ok(Default {
-            config: config.ambient_light,
+            config: config.illuminance,
             components,
             sensors,
         })
@@ -139,7 +139,7 @@ impl Module for Default {
                     );
 
                     loop {
-                        match read_ambient_light(sensor_config.device_path.as_ref()).await {
+                        match read_illuminance(sensor_config.device_path.as_ref()).await {
                             Ok(illuminance) => {
                                 debug!("Light sensor {} reading: {} lx", sensor_id, illuminance);
 
@@ -169,12 +169,12 @@ impl Module for Default {
 }
 
 #[cfg(target_os = "linux")]
-async fn read_ambient_light(device_path: Option<&String>) -> Result<f64, String> {
+async fn read_illuminance(device_path: Option<&String>) -> Result<f64, String> {
     use std::{fs, path::Path};
 
     // If a specific device path is provided, use it
     if let Some(path) = device_path {
-        return read_linux_ambient_light_from_path(path).await;
+        return read_linux_illuminance_from_path(path).await;
     }
 
     // Auto-detect light sensor devices
@@ -193,7 +193,7 @@ async fn read_ambient_light(device_path: Option<&String>) -> Result<f64, String>
                         let illuminance_input_path = device_path.join("in_illuminance_input");
 
                         if illuminance_raw_path.exists() {
-                            if let Ok(value) = read_linux_ambient_light_from_path(
+                            if let Ok(value) = read_linux_illuminance_from_path(
                                 &illuminance_raw_path.to_string_lossy().to_string(),
                             )
                             .await
@@ -201,7 +201,7 @@ async fn read_ambient_light(device_path: Option<&String>) -> Result<f64, String>
                                 return Ok(value);
                             }
                         } else if illuminance_input_path.exists() {
-                            if let Ok(value) = read_linux_ambient_light_from_path(
+                            if let Ok(value) = read_linux_illuminance_from_path(
                                 &illuminance_input_path.to_string_lossy().to_string(),
                             )
                             .await
@@ -224,7 +224,7 @@ async fn read_ambient_light(device_path: Option<&String>) -> Result<f64, String>
 
     for path in &hwmon_paths {
         if Path::new(path).exists() {
-            if let Ok(value) = read_linux_ambient_light_from_path(&path.to_string()).await {
+            if let Ok(value) = read_linux_illuminance_from_path(&path.to_string()).await {
                 return Ok(value);
             }
         }
@@ -234,7 +234,7 @@ async fn read_ambient_light(device_path: Option<&String>) -> Result<f64, String>
 }
 
 #[cfg(target_os = "linux")]
-async fn read_linux_ambient_light_from_path(path: &str) -> Result<f64, String> {
+async fn read_linux_illuminance_from_path(path: &str) -> Result<f64, String> {
     use std::fs;
 
     let content = fs::read_to_string(path)
@@ -252,11 +252,11 @@ async fn read_linux_ambient_light_from_path(path: &str) -> Result<f64, String> {
 }
 
 #[cfg(target_os = "windows")]
-async fn read_ambient_light(_device_path: Option<&String>) -> Result<f64, String> {
+async fn read_illuminance(_device_path: Option<&String>) -> Result<f64, String> {
     use windows::{
         Win32::Devices::Sensors::{
             ISensorDataReport, ISensorManager, SENSOR_DATA_TYPE_LIGHT_LEVEL_LUX,
-            SENSOR_TYPE_AMBIENT_LIGHT,
+            SENSOR_TYPE_illuminance,
         },
         Win32::System::Com::StructuredStorage::{PropVariantToDouble, PROPVARIANT},
         Win32::System::Com::{
@@ -283,9 +283,9 @@ async fn read_ambient_light(_device_path: Option<&String>) -> Result<f64, String
                 format!("Failed to create SensorManager instance: {}", e)
             })?;
 
-        // Get sensors by type (SENSOR_TYPE_AMBIENT_LIGHT)
+        // Get sensors by type (SENSOR_TYPE_illuminance)
         let sensor_collection = sensor_manager
-            .GetSensorsByType(&SENSOR_TYPE_AMBIENT_LIGHT)
+            .GetSensorsByType(&SENSOR_TYPE_illuminance)
             .map_err(|e| {
                 CoUninitialize();
                 format!("Failed to get ambient light sensors: {}", e)
@@ -339,6 +339,6 @@ async fn read_ambient_light(_device_path: Option<&String>) -> Result<f64, String
 }
 
 #[cfg(not(any(target_os = "linux", target_os = "windows")))]
-async fn read_ambient_light(_device_path: Option<&String>) -> Result<f64, String> {
+async fn read_illuminance(_device_path: Option<&String>) -> Result<f64, String> {
     Err("Light sensor is only supported on Linux and Windows".to_string())
 }
