@@ -77,7 +77,8 @@ class UbiHome(object):
             file = "ubihome.exe"
         else:
             file = "ubihome"
-        self.executable = os.path.join(os.getcwd(), "..", "target", "debug", file)
+        # self.executable = os.path.join(os.getcwd(), "..", "target", "debug", file)
+        self.executable = os.path.join(os.getcwd(), file)
         logging.info(f"Using UbiHome executable: {self.executable}")
 
     async def __aenter__(self):
