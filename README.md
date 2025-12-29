@@ -8,7 +8,7 @@
 `UbiHome` is a ubiquitous system which allows you to integrate a device running any OS (Linux, Windows, MacOS) into your smart home via a simple YAML configuration file (similar to ESPHome for Microcontrollers).
 
 > Attention: This is a work in progress. The documentation is not complete and the project is still in development.
-> Still many things already work - so feel free to try it out.
+> Still many things already work (I already use it throughout my own home) - so feel free to try it out.
 
 Simply [download](https://ubihome.github.io/getting_started/index.html) the executable and configure it.
 
