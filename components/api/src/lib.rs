@@ -91,7 +91,7 @@ impl Module for UbiHomeDefault {
         let ip = get_ip_address().unwrap();
         let mac = get_network_mac_address(ip).unwrap();
 
-        let mut server = EspHomeApi::builder()
+        let server_base = EspHomeApi::builder()
             .api_version_major(1)
             .api_version_minor(42)
             .encryption_key_opt(self.config.api.encryption_key.clone())
@@ -104,7 +104,7 @@ impl Module for UbiHomeDefault {
                     .clone()
                     .unwrap_or(self.config.ubihome.name.clone()),
             )
-            .bluetooth_mac_address("18:65:71:EB:5A:FB".to_string())
+            // .bluetooth_mac_address("18:65:71:EB:5A:FB".to_string())
             .mac(mac)
             .manufacturer(whoami::distro().to_string() + " " + &whoami::arch().to_string())
             .model(whoami::devicename())
@@ -280,297 +280,346 @@ impl Module for UbiHomeDefault {
             loop {
                 // Asynchronously wait for an inbound socket.
                 let (socket, _) = listener.accept().await?;
-                debug!("Accepted request from {}", socket.peer_addr().unwrap());
-                let (tx, mut rx) = server.start(socket).await.expect("Failed to start server");
-
-                let tx_clone = tx.clone();
+                let mut server = server_base.clone();
                 let mut receiver_clone = receiver.resubscribe();
                 let api_components_key_id_clone = api_components_key_id.clone();
-
-                // Send Messages
-                tokio::spawn(async move {
-                    while let Ok(cmd) = receiver_clone.recv().await {
-                        match cmd {
-                            PublishedMessage::SensorValueChanged { key, value } => {
-                                let key = api_components_key_id_clone.get(&key).unwrap();
-                                debug!("SensorValueChanged: {:?}", &value);
-
-                                tx_clone
-                                    .send(ProtoMessage::SensorStateResponse(SensorStateResponse {
-                                        key: key.clone(),
-                                        device_id: 0,
-                                        state: value,
-                                        missing_state: false,
-                                    }))
-                                    .await
-                                    .unwrap();
-                            }
-                            PublishedMessage::BinarySensorValueChanged { key, value } => {
-                                let key = api_components_key_id_clone.get(&key).unwrap();
-                                debug!("SensorValueChanged: {:?}", &value);
-
-                                tx_clone
-                                    .send(ProtoMessage::BinarySensorStateResponse(
-                                        BinarySensorStateResponse {
-                                            key: key.clone(),
-                                            device_id: 0,
-                                            state: value,
-                                            missing_state: false,
-                                        },
-                                    ))
-                                    .await
-                                    .unwrap();
-                            }
-                            PublishedMessage::SwitchStateChange { key, state } => {
-                                let key = api_components_key_id_clone.get(&key).unwrap();
-                                debug!("SensorValueChanged: {:?}", &state);
-
-                                tx_clone
-                                    .send(ProtoMessage::SwitchStateResponse(SwitchStateResponse {
-                                        key: key.clone(),
-                                        device_id: 0,
-                                        state: state,
-                                    }))
-                                    .await
-                                    .unwrap();
-                            }
-                            PublishedMessage::LightStateChange {
-                                key,
-                                state,
-                                brightness,
-                                red,
-                                green,
-                                blue,
-                            } => {
-                                let key = api_components_key_id_clone.get(&key).unwrap();
-                                debug!("LightStateChanged: state={:?}, brightness={:?}, rgb=({:?},{:?},{:?})", &state, &brightness, &red, &green, &blue);
-
-                                tx_clone
-                                    .send(ProtoMessage::LightStateResponse(LightStateResponse {
-                                        key: key.clone(),
-                                        device_id: 0,
-                                        state: state,
-                                        brightness: brightness.unwrap_or(0.0),
-                                        color_mode: 1, // RGB mode, could be made configurable
-                                        color_brightness: brightness.unwrap_or(0.0),
-                                        red: red.unwrap_or(0.0),
-                                        green: green.unwrap_or(0.0),
-                                        blue: blue.unwrap_or(0.0),
-                                        white: 0.0,             // Not currently supported
-                                        color_temperature: 0.0, // Not currently supported
-                                        cold_white: 0.0,        // Not currently supported
-                                        warm_white: 0.0,        // Not currently supported
-                                        effect: "".to_string(), // No effect currently
-                                    }))
-                                    .await
-                                    .unwrap();
-                            }
-                            PublishedMessage::BluetoothProxyMessage(msg) => {
-                                debug!("BluetoothProxyMessage: {:?}", &msg);
-                                let service_data: Vec<BluetoothServiceData> = msg
-                                    .service_data
-                                    .iter()
-                                    .map(|(k, v)| BluetoothServiceData {
-                                        uuid: k.to_string(),
-                                        data: v.clone(),
-                                        legacy_data: Vec::new(),
-                                    })
-                                    .collect();
-                                let manufacturer_data = msg
-                                    .manufacturer_data
-                                    .iter()
-                                    .map(|(k, v)| BluetoothServiceData {
-                                        uuid: k.to_string(),
-                                        data: v.clone(),
-                                        legacy_data: Vec::new(),
-                                    })
-                                    .collect();
-                                let test = BluetoothLeAdvertisementResponse {
-                                    address: mac_to_u64(&msg.mac).unwrap(),
-                                    rssi: msg.rssi.try_into().unwrap(),
-                                    address_type: 1,
-                                    name: msg.name.as_bytes().to_vec(),
-                                    service_uuids: msg.service_uuids,
-                                    service_data: service_data,
-                                    manufacturer_data: manufacturer_data,
-                                };
-
-                                tx_clone
-                                    .send(ProtoMessage::BluetoothLeAdvertisementResponse(test))
-                                    .await
-                                    .unwrap();
-                            }
-                            _ => {}
-                        }
-                    }
-                });
-
                 let api_components_clone = api_components_by_key.clone();
-                // Read Loop
                 let cloned_sender = sender.clone();
-                tokio::spawn(async move {
-                    while let Ok(message) = rx.recv().await {
-                        // Process the received message
-                        debug!("Received message: {:?}", message);
+                tokio::spawn({
+                    async move {
+                        debug!("Accepted request from {}", socket.peer_addr().unwrap());
+                        let (tx, mut rx) =
+                            server.start(socket).await.expect("Failed to start server");
 
-                        match message {
-                            ProtoMessage::ListEntitiesRequest(list_entities_request) => {
-                                debug!("ListEntitiesRequest: {:?}", list_entities_request);
+                        let tx_clone = tx.clone();
 
-                                for (key, sensor) in &api_components_clone {
-                                    tx.send(sensor.clone()).await.unwrap();
-                                }
-                                tx.send(ProtoMessage::ListEntitiesDoneResponse(
-                                    ListEntitiesDoneResponse {},
-                                ))
-                                .await
-                                .unwrap();
-                            }
-                            ProtoMessage::SubscribeLogsRequest(request) => {
-                                debug!("SubscribeLogsRequest: {:?}", request);
-                                let response_message = SubscribeLogsResponse {
-                                    level: 0,
-                                    message: "Test log".to_string().into_bytes(),
-                                };
-                                tx.send(ProtoMessage::SubscribeLogsResponse(response_message))
-                                    .await
-                                    .unwrap();
-                            }
-                            ProtoMessage::SubscribeBluetoothLeAdvertisementsRequest(request) => {
-                                debug!("SubscribeBluetoothLeAdvertisementsRequest: {:?}", request);
-                                // let response_message = proto::BluetoothLeAdvertisementResponse {
-                                //     address: u64::from_str_radix("000000000000", 16).unwrap(),
-                                //     rssi: -100,
-                                //     address_type: 0,
-                                //     // data: vec![0, 1, 2, 3, 4, 5],
-                                // };
-                                // answer_buf = [
-                                //     answer_buf,
-                                //     to_packet(ProtoMessage::BluetoothLeAdvertisementResponse(
-                                //         response_message,
-                                //     ))
-                                //     .unwrap(),
-                                // ]
-                                // .concat();
-                            }
-                            ProtoMessage::UnsubscribeBluetoothLeAdvertisementsRequest(request) => {
-                                debug!(
-                                    "UnsubscribeBluetoothLeAdvertisementsRequest: {:?}",
-                                    request
-                                );
-                                // let response_message = proto::BluetoothLeAdvertisementResponse {
-                                //     address: u64::from_str_radix("000000000000", 16).unwrap(),
-                                //     rssi: -100,
-                                //     address_type: 0,
-                                //     // data: vec![0, 1, 2, 3, 4, 5],
-                                // };
-                                // answer_buf = [
-                                //     answer_buf,
-                                //     to_packet(ProtoMessage::BluetoothLeAdvertisementResponse(
-                                //         response_message,
-                                //     ))
-                                //     .unwrap(),
-                                // ]
-                                // .concat();
-                            }
-                            ProtoMessage::SubscribeStatesRequest(subscribe_states_request) => {
-                                debug!("SubscribeStatesRequest: {:?}", subscribe_states_request);
-                            }
-                            ProtoMessage::SubscribeHomeassistantServicesRequest(request) => {
-                                debug!("SubscribeHomeassistantServicesRequest: {:?}", request);
-                            }
-                            ProtoMessage::SubscribeHomeAssistantStatesRequest(
-                                subscribe_homeassistant_services_request,
-                            ) => {
-                                debug!(
-                                    "SubscribeHomeAssistantStatesRequest: {:?}",
-                                    subscribe_homeassistant_services_request
-                                );
-                                let response_message = SubscribeHomeAssistantStateResponse {
-                                    entity_id: "test".to_string(),
-                                    attribute: "test".to_string(),
-                                    once: true,
-                                };
-                            }
-                            ProtoMessage::ButtonCommandRequest(button_command_request) => {
-                                debug!("ButtonCommandRequest: {:?}", button_command_request);
-                                let button = api_components_clone
-                                    .get(&button_command_request.key)
-                                    .unwrap();
-                                match button {
-                                    ProtoMessage::ListEntitiesButtonResponse(button) => {
-                                        debug!("ButtonCommandRequest: {:?}", button);
-                                        let msg = ChangedMessage::ButtonPress {
-                                            key: button.object_id.clone(),
+                        // Send Messages
+                        tokio::spawn(async move {
+                            while let Ok(cmd) = receiver_clone.recv().await {
+                                match cmd {
+                                    PublishedMessage::SensorValueChanged { key, value } => {
+                                        let key = api_components_key_id_clone.get(&key).unwrap();
+                                        debug!("SensorValueChanged: {:?}", &value);
+
+                                        tx_clone
+                                            .send(ProtoMessage::SensorStateResponse(
+                                                SensorStateResponse {
+                                                    key: key.clone(),
+                                                    device_id: 0,
+                                                    state: value,
+                                                    missing_state: false,
+                                                },
+                                            ))
+                                            .await
+                                            .unwrap();
+                                    }
+                                    PublishedMessage::BinarySensorValueChanged { key, value } => {
+                                        let key = api_components_key_id_clone.get(&key).unwrap();
+                                        debug!("SensorValueChanged: {:?}", &value);
+
+                                        tx_clone
+                                            .send(ProtoMessage::BinarySensorStateResponse(
+                                                BinarySensorStateResponse {
+                                                    key: key.clone(),
+                                                    device_id: 0,
+                                                    state: value,
+                                                    missing_state: false,
+                                                },
+                                            ))
+                                            .await
+                                            .unwrap();
+                                    }
+                                    PublishedMessage::SwitchStateChange { key, state } => {
+                                        let key = api_components_key_id_clone.get(&key).unwrap();
+                                        debug!("SensorValueChanged: {:?}", &state);
+
+                                        tx_clone
+                                            .send(ProtoMessage::SwitchStateResponse(
+                                                SwitchStateResponse {
+                                                    key: key.clone(),
+                                                    device_id: 0,
+                                                    state: state,
+                                                },
+                                            ))
+                                            .await
+                                            .unwrap();
+                                    }
+                                    PublishedMessage::LightStateChange {
+                                        key,
+                                        state,
+                                        brightness,
+                                        red,
+                                        green,
+                                        blue,
+                                    } => {
+                                        let key = api_components_key_id_clone.get(&key).unwrap();
+                                        debug!("LightStateChanged: state={:?}, brightness={:?}, rgb=({:?},{:?},{:?})", &state, &brightness, &red, &green, &blue);
+
+                                        tx_clone
+                                            .send(ProtoMessage::LightStateResponse(
+                                                LightStateResponse {
+                                                    key: key.clone(),
+                                                    device_id: 0,
+                                                    state: state,
+                                                    brightness: brightness.unwrap_or(0.0),
+                                                    color_mode: 1, // RGB mode, could be made configurable
+                                                    color_brightness: brightness.unwrap_or(0.0),
+                                                    red: red.unwrap_or(0.0),
+                                                    green: green.unwrap_or(0.0),
+                                                    blue: blue.unwrap_or(0.0),
+                                                    white: 0.0, // Not currently supported
+                                                    color_temperature: 0.0, // Not currently supported
+                                                    cold_white: 0.0, // Not currently supported
+                                                    warm_white: 0.0, // Not currently supported
+                                                    effect: "".to_string(), // No effect currently
+                                                },
+                                            ))
+                                            .await
+                                            .unwrap();
+                                    }
+                                    PublishedMessage::BluetoothProxyMessage(msg) => {
+                                        debug!("BluetoothProxyMessage: {:?}", &msg);
+                                        let service_data: Vec<BluetoothServiceData> = msg
+                                            .service_data
+                                            .iter()
+                                            .map(|(k, v)| BluetoothServiceData {
+                                                uuid: k.to_string(),
+                                                data: v.clone(),
+                                                legacy_data: Vec::new(),
+                                            })
+                                            .collect();
+                                        let manufacturer_data = msg
+                                            .manufacturer_data
+                                            .iter()
+                                            .map(|(k, v)| BluetoothServiceData {
+                                                uuid: k.to_string(),
+                                                data: v.clone(),
+                                                legacy_data: Vec::new(),
+                                            })
+                                            .collect();
+                                        let test = BluetoothLeAdvertisementResponse {
+                                            address: mac_to_u64(&msg.mac).unwrap(),
+                                            rssi: msg.rssi.try_into().unwrap(),
+                                            address_type: 1,
+                                            name: msg.name.as_bytes().to_vec(),
+                                            service_uuids: msg.service_uuids,
+                                            service_data: service_data,
+                                            manufacturer_data: manufacturer_data,
                                         };
 
-                                        cloned_sender.send(msg).unwrap();
+                                        tx_clone
+                                            .send(ProtoMessage::BluetoothLeAdvertisementResponse(
+                                                test,
+                                            ))
+                                            .await
+                                            .unwrap();
                                     }
                                     _ => {}
                                 }
                             }
-                            ProtoMessage::SwitchCommandRequest(switch_command_request) => {
-                                debug!("SwitchCommandRequest: {:?}", switch_command_request);
-                                let switch_entity = api_components_clone
-                                    .get(&switch_command_request.key)
-                                    .unwrap();
-                                match switch_entity {
-                                    ProtoMessage::ListEntitiesSwitchResponse(switch_entity) => {
-                                        debug!("switch_entityCommandRequest: {:?}", switch_entity);
-                                        let msg = ChangedMessage::SwitchStateCommand {
-                                            key: switch_entity.object_id.clone(),
-                                            state: switch_command_request.state,
-                                        };
+                        });
 
-                                        cloned_sender.send(msg).unwrap();
+                        // Read Loop
+                        tokio::spawn(async move {
+                            while let Ok(message) = rx.recv().await {
+                                // Process the received message
+                                debug!("Received message: {:?}", message);
+
+                                match message {
+                                    ProtoMessage::ListEntitiesRequest(list_entities_request) => {
+                                        debug!("ListEntitiesRequest: {:?}", list_entities_request);
+
+                                        for (key, sensor) in &api_components_clone {
+                                            tx.send(sensor.clone()).await.unwrap();
+                                        }
+                                        tx.send(ProtoMessage::ListEntitiesDoneResponse(
+                                            ListEntitiesDoneResponse {},
+                                        ))
+                                        .await
+                                        .unwrap();
                                     }
-                                    _ => {}
+                                    ProtoMessage::SubscribeLogsRequest(request) => {
+                                        debug!("SubscribeLogsRequest: {:?}", request);
+                                        let response_message = SubscribeLogsResponse {
+                                            level: 0,
+                                            message: "Test log".to_string().into_bytes(),
+                                        };
+                                        tx.send(ProtoMessage::SubscribeLogsResponse(
+                                            response_message,
+                                        ))
+                                        .await
+                                        .unwrap();
+                                    }
+                                    ProtoMessage::SubscribeBluetoothLeAdvertisementsRequest(
+                                        request,
+                                    ) => {
+                                        debug!(
+                                            "SubscribeBluetoothLeAdvertisementsRequest: {:?}",
+                                            request
+                                        );
+                                        // let response_message = proto::BluetoothLeAdvertisementResponse {
+                                        //     address: u64::from_str_radix("000000000000", 16).unwrap(),
+                                        //     rssi: -100,
+                                        //     address_type: 0,
+                                        //     // data: vec![0, 1, 2, 3, 4, 5],
+                                        // };
+                                        // answer_buf = [
+                                        //     answer_buf,
+                                        //     to_packet(ProtoMessage::BluetoothLeAdvertisementResponse(
+                                        //         response_message,
+                                        //     ))
+                                        //     .unwrap(),
+                                        // ]
+                                        // .concat();
+                                    }
+                                    ProtoMessage::UnsubscribeBluetoothLeAdvertisementsRequest(
+                                        request,
+                                    ) => {
+                                        debug!(
+                                            "UnsubscribeBluetoothLeAdvertisementsRequest: {:?}",
+                                            request
+                                        );
+                                        // let response_message = proto::BluetoothLeAdvertisementResponse {
+                                        //     address: u64::from_str_radix("000000000000", 16).unwrap(),
+                                        //     rssi: -100,
+                                        //     address_type: 0,
+                                        //     // data: vec![0, 1, 2, 3, 4, 5],
+                                        // };
+                                        // answer_buf = [
+                                        //     answer_buf,
+                                        //     to_packet(ProtoMessage::BluetoothLeAdvertisementResponse(
+                                        //         response_message,
+                                        //     ))
+                                        //     .unwrap(),
+                                        // ]
+                                        // .concat();
+                                    }
+                                    ProtoMessage::SubscribeStatesRequest(
+                                        subscribe_states_request,
+                                    ) => {
+                                        debug!(
+                                            "SubscribeStatesRequest: {:?}",
+                                            subscribe_states_request
+                                        );
+                                    }
+                                    ProtoMessage::SubscribeHomeassistantServicesRequest(
+                                        request,
+                                    ) => {
+                                        debug!(
+                                            "SubscribeHomeassistantServicesRequest: {:?}",
+                                            request
+                                        );
+                                    }
+                                    ProtoMessage::SubscribeHomeAssistantStatesRequest(
+                                        subscribe_homeassistant_services_request,
+                                    ) => {
+                                        debug!(
+                                            "SubscribeHomeAssistantStatesRequest: {:?}",
+                                            subscribe_homeassistant_services_request
+                                        );
+                                        let response_message =
+                                            SubscribeHomeAssistantStateResponse {
+                                                entity_id: "test".to_string(),
+                                                attribute: "test".to_string(),
+                                                once: true,
+                                            };
+                                    }
+                                    ProtoMessage::ButtonCommandRequest(button_command_request) => {
+                                        debug!(
+                                            "ButtonCommandRequest: {:?}",
+                                            button_command_request
+                                        );
+                                        let button = api_components_clone
+                                            .get(&button_command_request.key)
+                                            .unwrap();
+                                        match button {
+                                            ProtoMessage::ListEntitiesButtonResponse(button) => {
+                                                debug!("ButtonCommandRequest: {:?}", button);
+                                                let msg = ChangedMessage::ButtonPress {
+                                                    key: button.object_id.clone(),
+                                                };
+
+                                                cloned_sender.send(msg).unwrap();
+                                            }
+                                            _ => {}
+                                        }
+                                    }
+                                    ProtoMessage::SwitchCommandRequest(switch_command_request) => {
+                                        debug!(
+                                            "SwitchCommandRequest: {:?}",
+                                            switch_command_request
+                                        );
+                                        let switch_entity = api_components_clone
+                                            .get(&switch_command_request.key)
+                                            .unwrap();
+                                        match switch_entity {
+                                            ProtoMessage::ListEntitiesSwitchResponse(
+                                                switch_entity,
+                                            ) => {
+                                                debug!(
+                                                    "switch_entityCommandRequest: {:?}",
+                                                    switch_entity
+                                                );
+                                                let msg = ChangedMessage::SwitchStateCommand {
+                                                    key: switch_entity.object_id.clone(),
+                                                    state: switch_command_request.state,
+                                                };
+
+                                                cloned_sender.send(msg).unwrap();
+                                            }
+                                            _ => {}
+                                        }
+                                    }
+                                    ProtoMessage::LightCommandRequest(light_command_request) => {
+                                        debug!("LightCommandRequest: {:?}", light_command_request);
+                                        let light_entity = api_components_clone
+                                            .get(&light_command_request.key)
+                                            .unwrap();
+                                        match light_entity {
+                                            ProtoMessage::ListEntitiesLightResponse(
+                                                light_entity,
+                                            ) => {
+                                                debug!("LightCommandRequest: {:?}", light_entity);
+                                                let msg = ChangedMessage::LightStateCommand {
+                                                    key: light_entity.object_id.clone(),
+                                                    state: light_command_request.state,
+                                                    brightness: if light_command_request
+                                                        .has_brightness
+                                                    {
+                                                        Some(light_command_request.brightness)
+                                                    } else {
+                                                        None
+                                                    },
+                                                    red: if light_command_request.has_rgb {
+                                                        Some(light_command_request.red)
+                                                    } else {
+                                                        None
+                                                    },
+                                                    green: if light_command_request.has_rgb {
+                                                        Some(light_command_request.green)
+                                                    } else {
+                                                        None
+                                                    },
+                                                    blue: if light_command_request.has_rgb {
+                                                        Some(light_command_request.blue)
+                                                    } else {
+                                                        None
+                                                    },
+                                                };
+
+                                                cloned_sender.send(msg).unwrap();
+                                            }
+                                            _ => {}
+                                        }
+                                    }
+                                    _ => {
+                                        debug!("Ignore message type: {:?}", message);
+                                    }
                                 }
                             }
-                            ProtoMessage::LightCommandRequest(light_command_request) => {
-                                debug!("LightCommandRequest: {:?}", light_command_request);
-                                let light_entity = api_components_clone
-                                    .get(&light_command_request.key)
-                                    .unwrap();
-                                match light_entity {
-                                    ProtoMessage::ListEntitiesLightResponse(light_entity) => {
-                                        debug!("LightCommandRequest: {:?}", light_entity);
-                                        let msg = ChangedMessage::LightStateCommand {
-                                            key: light_entity.object_id.clone(),
-                                            state: light_command_request.state,
-                                            brightness: if light_command_request.has_brightness {
-                                                Some(light_command_request.brightness)
-                                            } else {
-                                                None
-                                            },
-                                            red: if light_command_request.has_rgb {
-                                                Some(light_command_request.red)
-                                            } else {
-                                                None
-                                            },
-                                            green: if light_command_request.has_rgb {
-                                                Some(light_command_request.green)
-                                            } else {
-                                                None
-                                            },
-                                            blue: if light_command_request.has_rgb {
-                                                Some(light_command_request.blue)
-                                            } else {
-                                                None
-                                            },
-                                        };
-
-                                        cloned_sender.send(msg).unwrap();
-                                    }
-                                    _ => {}
-                                }
-                            }
-                            _ => {
-                                debug!("Ignore message type: {:?}", message);
-                            }
-                        }
+                            debug!("Connection closed or error");
+                        });
                     }
-                    debug!("Connection closed or error");
                 });
             }
         })
@@ -627,10 +676,6 @@ api: {}
         assert_eq!(
             module.api_config.port, None,
             "Port should be None (default)"
-        );
-        assert_eq!(
-            module.api_config.password, None,
-            "Password should be None (default)"
         );
     }
 }
