@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.10.1](https://github.com/UbiHome/UbiHome/compare/v0.10.0...v0.10.1) (2025-12-29)
+
+
+### Bug Fixes
+
+* api panic crashing all api connections ([1f0c2dd](https://github.com/UbiHome/UbiHome/commit/1f0c2ddf4a03b9c02f8738843553168669038565))
+* update native api package ([951a9d7](https://github.com/UbiHome/UbiHome/commit/951a9d7b9984382a99b6ff386592bb475e74715c))
+
 ## [0.10.0](https://github.com/UbiHome/UbiHome/compare/v0.9.3...v0.10.0) (2025-12-21)
 
 
