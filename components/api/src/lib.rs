@@ -41,7 +41,6 @@ use ubihome_core::{
 #[derive(Clone, Deserialize, Debug)]
 pub struct ApiConfig {
     pub port: Option<u16>,
-    pub password: Option<String>,
     pub encryption_key: Option<String>,
     pub suggested_area: Option<String>,
 }

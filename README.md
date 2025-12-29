@@ -1,6 +1,5 @@
 # UbiHome
 
-
 [Repository](https://github.com/UbiHome/UbiHome) -- [Documentation](https://ubihome.github.io/UbiHome/) -- [Issues](https://github.com/UbiHome/UbiHome/issues)
 
 ---
@@ -16,19 +15,17 @@ Simply [download](https://ubihome.github.io/getting_started/index.html) the exec
 # Example configuration
 
 ubihome:
-  name: "Raspberry Pi behind the TV"
+  name: 'Raspberry Pi behind the TV'
 
-mqtt: 
-  broker: 192.168.100.23
-  username: ubihome-tv
-  password: <secure_password>
+api:
+  encryption_key: 'your_secure_key_here' # Generate via https://esphome.io/components/api/
 
 sensor:
   - platform: shell
-    name: "RAM Usage"
+    name: 'RAM Usage'
     icon: mdi:memory
-    state_class: "measurement"
-    unit_of_measurement: "%"
+    state_class: 'measurement'
+    unit_of_measurement: '%'
     update_interval: 30s
     # Execute any command you like:
     command: |-
