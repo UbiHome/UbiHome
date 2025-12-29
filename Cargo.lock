@@ -4068,7 +4068,7 @@ checksum = "1dccffe3ce07af9386bfd29e80c0ab1a8205a2fc34e4bcd40364df902cfa8f3f"
 
 [[package]]
 name = "ubihome"
-version = "0.10.0"
+version = "0.10.1"
 dependencies = [
  "cargo_toml",
  "clap 4.5.34",
@@ -4105,7 +4105,7 @@ dependencies = [
 
 [[package]]
 name = "ubihome-api"
-version = "0.10.0"
+version = "0.9.4"
 dependencies = [
  "duration-str",
  "esphome-native-api",
