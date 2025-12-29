@@ -20,7 +20,7 @@ api:
 """
 
   async with UbiHome("run", config=DEVICE_INFO_CONFIG, wait_for_api=True) as ubihome:
-    api = aioesphomeapi.APIClient("127.0.0.1", 6053, None, noise_psk=encryption_key)
+    api = aioesphomeapi.APIClient("127.0.0.1", ubihome.port, None, noise_psk=encryption_key)
     await api.connect(login=False)
 
     entities, services = await api.list_entities_services()
@@ -42,7 +42,7 @@ api:
 """
 
   async with UbiHome("run", config=DEVICE_INFO_CONFIG, wait_for_api=True) as ubihome:
-    api = aioesphomeapi.APIClient("127.0.0.1", 6053, None, noise_psk="RcaiIwmN008EoAE7KkN2qCXic+hm540EhLvD30EnhhE=")
+    api = aioesphomeapi.APIClient("127.0.0.1", ubihome.port, None, noise_psk="RcaiIwmN008EoAE7KkN2qCXic+hm540EhLvD30EnhhE=")
 
     with pytest.raises(aioesphomeapi.core.InvalidEncryptionKeyAPIError):
       await api.connect(login=False)

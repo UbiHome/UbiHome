@@ -1,7 +1,10 @@
 import asyncio
 from asyncio.subprocess import Process
+import logging
 import os
+import signal
 import socket
+import platform
 import time
 from typing import Optional
 
@@ -52,29 +55,43 @@ class UbiHome(object):
     process: Optional[Process] = None
     _stdout_task = None
     _stderr_task = None
-    port = 6053
     stdout: str | None = None
     stderr: str | None = None
-    
-    def __init__(self, *arguments, config=None, throw_on_error=True, wait_for_api=False):
+
+    def __init__(
+        self,
+        *arguments,
+        port=6053,
+        config=None,
+        throw_on_error=True,
+        wait_for_api=False,
+        # executable=None,
+    ):
+        self.port = port
         self.config = config if config else DEFAULT_CONFIG
         self.arguments = arguments
         self.configuration_file = f"config{os.getpid()}.yaml"
         self.throw_on_error = throw_on_error
         self.wait_for_api = wait_for_api
+        if platform.system() == "Windows":
+            file = "ubihome.exe"
+        else:
+            file = "ubihome"
+        self.executable = os.path.join(os.getcwd(), "..", "target", "debug", file)
+        logging.info(f"Using UbiHome executable: {self.executable}")
 
     async def __aenter__(self):
         my_env = os.environ.copy()
-        my_env["RUST_LOG"] = "debug"
+        my_env["RUST_LOG"] = "TRACE"
+        my_env["RUST_BACKTRACE"] = "1"
         my_env["RUSTFLAGS"] = "-Awarnings"
         with open(self.configuration_file, "w") as f:
             f.write(self.config)
 
-        executable = os.path.join(os.getcwd(), "ubihome")
-        if os.path.exists(executable):
+        if os.path.exists(self.executable):
             # Use pre-build binaries
             self.process = await asyncio.create_subprocess_exec(
-                executable,
+                self.executable,
                 "-c",
                 self.configuration_file,
                 *self.arguments,
@@ -83,22 +100,24 @@ class UbiHome(object):
                 stdout=asyncio.subprocess.PIPE,
             )
         else:
-            raise Exception(f"{executable} does not exist. Please build UbiHome first.")
+            raise Exception(
+                f"{self.executable} does not exist. Please build UbiHome first."
+            )
 
         self._stdout_task = asyncio.create_task(self._read_stdout())
         self._stderr_task = asyncio.create_task(self._read_stderr())
 
         if self.wait_for_api:
-          print("Waiting for server to start...")
-          sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-          while True:
-              result = sock.connect_ex(("127.0.0.1", self.port))
-              if result == 0:
-                  print("Port is open")
-                  break
-              else:
-                  await asyncio.sleep(0.1)
-          sock.close()
+            print("Waiting for server to start...")
+            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            while True:
+                result = sock.connect_ex(("127.0.0.1", self.port))
+                if result == 0:
+                    print("Port is open")
+                    break
+                else:
+                    await asyncio.sleep(0.1)
+            sock.close()
 
         return self
 
@@ -132,7 +151,8 @@ class UbiHome(object):
                 except asyncio.CancelledError:
                     pass
             # Works on windows?!
-            # os.kill(self.process.pid, signal.CTRL_BREAK_EVENT)
+            if platform.system() == "Windows":
+                os.kill(self.process.pid, signal.CTRL_BREAK_EVENT)
 
             # self.process = None
 
