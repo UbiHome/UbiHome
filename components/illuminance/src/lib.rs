@@ -38,6 +38,7 @@ config_template!(
     NoConfig,
     AmbientLightSensorConfig,
     NoConfig,
+    NoConfig,
     NoConfig
 );
 

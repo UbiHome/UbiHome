@@ -17,7 +17,11 @@ use tokio::{
     time::sleep,
 };
 use ubihome_core::{
-    config_template, features::ip::{get_ip_address, get_network_mac_address}, home_assistant::sensors::Component, internal::sensors::InternalComponent, ChangedMessage, Module, NoConfig, PublishedMessage
+    config_template,
+    features::ip::{get_ip_address, get_network_mac_address},
+    home_assistant::sensors::Component,
+    internal::sensors::InternalComponent,
+    ChangedMessage, Module, NoConfig, PublishedMessage,
 };
 
 mod discovery;
@@ -32,7 +36,7 @@ pub struct MqttConfig {
     pub password: Option<String>,
 }
 
-config_template!(mqtt, MqttConfig, NoConfig, NoConfig, NoConfig, NoConfig, NoConfig);
+config_template!(mqtt, MqttConfig, NoConfig, NoConfig, NoConfig, NoConfig, NoConfig, NoConfig);
 
 #[derive(Clone, Debug)]
 pub struct Default {
@@ -214,6 +218,29 @@ impl Module for Default {
                                                     ),
                                                 );
                                             }
+                                            Component::Event(event) => {
+                                                mqtt_components.insert(
+                                                    event.id.clone(),
+                                                    HAMqttComponent::BinarySensor(
+                                                        HAMqttBinarySensor {
+                                                            platform: "event".to_string(),
+                                                            icon: event.icon.clone(),
+                                                            unique_id: event.id.clone(),
+                                                            device_class: event
+                                                                .device_class
+                                                                .clone()
+                                                                .unwrap_or("".to_string()),
+                                                            name: event.name.clone(),
+                                                            state_topic: format!(
+                                                                "{}/{}",
+                                                                base_topic_clone.clone(),
+                                                                event.id.clone()
+                                                            ),
+                                                            object_id: event.id.clone(),
+                                                        },
+                                                    ),
+                                                );
+                                            }
                                             Component::Light(_light) => {
                                                 // TODO: Add MQTT light support if needed
                                                 // For now, just skip light components for MQTT
@@ -337,19 +364,17 @@ impl Module for Default {
                                 _ => {}
                             }
                         }
-                        Err(e) => {
-                            match e {
-                                tokio::sync::broadcast::error::RecvError::Closed => {
-                                    warn!("MQTT send encountered an error, but will continue running: {:?}", e);
-                                    sleep(Duration::from_secs(60)).await;
-                                }
-                                _ => {
-                                    error!("Error receiving message: {:?}", e);
-                                    error!("MQTT Sender terminated");
-                                    break;
-                                }
+                        Err(e) => match e {
+                            tokio::sync::broadcast::error::RecvError::Closed => {
+                                warn!("MQTT send encountered an error, but will continue running: {:?}", e);
+                                sleep(Duration::from_secs(60)).await;
                             }
-                        }
+                            _ => {
+                                error!("Error receiving message: {:?}", e);
+                                error!("MQTT Sender terminated");
+                                break;
+                            }
+                        },
                     }
                 }
             });

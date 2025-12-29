@@ -5,10 +5,12 @@ use esphome_native_api::proto::version_2025_12_1::BinarySensorStateResponse;
 use esphome_native_api::proto::version_2025_12_1::BluetoothLeAdvertisementResponse;
 use esphome_native_api::proto::version_2025_12_1::BluetoothServiceData;
 use esphome_native_api::proto::version_2025_12_1::EntityCategory;
+use esphome_native_api::proto::version_2025_12_1::EventResponse;
 use esphome_native_api::proto::version_2025_12_1::LightStateResponse;
 use esphome_native_api::proto::version_2025_12_1::ListEntitiesBinarySensorResponse;
 use esphome_native_api::proto::version_2025_12_1::ListEntitiesButtonResponse;
 use esphome_native_api::proto::version_2025_12_1::ListEntitiesDoneResponse;
+use esphome_native_api::proto::version_2025_12_1::ListEntitiesEventResponse;
 use esphome_native_api::proto::version_2025_12_1::ListEntitiesLightResponse;
 use esphome_native_api::proto::version_2025_12_1::ListEntitiesSensorResponse;
 use esphome_native_api::proto::version_2025_12_1::ListEntitiesSwitchResponse;
@@ -51,7 +53,7 @@ fn mac_to_u64(mac: &str) -> Result<u64, ParseIntError> {
     u64::from_str_radix(&mac, 16)
 }
 
-config_template!(api, ApiConfig, NoConfig, NoConfig, NoConfig, NoConfig, NoConfig);
+config_template!(api, ApiConfig, NoConfig, NoConfig, NoConfig, NoConfig, NoConfig, NoConfig);
 
 #[derive(Clone, Debug)]
 pub struct UbiHomeDefault {
@@ -169,7 +171,7 @@ impl Module for UbiHomeDefault {
                                             key: index.try_into().unwrap(),
                                             name: button.name,
                                             device_id: 0,
-                                            icon: "".to_string(),
+                                            icon: button.icon.unwrap_or_default(),
                                             device_class: "".to_string(), //button.device_class,
                                             disabled_by_default: false,
                                             entity_category: EntityCategory::None as i32,
@@ -187,7 +189,7 @@ impl Module for UbiHomeDefault {
                                             key: index.try_into().unwrap(),
                                             name: sensor.name,
                                             device_id: 0,
-                                            icon: "".to_string(),
+                                            icon: sensor.icon.unwrap_or_default(),
                                             unit_of_measurement: sensor
                                                 .unit_of_measurement
                                                 .unwrap_or("".to_string()),
@@ -217,7 +219,7 @@ impl Module for UbiHomeDefault {
                                                 key: index.try_into().unwrap(),
                                                 name: binary_sensor.name,
                                                 device_id: 0,
-                                                icon: "".to_string(),
+                                                icon: binary_sensor.icon.unwrap_or_default(),
                                                 device_class: binary_sensor
                                                     .device_class
                                                     .unwrap_or("".to_string()), //binary_sensor.device_class,
@@ -232,6 +234,27 @@ impl Module for UbiHomeDefault {
                                         binary_sensor.id.clone(),
                                         index.try_into().unwrap(),
                                     );
+                                }
+                                Component::Event(event) => {
+                                    let component_event = ProtoMessage::ListEntitiesEventResponse(
+                                        ListEntitiesEventResponse {
+                                            object_id: event.id.clone(),
+                                            key: index.try_into().unwrap(),
+                                            name: event.name,
+                                            device_id: 0,
+                                            icon: event.icon.unwrap_or_default(),
+                                            device_class: event
+                                                .device_class
+                                                .unwrap_or("".to_string()), //event.device_class,
+                                            event_types: event.event_types,
+                                            disabled_by_default: false,
+                                            entity_category: EntityCategory::None as i32,
+                                        },
+                                    );
+                                    api_components_by_key
+                                        .insert(index.try_into().unwrap(), component_event);
+                                    api_components_key_id
+                                        .insert(event.id.clone(), index.try_into().unwrap());
                                 }
                                 Component::Light(light) => {
                                     let component_light = ProtoMessage::ListEntitiesLightResponse(
@@ -366,6 +389,17 @@ impl Module for UbiHomeDefault {
                                     .await
                                     .unwrap();
                             }
+                            PublishedMessage::EventChange { key, r#type } => {
+                                debug!("EventChange: {:?}", &key);
+                                let key = api_components_key_id_clone.get(&key).unwrap();
+                                tx_clone
+                                    .send(ProtoMessage::EventResponse(EventResponse {
+                                        key: *key,
+                                        device_id: 0,
+                                        event_type: r#type,
+                                    }))
+                                    .unwrap();
+                            }
                             PublishedMessage::BluetoothProxyMessage(msg) => {
                                 debug!("BluetoothProxyMessage: {:?}", &msg);
                                 let service_data: Vec<BluetoothServiceData> = msg
@@ -399,6 +433,18 @@ impl Module for UbiHomeDefault {
                                 tx_clone
                                     .send(ProtoMessage::BluetoothLeAdvertisementResponse(test))
                                     .await
+                                    .unwrap();
+                            }
+                            PublishedMessage::APISubscribeEntity { entity, attribute } => {
+                                debug!("APISubscribeEntity: {:?}", &entity);
+                                tx_clone
+                                    .send(ProtoMessage::SubscribeHomeAssistantStateResponse(
+                                        SubscribeHomeAssistantStateResponse {
+                                            entity_id: entity,
+                                            attribute: attribute,
+                                            once: false,
+                                        },
+                                    ))
                                     .unwrap();
                             }
                             _ => {}
@@ -480,6 +526,16 @@ impl Module for UbiHomeDefault {
                             ProtoMessage::SubscribeHomeassistantServicesRequest(request) => {
                                 debug!("SubscribeHomeassistantServicesRequest: {:?}", request);
                             }
+                            ProtoMessage::HomeAssistantStateResponse(state) => {
+                                debug!("HomeAssistantStateResponse: {:?}", state);
+                                let msg = ChangedMessage::APISubscribedEntityChange {
+                                    entity: state.entity_id.clone(),
+                                    attribute: state.attribute.clone(),
+                                    state: state.state,
+                                };
+
+                                cloned_sender.send(msg).unwrap();
+                            }
                             ProtoMessage::SubscribeHomeAssistantStatesRequest(
                                 subscribe_homeassistant_services_request,
                             ) => {
@@ -487,11 +543,11 @@ impl Module for UbiHomeDefault {
                                     "SubscribeHomeAssistantStatesRequest: {:?}",
                                     subscribe_homeassistant_services_request
                                 );
-                                let response_message = SubscribeHomeAssistantStateResponse {
-                                    entity_id: "test".to_string(),
-                                    attribute: "test".to_string(),
-                                    once: true,
-                                };
+                                // let response_message = SubscribeHomeAssistantStateResponse {
+                                //     entity_id: "test".to_string(),
+                                //     attribute: "test".to_string(),
+                                //     once: true,
+                                // };
                             }
                             ProtoMessage::ButtonCommandRequest(button_command_request) => {
                                 debug!("ButtonCommandRequest: {:?}", button_command_request);

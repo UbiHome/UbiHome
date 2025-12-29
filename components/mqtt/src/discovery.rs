@@ -12,7 +12,8 @@ pub(crate) enum HAMqttComponent {
     Button(HAMqttButton),
     Sensor(HAMqttSensor),
     BinarySensor(HAMqttBinarySensor),
-    Switch(HAMqttSwitch)
+    Switch(HAMqttSwitch),
+    Event(HAMqttEvent)
 }
 
 #[derive(Clone, Serialize, Deserialize, Debug)]
@@ -95,6 +96,32 @@ pub(crate) struct HAMqttSensor {
 
 #[derive(Clone, Serialize, Deserialize, Debug)]
 pub(crate) struct HAMqttBinarySensor {
+
+    #[serde(rename = "p")]
+    pub(crate) platform: String,
+
+    #[serde(rename = "uniq_id")]
+    pub(crate) unique_id: String,
+    
+    #[serde(rename = "name")]
+    pub(crate) name: String,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "ic")]
+    pub(crate) icon: Option<String>,
+    
+    #[serde(rename = "obj_id")]
+    pub(crate) object_id: String,
+    
+    #[serde(rename = "stat_t")]
+    pub(crate) state_topic: String,
+
+    #[serde(rename = "dev_cla")]
+    pub(crate) device_class: String,
+}
+
+#[derive(Clone, Serialize, Deserialize, Debug)]
+pub(crate) struct HAMqttEvent {
 
     #[serde(rename = "p")]
     pub(crate) platform: String,

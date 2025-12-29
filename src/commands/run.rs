@@ -1,5 +1,6 @@
 use flexi_logger::writers::FileLogWriter;
 use flexi_logger::{detailed_format, Age, Cleanup, Criterion, Duplicate, FileSpec, Logger, Naming};
+use tokio::time::sleep;
 use ubihome::CoreConfig;
 use ubihome_core::binary_sensor::{ActionType, FilterType};
 use ubihome_core::home_assistant::sensors::Component;
@@ -60,6 +61,9 @@ fn get_all_modules(yaml: &String) -> Vec<Box<dyn Module>> {
     println!("Modules to load: {:?}", modules_to_load);
 
     let mut modules: Vec<Box<dyn Module>> = Vec::new();
+    if modules_to_load.contains(&"api".to_string()) {
+        modules.push(Box::new(ubihome_api::UbiHomeDefault::new(&yaml).unwrap()));
+    }
     if modules_to_load.contains(&"bme280".to_string()) {
         modules.push(Box::new(ubihome_bme280::Default::new(&yaml).unwrap()));
     }
@@ -78,8 +82,8 @@ fn get_all_modules(yaml: &String) -> Vec<Box<dyn Module>> {
     if modules_to_load.contains(&"mqtt".to_string()) {
         modules.push(Box::new(ubihome_mqtt::Default::new(&yaml).unwrap()));
     }
-    if modules_to_load.contains(&"api".to_string()) {
-        modules.push(Box::new(ubihome_api::UbiHomeDefault::new(&yaml).unwrap()));
+    if modules_to_load.contains(&"media_controls".to_string()) {
+        modules.push(Box::new(ubihome_media_controls::UbiHomeDefault::new(&yaml).unwrap()));
     }
     if modules_to_load.contains(&"power_utils".to_string()) {
         modules.push(Box::new(ubihome_power_utils::Default::new(&yaml).unwrap()));
@@ -267,6 +271,9 @@ pub(crate) fn run(
                 }
                 InternalComponent::Light(light) => {
                     // println!("Light: {:?}", light);
+                }
+                InternalComponent::Event(switch) => {
+                    println!("Event: {:?}", switch);
                 }
                 InternalComponent::BinarySensor(binary_sensor) => {
                     let mutable: Mutable<Option<Option<bool>>> = Mutable::new(Option::None);
@@ -463,6 +470,17 @@ pub(crate) fn run(
                         ChangedMessage::BluetoothProxyMessage(msg) => {
                             publish_cmd = Some(PublishedMessage::BluetoothProxyMessage(msg));
                         }
+                        ChangedMessage::EventChange { key, r#type } => {
+                            publish_cmd = Some(PublishedMessage::EventChange { key, r#type });
+                        }
+                        ChangedMessage::APISubscribeEntity { entity, attribute } => {
+                            debug!("Publish APISubscribeEntity: {:?}", entity);
+                            publish_cmd = Some(PublishedMessage::APISubscribeEntity { entity, attribute });
+                        }
+                        ChangedMessage::APISubscribedEntityChange { entity, attribute, state } => {
+                            debug!("Publish APISubscribedEntityChange: {:?}", entity);
+                            publish_cmd = Some(PublishedMessage::APISubscribedEntityChange { entity, attribute, state });
+                        }
                     }
                     if let Some(pcmd) = publish_cmd {
                         debug!("Publishing command: {:?}", pcmd);
@@ -472,6 +490,7 @@ pub(crate) fn run(
             }
         });
 
+
         run_modules(modules, modules_tx.clone(), modules_rx).await;
 
         println!("Components: {:?}", components);
@@ -480,6 +499,7 @@ pub(crate) fn run(
                 components: components
                     .iter()
                     .map(|c| match c {
+                        InternalComponent::Event(event) => Component::Event(event.ha.clone()),
                         InternalComponent::Switch(switch) => Component::Switch(switch.ha.clone()),
                         InternalComponent::Button(button) => Component::Button(button.ha.clone()),
                         InternalComponent::Sensor(sensor) => Component::Sensor(sensor.ha.clone()),

@@ -8,6 +8,7 @@ pub enum Component {
     BinarySensor(UbiBinarySensor),
     Switch(UbiSwitch),
     Light(UbiLight),
+    Event(UbiEvent),
 }
 
 // Icons: https://pictogrammers.com/library/mdi/
@@ -52,6 +53,16 @@ pub struct UbiSwitch {
     pub id: String,
     // If the state must be assumed or can be determined
     pub assumed_state: bool,
+}
+
+#[derive(Clone, Serialize, Deserialize, Debug)]
+pub struct UbiEvent {
+    pub name: String,
+    pub platform: String,
+    pub icon: Option<String>,
+    pub device_class: Option<String>,
+    pub id: String,
+    pub event_types: Vec<String>,
 }
 
 // https://developers.home-assistant.io/docs/core/entity/light

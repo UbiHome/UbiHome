@@ -22,6 +22,7 @@ ubihome-gpio = { path = "components/gpio" }
 ubihome-illuminance = { path = "components/illuminance" }
 ubihome-mdns = { path = "components/mdns" }
 ubihome-mqtt = { path = "components/mqtt" }
+ubihome-media_controls = { path = "components/media_controls" }
 ubihome-power_utils = { path = "components/power_utils" }
 ubihome-shell = { path = "components/shell" }
 ubihome-web_server = { path = "components/web_server" }

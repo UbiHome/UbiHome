@@ -47,6 +47,7 @@ config_template!(
     NoConfig,
     NoConfig,
     NoConfig,
+    NoConfig,
     NoConfig
 );
 
@@ -120,11 +121,7 @@ async fn events_stream(
     }
 
     let entities_stream = stream::iter(entities)
-        .map(|entity| {
-            Event::default()
-                .event("state")
-                .data(entity)
-        })
+        .map(|entity| Event::default().event("state").data(entity))
         .map(Ok)
         .take(1);
 
@@ -185,7 +182,7 @@ impl Module for Default {
         Ok(Default { config: config })
     }
 
-    fn components(&mut self) -> Vec<InternalComponent>{
+    fn components(&mut self) -> Vec<InternalComponent> {
         let components: Vec<InternalComponent> = Vec::new();
 
         components

@@ -16,14 +16,21 @@ pub struct EvdevConfig {
 }
 
 // TODO: Add events?
-config_template!(evdev, EvdevConfig, NoConfig, NoConfig, NoConfig, NoConfig, NoConfig);
+config_template!(
+    evdev,
+    EvdevConfig,
+    NoConfig,
+    NoConfig,
+    NoConfig,
+    NoConfig,
+    NoConfig,
+    NoConfig
+);
 
 #[derive(Clone, Debug)]
 pub struct Default {
     config: CoreConfig,
 }
-
-
 
 impl Module for Default {
     fn new(config_string: &String) -> Result<Self, String> {
