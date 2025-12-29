@@ -5,7 +5,7 @@ This uses the same API as ESPHome.
 ## Basic Configuration
 
 ```yaml
-# This make the native api available
+# This makes the native api available unsecured
 api:
 ```
 
@@ -13,8 +13,11 @@ api:
 api:
   # Optional: Default Port is 6053
   port: 6053
-  encryption_key: 'your_secure_key_here' # Generate
+  # Secure your API:
+  encryption_key: 'copy_your_generated_key_here'
 ```
+
+{{ encryption_key_generator() }}
 
 Similar to ESPHome:
 

@@ -2,6 +2,7 @@ ubihome:
   name: New Awesome UbiHome Device
 
 api:
+  encryption_key: # Generate here: https://ubihome.github.io/features/connectivity/native_api.html
 
 shell:
 
@@ -13,11 +14,11 @@ button:
 
 sensor:
   - platform: shell
-    name: "RAM Usage"
+    name: 'RAM Usage'
     id: ram_usage
     icon: mdi:memory
-    state_class: "measurement"
-    unit_of_measurement: "%"
+    state_class: 'measurement'
+    unit_of_measurement: '%'
     update_interval: 30s
     command: |-
       free | grep Mem | awk '{print $3/$2 * 100.0}'
