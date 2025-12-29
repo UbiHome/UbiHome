@@ -582,9 +582,9 @@ checksum = "1fd0f2584146f6f2ef48085050886acf353beff7305ebd1ae69500e27c67f64b"
 
 [[package]]
 name = "bytes"
-version = "1.10.1"
+version = "1.11.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d71b6127be86fdcfddb610f7182ac57211d4b18a3e9c82eb2d17662f2227ad6a"
+checksum = "b35204fbdc0b3f4446b89fc1ac2cf84a8a68971995d0bf2e925ec7cd960f9cb3"
 
 [[package]]
 name = "cargo_toml"
@@ -1132,18 +1132,22 @@ dependencies = [
 
 [[package]]
 name = "esphome-native-api"
-version = "1.2.0"
+version = "2.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0206ed10cfd5e07b9d2edb828aaa10b61350fe929aa73a1eabebf171d0f79f21"
+checksum = "13619f061680b2058493cd6a877e5875022058c22377df1ef64af4618cfc4d5c"
 dependencies = [
  "base64",
  "byteorder",
+ "bytes",
  "constant_time_eq",
+ "futures",
  "log",
  "noise-protocol",
  "noise-rust-crypto",
  "prost",
  "tokio",
+ "tokio-stream",
+ "tokio-util",
  "typed-builder 0.21.0",
 ]
 
@@ -3877,9 +3881,9 @@ dependencies = [
 
 [[package]]
 name = "tokio-util"
-version = "0.7.15"
+version = "0.7.17"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "66a539a9ad6d5d281510d5bd368c973d636c02dbf8a67300bfb6b950696ad7df"
+checksum = "2efa149fe76073d6e8fd97ef4f4eca7b67f599660115591483572e406e165594"
 dependencies = [
  "bytes",
  "futures-core",

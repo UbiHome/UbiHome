@@ -95,9 +95,7 @@ impl Module for UbiHomeDefault {
         let mut server = EspHomeApi::builder()
             .api_version_major(1)
             .api_version_minor(42)
-            .password_opt(self.config.api.password.clone())
             .encryption_key_opt(self.config.api.encryption_key.clone())
-            // uses_password: api_config.as_ref().and_then(|c| c.password.as_ref()).is_some(),
             .server_info("UbiHome".to_string())
             .name(self.config.ubihome.name.clone())
             .friendly_name(
@@ -305,6 +303,7 @@ impl Module for UbiHomeDefault {
                                         state: value,
                                         missing_state: false,
                                     }))
+                                    .await
                                     .unwrap();
                             }
                             PublishedMessage::BinarySensorValueChanged { key, value } => {
@@ -320,6 +319,7 @@ impl Module for UbiHomeDefault {
                                             missing_state: false,
                                         },
                                     ))
+                                    .await
                                     .unwrap();
                             }
                             PublishedMessage::SwitchStateChange { key, state } => {
@@ -332,6 +332,7 @@ impl Module for UbiHomeDefault {
                                         device_id: 0,
                                         state: state,
                                     }))
+                                    .await
                                     .unwrap();
                             }
                             PublishedMessage::LightStateChange {
@@ -362,6 +363,7 @@ impl Module for UbiHomeDefault {
                                         warm_white: 0.0,        // Not currently supported
                                         effect: "".to_string(), // No effect currently
                                     }))
+                                    .await
                                     .unwrap();
                             }
                             PublishedMessage::BluetoothProxyMessage(msg) => {
@@ -396,6 +398,7 @@ impl Module for UbiHomeDefault {
 
                                 tx_clone
                                     .send(ProtoMessage::BluetoothLeAdvertisementResponse(test))
+                                    .await
                                     .unwrap();
                             }
                             _ => {}
@@ -416,11 +419,12 @@ impl Module for UbiHomeDefault {
                                 debug!("ListEntitiesRequest: {:?}", list_entities_request);
 
                                 for (key, sensor) in &api_components_clone {
-                                    tx.send(sensor.clone()).unwrap();
+                                    tx.send(sensor.clone()).await.unwrap();
                                 }
                                 tx.send(ProtoMessage::ListEntitiesDoneResponse(
                                     ListEntitiesDoneResponse {},
                                 ))
+                                .await
                                 .unwrap();
                             }
                             ProtoMessage::SubscribeLogsRequest(request) => {
@@ -430,6 +434,7 @@ impl Module for UbiHomeDefault {
                                     message: "Test log".to_string().into_bytes(),
                                 };
                                 tx.send(ProtoMessage::SubscribeLogsResponse(response_message))
+                                    .await
                                     .unwrap();
                             }
                             ProtoMessage::SubscribeBluetoothLeAdvertisementsRequest(request) => {
@@ -587,7 +592,8 @@ ubihome:
 
 api:
   port: 8053
-  password: "test_password"
+  encryption_key: 'xiahAckHBW7BcKEQ6mRfasIW20Md9uMh/5PjrjbAhXQ='
+
 "#;
 
         let api_module = UbiHomeDefault::new(&config.to_string());
@@ -598,9 +604,9 @@ api:
         // Check that the API config is parsed correctly
         assert_eq!(module.api_config.port, Some(8053), "Port should be 8053");
         assert_eq!(
-            module.api_config.password,
-            Some("test_password".to_string()),
-            "Password should be test_password"
+            module.api_config.encryption_key,
+            Some("xiahAckHBW7BcKEQ6mRfasIW20Md9uMh/5PjrjbAhXQ=".to_string()),
+            "Encryption key should be xiahAckHBW7BcKEQ6mRfasIW20Md9uMh/5PjrjbAhXQ="
         );
     }
 
