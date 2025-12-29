@@ -12,13 +12,14 @@
 Simply [download](https://ubihome.github.io/getting_started/index.html) the executable and configure it.
 
 ```yaml
-# Example configuration
+# Unsecure example configuration
 
 ubihome:
   name: 'Raspberry Pi behind the TV'
 
 api:
-  encryption_key: 'your_secure_key_here' # Generate via https://esphome.io/components/api/
+# Have a look at the documentation to secure your API:
+# https://ubihome.github.io/features/connectivity/native_api.html
 
 sensor:
   - platform: shell
