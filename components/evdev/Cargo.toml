@@ -10,9 +10,9 @@ serde = { version = "1.0", features = ["derive"] }
 tokio = { version = "1", features = ["full"] }
 ubihome-core = { path = "../core" }
 async-trait = "0.1.88"
-serde_yaml = "0.9.34"
+serde-saphyr = "0.0.12"
 duration-str = "0.16.1"
-
+garde = { version = "0.22.1", features = ["serde"] }
 
 [target.'cfg(target_os="linux")'.dependencies]
 evdev = "0.13.1"

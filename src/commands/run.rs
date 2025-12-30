@@ -169,7 +169,13 @@ pub(crate) fn run(
     let config_string: String =
         read_base_config(config_path).expect("Failed to load base configuration");
 
-    let config = serde_yaml::from_str::<CoreConfig>(&config_string).unwrap();
+    let validation_result = serde_saphyr::from_str_with_options_valid::<CoreConfig>(&config_string, Default::default());
+    if let Err(errors) = validation_result {
+        error!("Configuration is invalid:");
+        error!("{}", errors);
+        return Ok(());  
+    }
+    let config = validation_result.unwrap();
     if let Some(logger_config) = config.logger.clone() {
         logger
             .reset_flw(&FileLogWriter::builder(

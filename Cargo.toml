@@ -13,7 +13,6 @@ rust-embed = "6.8"
 log = "0.4"
 rumqttc = "0.24.0"
 serde = { version = "1.0", features = ["derive"] }
-serde_yaml = "0.9"
 ubihome-api = { path = "components/api" }
 ubihome-bluetooth_proxy = { path = "components/bluetooth_proxy" }
 ubihome-bme280 = { path = "components/bme280" }
@@ -39,6 +38,8 @@ self-replace = "1.5.0"
 current_platform = "0.2.0"
 indicatif = "0.17.8"
 futures-util = "0.3.31"
+serde-saphyr = { version = "0.0.12", features = ["garde"] }
+garde = { version = "0.22.1", features = ["serde"] }
 
 
 [build-dependencies]

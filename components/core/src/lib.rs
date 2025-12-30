@@ -16,6 +16,7 @@ use internal::sensors::InternalComponent;
 use std::{collections::HashMap, pin::Pin};
 use tokio::sync::broadcast::{Receiver, Sender};
 use serde::{Deserialize};
+use garde::Validate;
 
 
 pub type BoxFuture<'a, T> = Pin<Box<dyn Future<Output = T> + Send + 'a>>;
@@ -84,10 +85,14 @@ pub enum PublishedMessage {
 pub struct NoConfig {}
 
 
-#[derive(Clone, Deserialize, Debug)]
+#[derive(Clone, Deserialize, Debug, Validate)]
+#[serde(deny_unknown_fields)]
 pub struct UbiHome {
+    #[garde(ascii, length(min=3, max=25))]
     pub name: String,
+    #[garde(ascii, length(min=3, max=25))]
     pub friendly_name: Option<String>,
+    #[garde(ascii, length(max=25))]
     pub area: Option<String>,
 }
 
@@ -111,6 +116,7 @@ macro_rules! config_template {
         use ubihome_core::template_light;
         use ubihome_core::template_mapper;
         use ubihome_core::UbiHome;
+        use garde::Validate;
 
 
         template_button!($component_name, $button_extension);
@@ -130,7 +136,8 @@ macro_rules! config_template {
         template_mapper!(map_light, Light);
 
 
-        #[derive(Clone, Deserialize, Debug)]
+        #[derive(Clone, Deserialize, Debug, Validate)]
+        #[garde(allow_unvalidated)]
         pub struct CoreConfig {
             pub ubihome: UbiHome,
 

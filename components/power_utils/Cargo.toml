@@ -9,6 +9,7 @@ log = "0.4"
 serde = { version = "1.0", features = ["derive"] }
 tokio = { version = "1", features = ["full"] }
 ubihome-core = { path = "../core" }
-serde_yaml = "0.9.34"
+serde-saphyr = "0.0.12"
 duration-str = "0.16.1"
 system_shutdown = "4.0.1"
+garde = { version = "0.22.1", features = ["serde"] }

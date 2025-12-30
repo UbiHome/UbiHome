@@ -21,8 +21,6 @@ const DEFAULT_CONFIG_FILE_YAML: &str = "config.yaml";
 // Embed the default configuration file at compile time
 const DEFAULT_CONFIG: Option<&str> = option_env!("CONFIG_YAML");
 
-
-
 #[cfg(target_os = "windows")]
 use windows_service::{
     define_windows_service,
@@ -143,15 +141,26 @@ fn main() {
 
     match matches {
         Ok(matches) => {
-            let mut config_file = matches.try_get_one::<String>("configuration_file").unwrap_or_default().cloned();
+            let mut config_file = matches
+                .try_get_one::<String>("configuration_file")
+                .unwrap_or_default()
+                .cloned();
             if config_file.is_none() {
                 if DEFAULT_CONFIG.is_none() {
                     // Check if the default config file exists
-                    let default_config_file = format!("{}/{}", env::current_dir().unwrap().display(), DEFAULT_CONFIG_FILE_YML);
+                    let default_config_file = format!(
+                        "{}/{}",
+                        env::current_dir().unwrap().display(),
+                        DEFAULT_CONFIG_FILE_YML
+                    );
                     if fs::metadata(&default_config_file).is_ok() {
                         config_file = Some(default_config_file);
                     } else {
-                        config_file = Some(format!("{}/{}", env::current_dir().unwrap().display(), DEFAULT_CONFIG_FILE_YAML));
+                        config_file = Some(format!(
+                            "{}/{}",
+                            env::current_dir().unwrap().display(),
+                            DEFAULT_CONFIG_FILE_YAML
+                        ));
                     }
                 }
             }
@@ -166,7 +175,7 @@ fn main() {
                 Some(("update", _)) => {
                     if let Some(log_level) = log_level {
                         let mut logger_builder = Logger::try_with_env_or_str(log_level).unwrap();
-                        logger_builder = logger_builder.duplicate_to_stdout(Duplicate::Debug);
+                        logger_builder = logger_builder.duplicate_to_stdout(Duplicate::Trace);
                         logger_builder.start().unwrap();
                     }
                     update().unwrap();
@@ -190,7 +199,8 @@ fn main() {
                         #[cfg(target_os = "windows")]
                         use windows_service::service_dispatcher;
                         #[cfg(target_os = "windows")]
-                        service_dispatcher::start(constants::SERVICE_NAME, ffi_service_main).unwrap();
+                        service_dispatcher::start(constants::SERVICE_NAME, ffi_service_main)
+                            .unwrap();
                         panic!("Running as a Windows service is not supported on Linux.");
                     } else {
                         // Run normally
@@ -205,8 +215,6 @@ fn main() {
             }
             std::process::exit(0);
         }
-        Err(err) => {
-            err.exit()
-        }
+        Err(err) => err.exit(),
     };
 }

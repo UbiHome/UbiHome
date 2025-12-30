@@ -11,5 +11,6 @@ tokio = { version = "1", features = ["full"] }
 ubihome-core = { path = "../core", features = ["ip"] }
 libmdns = "0.9"
 mdns-sd = "0.13.5"
-serde_yaml = "0.9.34"
+serde-saphyr = "0.0.12"
 duration-str = "0.16.1"
+garde = { version = "0.22.1", features = ["serde"] }

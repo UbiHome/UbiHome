@@ -27,7 +27,7 @@ pub struct Default {
 
 impl Module for Default {
     fn new(config_string: &String) -> Result<Self, String> {
-        let config = serde_yaml::from_str::<CoreConfig>(config_string).unwrap();
+        let config = serde_saphyr::from_str::<CoreConfig>(config_string).unwrap();
         info!("Evdev config: {:?}", config);
         Ok(Default { config: config })
     }

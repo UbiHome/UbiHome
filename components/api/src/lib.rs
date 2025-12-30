@@ -18,6 +18,7 @@ use esphome_native_api::proto::version_2025_12_1::SensorStateResponse;
 use esphome_native_api::proto::version_2025_12_1::SubscribeHomeAssistantStateResponse;
 use esphome_native_api::proto::version_2025_12_1::SubscribeLogsResponse;
 use esphome_native_api::proto::version_2025_12_1::SwitchStateResponse;
+// use garde::Validate;
 use log::debug;
 use log::info;
 use log::trace;
@@ -38,10 +39,14 @@ use ubihome_core::{
     config_template, home_assistant::sensors::Component, ChangedMessage, Module, PublishedMessage,
 };
 
-#[derive(Clone, Deserialize, Debug)]
+#[derive(Clone, Deserialize, Debug, Validate)]
+#[serde(deny_unknown_fields)]
 pub struct ApiConfig {
+    #[garde(range(min = 0, max = 65535))]
     pub port: Option<u16>,
+    #[garde(length(min = 15, max = 64))]
     pub encryption_key: Option<String>,
+    #[garde(length(min = 3, max = 64))]
     pub suggested_area: Option<String>,
 }
 
@@ -62,7 +67,10 @@ pub struct UbiHomeDefault {
 
 impl Module for UbiHomeDefault {
     fn new(config_string: &String) -> Result<Self, String> {
-        match serde_yaml::from_str::<CoreConfig>(config_string) {
+        match serde_saphyr::from_str_with_options_valid::<CoreConfig>(
+            config_string,
+            Default::default(),
+        ) {
             Ok(config) => {
                 let config_clone = config.clone();
                 Ok(UbiHomeDefault {
@@ -73,7 +81,7 @@ impl Module for UbiHomeDefault {
                 })
             }
             Err(e) => {
-                return Err(format!("Failed to parse API config: {:?}", e));
+                return Err(format!("Failed to parse API config:\n\n {e}"));
             }
         }
     }
