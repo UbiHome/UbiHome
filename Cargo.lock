@@ -1132,9 +1132,9 @@ dependencies = [
 
 [[package]]
 name = "esphome-native-api"
-version = "2.0.2"
+version = "2.0.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5dbf7259cae5fc0314d41b9eb61d14c39ff5c8050d2765d09ac9b7dfa686022f"
+checksum = "b935a4694db098da45caac33af61f3fd106579c7939bdc26484804a0072046de"
 dependencies = [
  "base64",
  "byteorder",
@@ -4119,7 +4119,7 @@ dependencies = [
 
 [[package]]
 name = "ubihome-bluetooth_proxy"
-version = "0.10.0"
+version = "0.10.1"
 dependencies = [
  "anyhow",
  "btleplug",
@@ -4135,7 +4135,7 @@ dependencies = [
 
 [[package]]
 name = "ubihome-bme280"
-version = "0.10.0"
+version = "0.10.1"
 dependencies = [
  "bme280",
  "duration-str",
@@ -4149,7 +4149,7 @@ dependencies = [
 
 [[package]]
 name = "ubihome-core"
-version = "0.10.0"
+version = "0.10.1"
 dependencies = [
  "convert_case",
  "duration-str",
@@ -4162,7 +4162,7 @@ dependencies = [
 
 [[package]]
 name = "ubihome-evdev"
-version = "0.10.0"
+version = "0.10.1"
 dependencies = [
  "async-trait",
  "duration-str",
@@ -4176,7 +4176,7 @@ dependencies = [
 
 [[package]]
 name = "ubihome-gpio"
-version = "0.10.0"
+version = "0.10.1"
 dependencies = [
  "async-trait",
  "duration-str",
@@ -4204,7 +4204,7 @@ dependencies = [
 
 [[package]]
 name = "ubihome-mdns"
-version = "0.9.3"
+version = "0.10.1"
 dependencies = [
  "duration-str",
  "libmdns",
@@ -4218,7 +4218,7 @@ dependencies = [
 
 [[package]]
 name = "ubihome-mqtt"
-version = "0.10.0"
+version = "0.10.1"
 dependencies = [
  "duration-str",
  "log",
@@ -4234,7 +4234,7 @@ dependencies = [
 
 [[package]]
 name = "ubihome-power_utils"
-version = "0.10.0"
+version = "0.10.1"
 dependencies = [
  "duration-str",
  "log",
@@ -4247,7 +4247,7 @@ dependencies = [
 
 [[package]]
 name = "ubihome-shell"
-version = "0.10.0"
+version = "0.10.1"
 dependencies = [
  "duration-str",
  "log",
@@ -4260,7 +4260,7 @@ dependencies = [
 
 [[package]]
 name = "ubihome-web_server"
-version = "0.10.0"
+version = "0.10.1"
 dependencies = [
  "async-stream",
  "axum",
