@@ -24,15 +24,15 @@ pub async fn install(location: &str) -> Result<(), Box<dyn std::error::Error>> {
     );
     fs::copy(config_file_path, &new_config_file_path).expect("Unable to copy file");
 
-    println!(" - Creating Windows Service");
-
     use std::ffi::OsString;
     use windows_service::{
         service::{ServiceAccess, ServiceErrorControl, ServiceInfo, ServiceStartType, ServiceType},
         service_manager::{ServiceManager, ServiceManagerAccess},
     };
 
-    let manager_access = ServiceManagerAccess::CONNECT | ServiceManagerAccess::CREATE_SERVICE;
+    let manager_access = ServiceManagerAccess::CONNECT
+        | ServiceManagerAccess::CREATE_SERVICE
+        | ServiceManagerAccess::ENUMERATE_SERVICE;
     let service_manager = ServiceManager::local_computer(None::<&str>, manager_access)?;
 
     let service_info = ServiceInfo {
@@ -52,8 +52,20 @@ pub async fn install(location: &str) -> Result<(), Box<dyn std::error::Error>> {
         account_name: None, // run as System
         account_password: None,
     };
-    let service = service_manager.create_service(&service_info, ServiceAccess::CHANGE_CONFIG)?;
-    service.set_description(constants::SERVICE_DESCRIPTION)?;
+
+    if let Ok(service) =
+        service_manager.open_service(constants::SERVICE_NAME, ServiceAccess::CHANGE_CONFIG)
+    {
+        debug!("Service already exists, updating...");
+        service.set_description(constants::SERVICE_DESCRIPTION)?;
+        service.change_config(&service_info)?;
+        println!(" - Service updated.");
+    } else {
+        let service =
+            service_manager.create_service(&service_info, ServiceAccess::CHANGE_CONFIG)?;
+        service.set_description(constants::SERVICE_DESCRIPTION)?;
+        println!(" - Created Windows Service");
+    }
 
     println!(" - TODO: Create Readme...");
 

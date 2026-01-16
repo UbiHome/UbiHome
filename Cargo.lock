@@ -4119,7 +4119,7 @@ dependencies = [
 
 [[package]]
 name = "ubihome-bluetooth_proxy"
-version = "0.10.1"
+version = "0.10.2"
 dependencies = [
  "anyhow",
  "btleplug",
@@ -4135,7 +4135,7 @@ dependencies = [
 
 [[package]]
 name = "ubihome-bme280"
-version = "0.10.1"
+version = "0.10.2"
 dependencies = [
  "bme280",
  "duration-str",
@@ -4149,7 +4149,7 @@ dependencies = [
 
 [[package]]
 name = "ubihome-core"
-version = "0.10.1"
+version = "0.10.2"
 dependencies = [
  "convert_case",
  "duration-str",
@@ -4162,7 +4162,7 @@ dependencies = [
 
 [[package]]
 name = "ubihome-evdev"
-version = "0.10.1"
+version = "0.10.2"
 dependencies = [
  "async-trait",
  "duration-str",
@@ -4176,7 +4176,7 @@ dependencies = [
 
 [[package]]
 name = "ubihome-gpio"
-version = "0.10.1"
+version = "0.10.2"
 dependencies = [
  "async-trait",
  "duration-str",
@@ -4190,7 +4190,7 @@ dependencies = [
 
 [[package]]
 name = "ubihome-illuminance"
-version = "0.10.0"
+version = "0.10.2"
 dependencies = [
  "duration-str",
  "industrial-io",
@@ -4204,7 +4204,7 @@ dependencies = [
 
 [[package]]
 name = "ubihome-mdns"
-version = "0.10.1"
+version = "0.10.2"
 dependencies = [
  "duration-str",
  "libmdns",
@@ -4218,7 +4218,7 @@ dependencies = [
 
 [[package]]
 name = "ubihome-mqtt"
-version = "0.10.1"
+version = "0.10.2"
 dependencies = [
  "duration-str",
  "log",
@@ -4234,7 +4234,7 @@ dependencies = [
 
 [[package]]
 name = "ubihome-power_utils"
-version = "0.10.1"
+version = "0.10.2"
 dependencies = [
  "duration-str",
  "log",
@@ -4247,7 +4247,7 @@ dependencies = [
 
 [[package]]
 name = "ubihome-shell"
-version = "0.10.1"
+version = "0.10.2"
 dependencies = [
  "duration-str",
  "log",
@@ -4260,7 +4260,7 @@ dependencies = [
 
 [[package]]
 name = "ubihome-web_server"
-version = "0.10.1"
+version = "0.10.2"
 dependencies = [
  "async-stream",
  "axum",
