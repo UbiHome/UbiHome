@@ -1,4 +1,5 @@
 use esphome_native_api::esphomeapi::EspHomeApi;
+use esphome_native_api::hash::hash_fnv1;
 use esphome_native_api::parser;
 use esphome_native_api::parser::ProtoMessage;
 use esphome_native_api::proto::version_2025_12_1::BinarySensorStateResponse;
@@ -56,8 +57,6 @@ config_template!(api, ApiConfig, NoConfig, NoConfig, NoConfig, NoConfig, NoConfi
 pub struct UbiHomeDefault {
     config: CoreConfig,
     pub api_config: ApiConfig,
-    components_by_key: HashMap<u32, ProtoMessage>,
-    components_key_id: HashMap<String, u32>,
 }
 
 impl Module for UbiHomeDefault {
@@ -68,8 +67,6 @@ impl Module for UbiHomeDefault {
                 Ok(UbiHomeDefault {
                     config: config,
                     api_config: config_clone.api,
-                    components_by_key: HashMap::new(),
-                    components_key_id: HashMap::new(),
                 })
             }
             Err(e) => {
@@ -127,22 +124,23 @@ impl Module for UbiHomeDefault {
         let core_config = self.config.clone();
         let api_config = self.api_config.clone();
         // let mut api_components = self.components.();
-        let mut api_components_by_key = self.components_by_key.clone();
-        let mut api_components_key_id = self.components_key_id.clone();
+        let mut api_components_by_key: HashMap<u32, ProtoMessage> = HashMap::new();
+        let mut api_components_key_id: HashMap<String, u32> = HashMap::new();
         info!("Starting API with config: {:?}", core_config.api);
 
         Box::pin(async move {
             while let Ok(cmd) = receiver.recv().await {
                 match cmd {
                     PublishedMessage::Components { components } => {
-                        for (index, component) in components.iter().enumerate() {
+                        for component in components {
                             match component.clone() {
                                 Component::Switch(switch_entity) => {
+                                    let key = hash_fnv1(&switch_entity.id);
                                     let component_switch_entity =
                                         ProtoMessage::ListEntitiesSwitchResponse(
                                             ListEntitiesSwitchResponse {
                                                 object_id: switch_entity.id.clone(),
-                                                key: index.try_into().unwrap(),
+                                                key: key,
                                                 name: switch_entity.name,
                                                 device_id: 0,
                                                 icon: switch_entity.icon.unwrap_or_default(),
@@ -154,36 +152,32 @@ impl Module for UbiHomeDefault {
                                                 assumed_state: switch_entity.assumed_state,
                                             },
                                         );
-                                    api_components_by_key
-                                        .insert(index.try_into().unwrap(), component_switch_entity);
-                                    api_components_key_id.insert(
-                                        switch_entity.id.clone(),
-                                        index.try_into().unwrap(),
-                                    );
+                                    api_components_by_key.insert(key, component_switch_entity);
+                                    api_components_key_id.insert(switch_entity.id.clone(), key);
                                 }
                                 Component::Button(button) => {
+                                    let key = hash_fnv1(&button.id);
                                     let component_button = ProtoMessage::ListEntitiesButtonResponse(
                                         ListEntitiesButtonResponse {
                                             object_id: button.id.clone(),
-                                            key: index.try_into().unwrap(),
+                                            key: key,
                                             name: button.name,
                                             device_id: 0,
-                                            icon: "".to_string(),
-                                            device_class: "".to_string(), //button.device_class,
+                                            icon: button.icon.unwrap_or_default(),
+                                            device_class: "".to_string(),
                                             disabled_by_default: false,
                                             entity_category: EntityCategory::None as i32,
                                         },
                                     );
-                                    api_components_by_key
-                                        .insert(index.try_into().unwrap(), component_button);
-                                    api_components_key_id
-                                        .insert(button.id.clone(), index.try_into().unwrap());
+                                    api_components_by_key.insert(key, component_button);
+                                    api_components_key_id.insert(button.id.clone(), key);
                                 }
                                 Component::Sensor(sensor) => {
+                                    let key = hash_fnv1(&sensor.id);
                                     let component_sensor = ProtoMessage::ListEntitiesSensorResponse(
                                         ListEntitiesSensorResponse {
                                             object_id: sensor.id.clone(),
-                                            key: index.try_into().unwrap(),
+                                            key: key,
                                             name: sensor.name,
                                             device_id: 0,
                                             icon: "".to_string(),
@@ -203,17 +197,16 @@ impl Module for UbiHomeDefault {
                                             entity_category: EntityCategory::None as i32,
                                         },
                                     );
-                                    api_components_by_key
-                                        .insert(index.try_into().unwrap(), component_sensor);
-                                    api_components_key_id
-                                        .insert(sensor.id.clone(), index.try_into().unwrap());
+                                    api_components_by_key.insert(key, component_sensor);
+                                    api_components_key_id.insert(sensor.id.clone(), key);
                                 }
                                 Component::BinarySensor(binary_sensor) => {
+                                    let key = hash_fnv1(&binary_sensor.id);
                                     let component_binary_sensor =
                                         ProtoMessage::ListEntitiesBinarySensorResponse(
                                             ListEntitiesBinarySensorResponse {
                                                 object_id: binary_sensor.id.clone(),
-                                                key: index.try_into().unwrap(),
+                                                key: key,
                                                 name: binary_sensor.name,
                                                 device_id: 0,
                                                 icon: "".to_string(),
@@ -225,18 +218,15 @@ impl Module for UbiHomeDefault {
                                                 entity_category: EntityCategory::None as i32,
                                             },
                                         );
-                                    api_components_by_key
-                                        .insert(index.try_into().unwrap(), component_binary_sensor);
-                                    api_components_key_id.insert(
-                                        binary_sensor.id.clone(),
-                                        index.try_into().unwrap(),
-                                    );
+                                    api_components_by_key.insert(key, component_binary_sensor);
+                                    api_components_key_id.insert(binary_sensor.id.clone(), key);
                                 }
                                 Component::Light(light) => {
+                                    let key = hash_fnv1(&light.id);
                                     let component_light = ProtoMessage::ListEntitiesLightResponse(
                                         ListEntitiesLightResponse {
                                             object_id: light.id.clone(),
-                                            key: index.try_into().unwrap(),
+                                            key: key,
                                             name: light.name,
                                             device_id: 0,
                                             icon: light.icon.unwrap_or_default(),
@@ -252,10 +242,8 @@ impl Module for UbiHomeDefault {
                                             legacy_supports_color_temperature: false,
                                         },
                                     );
-                                    api_components_by_key
-                                        .insert(index.try_into().unwrap(), component_light);
-                                    api_components_key_id
-                                        .insert(light.id.clone(), index.try_into().unwrap());
+                                    api_components_by_key.insert(key, component_light);
+                                    api_components_key_id.insert(light.id.clone(), key);
                                 }
                             }
                         }
