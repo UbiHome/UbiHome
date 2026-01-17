@@ -1,12 +1,44 @@
 import asyncio
 from asyncio.subprocess import Process
+from enum import Enum
 import logging
 import os
+import re
 import signal
 import socket
 import platform
 import time
 from typing import Optional
+import yaml
+import random
+
+
+def represent_none(self, _):
+    return self.represent_scalar("tag:yaml.org,2002:null", "")
+
+
+yaml.add_representer(type(None), represent_none)
+
+
+class Platform(Enum):
+    WINDOWS = "Windows"
+    LINUX = "Linux"
+    MACOS = "Darwin"
+
+
+def os_platform() -> Platform:
+    platform_str = platform.system()
+    if platform_str == "Linux":
+        return Platform.LINUX
+    elif platform_str == "Darwin":
+        return Platform.MACOS
+    elif platform_str == "Windows":
+        return Platform.WINDOWS
+    else:
+        raise ValueError(f"Unsupported platform: {platform_str}")
+
+
+OS_PLATFORM = os_platform()
 
 DEFAULT_CONFIG = """
 ubihome:
@@ -52,23 +84,23 @@ api:
 
 
 class UbiHome(object):
+    """Context manager to run UbiHome with a given configuration."""
+
     process: Optional[Process] = None
     _stdout_task = None
     _stderr_task = None
     stdout: str | None = None
     stderr: str | None = None
+    port: int | None = None
 
     def __init__(
         self,
         *arguments,
-        port=6053,
         config=None,
         throw_on_error=True,
         wait_for_api=False,
         # executable=None,
     ):
-        self.port = port
-        self.config = config if config else DEFAULT_CONFIG
         self.arguments = arguments
         self.configuration_file = f"config{os.getpid()}.yaml"
         self.throw_on_error = throw_on_error
@@ -79,7 +111,16 @@ class UbiHome(object):
             file = "ubihome"
         # self.executable = os.path.join(os.getcwd(), "..", "target", "debug", file)
         self.executable = os.path.join(os.getcwd(), file)
-        logging.info(f"Using UbiHome executable: {self.executable}")
+        logging.info("Using UbiHome executable: %s", self.executable)
+
+        config_yaml = yaml.safe_load(config if config else DEFAULT_CONFIG)
+        if "api" in config_yaml:
+            if config_yaml["api"] is None:
+                config_yaml["api"] = {}
+            self.port = random.randint(1024, 65535)
+            config_yaml["api"]["port"] = self.port
+
+        self.config = yaml.dump(config_yaml)
 
     async def __aenter__(self):
         my_env = os.environ.copy()
@@ -108,7 +149,7 @@ class UbiHome(object):
         self._stdout_task = asyncio.create_task(self._read_stdout())
         self._stderr_task = asyncio.create_task(self._read_stderr())
 
-        if self.wait_for_api:
+        if self.port and self.wait_for_api:
             print("Waiting for server to start...")
             sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             while True:
@@ -191,39 +232,38 @@ async def run_ubihome(*arguments, config=None) -> str:
         return ubihome.stdout or ""
 
 
-def wait_and_get_file(file_path, timeout=5):
-    """
-    Wait for a file to be created or modified.
-    """
-    start_time = time.time()
-    while not os.path.exists(file_path):
-        if time.time() - start_time > timeout:
-            raise TimeoutError(
-                f"File {file_path} was not created within {timeout} seconds."
-            )
-        time.sleep(0.1)
-    return open(file_path, "r").read()
+# FROM https://github.com/esphome/esphome/blob/58a9e30017b7094c9cf8bfb0739b610ba5bcd450/esphome/helpers.py#L65
+
+FNV1_OFFSET_BASIS = 2166136261
+FNV1_PRIME = 16777619
 
 
-def wait_for_mock_state(file_path, expected_state, timeout=5):
-    """
-    Wait for a file to be created or modified.
-    """
-    state = None
-    start_time = time.time()
-    while expected_state != state:
-        if time.time() - start_time > timeout:
-            raise TimeoutError(
-                f"State does not match within {timeout} seconds: {expected_state} != {state}."
-            )
-        while not os.path.exists(file_path):
-            if time.time() - start_time > timeout:
-                raise TimeoutError(
-                    f"File {file_path} was not created within {timeout} seconds."
-                )
-            time.sleep(0.1)
+def snake_case(value):
+    """Same behaviour as `helpers.cpp` method `str_snake_case`."""
+    return value.replace(" ", "_").lower()
 
-        state = open(file_path, "r").read()
-        time.sleep(0.1)
 
-    return True
+_DISALLOWED_CHARS = re.compile(r"[^a-zA-Z0-9-_]")
+
+
+def sanitize(value):
+    """Same behaviour as `helpers.cpp` method `str_sanitize`."""
+    return _DISALLOWED_CHARS.sub("_", value)
+
+
+def fnv1_hash(string: str) -> int:
+    """FNV-1 32-bit hash function (multiply then XOR)."""
+    hash_value = FNV1_OFFSET_BASIS
+    for char in string:
+        hash_value = (hash_value * FNV1_PRIME) & 0xFFFFFFFF
+        hash_value ^= ord(char)
+    return hash_value
+
+
+def fnv1_hash_object_id(name: str) -> int:
+    """Compute FNV-1 hash of name with snake_case + sanitize transformations.
+
+    IMPORTANT: Must produce same result as C++ fnv1_hash_object_id() in helpers.h.
+    Used for pre-computing entity object_id hashes at code generation time.
+    """
+    return fnv1_hash(sanitize(snake_case(name)))
