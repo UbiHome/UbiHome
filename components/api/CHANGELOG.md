@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.10.1](https://github.com/UbiHome/UbiHome/compare/v0.10.0...ubihome-api-v0.10.1) (2026-01-17)
+
+
+### Bug Fixes
+
+* api panic crashing all api connections ([1f0c2dd](https://github.com/UbiHome/UbiHome/commit/1f0c2ddf4a03b9c02f8738843553168669038565))
+* entities in mixed order ([80638c4](https://github.com/UbiHome/UbiHome/commit/80638c48ef75e9b7dc7bcac09aa914c800020f93))
+* update native api crate ([cce2910](https://github.com/UbiHome/UbiHome/commit/cce29100e2c76d8ff9cf15398a41ce9a8a850cc6))
+* update native api package ([951a9d7](https://github.com/UbiHome/UbiHome/commit/951a9d7b9984382a99b6ff386592bb475e74715c))
+
 ## [0.10.0](https://github.com/UbiHome/UbiHome/compare/ubihome-api-v0.9.4...ubihome-api-v0.10.0) (2025-12-30)
 
 
