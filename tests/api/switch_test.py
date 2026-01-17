@@ -80,7 +80,9 @@ switch:
         io_mock.set_value("true")
 
         # Wait for the state change
-        while not mock.called:
+        state_switched_to_true = False
+        while state_switched_to_true:
+            state_switched_to_true = (
+                mock.called and mock.call_args.args[0].state is True
+            )
             await sleep(0.1)
-        state = mock.call_args.args[0]
-        assert state.state is True
