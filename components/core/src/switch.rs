@@ -1,5 +1,5 @@
-use std::time::Duration;
 use duration_str::deserialize_duration;
+use std::time::Duration;
 
 use serde::Deserialize;
 
@@ -32,26 +32,22 @@ pub struct SwitchBase {
     pub name: String,
     pub icon: Option<String>,
     pub device_class: Option<String>,
-
     // pub filters: Option<Vec<BinarySensorFilter>>,
 }
 
 // TODO implement as procedural macro
 impl SwitchBase {
     pub fn get_object_id(&self) -> String {
-        format_id( &self.id, &self.name)
+        format_id(&self.id, &self.name)
     }
 }
 
 #[derive(Clone, Deserialize, Debug)]
-pub struct UnknownSwitch{}
-
-
+pub struct UnknownSwitch {}
 
 #[macro_export]
 macro_rules! template_switch {
     ($component_name:ident, $switch_extension:ident) => {
-    
         use $crate::switch::SwitchBase;
         use $crate::switch::UnknownSwitch;
 
@@ -73,12 +69,5 @@ macro_rules! template_switch {
             #[serde(flatten)]
             pub extra: SwitchKind,
         }
-    }
+    };
 }
-
-
-
-
-
-
-

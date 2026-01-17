@@ -1,5 +1,5 @@
-use std::{collections::HashMap, time::Duration};
 use duration_str::deserialize_duration;
+use std::{collections::HashMap, time::Duration};
 
 use serde::Deserialize;
 
@@ -15,7 +15,6 @@ pub enum FilterType {
     #[serde(deserialize_with = "deserialize_duration")]
     delayed_on(Duration),
 }
-
 
 #[derive(Clone, Deserialize, Debug)]
 #[serde(deny_unknown_fields)]
@@ -40,7 +39,6 @@ pub enum ActionType {
 pub struct Action {
     #[serde(flatten)]
     pub action: ActionType,
-
 }
 
 #[derive(Clone, Deserialize, Debug)]
@@ -66,19 +64,16 @@ pub struct BinarySensorBase {
 // TODO implement as procedural macro
 impl BinarySensorBase {
     pub fn get_object_id(&self) -> String {
-        format_id( &self.id, &self.name)
+        format_id(&self.id, &self.name)
     }
 }
 
 #[derive(Clone, Deserialize, Debug)]
-pub struct UnknownBinarySensor{}
-
-
+pub struct UnknownBinarySensor {}
 
 #[macro_export]
 macro_rules! template_binary_sensor {
     ($component_name:ident, $binary_sensor_extension:ident) => {
-    
         use $crate::binary_sensor::BinarySensorBase;
         use $crate::binary_sensor::UnknownBinarySensor;
 
@@ -100,12 +95,5 @@ macro_rules! template_binary_sensor {
             #[serde(flatten)]
             pub extra: BinarySensorKind,
         }
-    }
+    };
 }
-
-
-
-
-
-
-

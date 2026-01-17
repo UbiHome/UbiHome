@@ -1,9 +1,9 @@
 use std::collections::HashMap;
 
 use log::debug;
-use ubihome_core::{binary_sensor::BinarySensorBase, template_mapper, UbiHome};
 use serde::Deserialize;
 use serde::Deserializer;
+use ubihome_core::{binary_sensor::BinarySensorBase, template_mapper, UbiHome};
 
 #[derive(Clone, Deserialize, Debug)]
 pub enum LogLevel {
@@ -52,8 +52,8 @@ impl Logger {
                 ..
             } => spec.push_str("trace"),
         }
-        
-        let mut logs  = self.logs.clone().unwrap_or(HashMap::new());
+
+        let mut logs = self.logs.clone().unwrap_or(HashMap::new());
         if !logs.contains_key("libmdns") {
             logs.insert("libmdns".to_string(), LogLevel::Info);
         }
@@ -75,7 +75,6 @@ impl Logger {
     }
 }
 
-
 #[derive(Clone, Debug, Deserialize)]
 pub struct BinarySensor {
     #[serde(flatten)]
@@ -83,7 +82,6 @@ pub struct BinarySensor {
 }
 
 template_mapper!(map_binary_sensor, BinarySensor);
-
 
 #[derive(Clone, Deserialize, Debug)]
 pub struct CoreConfig {
@@ -95,8 +93,6 @@ pub struct CoreConfig {
 
     // #[serde(default, deserialize_with = "map_sensor")]
     // pub sensor: Option<HashMap<String, Sensor>>,
-
-    
     #[serde(default, deserialize_with = "map_binary_sensor")]
     pub binary_sensor: Option<HashMap<String, BinarySensor>>,
 }
