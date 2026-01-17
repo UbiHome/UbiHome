@@ -1,8 +1,8 @@
-use std::{env, fs};
-use std::{path::Path, time::Duration};
 use log::debug;
 use shell_exec::{Execution, Shell};
 use std::str;
+use std::{env, fs};
+use std::{path::Path, time::Duration};
 
 fn service_file() -> String {
     use crate::constants::SERVICE_NAME;
@@ -11,8 +11,7 @@ fn service_file() -> String {
 
 pub const SYSTEMD_FILE_PATH: &str = "/etc/systemd/system";
 
-
-pub async fn install(location: &str){
+pub async fn install(location: &str) {
     use crate::constants::SERVICE_DESCRIPTION;
 
     // TODO: Run update logic if already installed (e.g. stop service before copy)
@@ -27,8 +26,12 @@ pub async fn install(location: &str){
     let service_file = service_file();
 
     let systemd_file_path = Path::new(SYSTEMD_FILE_PATH).join(&service_file);
-    println!(" - Creating Systemd Service file {}", systemd_file_path.to_string_lossy().to_string());
-    let systemd_file: String = format!("[Unit]
+    println!(
+        " - Creating Systemd Service file {}",
+        systemd_file_path.to_string_lossy().to_string()
+    );
+    let systemd_file: String = format!(
+        "[Unit]
 Description={}
 After=network-online.target
 
@@ -42,7 +45,9 @@ WorkingDirectory={}
 
 
 [Install]
-WantedBy=multi-user.target", SERVICE_DESCRIPTION, location, location);
+WantedBy=multi-user.target",
+        SERVICE_DESCRIPTION, location, location
+    );
 
     fs::write(systemd_file_path, systemd_file).expect("Unable to write file");
     println!("- Installing Systemd Service");
@@ -55,20 +60,19 @@ WantedBy=multi-user.target", SERVICE_DESCRIPTION, location, location);
     println!("Successfully installed and started!");
     println!("Query the status via `systemctl status {}`", service_file);
     println!("Or follow the log with `journalctl -u {}`", service_file);
-
 }
 
 async fn execute_command(command: &str) {
     let execution = Execution::builder()
-    .shell(Shell::default())
-    .timeout(Duration::from_secs(5))
-    .cmd(command.to_string())
-    .build();
+        .shell(Shell::default())
+        .timeout(Duration::from_secs(5))
+        .cmd(command.to_string())
+        .build();
 
     let output = execution.execute(b"").await;
     match output {
         Ok(output) => {
-            let output_string = str::from_utf8(&output).unwrap_or(""); 
+            let output_string = str::from_utf8(&output).unwrap_or("");
             debug!("Command executed successfully: {}", output_string);
         }
         Err(e) => {
@@ -77,8 +81,7 @@ async fn execute_command(command: &str) {
     }
 }
 
-pub async fn uninstall(location: &str){
-
+pub async fn uninstall(location: &str) {
     if location.chars().filter(|c| *c == '/').count() < 2 {
         println!("To not shoot yourself in the foot, please provide a longer path");
         return;
@@ -94,9 +97,7 @@ pub async fn uninstall(location: &str){
     execute_command(format!("systemctl disable {}", service_file).as_str()).await;
     let systemd_file_path = Path::new(SYSTEMD_FILE_PATH).join(&service_file);
     fs::remove_file(systemd_file_path).expect("Unable to remove file");
-    
+
     execute_command("systemctl daemon-reload").await;
     println!("TODO: remove log files?");
-
-
 }

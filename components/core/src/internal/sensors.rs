@@ -1,4 +1,8 @@
-use crate::{binary_sensor::BinarySensorBase, home_assistant::sensors::{UbiBinarySensor, UbiButton, UbiSensor, UbiSwitch, UbiLight}, sensor::SensorBase};
+use crate::{
+    binary_sensor::BinarySensorBase,
+    home_assistant::sensors::{UbiBinarySensor, UbiButton, UbiLight, UbiSensor, UbiSwitch},
+    sensor::SensorBase,
+};
 
 #[derive(Clone, Debug)]
 pub enum InternalComponent {

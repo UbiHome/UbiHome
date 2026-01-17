@@ -15,9 +15,8 @@ impl ButtonBase {
     }
 }
 
-
 #[derive(Clone, Deserialize, Debug)]
-pub struct UnknownButton{}
+pub struct UnknownButton {}
 
 #[macro_export]
 macro_rules! template_button {
@@ -43,5 +42,5 @@ macro_rules! template_button {
             #[serde(flatten)]
             pub extra: ButtonKind,
         }
-    }
+    };
 }

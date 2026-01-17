@@ -6,10 +6,10 @@ use reqwest::header::USER_AGENT;
 
 use tokio::runtime::Runtime;
 
-use serde::Deserialize;
 use current_platform::CURRENT_PLATFORM;
-use indicatif::{ProgressBar, ProgressStyle};
 use futures_util::StreamExt;
+use indicatif::{ProgressBar, ProgressStyle};
+use serde::Deserialize;
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 
@@ -56,20 +56,20 @@ pub(crate) fn update() -> Result<(), String> {
             let file_ending = "";
             #[cfg(target_os = "windows")]
             let file_ending = ".exe";
-        
+
             let download_file_name = format!("ubihome-{}-{}{}", target_os, target_arch, file_ending);
-        
+
             let download_url = format!("https://github.com/UbiHome/UbiHome/releases/download/{}/{}", new_version, download_file_name);
             debug!("Download URL: {}", download_url);
-            
+
             println!("Downloading...");
             let resp = client.get(download_url).send().await.expect("request failed");
             if resp.status() != reqwest::StatusCode::OK {
                 return Err(format!("Failed to download file: {}", resp.status()));
             }
-            
+
             let total_size = resp.content_length().unwrap_or(0);
-            
+
             // Setup progress bar
             let pb = if total_size > 0 {
                 let pb = ProgressBar::new(total_size);
@@ -106,7 +106,7 @@ pub(crate) fn update() -> Result<(), String> {
             }
 
             pb.finish_with_message(format!("Downloaded {}", download_file_name));
-            
+
             match env::current_exe() {
                 Ok(exe_path) => {
                     let mut new_exe_path = exe_path.clone();

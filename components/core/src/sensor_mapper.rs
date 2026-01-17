@@ -1,8 +1,6 @@
-
 #[macro_export]
 macro_rules! template_sensor {
     ($component_name:ident, $sensor_extension:ident) => {
-
         use $crate::sensor::SensorBase;
         use $crate::sensor::UnknownSensor;
 
@@ -20,9 +18,9 @@ macro_rules! template_sensor {
         pub struct Sensor {
             #[serde(flatten)]
             pub default: SensorBase,
-        
+
             #[serde(flatten)]
             pub extra: SensorKind,
         }
-    }
+    };
 }
