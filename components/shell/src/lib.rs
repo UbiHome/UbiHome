@@ -87,7 +87,6 @@ pub struct ShellLightConfig {
     // pub supports_rgb: Option<bool>,
     // pub supports_white_value: Option<bool>,
     // pub supports_color_temperature: Option<bool>,
-
     #[serde(default = "default_timeout_none")]
     #[serde(deserialize_with = "deserialize_option_duration")]
     pub update_interval: Option<Duration>,
@@ -213,13 +212,16 @@ impl Module for Default {
             match any_light.extra {
                 LightKind::shell(light_config) => {
                     let id = any_light.default.get_object_id();
-                    components.push(InternalComponent::Light( InternalLight {
+                    components.push(InternalComponent::Light(InternalLight {
                         ha: UbiLight {
                             platform: "light".to_string(),
                             icon: any_light.default.icon.clone(),
                             name: any_light.default.name.clone(),
                             id: id.clone(),
-                            disabled_by_default: any_light.default.disabled_by_default.unwrap_or(true),
+                            disabled_by_default: any_light
+                                .default
+                                .disabled_by_default
+                                .unwrap_or(true),
                         },
                     }));
                     lights.insert(id.clone(), light_config);
@@ -302,7 +304,7 @@ impl Module for Default {
                                         &cloned_config.timeout,
                                     )
                                     .await;
-                                
+
                                     match output {
                                         Ok(output) => {
                                             debug!("Switch {} output: {}", key, &output);
@@ -352,9 +354,18 @@ impl Module for Default {
                                 }
                             }
                         }
-                        PublishedMessage::LightStateCommand { key, state, brightness, red, green, blue } => {
-                            debug!("LightStateCommand: {} state:{} brightness:{:?} rgb:{:?},{:?},{:?}", 
-                                key, state, brightness, red, green, blue);
+                        PublishedMessage::LightStateCommand {
+                            key,
+                            state,
+                            brightness,
+                            red,
+                            green,
+                            blue,
+                        } => {
+                            debug!(
+                                "LightStateCommand: {} state:{} brightness:{:?} rgb:{:?},{:?},{:?}",
+                                key, state, brightness, red, green, blue
+                            );
                             if let Some(light) = lights_clone.get(&key) {
                                 let command: String;
                                 if state {
@@ -373,7 +384,7 @@ impl Module for Default {
                                 )
                                 .await
                                 .unwrap();
-                                
+
                                 if output.is_empty() {
                                     trace!("Command executed successfully with no output.");
                                 } else {
@@ -417,7 +428,7 @@ impl Module for Default {
                                         &cloned_config.timeout,
                                     )
                                     .await;
-                                
+
                                     match output {
                                         Ok(output) => {
                                             debug!("Light {} state output: {}", key, &output);
@@ -503,7 +514,11 @@ impl Module for Default {
                             .unwrap_or_else(|| Duration::from_secs(60));
 
                         let mut interval = time::interval(duration);
-                        debug!("Switch {} has update interval: {:?}", key, interval.period());
+                        debug!(
+                            "Switch {} has update interval: {:?}",
+                            key,
+                            interval.period()
+                        );
                         loop {
                             let output = execute_command(
                                 &cloned_config,
@@ -589,7 +604,7 @@ impl Module for Default {
                     }
                 });
             }
-            
+
             // Monitor light states with update intervals
             for (key, light) in lights {
                 let light = light.clone();

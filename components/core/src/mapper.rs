@@ -1,8 +1,9 @@
-
 #[macro_export]
 macro_rules! template_mapper {
     ($component_name:ident, $component_type:ident) => {
-        fn $component_name<'de, D>(de: D) -> Result<Option<HashMap<String, $component_type>>, D::Error>
+        fn $component_name<'de, D>(
+            de: D,
+        ) -> Result<Option<HashMap<String, $component_type>>, D::Error>
         where
             D: Deserializer<'de>,
         {
@@ -10,11 +11,11 @@ macro_rules! template_mapper {
             struct ItemsVisitor;
             impl<'de> Visitor<'de> for ItemsVisitor {
                 type Value = Option<HashMap<String, $component_type>>;
-        
+
                 fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
                     formatter.write_str("a sequence of items")
                 }
-        
+
                 fn visit_seq<V>(
                     self,
                     mut seq: V,
@@ -23,7 +24,7 @@ macro_rules! template_mapper {
                     V: SeqAccess<'de>,
                 {
                     let mut map = HashMap::with_capacity(seq.size_hint().unwrap_or(0));
-        
+
                     while let Some(item) = seq.next_element::<$component_type>()? {
                         let key = item.default.get_object_id();
                         match map.entry(key) {
@@ -39,8 +40,8 @@ macro_rules! template_mapper {
                     Ok(Some(map))
                 }
             }
-        
+
             de.deserialize_seq(ItemsVisitor)
         }
-    }
+    };
 }

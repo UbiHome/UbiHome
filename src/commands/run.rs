@@ -10,14 +10,12 @@ use ubihome_core::{ChangedMessage, Module, PublishedMessage};
 use futures_signals::signal::{Mutable, SignalExt};
 use log::{debug, error, info, trace, warn};
 use std::collections::HashMap;
+use std::fs;
 use std::path::Path;
 use std::sync::mpsc;
 use std::time::Duration;
-use std::fs;
 use tokio::sync::broadcast::{self, Receiver, Sender};
 use tokio::{runtime::Runtime, signal};
-
-
 
 fn read_base_config(path: Option<String>) -> Result<String, String> {
     if let Some(path) = path {
@@ -73,7 +71,7 @@ fn get_all_modules(yaml: &String) -> Vec<Box<dyn Module>> {
         modules.push(Box::new(ubihome_illuminance::Default::new(&yaml).unwrap()));
     }
     // if modules_to_load.contains(&"mdns".to_string()) {
-        modules.push(Box::new(ubihome_mdns::Default::new(&yaml).unwrap()));
+    modules.push(Box::new(ubihome_mdns::Default::new(&yaml).unwrap()));
     // }
     if modules_to_load.contains(&"mqtt".to_string()) {
         modules.push(Box::new(ubihome_mqtt::Default::new(&yaml).unwrap()));
@@ -90,11 +88,12 @@ fn get_all_modules(yaml: &String) -> Vec<Box<dyn Module>> {
 
     // TODO: Throw error if platform is used in sensor but not configured
     if modules_to_load.contains(&"bluetooth_proxy".to_string()) {
-        modules.push(Box::new(ubihome_bluetooth_proxy::Default::new(&yaml).unwrap()));
+        modules.push(Box::new(
+            ubihome_bluetooth_proxy::Default::new(&yaml).unwrap(),
+        ));
     }
     return modules;
 }
-
 
 async fn initialize_modules(
     modules: &mut Vec<Box<dyn Module>>,
@@ -128,7 +127,6 @@ pub(crate) fn run(
     config_path: Option<String>,
     shutdown_signal: Option<mpsc::Receiver<()>>,
 ) -> Result<(), Box<dyn std::error::Error>> {
-
     #[cfg(not(debug_assertions))]
     use directories::BaseDirs;
     #[cfg(not(debug_assertions))]
@@ -226,7 +224,6 @@ pub(crate) fn run(
                                     trace!("round");
                                     signal = signal
                                     .map(move |value| {
-                                        
                                         if let Some(v) = value.clone().and_then(|v| v) {
                                             // let number: f64 = v.parse().unwrap();
                                             let output: f32 = format!("{:.1$}", v, decimals).parse().unwrap();
@@ -252,7 +249,7 @@ pub(crate) fn run(
                                         value: value,
                                     };
                                     debug!("Publishing command from signal: {:?}", pcmd);
-                                        
+
                                     signal_tx_clone.send(pcmd).unwrap();
                                 }
 
@@ -402,7 +399,7 @@ pub(crate) fn run(
                                         value: value,
                                     };
                                     debug!("Publishing command from signal: {:?}", pcmd);
-                                        
+
                                     signal_tx_clone.send(pcmd).unwrap();
                                 }
 

@@ -4,9 +4,8 @@ use crate::utils::format_id;
 
 #[derive(Clone, Deserialize, Debug)]
 pub enum SensorFilterType {
-    round(usize)
+    round(usize),
 }
-
 
 #[derive(Clone, Deserialize, Debug)]
 #[serde(deny_unknown_fields)]
@@ -26,7 +25,6 @@ pub struct SensorBase {
     pub state_class: Option<String>,
 
     pub filters: Option<Vec<SensorFilter>>,
-
 }
 
 // TODO implement as procedural macro
@@ -37,4 +35,4 @@ impl SensorBase {
 }
 
 #[derive(Clone, Deserialize, Debug)]
-pub struct UnknownSensor{}
+pub struct UnknownSensor {}

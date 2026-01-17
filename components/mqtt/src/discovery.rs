@@ -12,28 +12,27 @@ pub(crate) enum HAMqttComponent {
     Button(HAMqttButton),
     Sensor(HAMqttSensor),
     BinarySensor(HAMqttBinarySensor),
-    Switch(HAMqttSwitch)
+    Switch(HAMqttSwitch),
 }
 
 #[derive(Clone, Serialize, Deserialize, Debug)]
 pub(crate) struct HAMqttSwitch {
-
     #[serde(rename = "p")]
     pub(crate) platform: String,
 
     #[serde(rename = "uniq_id")]
     pub(crate) unique_id: String,
-    
+
     #[serde(rename = "name")]
     pub(crate) name: String,
 
     #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(rename = "ic")]
     pub(crate) icon: Option<String>,
-    
+
     #[serde(rename = "obj_id")]
     pub(crate) object_id: String,
-    
+
     #[serde(rename = "stat_t")]
     pub(crate) state_topic: String,
 
@@ -43,30 +42,28 @@ pub(crate) struct HAMqttSwitch {
 
 #[derive(Clone, Serialize, Deserialize, Debug)]
 pub(crate) struct HAMqttButton {
-
     #[serde(rename = "p")]
     pub(crate) platform: String,
 
     #[serde(rename = "uniq_id")]
     pub(crate) unique_id: String,
-    
+
     #[serde(rename = "name")]
     pub(crate) name: String,
 
     #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(rename = "ic")]
     pub(crate) icon: Option<String>,
-    
+
     #[serde(rename = "obj_id")]
     pub(crate) object_id: String,
-    
+
     #[serde(rename = "cmd_t")]
     pub(crate) command_topic: String,
 }
 
 #[derive(Clone, Serialize, Deserialize, Debug)]
 pub(crate) struct HAMqttSensor {
-
     #[serde(rename = "p")]
     pub(crate) platform: String,
 
@@ -88,30 +85,29 @@ pub(crate) struct HAMqttSensor {
 
     #[serde(rename = "dev_cla")]
     pub(crate) device_class: String,
-    
+
     #[serde(rename = "unit_of_meas")]
     pub(crate) unit_of_measurement: String,
 }
 
 #[derive(Clone, Serialize, Deserialize, Debug)]
 pub(crate) struct HAMqttBinarySensor {
-
     #[serde(rename = "p")]
     pub(crate) platform: String,
 
     #[serde(rename = "uniq_id")]
     pub(crate) unique_id: String,
-    
+
     #[serde(rename = "name")]
     pub(crate) name: String,
 
     #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(rename = "ic")]
     pub(crate) icon: Option<String>,
-    
+
     #[serde(rename = "obj_id")]
     pub(crate) object_id: String,
-    
+
     #[serde(rename = "stat_t")]
     pub(crate) state_topic: String,
 
@@ -137,7 +133,6 @@ pub(crate) struct HAMqttDevice {
     pub(crate) model: String,
     #[serde(rename = "cns")]
     pub(crate) connections: Vec<HAMqttConnection>,
-
     // sw_version
     // NEXT: Show http web server?
     // configuration_url
