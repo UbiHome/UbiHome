@@ -1,61 +1,57 @@
-
 from asyncio import sleep
 from unittest.mock import Mock
 
 import pytest
-from utils import UbiHome
+from mock_file import IOMock
+from utils import OS_PLATFORM, Platform, UbiHome
 import aioesphomeapi
-from utils import wait_and_get_file
 
 
-async def test_run():
-  light_id = "my_light"
-  light_name = "Test Light"
-  light_mock = "test_light.mock"
-  DEVICE_INFO_CONFIG = f"""
+async def test_run(io_mock: IOMock):
+    light_id = "my_light"
+    light_name = "Test Light"
+    io_mock.set_value("false")
+    DEVICE_INFO_CONFIG = f"""
 ubihome:
   name: test_device
 
 api:
 
 shell:
+  type: {"shell" if OS_PLATFORM is Platform.LINUX else "powershell"}
   
 light:
   - platform: shell
     id: {light_id}
     update_interval: 1s
     name: {light_name}
-    command_on: "echo true > {light_mock}"
-    command_off: "echo false > {light_mock}"
-    command_state: "cat {light_mock} || echo false"
+    command_on: "echo true > {io_mock.file}"
+    command_off: "echo false > {io_mock.file}"
+    command_state: "cat {io_mock.file}"
 
 """
-  with open(light_mock, "w") as f:
-      f.write("0.1")
 
-  async with UbiHome("run", config=DEVICE_INFO_CONFIG, wait_for_api=True) as ubihome:
-    api = aioesphomeapi.APIClient("127.0.0.1", 6053, "")
-    await api.connect(login=False)
+    async with UbiHome("run", config=DEVICE_INFO_CONFIG, wait_for_api=True) as ubihome:
+        api = aioesphomeapi.APIClient("127.0.0.1", ubihome.port, "")
+        await api.connect(login=False)
 
-    entities, services = await api.list_entities_services()
-    assert len(entities) == 1, entities
-    entity = entities[0]
+        entities, services = await api.list_entities_services()
+        assert len(entities) == 1, entities
+        entity = entities[0]
 
-    assert type(entity) == aioesphomeapi.LightInfo
-    assert entity.object_id == light_id
-    assert entity.name == light_name
+        assert type(entity) == aioesphomeapi.LightInfo
+        assert entity.object_id == light_id
+        assert entity.name == light_name
 
-    mock = Mock()
-    # Subscribe to the state changes
-    api.subscribe_states(mock)
+        mock = Mock()
+        # Subscribe to the state changes
+        api.subscribe_states(mock)
 
-    with open(light_mock, "w") as f:
-      f.write("true")
+        io_mock.set_value("true")
 
-    # Wait for the state change
-    while not mock.called:
-      await sleep(0.1)
+        # Wait for the state change
+        while not mock.called:
+            await sleep(0.1)
 
-    state = mock.call_args.args[0]
-    assert state.state is True
-
+        state = mock.call_args.args[0]
+        assert state.state is True
