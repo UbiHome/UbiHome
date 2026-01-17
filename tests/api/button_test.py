@@ -19,7 +19,7 @@ ubihome:
 api:
 
 shell:
-  type: {"shell" if OS_PLATFORM is Platform.LINUX else "powershell"}
+  type: {"bash" if OS_PLATFORM is Platform.LINUX else "powershell"}
   
 button: 
  - platform: shell
