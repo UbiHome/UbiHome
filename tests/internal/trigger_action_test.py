@@ -1,17 +1,16 @@
+from mock_file import IOMockFactory
+from utils import UbiHome
 
-import os
-from utils import UbiHome, wait_for_mock_state
 
+async def test_binary_sensor_triggers(io_mock_factory: IOMockFactory):
+    """
+    Test that Binary Sensor triggers are working by turning on/off a switch.
+    """
 
-async def test_binary_sensor_triggers():
-  """
-  Test that Binary Sensor triggers are working by turning on/off a switch.
-  """
+    switch_mock = io_mock_factory.create_mock()
+    sensor_mock = io_mock_factory.create_mock()
 
-  switch_mock = "testswitch.mock"
-  sensor_mock = "test_sensor.mock"
-
-  DEVICE_INFO_CONFIG = f"""
+    DEVICE_INFO_CONFIG = f"""
 ubihome:
   name: test_device
 
@@ -38,20 +37,13 @@ binary_sensor:
       then:
         - switch.turn_off: "test_switch"
 """
-  
-  with open(sensor_mock, "w") as f:
-      f.write("false")
-  async with UbiHome("run", config=DEVICE_INFO_CONFIG) as ubihome:
-    
-    with open(sensor_mock, "w") as f:
-        f.write("true")
-    assert wait_for_mock_state(switch_mock, "true\n")
-    os.remove(switch_mock)
+    sensor_mock.set_value("false")
 
+    async with UbiHome("run", config=DEVICE_INFO_CONFIG) as ubihome:
 
-    with open(sensor_mock, "w") as f:
-        f.write("false")
-    assert wait_for_mock_state(switch_mock, "false\n")
+        sensor_mock.set_value("true")
+        switch_mock.wait_for_mock_state("true")
+        switch_mock.remove()
 
-    os.remove(sensor_mock)
-    os.remove(switch_mock)
+        sensor_mock.set_value("false")
+        switch_mock.wait_for_mock_state("false")

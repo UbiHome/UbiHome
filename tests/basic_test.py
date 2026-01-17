@@ -1,20 +1,25 @@
 import pytest
 
-from utils import run_ubihome
+from utils import OS_PLATFORM, Platform, run_ubihome
 
 
 @pytest.mark.asyncio
 async def test_version_help():
     version = await run_ubihome("--version")
 
-    output = await run_ubihome("--help")
+    executable = "ubihome"
+    if OS_PLATFORM == Platform.WINDOWS:
+        executable += ".exe"
 
-    assert output == f"""{version}
+    output = await run_ubihome("--help")
+    assert (
+        output
+        == f"""{version}
 UbiHome is a system which allows you to integrate any device running an OS into your smart home.
 Documentation: https://ubihome.github.io/
 Homepage: https://github.com/UbiHome/UbiHome
 
-Usage: ubihome [OPTIONS] <COMMAND>
+Usage: {executable} [OPTIONS] <COMMAND>
 
 Commands:
   run        Run UbiHome manually.
@@ -34,4 +39,4 @@ Options:
   -V, --version
           Print version
 """
-  
+    )

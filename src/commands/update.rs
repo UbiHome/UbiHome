@@ -106,7 +106,6 @@ pub(crate) fn update() -> Result<(), String> {
             }
 
             pb.finish_with_message(format!("Downloaded {}", download_file_name));
-
             match env::current_exe() {
                 Ok(exe_path) => {
                     let mut new_exe_path = exe_path.clone();
