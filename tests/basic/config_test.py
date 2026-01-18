@@ -61,3 +61,26 @@ ubihome:
   friendly_name: 'test'
   area: test123\u200b
 """
+
+
+# Unknown platform
+"""
+ubihome:
+  name: test_a_1%
+  friendly_name: 'test'
+  area: test123\u200b
+
+unknown_platform:
+"""
+
+# No base platform config
+"""
+ubihome:
+  name: test_a_1%
+  friendly_name: 'test'
+  area: test123\u200b
+
+sensor:
+  - platform: unknown_platform
+    name: "RAM Usage"
+"""

@@ -38,14 +38,23 @@ use ubihome_core::{
     config_template, home_assistant::sensors::Component, ChangedMessage, Module, PublishedMessage,
 };
 
+use ubihome_core::constants::is_readable_string_option;
+
+#[derive(Clone, Deserialize, Debug, Validate)]
+#[serde(deny_unknown_fields)]
+pub struct ApiEncryptionConfig {
+    #[garde(ascii, length(min = 44, max = 44))]
+    pub key: Option<String>,
+}
+
 #[derive(Clone, Deserialize, Debug, Validate)]
 #[serde(deny_unknown_fields)]
 pub struct ApiConfig {
-    #[garde(range(min = 0, max = 65535))]
+    #[garde(range(min = 1, max = 65535))]
     pub port: Option<u16>,
-    #[garde(length(min = 15, max = 64))]
-    pub encryption_key: Option<String>,
-    #[garde(length(min = 3, max = 64))]
+    #[garde(dive)]
+    pub encryption: Option<ApiEncryptionConfig>,
+    #[garde(custom(is_readable_string_option), length(min = 3, max = 64))]
     pub suggested_area: Option<String>,
 }
 
@@ -57,20 +66,20 @@ fn mac_to_u64(mac: &str) -> Result<u64, ParseIntError> {
 config_template!(api, ApiConfig, NoConfig, NoConfig, NoConfig, NoConfig, NoConfig);
 
 #[derive(Clone, Debug)]
-pub struct UbiHomeDefault {
+pub struct Default {
     config: CoreConfig,
     pub api_config: ApiConfig,
 }
 
-impl Module for UbiHomeDefault {
+impl Module for Default {
     fn new(config_string: &String) -> Result<Self, String> {
         match serde_saphyr::from_str_with_options_valid::<CoreConfig>(
             config_string,
-            Default::default(),
+            std::default::Default::default(),
         ) {
             Ok(config) => {
                 let config_clone = config.clone();
-                Ok(UbiHomeDefault {
+                Ok(Default {
                     config: config,
                     api_config: config_clone.api,
                 })
@@ -97,7 +106,13 @@ impl Module for UbiHomeDefault {
         let server_base = EspHomeApi::builder()
             .api_version_major(1)
             .api_version_minor(42)
-            .encryption_key_opt(self.config.api.encryption_key.clone())
+            .encryption_key_opt(
+                self.config
+                    .api
+                    .encryption
+                    .as_ref()
+                    .and_then(|e| e.key.clone()),
+            )
             .server_info("UbiHome".to_string())
             .name(self.config.ubihome.name.clone())
             .friendly_name(
@@ -634,11 +649,12 @@ ubihome:
 
 api:
   port: 8053
-  encryption_key: 'xiahAckHBW7BcKEQ6mRfasIW20Md9uMh/5PjrjbAhXQ='
+  encryption:
+    key: 'xiahAckHBW7BcKEQ6mRfasIW20Md9uMh/5PjrjbAhXQ='
 
 "#;
 
-        let api_module = UbiHomeDefault::new(&config.to_string());
+        let api_module = Default::new(&config.to_string());
         assert!(api_module.is_ok(), "API module should parse successfully");
 
         let module = api_module.unwrap();
@@ -661,7 +677,7 @@ ubihome:
 api: {}
 "#;
 
-        let api_module = UbiHomeDefault::new(&config.to_string());
+        let api_module = Default::new(&config.to_string());
         assert!(api_module.is_ok(), "API module should parse successfully");
 
         let module = api_module.unwrap();
