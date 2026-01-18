@@ -15,10 +15,11 @@ use system_shutdown::reboot;
 use system_shutdown::shutdown;
 use system_shutdown::sleep;
 
-#[derive(Clone, Deserialize, Debug)]
+#[derive(Clone, Deserialize, Debug, Validate)]
+#[garde(allow_unvalidated)]
 pub struct PowerUtilsConfig {}
 
-#[derive(Debug, Copy, Clone, Deserialize)]
+#[derive(Debug, Copy, Clone, Deserialize, Validate)]
 #[serde(rename_all = "camelCase")]
 pub enum PowerAction {
     #[serde(alias = "reboot", alias = "restart")]
@@ -33,7 +34,8 @@ pub enum PowerAction {
     Sleep,
 }
 
-#[derive(Clone, Deserialize, Debug)]
+#[derive(Clone, Deserialize, Debug, Validate)]
+#[garde(allow_unvalidated)]
 pub struct PowerUtilsButtonConfig {
     pub action: PowerAction,
 }

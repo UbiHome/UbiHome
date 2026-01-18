@@ -1,21 +1,17 @@
+use crate::constants::is_id_string_option;
+use crate::constants::is_readable_string;
+use crate::with_base_entity_properties;
+use garde::Validate;
 use serde::Deserialize;
 
-use crate::utils::format_id;
+with_base_entity_properties! {
 
-#[derive(Clone, Deserialize, Debug)]
-pub struct ButtonBase {
-    pub id: Option<String>,
-    pub icon: Option<String>,
-    pub name: String,
-}
-
-impl ButtonBase {
-    pub fn get_object_id(&self) -> String {
-        format_id(&self.id, &self.name)
+    #[derive(Clone, Deserialize, Debug, Validate)]
+    pub struct ButtonBase {
     }
 }
 
-#[derive(Clone, Deserialize, Debug)]
+#[derive(Clone, Deserialize, Debug, Validate)]
 pub struct UnknownButton {}
 
 #[macro_export]
@@ -25,21 +21,23 @@ macro_rules! template_button {
         use $crate::button::UnknownButton;
 
         #[allow(non_camel_case_types)]
-        #[derive(Clone, Deserialize, Debug)]
+        #[derive(Clone, Deserialize, Debug, Validate)]
         #[serde(tag = "platform")]
         #[serde(rename_all = "camelCase")]
         pub enum ButtonKind {
-            $component_name($button_extension),
+            $component_name(#[garde(dive)] $button_extension),
             #[serde(untagged)]
-            Unknown(UnknownButton),
+            Unknown(#[garde(dive)] UnknownButton),
         }
 
-        #[derive(Clone, Deserialize, Debug)]
+        #[derive(Clone, Deserialize, Debug, Validate)]
         pub struct ButtonConfig {
             #[serde(flatten)]
+            #[garde(dive)]
             pub default: ButtonBase,
 
             #[serde(flatten)]
+            #[garde(dive)]
             pub extra: ButtonKind,
         }
     };

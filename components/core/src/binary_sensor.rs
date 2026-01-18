@@ -4,8 +4,9 @@ use std::{collections::HashMap, time::Duration};
 
 use serde::Deserialize;
 
-use crate::utils::format_id;
-
+use crate::constants::is_id_string_option;
+use crate::constants::is_readable_string;
+use crate::{utils::format_id, with_base_entity_properties};
 #[derive(Clone, Deserialize, Debug, Validate)]
 pub enum FilterType {
     invert(#[garde(required)] Option<String>),
@@ -52,36 +53,28 @@ pub struct Trigger {
     pub then: Vec<Action>,
 }
 
-#[derive(Clone, Deserialize, Debug, Validate)]
-#[serde(deny_unknown_fields)]
-pub struct BinarySensorBase {
-    #[garde(ascii)]
-    pub id: Option<String>,
+with_base_entity_properties! {
 
-    #[garde(ascii)]
-    pub name: String,
-
-    #[garde(ascii)]
-    pub icon: Option<String>,
-    #[garde(ascii)]
-    pub device_class: Option<String>,
-
-    #[garde(dive)]
-    pub filters: Option<Vec<BinarySensorFilter>>,
-    #[garde(dive)]
-    pub on_press: Option<Trigger>,
-    #[garde(dive)]
-    pub on_release: Option<Trigger>,
-}
-
-// TODO implement as procedural macro
-impl BinarySensorBase {
-    pub fn get_object_id(&self) -> String {
-        format_id(&self.id, &self.name)
+    #[derive(Clone, Deserialize, Debug, Validate)]
+    #[serde(deny_unknown_fields)]
+    pub struct BinarySensorBase {
+        #[garde(dive)]
+        pub filters: Option<Vec<BinarySensorFilter>>,
+        #[garde(dive)]
+        pub on_press: Option<Trigger>,
+        #[garde(dive)]
+        pub on_release: Option<Trigger>,
     }
 }
 
-#[derive(Clone, Deserialize, Debug)]
+// // TODO implement as procedural macro
+// impl BinarySensorBase {
+//     pub fn get_object_id(&self) -> String {
+//         format_id(&self.id, &self.name)
+//     }
+// }
+
+#[derive(Clone, Deserialize, Debug, Validate)]
 pub struct UnknownBinarySensor {}
 
 #[macro_export]
@@ -91,21 +84,23 @@ macro_rules! template_binary_sensor {
         use $crate::binary_sensor::UnknownBinarySensor;
 
         #[allow(non_camel_case_types)]
-        #[derive(Clone, Deserialize, Debug)]
+        #[derive(Clone, Deserialize, Debug, Validate)]
         #[serde(tag = "platform")]
         #[serde(rename_all = "camelCase")]
         pub enum BinarySensorKind {
-            $component_name($binary_sensor_extension),
+            $component_name(#[garde(dive)] $binary_sensor_extension),
             #[serde(untagged)]
-            Unknown(UnknownBinarySensor),
+            Unknown(#[garde(dive)] UnknownBinarySensor),
         }
 
-        #[derive(Clone, Debug, Deserialize)]
+        #[derive(Clone, Debug, Deserialize, Validate)]
         pub struct BinarySensor {
             #[serde(flatten)]
+            #[garde(dive)]
             pub default: BinarySensorBase,
 
             #[serde(flatten)]
+            #[garde(dive)]
             pub extra: BinarySensorKind,
         }
     };

@@ -1,11 +1,10 @@
 use crate::components::{configure_platforms, initialize_platforms, run_platforms, Platform};
-use crate::config::BaseConfig;
+use crate::config::{BaseConfig, BaseConfigContext};
 use flexi_logger::writers::FileLogWriter;
 use flexi_logger::{detailed_format, Age, Cleanup, Criterion, Duplicate, FileSpec, Logger, Naming};
 
 use garde::Validate;
 use ubihome_core::binary_sensor::{ActionType, FilterType};
-use ubihome_core::configuration::base::BaseConfigContext;
 use ubihome_core::home_assistant::sensors::Component;
 use ubihome_core::internal::sensors::InternalComponent;
 use ubihome_core::sensor::SensorFilterType;

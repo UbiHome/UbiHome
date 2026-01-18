@@ -27,7 +27,8 @@ use ubihome_core::{
 mod discovery;
 use discovery::*;
 
-#[derive(Clone, Deserialize, Debug)]
+#[derive(Clone, Deserialize, Debug, Validate)]
+#[garde(allow_unvalidated)]
 pub struct MqttConfig {
     pub discovery_prefix: Option<String>,
     pub broker: String,

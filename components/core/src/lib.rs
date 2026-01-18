@@ -8,7 +8,6 @@ pub mod internal;
 pub mod light;
 pub mod mapper;
 pub mod sensor;
-pub mod sensor_mapper;
 pub mod switch;
 pub mod utils;
 pub extern crate paste;
@@ -17,7 +16,7 @@ use garde::Validate;
 use home_assistant::sensors::Component;
 use internal::sensors::InternalComponent;
 use serde::Deserialize;
-use std::{collections::HashMap, pin::Pin, sync::LazyLock};
+use std::{collections::HashMap, pin::Pin};
 use tokio::sync::broadcast::{Receiver, Sender};
 
 use crate::constants::{is_readable_string, is_readable_string_option};
@@ -140,7 +139,8 @@ pub enum PublishedMessage {
     BluetoothProxyMessage(BluetoothProxyMessage),
 }
 
-#[derive(Clone, Deserialize, Debug)]
+#[derive(Clone, Deserialize, Debug, Validate)]
+#[garde(allow_unvalidated)]
 pub struct NoConfig {}
 
 #[derive(Clone, Deserialize, Debug, Validate)]
@@ -189,23 +189,30 @@ macro_rules! config_template {
         #[derive(Clone, Deserialize, Debug, Validate)]
         #[garde(allow_unvalidated)]
         pub struct CoreConfig {
+            #[garde(dive)]
             pub ubihome: UbiHome,
 
+            #[garde(dive)]
             pub $component_name: $component_config,
 
             #[serde(default, deserialize_with = "map_button")]
+            #[garde(dive)]
             pub button: Option<HashMap<String, ButtonConfig>>,
 
             #[serde(default, deserialize_with = "map_sensor")]
+            #[garde(dive)]
             pub sensor: Option<HashMap<String, Sensor>>,
 
             #[serde(default, deserialize_with = "map_binary_sensor")]
+            #[garde(dive)]
             pub binary_sensor: Option<HashMap<String, BinarySensor>>,
 
             #[serde(default, deserialize_with = "map_switch")]
+            #[garde(dive)]
             pub switch: Option<HashMap<String, Switch>>,
 
             #[serde(default, deserialize_with = "map_light")]
+            #[garde(dive)]
             pub light: Option<HashMap<String, Light>>,
         }
     };

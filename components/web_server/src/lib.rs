@@ -29,7 +29,8 @@ use tokio::sync::broadcast::{Receiver, Sender};
 use ubihome_core::NoConfig;
 use ubihome_core::{config_template, ChangedMessage, Module, PublishedMessage};
 
-#[derive(Clone, Deserialize, Debug)]
+#[derive(Clone, Deserialize, Debug, Validate)]
+#[garde(allow_unvalidated)]
 pub struct WebServerConfig {
     pub port: u16,
 }

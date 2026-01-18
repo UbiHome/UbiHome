@@ -10,7 +10,8 @@ use ubihome_core::{
     ChangedMessage, Module, NoConfig, PublishedMessage,
 };
 
-#[derive(Clone, Deserialize, Debug)]
+#[derive(Clone, Deserialize, Debug, Validate)]
+#[garde(allow_unvalidated)]
 pub struct EvdevConfig {
     // pub device: GpioDevice,
 }

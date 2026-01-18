@@ -10,18 +10,20 @@ use ubihome_core::{
     ChangedMessage, Module, NoConfig, PublishedMessage,
 };
 
-#[derive(Debug, Copy, Clone, Deserialize)]
+#[derive(Debug, Copy, Clone, Deserialize, Validate)]
 #[serde(rename_all = "camelCase")]
 pub enum GpioDevice {
     RaspberryPi,
 }
 
-#[derive(Clone, Deserialize, Debug)]
+#[derive(Clone, Deserialize, Debug, Validate)]
+#[garde(allow_unvalidated)]
 pub struct GpioConfig {
     pub device: GpioDevice,
 }
 
-#[derive(Clone, Deserialize, Debug)]
+#[derive(Clone, Deserialize, Debug, Validate)]
+#[garde(allow_unvalidated)]
 pub struct GpioBinarySensorConfig {
     pub pin: u8, // TODO: Use GPIO types or library
     pub pull_up: Option<bool>,

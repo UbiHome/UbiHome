@@ -12,7 +12,8 @@ use ubihome_core::{
     config_template, home_assistant::sensors::Component, ChangedMessage, Module, PublishedMessage,
 };
 
-#[derive(Clone, Deserialize, Debug)]
+#[derive(Clone, Deserialize, Debug, Validate)]
+#[garde(allow_unvalidated)]
 pub struct MdnsConfig {
     pub disabled: Option<bool>,
     pub ip: Option<IpAddr>,

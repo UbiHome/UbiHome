@@ -1,24 +1,20 @@
+use garde::Validate;
 use serde::Deserialize;
 
-use crate::utils::format_id;
+use crate::constants::is_id_string_option;
+use crate::constants::is_readable_string;
+use crate::with_base_entity_properties;
 
-#[derive(Clone, Deserialize, Debug)]
-#[serde(deny_unknown_fields)]
-pub struct LightBase {
-    pub id: Option<String>,
-    pub name: String,
-    pub icon: Option<String>,
-    pub disabled_by_default: Option<bool>,
-}
-
-// TODO implement as procedural macro
-impl LightBase {
-    pub fn get_object_id(&self) -> String {
-        format_id(&self.id, &self.name)
+with_base_entity_properties! {
+    #[derive(Clone, Deserialize, Debug, Validate)]
+    #[serde(deny_unknown_fields)]
+    pub struct LightBase {
+        #[garde(skip)]
+        pub disabled_by_default: Option<bool>,
     }
 }
 
-#[derive(Clone, Deserialize, Debug)]
+#[derive(Clone, Deserialize, Debug, Validate)]
 pub struct UnknownLight {}
 
 #[macro_export]
@@ -28,21 +24,23 @@ macro_rules! template_light {
         use $crate::light::UnknownLight;
 
         #[allow(non_camel_case_types)]
-        #[derive(Clone, Deserialize, Debug)]
+        #[derive(Clone, Deserialize, Debug, Validate)]
         #[serde(tag = "platform")]
         #[serde(rename_all = "camelCase")]
         pub enum LightKind {
-            $component_name($light_extension),
+            $component_name(#[garde(dive)] $light_extension),
             #[serde(untagged)]
-            Unknown(UnknownLight),
+            Unknown(#[garde(dive)] UnknownLight),
         }
 
-        #[derive(Clone, Debug, Deserialize)]
+        #[derive(Clone, Debug, Deserialize, Validate)]
         pub struct Light {
             #[serde(flatten)]
+            #[garde(dive)]
             pub default: LightBase,
 
             #[serde(flatten)]
+            #[garde(dive)]
             pub extra: LightKind,
         }
     };

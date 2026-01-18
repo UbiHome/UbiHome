@@ -1,9 +1,9 @@
-use duration_str::deserialize_duration;
-use std::time::Duration;
+use garde::Validate;
 
 use serde::Deserialize;
 
-use crate::utils::format_id;
+use crate::constants::is_id_string_option;
+use crate::constants::is_readable_string;
 
 // #[derive(Clone, Deserialize, Debug)]
 // pub enum FilterType {
@@ -25,24 +25,18 @@ use crate::utils::format_id;
 
 // }
 
-#[derive(Clone, Deserialize, Debug)]
-#[serde(deny_unknown_fields)]
-pub struct SwitchBase {
-    pub id: Option<String>,
-    pub name: String,
-    pub icon: Option<String>,
-    pub device_class: Option<String>,
-    // pub filters: Option<Vec<BinarySensorFilter>>,
-}
+use crate::with_base_entity_properties;
 
-// TODO implement as procedural macro
-impl SwitchBase {
-    pub fn get_object_id(&self) -> String {
-        format_id(&self.id, &self.name)
+with_base_entity_properties! {
+    #[derive(Clone, Deserialize, Debug, Validate)]
+    #[serde(deny_unknown_fields)]
+    pub struct SwitchBase {
+        // #[garde(skip)]
+        // pub filters: Option<Vec<BinarySensorFilter>>,
     }
 }
 
-#[derive(Clone, Deserialize, Debug)]
+#[derive(Clone, Deserialize, Debug, Validate)]
 pub struct UnknownSwitch {}
 
 #[macro_export]
@@ -52,21 +46,24 @@ macro_rules! template_switch {
         use $crate::switch::UnknownSwitch;
 
         #[allow(non_camel_case_types)]
-        #[derive(Clone, Deserialize, Debug)]
+        #[derive(Clone, Deserialize, Debug, Validate)]
         #[serde(tag = "platform")]
         #[serde(rename_all = "camelCase")]
         pub enum SwitchKind {
-            $component_name($switch_extension),
+            $component_name(#[garde(dive)] $switch_extension),
             #[serde(untagged)]
-            Unknown(UnknownSwitch),
+            Unknown(#[garde(dive)] UnknownSwitch),
         }
 
-        #[derive(Clone, Debug, Deserialize)]
+        #[derive(Clone, Debug, Deserialize, Validate)]
+        // #[garde(transparent)]
         pub struct Switch {
             #[serde(flatten)]
+            #[garde(dive)]
             pub default: SwitchBase,
 
             #[serde(flatten)]
+            #[garde(dive)]
             pub extra: SwitchKind,
         }
     };

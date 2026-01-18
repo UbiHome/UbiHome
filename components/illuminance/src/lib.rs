@@ -14,7 +14,8 @@ use ubihome_core::{
     ChangedMessage, Module, NoConfig, PublishedMessage,
 };
 
-#[derive(Clone, Deserialize, Debug)]
+#[derive(Clone, Deserialize, Debug, Validate)]
+#[garde(allow_unvalidated)]
 pub struct AmbientLightSensorConfig {
     /// Update interval for reading light sensor values
     #[serde(default = "default_update_interval")]
@@ -28,7 +29,8 @@ fn default_update_interval() -> Duration {
     Duration::from_secs(30)
 }
 
-#[derive(Clone, Deserialize, Debug)]
+#[derive(Clone, Deserialize, Debug, Validate)]
+#[garde(allow_unvalidated)]
 struct AmbientLightConfig {}
 
 config_template!(

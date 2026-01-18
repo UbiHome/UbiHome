@@ -2,8 +2,6 @@ use std::collections::HashMap;
 
 use garde::Validate;
 use serde::Deserialize;
-use serde::Deserializer;
-use ubihome_core::configuration::base::BaseConfigContext;
 use ubihome_core::UbiHome;
 
 #[derive(Clone, Deserialize, Debug, Validate)]

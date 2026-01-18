@@ -28,7 +28,8 @@ pub enum CustomShell {
     Wsl,
 }
 
-#[derive(Clone, Deserialize, Debug)]
+#[derive(Clone, Deserialize, Debug, Validate)]
+#[garde(allow_unvalidated)]
 pub struct ShellConfig {
     #[serde(rename = "type")]
     pub kind: Option<CustomShell>,
@@ -42,7 +43,8 @@ fn default_timeout() -> Duration {
     Duration::from_secs(5)
 }
 
-#[derive(Clone, Deserialize, Debug)]
+#[derive(Clone, Deserialize, Debug, Validate)]
+#[garde(allow_unvalidated)]
 pub struct ShellBinarySensorConfig {
     #[serde(default = "default_timeout_none")]
     #[serde(deserialize_with = "deserialize_option_duration")]
@@ -50,7 +52,8 @@ pub struct ShellBinarySensorConfig {
     pub command: String,
 }
 
-#[derive(Clone, Deserialize, Debug)]
+#[derive(Clone, Deserialize, Debug, Validate)]
+#[garde(allow_unvalidated)]
 pub struct ShellSensorConfig {
     pub command: String,
 
@@ -59,12 +62,14 @@ pub struct ShellSensorConfig {
     pub update_interval: Option<Duration>,
 }
 
-#[derive(Clone, Deserialize, Debug)]
+#[derive(Clone, Deserialize, Debug, Validate)]
+#[garde(allow_unvalidated)]
 pub struct ShellButtonConfig {
     pub command: String,
 }
 
-#[derive(Clone, Deserialize, Debug)]
+#[derive(Clone, Deserialize, Debug, Validate)]
+#[garde(allow_unvalidated)]
 pub struct ShellSwitchConfig {
     pub command_on: String,
     pub command_off: String,
@@ -75,7 +80,8 @@ pub struct ShellSwitchConfig {
     pub update_interval: Option<Duration>,
 }
 
-#[derive(Clone, Deserialize, Debug)]
+#[derive(Clone, Deserialize, Debug, Validate)]
+#[garde(allow_unvalidated)]
 pub struct ShellLightConfig {
     pub command_on: String,
     pub command_off: String,

@@ -662,7 +662,7 @@ api:
         // Check that the API config is parsed correctly
         assert_eq!(module.api_config.port, Some(8053), "Port should be 8053");
         assert_eq!(
-            module.api_config.encryption_key,
+            module.api_config.encryption.unwrap().key,
             Some("xiahAckHBW7BcKEQ6mRfasIW20Md9uMh/5PjrjbAhXQ=".to_string()),
             "Encryption key should be xiahAckHBW7BcKEQ6mRfasIW20Md9uMh/5PjrjbAhXQ="
         );

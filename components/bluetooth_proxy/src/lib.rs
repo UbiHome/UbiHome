@@ -21,7 +21,8 @@ async fn get_central(manager: &Manager) -> Adapter {
     adapters.into_iter().nth(0).unwrap()
 }
 
-#[derive(Clone, Deserialize, Debug)]
+#[derive(Clone, Deserialize, Debug, Validate)]
+#[garde(allow_unvalidated)]
 pub struct BluetoothProxyConfig {
     pub disabled: Option<bool>,
 }
