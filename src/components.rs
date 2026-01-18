@@ -1,11 +1,11 @@
 use serde::Deserialize;
 use std::collections::HashSet;
 use tokio::sync::broadcast::{Receiver, Sender};
-use ubihome_core::home_assistant::sensors::UbiComponent;
+use ubihome_core::internal::sensors::UbiComponent;
 use ubihome_core::Module;
 use ubihome_core::{ChangedMessage, PublishedMessage};
 
-macro_rules! generate_platform_methods {
+macro_rules! generate_component_methods {
     (
         $(($variant:ident, $platform_name:literal, $module_path:ident, $type_name:ident)),* $(,)?
     ) => {
@@ -57,7 +57,7 @@ macro_rules! generate_platform_methods {
                                     modules.push(Box::new(component));
                                 }
                                 Err(e) => {
-                                    return Err(e);
+                                    return Err(format!("Module {}: {}", stringify!($module_path), e));
                                 }
                             }
                         }

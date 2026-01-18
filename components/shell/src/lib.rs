@@ -8,12 +8,20 @@ use tokio::{
     sync::broadcast::{Receiver, Sender},
     time,
 };
-use ubihome_core::home_assistant::sensors::{UbiComponent, UbiLight, UbiSwitch};
+use ubihome_core::internal::sensors::{UbiComponent, UbiLight, UbiSwitch};
+use ubihome_core::NoConfig;
 use ubihome_core::{
     config_template,
-    home_assistant::sensors::{UbiBinarySensor, UbiButton, UbiSensor},
+    internal::sensors::{UbiBinarySensor, UbiButton, UbiSensor},
     ChangedMessage, Module, PublishedMessage,
 };
+
+use ubihome_core::constants::is_id_string_option;
+use ubihome_core::constants::is_readable_string;
+use ubihome_core::template_binary_sensor;
+use ubihome_core::template_button;
+use ubihome_core::template_sensor;
+use ubihome_core::with_base_entity_properties;
 
 #[derive(Debug, Copy, Clone, Deserialize, Validate)]
 #[serde(rename_all = "camelCase")]
@@ -42,29 +50,35 @@ fn default_timeout() -> Duration {
     Duration::from_secs(5)
 }
 
-#[derive(Clone, Deserialize, Debug, Validate)]
-#[garde(allow_unvalidated)]
-pub struct ShellBinarySensorConfig {
-    #[serde(default = "default_timeout_none")]
-    #[serde(deserialize_with = "deserialize_option_duration")]
-    pub update_interval: Option<Duration>,
-    pub command: String,
+template_binary_sensor! {
+    #[derive(Clone, Deserialize, Debug, Validate)]
+    #[garde(allow_unvalidated)]
+    pub struct ShellBinarySensorConfig {
+        #[serde(default = "default_timeout_none")]
+        #[serde(deserialize_with = "deserialize_option_duration")]
+        pub update_interval: Option<Duration>,
+        pub command: String,
+    }
 }
 
-#[derive(Clone, Deserialize, Debug, Validate)]
-#[garde(allow_unvalidated)]
-pub struct ShellSensorConfig {
-    pub command: String,
+template_sensor! {
+    #[derive(Clone, Deserialize, Debug, Validate)]
+    #[garde(allow_unvalidated)]
+    pub struct ShellSensorConfig {
+        pub command: String,
 
-    #[serde(default = "default_timeout_none")]
-    #[serde(deserialize_with = "deserialize_option_duration")]
-    pub update_interval: Option<Duration>,
+        #[serde(default = "default_timeout_none")]
+        #[serde(deserialize_with = "deserialize_option_duration")]
+        pub update_interval: Option<Duration>,
+    }
 }
 
+template_button! {
 #[derive(Clone, Deserialize, Debug, Validate)]
 pub struct ShellButtonConfig {
     #[garde(skip)]
     pub command: String,
+}
 }
 
 #[derive(Clone, Deserialize, Debug, Validate)]
@@ -121,7 +135,7 @@ pub struct Default {
     config: ShellConfig,
     components: Vec<UbiComponent>,
     binary_sensors: HashMap<String, ShellBinarySensorConfig>,
-    buttons: HashMap<String, ShellButtonConfig>,
+    buttons: HashMap<String, ShellButtonConfigBase>,
     sensors: HashMap<String, ShellSensorConfig>,
     switches: HashMap<String, ShellSwitchConfig>,
     lights: HashMap<String, ShellLightConfig>,
@@ -136,18 +150,18 @@ impl Module for Default {
 
         let mut sensors: HashMap<String, ShellSensorConfig> = HashMap::new();
         for (_, any_sensor) in config.sensor.clone().unwrap_or_default() {
-            match any_sensor.extra {
+            match any_sensor.parsed {
                 SensorKind::shell(sensor) => {
-                    let id = any_sensor.default.get_object_id();
+                    let id = sensor.get_object_id();
                     components.push(UbiComponent::Sensor(UbiSensor {
                         platform: "sensor".to_string(),
-                        icon: any_sensor.default.icon.clone(),
-                        device_class: any_sensor.default.device_class.clone(),
-                        state_class: any_sensor.default.state_class.clone(),
-                        unit_of_measurement: any_sensor.default.unit_of_measurement.clone(),
-                        name: any_sensor.default.name.clone(),
+                        icon: sensor.icon.clone(),
+                        device_class: sensor.device_class.clone(),
+                        state_class: sensor.state_class.clone(),
+                        unit_of_measurement: sensor.unit_of_measurement.clone(),
+                        name: sensor.name.clone(),
                         id: id.clone(),
-                        filters: any_sensor.default.filters.clone(),
+                        filters: sensor.filters.clone(),
                     }));
                     sensors.insert(id.clone(), sensor);
                 }
@@ -156,35 +170,30 @@ impl Module for Default {
         }
 
         let mut binary_sensors: HashMap<String, ShellBinarySensorConfig> = HashMap::new();
-        for (_, any_sensor) in config.binary_sensor.clone().unwrap_or_default() {
-            match any_sensor.extra {
-                BinarySensorKind::shell(binary_sensor) => {
-                    let id = any_sensor.default.get_object_id();
-                    components.push(UbiComponent::BinarySensor(UbiBinarySensor {
-                        platform: "sensor".to_string(),
-                        icon: any_sensor.default.icon.clone(),
-                        device_class: any_sensor.default.device_class.clone(),
-                        name: any_sensor.default.name.clone(),
-                        id: id.clone(),
-                        on_press: any_sensor.default.on_press.clone(),
-                        on_release: any_sensor.default.on_release.clone(),
-                        filters: any_sensor.default.filters.clone(),
-                    }));
-                    binary_sensors.insert(id.clone(), binary_sensor);
-                }
-                _ => {}
-            }
+        for (_, binary_sensor) in config.binary_sensor.clone().unwrap_or_default() {
+            let id = binary_sensor.get_object_id();
+            components.push(UbiComponent::BinarySensor(UbiBinarySensor {
+                platform: "sensor".to_string(),
+                icon: binary_sensor.icon.clone(),
+                device_class: binary_sensor.device_class.clone(),
+                name: binary_sensor.name.clone(),
+                id: id.clone(),
+                on_press: binary_sensor.on_press.clone(),
+                on_release: binary_sensor.on_release.clone(),
+                filters: binary_sensor.filters.clone(),
+            }));
+            binary_sensors.insert(id.clone(), binary_sensor);
         }
 
-        let mut buttons: HashMap<String, ShellButtonConfig> = HashMap::new();
-        for (_, any_sensor) in config.button.clone().unwrap_or_default() {
-            match any_sensor.extra {
-                ButtonKind::shell(button) => {
-                    let id = any_sensor.default.get_object_id();
+        let mut buttons: HashMap<String, ShellButtonConfigBase> = HashMap::new();
+        for (_, button) in config.button.clone().unwrap_or_default() {
+            match button.kind {
+                ShellButtonConfigKind::parsed(button) => {
+                    let id = button.get_object_id();
                     components.push(UbiComponent::Button(UbiButton {
                         platform: "sensor".to_string(),
-                        icon: any_sensor.default.icon.clone(),
-                        name: any_sensor.default.name.clone(),
+                        icon: button.icon.clone(),
+                        name: button.name.clone(),
                         id: id.clone(),
                     }));
                     buttons.insert(id.clone(), button);

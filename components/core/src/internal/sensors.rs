@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    binary_sensor::{BinarySensorFilter, Trigger},
+    configuration::binary_sensor::{BinarySensorFilter, Trigger},
     sensor::SensorFilter,
 };
 
@@ -28,8 +28,6 @@ macro_rules! with_base_properties {
         }
     ) => {
         $(#[$meta])*
-        // TODO: Add? #[serde(deny_unknown_fields)]
-
         $vis struct $name {
             pub name: String,
             pub icon: Option<String>,

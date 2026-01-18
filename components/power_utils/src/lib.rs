@@ -1,12 +1,17 @@
-use log::{debug, error};
+use log::{debug, error, info};
 use serde::{Deserialize, Deserializer};
 use std::collections::HashMap;
 use std::{future::Future, pin::Pin, str};
 use tokio::sync::broadcast::{Receiver, Sender};
-use ubihome_core::home_assistant::sensors::UbiComponent;
+use ubihome_core::constants::is_id_string_option;
+use ubihome_core::constants::is_readable_string;
+use ubihome_core::internal::sensors::UbiComponent;
+use ubihome_core::template_binary_sensor;
+use ubihome_core::template_button;
+use ubihome_core::with_base_entity_properties;
 use ubihome_core::{
     ChangedMessage, Module, NoConfig, PublishedMessage, config_template,
-    home_assistant::sensors::UbiButton,
+    internal::sensors::UbiButton,
 };
 
 use system_shutdown::hibernate;
@@ -34,11 +39,35 @@ pub enum PowerAction {
     Sleep,
 }
 
+template_button! {
 #[derive(Clone, Deserialize, Debug, Validate)]
-#[garde(allow_unvalidated)]
 pub struct PowerUtilsButtonConfig {
+    #[garde(dive)]
     pub action: PowerAction,
 }
+}
+
+// #[derive(Clone, Deserialize, Debug, Validate)]
+// pub enum ButtonKind {
+//     power_utils(#[garde(dive)] PowerUtilsButtonConfig),
+//     nothing(#[garde(skip)] NoConfig),
+// }
+
+// #[derive(Clone, Deserialize, Debug, Validate)]
+// pub struct TestButton {
+//     #[serde(flatten)]
+//     #[garde(dive)]
+//     kind: ButtonKind,
+// }
+
+// impl TestButton {
+//     pub fn is_configured(&self) -> bool {
+//         true
+//     }
+//     pub fn get_object_id(&self) -> String {
+//         unimplemented!();
+//     }
+// }
 
 config_template!(
     power_utils,
@@ -53,81 +82,72 @@ config_template!(
 pub struct Default {
     config: PowerUtilsConfig,
     components: Vec<UbiComponent>,
-    buttons: HashMap<String, PowerUtilsButtonConfig>,
+    buttons: HashMap<String, PowerAction>,
 }
 
 impl Module for Default {
     fn new(config_string: &String) -> Result<Self, String> {
-        let config = serde_saphyr::from_str::<CoreConfig>(config_string).unwrap();
-        // info!("PowerUtils config: {:?}", config);
+        let config =
+            serde_saphyr::from_str::<CoreConfig>(config_string).map_err(|e| e.to_string())?;
+        info!("PowerUtils config: {:?}", config);
         let mut components: Vec<UbiComponent> = Vec::new();
 
-        let mut buttons: HashMap<String, PowerUtilsButtonConfig> = HashMap::new();
-        for (_, any_sensor) in config.button.clone().unwrap_or_default() {
-            match any_sensor.extra {
-                ButtonKind::power_utils(button) => {
-                    let id = any_sensor.default.get_object_id();
+        let mut buttons: HashMap<String, PowerAction> = HashMap::new();
+        for (_, button) in config.button.clone().unwrap_or_default() {
+            match button.kind {
+                PowerUtilsButtonConfigKind::nothing(_) => {
+                    continue;
+                }
+                PowerUtilsButtonConfigKind::parsed(button) => {
+                    let id = button.get_object_id();
                     let button_component;
                     match button.action {
                         PowerAction::Reboot => {
                             button_component = UbiButton {
                                 platform: "sensor".to_string(),
-                                icon: Some(
-                                    any_sensor.default.icon.unwrap_or("mdi:restart".to_string()),
-                                ),
-                                name: any_sensor.default.name.clone(),
+                                icon: Some(button.icon.unwrap_or("mdi:restart".to_string())),
+                                name: button.name.clone(),
                                 id: id.clone(),
                             };
                         }
                         PowerAction::Shutdown => {
                             button_component = UbiButton {
                                 platform: "sensor".to_string(),
-                                icon: Some(
-                                    any_sensor.default.icon.unwrap_or("mdi:power".to_string()),
-                                ),
-                                name: any_sensor.default.name.clone(),
+                                icon: Some(button.icon.unwrap_or("mdi:power".to_string())),
+                                name: button.name.clone(),
                                 id: id.clone(),
                             };
                         }
                         PowerAction::Hibernate => {
                             button_component = UbiButton {
                                 platform: "sensor".to_string(),
-                                icon: Some(
-                                    any_sensor
-                                        .default
-                                        .icon
-                                        .unwrap_or("mdi:snowflake".to_string()),
-                                ),
-                                name: any_sensor.default.name.clone(),
+                                icon: Some(button.icon.unwrap_or("mdi:snowflake".to_string())),
+                                name: button.name.clone(),
                                 id: id.clone(),
                             };
                         }
                         PowerAction::Logout => {
                             button_component = UbiButton {
                                 platform: "sensor".to_string(),
-                                icon: Some(
-                                    any_sensor.default.icon.unwrap_or("mdi:logout".to_string()),
-                                ),
-                                name: any_sensor.default.name.clone(),
+                                icon: Some(button.icon.unwrap_or("mdi:logout".to_string())),
+                                name: button.name.clone(),
                                 id: id.clone(),
                             };
                         }
                         PowerAction::Sleep => {
                             button_component = UbiButton {
                                 platform: "sensor".to_string(),
-                                icon: Some(
-                                    any_sensor.default.icon.unwrap_or("mdi:sleep".to_string()),
-                                ),
-                                name: any_sensor.default.name.clone(),
+                                icon: Some(button.icon.unwrap_or("mdi:sleep".to_string())),
+                                name: button.name.clone(),
                                 id: id.clone(),
                             };
                         }
                     }
 
                     components.push(UbiComponent::Button(button_component));
-                    buttons.insert(id.clone(), button);
+                    buttons.insert(id.clone(), button.action);
+                    // continue;
                 }
-                _ => {}
             }
         }
         Ok(Default {
@@ -155,11 +175,11 @@ impl Module for Default {
                     match cmd {
                         PublishedMessage::ButtonPressed { key } => {
                             debug!("Button pressed1: {}", key);
-                            if let Some(power_utils_button) = buttons.get(&key) {
+                            if let Some(action) = buttons.get(&key) {
                                 debug!("Button pressed: {}", key);
-                                debug!("Executing command: {:?}", power_utils_button.action);
+                                debug!("Executing command: {:?}", action);
 
-                                match power_utils_button.action {
+                                match action {
                                     PowerAction::Reboot => {
                                         debug!("Rebooting...");
                                         match reboot() {

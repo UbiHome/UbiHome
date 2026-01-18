@@ -3,9 +3,9 @@ use serde::{Deserialize, Deserializer};
 use std::collections::HashMap;
 use std::{future::Future, pin::Pin, str};
 use tokio::sync::broadcast::{Receiver, Sender};
-use ubihome_core::home_assistant::sensors::UbiComponent;
+use ubihome_core::internal::sensors::UbiComponent;
 use ubihome_core::{
-    config_template, home_assistant::sensors::UbiBinarySensor, ChangedMessage, Module, NoConfig,
+    config_template, internal::sensors::UbiBinarySensor, ChangedMessage, Module, NoConfig,
     PublishedMessage,
 };
 

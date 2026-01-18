@@ -34,8 +34,7 @@ use ubihome_core::features::ip::get_ip_address;
 use ubihome_core::features::ip::get_network_mac_address;
 use ubihome_core::NoConfig;
 use ubihome_core::{
-    config_template, home_assistant::sensors::UbiComponent, ChangedMessage, Module,
-    PublishedMessage,
+    config_template, internal::sensors::UbiComponent, ChangedMessage, Module, PublishedMessage,
 };
 
 use ubihome_core::constants::is_readable_string_option;

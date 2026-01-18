@@ -29,7 +29,6 @@ use crate::with_base_entity_properties;
 
 with_base_entity_properties! {
     #[derive(Clone, Deserialize, Debug, Validate)]
-    #[serde(deny_unknown_fields)]
     pub struct SwitchBase {
         // #[garde(skip)]
         // pub filters: Option<Vec<BinarySensorFilter>>,

@@ -4268,6 +4268,7 @@ dependencies = [
  "indicatif",
  "inquire",
  "log",
+ "paste",
  "reqwest",
  "rumqttc",
  "rust-embed",

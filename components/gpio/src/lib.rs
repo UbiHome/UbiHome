@@ -3,9 +3,14 @@ use serde::{Deserialize, Deserializer};
 use std::{collections::HashMap, future};
 use std::{future::Future, pin::Pin, str};
 use tokio::sync::broadcast::{Receiver, Sender};
-use ubihome_core::home_assistant::sensors::UbiComponent;
+use ubihome_core::constants::is_id_string_option;
+use ubihome_core::constants::is_readable_string;
+use ubihome_core::internal::sensors::UbiComponent;
+use ubihome_core::template_binary_sensor;
+use ubihome_core::template_button;
+use ubihome_core::with_base_entity_properties;
 use ubihome_core::{
-    config_template, home_assistant::sensors::UbiBinarySensor, ChangedMessage, Module, NoConfig,
+    config_template, internal::sensors::UbiBinarySensor, ChangedMessage, Module, NoConfig,
     PublishedMessage,
 };
 
@@ -23,9 +28,20 @@ pub struct GpioConfig {
 
 #[derive(Clone, Deserialize, Debug, Validate)]
 #[garde(allow_unvalidated)]
-pub struct GpioBinarySensorConfig {
+pub struct GpioSensorConfig {
     pub pin: u8, // TODO: Use GPIO types or library
     pub pull_up: Option<bool>,
+}
+
+template_binary_sensor! {
+
+#[derive(Clone, Deserialize, Debug, Validate)]
+#[garde(allow_unvalidated)]
+pub struct GpioBinarySensorConfig {
+    #[serde(flatten)]
+    #[garde(dive)]
+    pub base: GpioSensorConfig,
+}
 }
 
 config_template!(
@@ -41,7 +57,7 @@ config_template!(
 #[derive(Clone, Debug)]
 pub struct Default {
     components: Vec<UbiComponent>,
-    binary_sensors: HashMap<String, GpioBinarySensorConfig>,
+    binary_sensors: HashMap<String, GpioSensorConfig>,
 }
 
 impl Module for Default {
@@ -49,32 +65,27 @@ impl Module for Default {
         let config = serde_saphyr::from_str::<CoreConfig>(config_string).unwrap();
         // info!("GPIO config: {:?}", config);
         let mut components: Vec<UbiComponent> = Vec::new();
-        let mut binary_sensors: HashMap<String, GpioBinarySensorConfig> = HashMap::new();
+        let mut binary_sensors: HashMap<String, GpioSensorConfig> = HashMap::new();
 
-        for (_, any_sensor) in config.binary_sensor.clone().unwrap_or_default() {
-            match any_sensor.extra {
-                BinarySensorKind::gpio(binary_sensor) => {
-                    let id = any_sensor.default.get_object_id();
-                    components.push(UbiComponent::BinarySensor(UbiBinarySensor {
-                        platform: "sensor".to_string(),
-                        icon: any_sensor.default.icon.clone(),
-                        device_class: any_sensor.default.device_class.clone(),
-                        name: any_sensor.default.name.clone(),
-                        id: id.clone(),
-                        on_press: any_sensor.default.on_press.clone(),
-                        on_release: any_sensor.default.on_release.clone(),
-                        filters: any_sensor.default.filters.clone(),
-                    }));
-                    binary_sensors.insert(
-                        id,
-                        GpioBinarySensorConfig {
-                            pin: binary_sensor.pin,
-                            pull_up: binary_sensor.pull_up,
-                        },
-                    );
-                }
-                _ => {}
-            }
+        for (_, binary_sensor) in config.binary_sensor.clone().unwrap_or_default() {
+            let id = binary_sensor.get_object_id();
+            components.push(UbiComponent::BinarySensor(UbiBinarySensor {
+                platform: "sensor".to_string(),
+                icon: binary_sensor.icon.clone(),
+                device_class: binary_sensor.device_class.clone(),
+                name: binary_sensor.name.clone(),
+                id: id.clone(),
+                on_press: binary_sensor.on_press.clone(),
+                on_release: binary_sensor.on_release.clone(),
+                filters: binary_sensor.filters.clone(),
+            }));
+            binary_sensors.insert(
+                id,
+                GpioSensorConfig {
+                    pin: binary_sensor.base.pin,
+                    pull_up: binary_sensor.base.pull_up,
+                },
+            );
         }
 
         Ok(Default {

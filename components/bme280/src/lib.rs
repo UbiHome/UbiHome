@@ -7,7 +7,7 @@ use tokio::{
     time,
 };
 use ubihome_core::{
-    home_assistant::sensors::{UbiComponent, UbiSensor},
+    internal::sensors::{UbiComponent, UbiSensor},
     sensor::{SensorBase, UnknownSensor},
     ChangedMessage, Module, PublishedMessage, UbiHome,
 };

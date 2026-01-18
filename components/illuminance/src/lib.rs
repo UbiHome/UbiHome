@@ -7,12 +7,19 @@ use tokio::{
     sync::broadcast::{Receiver, Sender},
     time,
 };
-use ubihome_core::home_assistant::sensors::UbiComponent;
+use ubihome_core::constants::is_id_string_option;
+use ubihome_core::constants::is_readable_string;
+use ubihome_core::internal::sensors::UbiComponent;
+use ubihome_core::template_binary_sensor;
+use ubihome_core::template_button;
+use ubihome_core::template_sensor;
+use ubihome_core::with_base_entity_properties;
 use ubihome_core::{
-    config_template, home_assistant::sensors::UbiSensor, ChangedMessage, Module, NoConfig,
+    config_template, internal::sensors::UbiSensor, ChangedMessage, Module, NoConfig,
     PublishedMessage,
 };
 
+template_sensor! {
 #[derive(Clone, Deserialize, Debug, Validate)]
 #[garde(allow_unvalidated)]
 pub struct AmbientLightSensorConfig {
@@ -22,6 +29,7 @@ pub struct AmbientLightSensorConfig {
     pub update_interval: Duration,
     /// Device path (Linux only) - auto-detected if not specified
     pub device_path: Option<String>,
+}
 }
 
 fn default_update_interval() -> Duration {
@@ -60,34 +68,30 @@ impl Module for Default {
 
         if let Some(sensor_configs) = config.sensor {
             for (_, sensor_config) in sensor_configs {
-                match sensor_config.extra {
+                match sensor_config.parsed {
                     SensorKind::illuminance(sensor) => {
-                        let id = sensor_config.default.get_object_id();
+                        let id = sensor.get_object_id();
                         components.push(UbiComponent::Sensor(UbiSensor {
                             platform: "sensor".to_string(),
-                            icon: sensor_config
-                                .default
+                            icon: sensor
                                 .icon
                                 .clone()
                                 .or_else(|| Some("mdi:brightness-6".to_string())),
-                            device_class: sensor_config
-                                .default
+                            device_class: sensor
                                 .device_class
                                 .clone()
                                 .or_else(|| Some("illuminance".to_string())),
-                            state_class: sensor_config
-                                .default
+                            state_class: sensor
                                 .state_class
                                 .clone()
                                 .or_else(|| Some("measurement".to_string())),
-                            unit_of_measurement: sensor_config
-                                .default
+                            unit_of_measurement: sensor
                                 .unit_of_measurement
                                 .clone()
                                 .or_else(|| Some("lx".to_string())),
-                            name: sensor_config.default.name.clone(),
+                            name: sensor.name.clone(),
                             id: id.clone(),
-                            filters: sensor_config.default.filters.clone(),
+                            filters: sensor.filters.clone(),
                         }));
                         sensors.insert(id.clone(), sensor);
                     }

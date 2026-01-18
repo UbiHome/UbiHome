@@ -19,7 +19,7 @@ use tokio::{
 use ubihome_core::{
     config_template,
     features::ip::{get_ip_address, get_network_mac_address},
-    home_assistant::sensors::UbiComponent,
+    internal::sensors::UbiComponent,
     ChangedMessage, Module, NoConfig, PublishedMessage,
 };
 

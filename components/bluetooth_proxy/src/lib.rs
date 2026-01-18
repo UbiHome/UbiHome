@@ -11,8 +11,7 @@ use std::future;
 use std::{future::Future, pin::Pin, str};
 use tokio::sync::broadcast::{Receiver, Sender};
 use ubihome_core::{
-    config_template, home_assistant::sensors::UbiComponent, ChangedMessage, Module,
-    PublishedMessage,
+    config_template, internal::sensors::UbiComponent, ChangedMessage, Module, PublishedMessage,
 };
 use ubihome_core::{BluetoothProxyMessage, NoConfig};
 

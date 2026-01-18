@@ -1,9 +1,7 @@
-pub mod binary_sensor;
-pub mod button;
 pub mod configuration;
 pub mod constants;
 pub mod features;
-pub mod home_assistant;
+pub mod internal;
 pub mod light;
 pub mod mapper;
 pub mod sensor;
@@ -12,7 +10,7 @@ pub mod utils;
 pub extern crate paste;
 
 use garde::Validate;
-use home_assistant::sensors::UbiComponent;
+use internal::sensors::UbiComponent;
 use serde::Deserialize;
 use std::{collections::HashMap, pin::Pin};
 use tokio::sync::broadcast::{Receiver, Sender};
@@ -139,7 +137,18 @@ pub enum PublishedMessage {
 
 #[derive(Clone, Deserialize, Debug, Validate)]
 #[garde(allow_unvalidated)]
-pub struct NoConfig {}
+pub struct NoConfig {
+    pub platform: String,
+}
+
+impl NoConfig {
+    pub fn is_configured(&self) -> bool {
+        false
+    }
+    pub fn get_object_id(&self) -> String {
+        unimplemented!();
+    }
+}
 
 #[derive(Clone, Deserialize, Debug, Validate)]
 #[serde(deny_unknown_fields)]
@@ -165,22 +174,25 @@ macro_rules! config_template {
         use duration_str::deserialize_option_duration;
         use garde::Validate;
         use ubihome_core::UbiHome;
-        use ubihome_core::template_binary_sensor;
-        use ubihome_core::template_button;
+        // use ubihome_core::template_binary_sensor;
+        use ubihome_core::template_entity;
         use ubihome_core::template_light;
         use ubihome_core::template_mapper;
-        use ubihome_core::template_sensor;
+        use ubihome_core::template_mapper_kind;
+        use ubihome_core::template_mapper_new;
+        use ubihome_core::template_mapper3;
         use ubihome_core::template_switch;
 
-        template_button!($component_name, $button_extension);
-        template_binary_sensor!($component_name, $binary_sensor_extension);
-        template_sensor!($component_name, $sensor_extension);
+        // template_button!($component_name, $button_extension);
+        // template_binary_sensor!($component_name, $binary_sensor_extension);
+        template_entity!($component_name, $sensor_extension);
         template_switch!($component_name, $switch_extension);
         template_light!($component_name, $light_extension);
 
-        template_mapper!(map_sensor, Sensor);
-        template_mapper!(map_button, ButtonConfig);
-        template_mapper!(map_binary_sensor, BinarySensor);
+        // template_mapper!(map_sensor, Sensor);
+        template_mapper_kind!(map_sensor, $component_name, Sensor);
+        template_mapper3!(map_button, $component_name, $button_extension);
+        template_mapper_new!(map_binary_sensor, $component_name, $binary_sensor_extension);
         template_mapper!(map_switch, Switch);
         template_mapper!(map_light, Light);
 
@@ -195,7 +207,7 @@ macro_rules! config_template {
 
             #[serde(default, deserialize_with = "map_button")]
             #[garde(dive)]
-            pub button: Option<HashMap<String, ButtonConfig>>,
+            pub button: Option<HashMap<String, $button_extension>>,
 
             #[serde(default, deserialize_with = "map_sensor")]
             #[garde(dive)]
@@ -203,7 +215,7 @@ macro_rules! config_template {
 
             #[serde(default, deserialize_with = "map_binary_sensor")]
             #[garde(dive)]
-            pub binary_sensor: Option<HashMap<String, BinarySensor>>,
+            pub binary_sensor: Option<HashMap<String, $binary_sensor_extension>>,
 
             #[serde(default, deserialize_with = "map_switch")]
             #[garde(dive)]

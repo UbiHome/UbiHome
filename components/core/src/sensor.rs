@@ -37,7 +37,7 @@ with_base_entity_properties! {
 pub struct UnknownSensor {}
 
 #[macro_export]
-macro_rules! template_sensor {
+macro_rules! template_entity {
     ($component_name:ident, $sensor_extension:ident) => {
         use $crate::sensor::SensorBase;
         use $crate::sensor::UnknownSensor;
@@ -56,11 +56,23 @@ macro_rules! template_sensor {
         pub struct Sensor {
             #[garde(dive)]
             #[serde(flatten)]
-            pub default: SensorBase,
+            pub parsed: SensorKind,
+        }
 
-            #[garde(dive)]
-            #[serde(flatten)]
-            pub extra: SensorKind,
+        impl Sensor {
+            pub fn is_configured(&self) -> bool {
+                match &self.parsed {
+                    SensorKind::$component_name(ext) => true,
+                    SensorKind::Unknown(_) => false,
+                }
+            }
+
+            pub fn get_object_id(&self) -> String {
+                match &self.parsed {
+                    SensorKind::$component_name(ext) => ext.get_object_id(),
+                    SensorKind::Unknown(_) => panic!("Cannot get base from UnknownSensor"),
+                }
+            }
         }
     };
 }

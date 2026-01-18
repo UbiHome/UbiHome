@@ -7,7 +7,6 @@ use crate::with_base_entity_properties;
 
 with_base_entity_properties! {
     #[derive(Clone, Deserialize, Debug, Validate)]
-    #[serde(deny_unknown_fields)]
     pub struct LightBase {
         #[garde(skip)]
         pub disabled_by_default: Option<bool>,

@@ -15,7 +15,7 @@ use std::net::SocketAddr;
 use std::time::Duration;
 use tokio_stream::StreamExt;
 use tower_http::trace::TraceLayer;
-use ubihome_core::home_assistant::sensors::UbiComponent;
+use ubihome_core::internal::sensors::UbiComponent;
 
 use log::{debug, info};
 use std::sync::Arc;
@@ -108,17 +108,18 @@ async fn events_stream(
         .take(1);
 
     let mut entities: Vec<String> = Vec::new();
-    for (key, binary_sensor) in config.binary_sensor.unwrap() {
-        let object_id = binary_sensor.default.get_object_id();
-        let id = binary_sensor.default.id.unwrap_or(object_id.clone());
-        entities.push(format!(
-            "{{\"id\": \"{}\", \"name\": \"{}\", \"icon\": \"{}\", \"entity_category\": {}, \"state\": \"ON\"}}",
-            id,
-            binary_sensor.default.name,
-            binary_sensor.default.icon.unwrap_or_default(),
-            0
-        ));
-    }
+    // TODO: Add back
+    // for (key, binary_sensor) in config.binary_sensor.unwrap() {
+    //     let object_id = binary_sensor.default.get_object_id();
+    //     let id = binary_sensor.default.id.unwrap_or(object_id.clone());
+    //     entities.push(format!(
+    //         "{{\"id\": \"{}\", \"name\": \"{}\", \"icon\": \"{}\", \"entity_category\": {}, \"state\": \"ON\"}}",
+    //         id,
+    //         binary_sensor.default.name,
+    //         binary_sensor.default.icon.unwrap_or_default(),
+    //         0
+    //     ));
+    // }
 
     let entities_stream = stream::iter(entities)
         .map(|entity| Event::default().event("state").data(entity))
