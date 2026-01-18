@@ -3,11 +3,10 @@ use serde::{Deserialize, Deserializer};
 use std::{collections::HashMap, future};
 use std::{future::Future, pin::Pin, str};
 use tokio::sync::broadcast::{Receiver, Sender};
+use ubihome_core::home_assistant::sensors::UbiComponent;
 use ubihome_core::{
-    config_template,
-    home_assistant::sensors::UbiBinarySensor,
-    internal::sensors::{InternalBinarySensor, InternalComponent},
-    ChangedMessage, Module, NoConfig, PublishedMessage,
+    config_template, home_assistant::sensors::UbiBinarySensor, ChangedMessage, Module, NoConfig,
+    PublishedMessage,
 };
 
 #[derive(Debug, Copy, Clone, Deserialize, Validate)]
@@ -41,7 +40,7 @@ config_template!(
 
 #[derive(Clone, Debug)]
 pub struct Default {
-    components: Vec<InternalComponent>,
+    components: Vec<UbiComponent>,
     binary_sensors: HashMap<String, GpioBinarySensorConfig>,
 }
 
@@ -49,22 +48,22 @@ impl Module for Default {
     fn new(config_string: &String) -> Result<Self, String> {
         let config = serde_saphyr::from_str::<CoreConfig>(config_string).unwrap();
         // info!("GPIO config: {:?}", config);
-        let mut components: Vec<InternalComponent> = Vec::new();
+        let mut components: Vec<UbiComponent> = Vec::new();
         let mut binary_sensors: HashMap<String, GpioBinarySensorConfig> = HashMap::new();
 
         for (_, any_sensor) in config.binary_sensor.clone().unwrap_or_default() {
             match any_sensor.extra {
                 BinarySensorKind::gpio(binary_sensor) => {
                     let id = any_sensor.default.get_object_id();
-                    components.push(InternalComponent::BinarySensor(InternalBinarySensor {
-                        ha: UbiBinarySensor {
-                            platform: "sensor".to_string(),
-                            icon: any_sensor.default.icon.clone(),
-                            device_class: any_sensor.default.device_class.clone(),
-                            name: any_sensor.default.name.clone(),
-                            id: id.clone(),
-                        },
-                        base: any_sensor.default.clone(),
+                    components.push(UbiComponent::BinarySensor(UbiBinarySensor {
+                        platform: "sensor".to_string(),
+                        icon: any_sensor.default.icon.clone(),
+                        device_class: any_sensor.default.device_class.clone(),
+                        name: any_sensor.default.name.clone(),
+                        id: id.clone(),
+                        on_press: any_sensor.default.on_press.clone(),
+                        on_release: any_sensor.default.on_release.clone(),
+                        filters: any_sensor.default.filters.clone(),
                     }));
                     binary_sensors.insert(
                         id,
@@ -84,7 +83,7 @@ impl Module for Default {
         })
     }
 
-    fn components(&mut self) -> Vec<InternalComponent> {
+    fn components(&mut self) -> Vec<UbiComponent> {
         self.components.clone()
     }
 

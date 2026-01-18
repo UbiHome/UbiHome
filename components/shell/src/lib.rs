@@ -8,12 +8,10 @@ use tokio::{
     sync::broadcast::{Receiver, Sender},
     time,
 };
-use ubihome_core::home_assistant::sensors::{UbiLight, UbiSwitch};
-use ubihome_core::internal::sensors::{InternalLight, InternalSwitch};
+use ubihome_core::home_assistant::sensors::{UbiComponent, UbiLight, UbiSwitch};
 use ubihome_core::{
     config_template,
     home_assistant::sensors::{UbiBinarySensor, UbiButton, UbiSensor},
-    internal::sensors::{InternalBinarySensor, InternalButton, InternalComponent, InternalSensor},
     ChangedMessage, Module, PublishedMessage,
 };
 
@@ -121,7 +119,7 @@ config_template!(
 
 pub struct Default {
     config: ShellConfig,
-    components: Vec<InternalComponent>,
+    components: Vec<UbiComponent>,
     binary_sensors: HashMap<String, ShellBinarySensorConfig>,
     buttons: HashMap<String, ShellButtonConfig>,
     sensors: HashMap<String, ShellSensorConfig>,
@@ -134,24 +132,22 @@ impl Module for Default {
         let config =
             serde_saphyr::from_str::<CoreConfig>(config_string).map_err(|e| e.to_string())?;
         debug!("Shell config: {:?}", config);
-        let mut components: Vec<InternalComponent> = Vec::new();
+        let mut components: Vec<UbiComponent> = Vec::new();
 
         let mut sensors: HashMap<String, ShellSensorConfig> = HashMap::new();
         for (_, any_sensor) in config.sensor.clone().unwrap_or_default() {
             match any_sensor.extra {
                 SensorKind::shell(sensor) => {
                     let id = any_sensor.default.get_object_id();
-                    components.push(InternalComponent::Sensor(InternalSensor {
-                        ha: UbiSensor {
-                            platform: "sensor".to_string(),
-                            icon: any_sensor.default.icon.clone(),
-                            device_class: any_sensor.default.device_class.clone(),
-                            state_class: any_sensor.default.state_class.clone(),
-                            unit_of_measurement: any_sensor.default.unit_of_measurement.clone(),
-                            name: any_sensor.default.name.clone(),
-                            id: id.clone(),
-                        },
-                        base: any_sensor.default.clone(),
+                    components.push(UbiComponent::Sensor(UbiSensor {
+                        platform: "sensor".to_string(),
+                        icon: any_sensor.default.icon.clone(),
+                        device_class: any_sensor.default.device_class.clone(),
+                        state_class: any_sensor.default.state_class.clone(),
+                        unit_of_measurement: any_sensor.default.unit_of_measurement.clone(),
+                        name: any_sensor.default.name.clone(),
+                        id: id.clone(),
+                        filters: any_sensor.default.filters.clone(),
                     }));
                     sensors.insert(id.clone(), sensor);
                 }
@@ -164,15 +160,15 @@ impl Module for Default {
             match any_sensor.extra {
                 BinarySensorKind::shell(binary_sensor) => {
                     let id = any_sensor.default.get_object_id();
-                    components.push(InternalComponent::BinarySensor(InternalBinarySensor {
-                        ha: UbiBinarySensor {
-                            platform: "sensor".to_string(),
-                            icon: any_sensor.default.icon.clone(),
-                            device_class: any_sensor.default.device_class.clone(),
-                            name: any_sensor.default.name.clone(),
-                            id: id.clone(),
-                        },
-                        base: any_sensor.default.clone(),
+                    components.push(UbiComponent::BinarySensor(UbiBinarySensor {
+                        platform: "sensor".to_string(),
+                        icon: any_sensor.default.icon.clone(),
+                        device_class: any_sensor.default.device_class.clone(),
+                        name: any_sensor.default.name.clone(),
+                        id: id.clone(),
+                        on_press: any_sensor.default.on_press.clone(),
+                        on_release: any_sensor.default.on_release.clone(),
+                        filters: any_sensor.default.filters.clone(),
                     }));
                     binary_sensors.insert(id.clone(), binary_sensor);
                 }
@@ -185,13 +181,11 @@ impl Module for Default {
             match any_sensor.extra {
                 ButtonKind::shell(button) => {
                     let id = any_sensor.default.get_object_id();
-                    components.push(InternalComponent::Button(InternalButton {
-                        ha: UbiButton {
-                            platform: "sensor".to_string(),
-                            icon: any_sensor.default.icon.clone(),
-                            name: any_sensor.default.name.clone(),
-                            id: id.clone(),
-                        },
+                    components.push(UbiComponent::Button(UbiButton {
+                        platform: "sensor".to_string(),
+                        icon: any_sensor.default.icon.clone(),
+                        name: any_sensor.default.name.clone(),
+                        id: id.clone(),
                     }));
                     buttons.insert(id.clone(), button);
                 }
@@ -204,16 +198,14 @@ impl Module for Default {
             match any_sensor.extra {
                 SwitchKind::shell(switch) => {
                     let id = any_sensor.default.get_object_id();
-                    components.push(InternalComponent::Switch(InternalSwitch {
-                        ha: UbiSwitch {
-                            // TODO
-                            platform: "sensor".to_string(),
-                            icon: any_sensor.default.icon.clone(),
-                            name: any_sensor.default.name.clone(),
-                            id: id.clone(),
-                            device_class: None,
-                            assumed_state: !switch.command_state.is_some(),
-                        },
+                    components.push(UbiComponent::Switch(UbiSwitch {
+                        // TODO
+                        platform: "sensor".to_string(),
+                        icon: any_sensor.default.icon.clone(),
+                        name: any_sensor.default.name.clone(),
+                        id: id.clone(),
+                        device_class: None,
+                        assumed_state: !switch.command_state.is_some(),
                     }));
                     switches.insert(id.clone(), switch);
                 }
@@ -226,17 +218,12 @@ impl Module for Default {
             match any_light.extra {
                 LightKind::shell(light_config) => {
                     let id = any_light.default.get_object_id();
-                    components.push(InternalComponent::Light(InternalLight {
-                        ha: UbiLight {
-                            platform: "light".to_string(),
-                            icon: any_light.default.icon.clone(),
-                            name: any_light.default.name.clone(),
-                            id: id.clone(),
-                            disabled_by_default: any_light
-                                .default
-                                .disabled_by_default
-                                .unwrap_or(true),
-                        },
+                    components.push(UbiComponent::Light(UbiLight {
+                        platform: "light".to_string(),
+                        icon: any_light.default.icon.clone(),
+                        name: any_light.default.name.clone(),
+                        id: id.clone(),
+                        disabled_by_default: any_light.default.disabled_by_default.unwrap_or(true),
                     }));
                     lights.insert(id.clone(), light_config);
                 }
@@ -255,7 +242,7 @@ impl Module for Default {
         })
     }
 
-    fn components(&mut self) -> Vec<InternalComponent> {
+    fn components(&mut self) -> Vec<UbiComponent> {
         self.components.clone()
     }
 

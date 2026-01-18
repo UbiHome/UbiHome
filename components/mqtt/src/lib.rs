@@ -19,8 +19,7 @@ use tokio::{
 use ubihome_core::{
     config_template,
     features::ip::{get_ip_address, get_network_mac_address},
-    home_assistant::sensors::Component,
-    internal::sensors::InternalComponent,
+    home_assistant::sensors::UbiComponent,
     ChangedMessage, Module, NoConfig, PublishedMessage,
 };
 
@@ -56,8 +55,8 @@ impl Module for Default {
         })
     }
 
-    fn components(&mut self) -> Vec<InternalComponent> {
-        let components: Vec<InternalComponent> = Vec::new();
+    fn components(&mut self) -> Vec<UbiComponent> {
+        let components: Vec<UbiComponent> = Vec::new();
 
         components
     }
@@ -127,7 +126,7 @@ impl Module for Default {
                                             //     "{}_{}",
                                             //     core_config.ubihome.name, sensor.name
                                             // ));
-                                            Component::Switch(switch) => {
+                                            UbiComponent::Switch(switch) => {
                                                 let topic = format!(
                                                     "{}/{}/set",
                                                     base_topic_clone.clone(),
@@ -152,7 +151,7 @@ impl Module for Default {
                                                     }),
                                                 );
                                             }
-                                            Component::Button(button) => {
+                                            UbiComponent::Button(button) => {
                                                 let topic = format!(
                                                     "{}/{}",
                                                     base_topic_clone.clone(),
@@ -171,7 +170,7 @@ impl Module for Default {
                                                     }),
                                                 );
                                             }
-                                            Component::Sensor(sensor) => {
+                                            UbiComponent::Sensor(sensor) => {
                                                 mqtt_components.insert(
                                                     sensor.id.clone(),
                                                     HAMqttComponent::Sensor(HAMqttSensor {
@@ -196,7 +195,7 @@ impl Module for Default {
                                                     }),
                                                 );
                                             }
-                                            Component::BinarySensor(sensor) => {
+                                            UbiComponent::BinarySensor(sensor) => {
                                                 mqtt_components.insert(
                                                     sensor.id.clone(),
                                                     HAMqttComponent::BinarySensor(
@@ -219,7 +218,7 @@ impl Module for Default {
                                                     ),
                                                 );
                                             }
-                                            Component::Light(_light) => {
+                                            UbiComponent::Light(_light) => {
                                                 // TODO: Add MQTT light support if needed
                                                 // For now, just skip light components for MQTT
                                             }

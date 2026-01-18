@@ -1,8 +1,13 @@
 use serde::{Deserialize, Serialize};
 
-#[derive(Clone, Serialize, Deserialize, Debug)]
+use crate::{
+    binary_sensor::{BinarySensorFilter, Trigger},
+    sensor::SensorFilter,
+};
+
+#[derive(Clone, Deserialize, Debug)]
 #[serde(untagged)]
-pub enum Component {
+pub enum UbiComponent {
     Button(UbiButton),
     Sensor(UbiSensor),
     BinarySensor(UbiBinarySensor),
@@ -12,59 +17,84 @@ pub enum Component {
 
 // Icons: https://pictogrammers.com/library/mdi/
 
-#[derive(Clone, Serialize, Deserialize, Debug)]
-pub struct UbiButton {
-    pub name: String,
-    pub icon: Option<String>,
-    pub platform: String,
-    pub id: String,
+macro_rules! with_base_properties {
+    (
+        $(#[$meta:meta])*
+        $vis:vis struct $name:ident {
+            $(
+                $(#[$field_meta:meta])*
+                $field_vis:vis $field_name:ident : $field_type:ty
+            ),* $(,)?
+        }
+    ) => {
+        $(#[$meta])*
+        // TODO: Add? #[serde(deny_unknown_fields)]
+
+        $vis struct $name {
+            pub name: String,
+            pub icon: Option<String>,
+            pub platform: String,
+            pub id: String,
+        // pub state_class: Option<String>,
+        // pub device_class: Option<String>,
+
+            $(
+                $(#[$field_meta])*
+                $field_vis $field_name : $field_type,
+            )*
+        }
+    };
 }
 
+with_base_properties! {
+    #[derive(Clone, Serialize, Deserialize, Debug)]
+    pub struct UbiButton {
+    }
+}
+
+with_base_properties! {
 // https://developers.home-assistant.io/docs/core/entity/sensor/
-#[derive(Clone, Serialize, Deserialize, Debug)]
-pub struct UbiSensor {
-    pub name: String,
-    pub platform: String,
-    pub icon: Option<String>,
-    pub state_class: Option<String>,
-    pub device_class: Option<String>,
-    pub unit_of_measurement: Option<String>,
-    pub id: String,
+    #[derive(Clone, Deserialize, Debug)]
+    pub struct UbiSensor {
+        pub state_class: Option<String>,
+        pub device_class: Option<String>,
+        pub unit_of_measurement: Option<String>,
+
+        pub filters: Option<Vec<SensorFilter>>,
+    }
 }
 
+with_base_properties! {
 // https://developers.home-assistant.io/docs/core/entity/binary-sensor
 #[derive(Clone, Serialize, Deserialize, Debug)]
 pub struct UbiBinarySensor {
-    pub name: String,
-    pub platform: String,
-    pub icon: Option<String>,
     pub device_class: Option<String>,
-    pub id: String,
+    pub filters: Option<Vec<BinarySensorFilter>>,
+    pub on_press: Option<Trigger>,
+    pub on_release: Option<Trigger>,
+}
 }
 
+with_base_properties! {
 // https://developers.home-assistant.io/docs/core/entity/switch
 #[derive(Clone, Serialize, Deserialize, Debug)]
 pub struct UbiSwitch {
-    pub name: String,
-    pub platform: String,
-    pub icon: Option<String>,
     pub device_class: Option<String>,
-    pub id: String,
     // If the state must be assumed or can be determined
     pub assumed_state: bool,
 }
+}
+
+with_base_properties! {
 
 // https://developers.home-assistant.io/docs/core/entity/light
 #[derive(Clone, Serialize, Deserialize, Debug)]
 pub struct UbiLight {
-    pub name: String,
-    pub platform: String,
-    pub icon: Option<String>,
-    pub id: String,
     pub disabled_by_default: bool,
     // Light capabilities
     // pub supports_brightness: bool,
     // pub supports_rgb: bool,
     // pub supports_white_value: bool,
     // pub supports_color_temperature: bool,
+}
 }

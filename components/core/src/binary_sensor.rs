@@ -3,11 +3,12 @@ use garde::Validate;
 use std::{collections::HashMap, time::Duration};
 
 use serde::Deserialize;
+use serde::Serialize;
 
 use crate::constants::is_id_string_option;
 use crate::constants::is_readable_string;
 use crate::{utils::format_id, with_base_entity_properties};
-#[derive(Clone, Deserialize, Debug, Validate)]
+#[derive(Clone, Serialize, Deserialize, Debug, Validate)]
 pub enum FilterType {
     invert(#[garde(required)] Option<String>),
 
@@ -18,7 +19,7 @@ pub enum FilterType {
     delayed_on(#[garde(skip)] Duration),
 }
 
-#[derive(Clone, Deserialize, Debug, Validate)]
+#[derive(Clone, Serialize, Deserialize, Debug, Validate)]
 #[serde(deny_unknown_fields)]
 
 pub struct BinarySensorFilter {
@@ -27,7 +28,7 @@ pub struct BinarySensorFilter {
     pub filter: FilterType,
 }
 
-#[derive(Clone, Deserialize, Debug, Validate)]
+#[derive(Clone, Serialize, Deserialize, Debug, Validate)]
 pub enum ActionType {
     #[serde(rename = "switch.turn_on")]
     switch_turn_on(#[garde(ascii)] String),
@@ -36,7 +37,7 @@ pub enum ActionType {
     switch_turn_off(#[garde(ascii)] String),
 }
 
-#[derive(Clone, Deserialize, Debug, Validate)]
+#[derive(Clone, Serialize, Deserialize, Debug, Validate)]
 #[serde(deny_unknown_fields)]
 
 pub struct Action {
@@ -45,7 +46,7 @@ pub struct Action {
     pub action: ActionType,
 }
 
-#[derive(Clone, Deserialize, Debug, Validate)]
+#[derive(Clone, Serialize, Deserialize, Debug, Validate)]
 #[serde(deny_unknown_fields)]
 
 pub struct Trigger {

@@ -15,7 +15,7 @@ use std::net::SocketAddr;
 use std::time::Duration;
 use tokio_stream::StreamExt;
 use tower_http::trace::TraceLayer;
-use ubihome_core::internal::sensors::InternalComponent;
+use ubihome_core::home_assistant::sensors::UbiComponent;
 
 use log::{debug, info};
 use std::sync::Arc;
@@ -182,8 +182,8 @@ impl Module for Default {
         Ok(Default { config: config })
     }
 
-    fn components(&mut self) -> Vec<InternalComponent> {
-        let components: Vec<InternalComponent> = Vec::new();
+    fn components(&mut self) -> Vec<UbiComponent> {
+        let components: Vec<UbiComponent> = Vec::new();
 
         components
     }

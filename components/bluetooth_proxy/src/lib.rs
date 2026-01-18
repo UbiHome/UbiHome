@@ -10,9 +10,9 @@ use std::collections::HashMap;
 use std::future;
 use std::{future::Future, pin::Pin, str};
 use tokio::sync::broadcast::{Receiver, Sender};
-use ubihome_core::internal::sensors::InternalComponent;
 use ubihome_core::{
-    config_template, home_assistant::sensors::Component, ChangedMessage, Module, PublishedMessage,
+    config_template, home_assistant::sensors::UbiComponent, ChangedMessage, Module,
+    PublishedMessage,
 };
 use ubihome_core::{BluetoothProxyMessage, NoConfig};
 
@@ -49,8 +49,8 @@ impl Module for Default {
         Ok(Default { config: config })
     }
 
-    fn components(&mut self) -> Vec<InternalComponent> {
-        let components: Vec<InternalComponent> = Vec::new();
+    fn components(&mut self) -> Vec<UbiComponent> {
+        let components: Vec<UbiComponent> = Vec::new();
 
         components
     }

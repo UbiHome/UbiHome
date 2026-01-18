@@ -1,7 +1,8 @@
 use serde::Deserialize;
 use std::collections::HashSet;
 use tokio::sync::broadcast::{Receiver, Sender};
-use ubihome_core::{internal::sensors::InternalComponent, Module};
+use ubihome_core::home_assistant::sensors::UbiComponent;
+use ubihome_core::Module;
 use ubihome_core::{ChangedMessage, PublishedMessage};
 
 macro_rules! generate_platform_methods {
@@ -73,8 +74,8 @@ include!(concat!(env!("OUT_DIR"), "/", "components.rs"));
 
 pub(crate) fn initialize_platforms(
     modules: &mut Vec<Box<dyn Module>>,
-) -> Result<Vec<InternalComponent>, String> {
-    let mut all_components: Vec<InternalComponent> = Vec::new();
+) -> Result<Vec<UbiComponent>, String> {
+    let mut all_components: Vec<UbiComponent> = Vec::new();
     for module in modules.iter_mut() {
         let mut components = module.components();
         // println!("Module: {:?}", &components);

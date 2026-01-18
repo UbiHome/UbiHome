@@ -4,7 +4,6 @@ pub mod configuration;
 pub mod constants;
 pub mod features;
 pub mod home_assistant;
-pub mod internal;
 pub mod light;
 pub mod mapper;
 pub mod sensor;
@@ -13,8 +12,7 @@ pub mod utils;
 pub extern crate paste;
 
 use garde::Validate;
-use home_assistant::sensors::Component;
-use internal::sensors::InternalComponent;
+use home_assistant::sensors::UbiComponent;
 use serde::Deserialize;
 use std::{collections::HashMap, pin::Pin};
 use tokio::sync::broadcast::{Receiver, Sender};
@@ -35,7 +33,7 @@ where
     /// This will be called to validate the module configuration and set the module up for the later run command.
     /// It is guaranteed to be be called before the run command.
     /// Do not do any heavy lifting in this function, as it will block the main thread.
-    fn components(&mut self) -> Vec<InternalComponent>;
+    fn components(&mut self) -> Vec<UbiComponent>;
 
     // This will be called in a separate Thread to run the module and its functionality.
     fn run(
@@ -99,7 +97,7 @@ pub enum ChangedMessage {
 #[derive(Debug, Clone)]
 pub enum PublishedMessage {
     Components {
-        components: Vec<Component>,
+        components: Vec<UbiComponent>,
     },
     ButtonPressed {
         key: String,

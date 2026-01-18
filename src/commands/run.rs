@@ -5,8 +5,7 @@ use flexi_logger::{detailed_format, Age, Cleanup, Criterion, Duplicate, FileSpec
 
 use garde::Validate;
 use ubihome_core::binary_sensor::{ActionType, FilterType};
-use ubihome_core::home_assistant::sensors::Component;
-use ubihome_core::internal::sensors::InternalComponent;
+use ubihome_core::home_assistant::sensors::UbiComponent;
 use ubihome_core::sensor::SensorFilterType;
 use ubihome_core::{ChangedMessage, Module, PublishedMessage};
 
@@ -195,13 +194,13 @@ Remove the "{}:" entry from your configuration or install the cargo crate contai
 
         for component in initialized_platforms.clone() {
             match component {
-                InternalComponent::Button(button) => {
+                UbiComponent::Button(button) => {
                     // println!("Button: {:?}", button);
                 }
-                InternalComponent::Sensor(sensor) => {
+                UbiComponent::Sensor(sensor) => {
                     let mutable: Mutable<Option<Option<f32>>> = Mutable::new(Option::None);
                     signal_map_sensor
-                        .insert(sensor.ha.id.clone(), mutable.clone());
+                        .insert(sensor.id.clone(), mutable.clone());
                     let internal_tx_clone = internal_tx.clone();
 
                     let mutable_clone = mutable.clone();
@@ -209,7 +208,7 @@ Remove the "{}:" entry from your configuration or install the cargo crate contai
                         // println!("Filters: {:?}", binary_sensor.filters);
 
                         let mut signal = mutable_clone.signal_cloned().boxed();
-                        for filter in sensor.base.filters.unwrap_or_default() {
+                        for filter in sensor.filters.unwrap_or_default() {
                             match filter.filter {
                                 SensorFilterType::round(decimals) => {
                                     trace!("round");
@@ -233,7 +232,7 @@ Remove the "{}:" entry from your configuration or install the cargo crate contai
                             .for_each(|value| {
                                 let signal_tx_clone = internal_tx_clone.clone();
 
-                                let key = sensor.ha.id.clone();
+                                let key = sensor.id.clone();
                                 if let Some(value) = value.and_then(|v| v) {
                                     let pcmd = PublishedMessage::SensorValueChanged {
                                         key: key,
@@ -250,16 +249,16 @@ Remove the "{}:" entry from your configuration or install the cargo crate contai
                             .await;
                     });
                 }
-                InternalComponent::Switch(switch) => {
+                UbiComponent::Switch(switch) => {
                     // println!("Switch: {:?}", switch);
                 }
-                InternalComponent::Light(light) => {
+                UbiComponent::Light(light) => {
                     // println!("Light: {:?}", light);
                 }
-                InternalComponent::BinarySensor(binary_sensor) => {
+                UbiComponent::BinarySensor(binary_sensor) => {
                     let mutable: Mutable<Option<Option<bool>>> = Mutable::new(Option::None);
                     signal_map_binary_sensor
-                        .insert(binary_sensor.ha.id.clone(), mutable.clone());
+                        .insert(binary_sensor.id.clone(), mutable.clone());
                     let internal_tx_clone = internal_tx.clone();
 
                     let mutable_clone = mutable.clone();
@@ -267,7 +266,7 @@ Remove the "{}:" entry from your configuration or install the cargo crate contai
                         // println!("Filters: {:?}", binary_sensor.filters);
 
                         let mut signal = mutable_clone.signal().boxed();
-                        for filter in binary_sensor.base.filters.unwrap_or_default() {
+                        for filter in binary_sensor.filters.unwrap_or_default() {
                             match filter.filter {
                                 FilterType::delayed_on(time) => {
                                     trace!("delayed_on");
@@ -334,10 +333,10 @@ Remove the "{}:" entry from your configuration or install the cargo crate contai
                             .for_each(|value| {
                                 let signal_tx_clone = internal_tx_clone.clone();
 
-                                let key = binary_sensor.ha.id.clone();
+                                let key = binary_sensor.id.clone();
                                 if let Some(value) = value.and_then(|v| v) {
                                     if value == true {
-                                        if let Some(on_press) = binary_sensor.base.on_press.clone() {
+                                        if let Some(on_press) = binary_sensor.on_press.clone() {
                                             for action in on_press.then {
                                                 match &action.action {
                                                     ActionType::switch_turn_on(key) => {
@@ -360,7 +359,7 @@ Remove the "{}:" entry from your configuration or install the cargo crate contai
                                             }
                                         }
                                     }else{
-                                        if let Some(on_release) = binary_sensor.base.on_release.clone() {
+                                        if let Some(on_release) = binary_sensor.on_release.clone() {
                                             for action in on_release.then {
                                                 match &action.action {
                                                     ActionType::switch_turn_on(key) => {
@@ -468,13 +467,13 @@ Remove the "{}:" entry from your configuration or install the cargo crate contai
                 components: initialized_platforms
                     .iter()
                     .map(|c| match c {
-                        InternalComponent::Switch(switch) => Component::Switch(switch.ha.clone()),
-                        InternalComponent::Button(button) => Component::Button(button.ha.clone()),
-                        InternalComponent::Sensor(sensor) => Component::Sensor(sensor.ha.clone()),
-                        InternalComponent::BinarySensor(binary_sensor) => {
-                            Component::BinarySensor(binary_sensor.ha.clone())
+                        UbiComponent::Switch(switch) => UbiComponent::Switch(switch.clone()),
+                        UbiComponent::Button(button) => UbiComponent::Button(button.clone()),
+                        UbiComponent::Sensor(sensor) => UbiComponent::Sensor(sensor.clone()),
+                        UbiComponent::BinarySensor(binary_sensor) => {
+                            UbiComponent::BinarySensor(binary_sensor.clone())
                         }
-                        InternalComponent::Light(light) => Component::Light(light.ha.clone()),
+                        UbiComponent::Light(light) => UbiComponent::Light(light.clone()),
                     })
                     .collect(),
             })

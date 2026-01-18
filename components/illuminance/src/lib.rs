@@ -7,11 +7,10 @@ use tokio::{
     sync::broadcast::{Receiver, Sender},
     time,
 };
+use ubihome_core::home_assistant::sensors::UbiComponent;
 use ubihome_core::{
-    config_template,
-    home_assistant::sensors::UbiSensor,
-    internal::sensors::{InternalComponent, InternalSensor},
-    ChangedMessage, Module, NoConfig, PublishedMessage,
+    config_template, home_assistant::sensors::UbiSensor, ChangedMessage, Module, NoConfig,
+    PublishedMessage,
 };
 
 #[derive(Clone, Deserialize, Debug, Validate)]
@@ -45,7 +44,7 @@ config_template!(
 
 pub struct Default {
     config: AmbientLightConfig,
-    components: Vec<InternalComponent>,
+    components: Vec<UbiComponent>,
     sensors: HashMap<String, AmbientLightSensorConfig>,
 }
 
@@ -56,7 +55,7 @@ impl Module for Default {
 
         debug!("AmbientLight sensor config: {:?}", config);
 
-        let mut components: Vec<InternalComponent> = Vec::new();
+        let mut components: Vec<UbiComponent> = Vec::new();
         let mut sensors: HashMap<String, AmbientLightSensorConfig> = HashMap::new();
 
         if let Some(sensor_configs) = config.sensor {
@@ -64,33 +63,31 @@ impl Module for Default {
                 match sensor_config.extra {
                     SensorKind::illuminance(sensor) => {
                         let id = sensor_config.default.get_object_id();
-                        components.push(InternalComponent::Sensor(InternalSensor {
-                            ha: UbiSensor {
-                                platform: "sensor".to_string(),
-                                icon: sensor_config
-                                    .default
-                                    .icon
-                                    .clone()
-                                    .or_else(|| Some("mdi:brightness-6".to_string())),
-                                device_class: sensor_config
-                                    .default
-                                    .device_class
-                                    .clone()
-                                    .or_else(|| Some("illuminance".to_string())),
-                                state_class: sensor_config
-                                    .default
-                                    .state_class
-                                    .clone()
-                                    .or_else(|| Some("measurement".to_string())),
-                                unit_of_measurement: sensor_config
-                                    .default
-                                    .unit_of_measurement
-                                    .clone()
-                                    .or_else(|| Some("lx".to_string())),
-                                name: sensor_config.default.name.clone(),
-                                id: id.clone(),
-                            },
-                            base: sensor_config.default.clone(),
+                        components.push(UbiComponent::Sensor(UbiSensor {
+                            platform: "sensor".to_string(),
+                            icon: sensor_config
+                                .default
+                                .icon
+                                .clone()
+                                .or_else(|| Some("mdi:brightness-6".to_string())),
+                            device_class: sensor_config
+                                .default
+                                .device_class
+                                .clone()
+                                .or_else(|| Some("illuminance".to_string())),
+                            state_class: sensor_config
+                                .default
+                                .state_class
+                                .clone()
+                                .or_else(|| Some("measurement".to_string())),
+                            unit_of_measurement: sensor_config
+                                .default
+                                .unit_of_measurement
+                                .clone()
+                                .or_else(|| Some("lx".to_string())),
+                            name: sensor_config.default.name.clone(),
+                            id: id.clone(),
+                            filters: sensor_config.default.filters.clone(),
                         }));
                         sensors.insert(id.clone(), sensor);
                     }
@@ -106,7 +103,7 @@ impl Module for Default {
         })
     }
 
-    fn components(&mut self) -> Vec<InternalComponent> {
+    fn components(&mut self) -> Vec<UbiComponent> {
         self.components.clone()
     }
 

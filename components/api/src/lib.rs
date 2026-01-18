@@ -32,10 +32,10 @@ use tokio::sync::broadcast::Receiver;
 use tokio::sync::broadcast::Sender;
 use ubihome_core::features::ip::get_ip_address;
 use ubihome_core::features::ip::get_network_mac_address;
-use ubihome_core::internal::sensors::InternalComponent;
 use ubihome_core::NoConfig;
 use ubihome_core::{
-    config_template, home_assistant::sensors::Component, ChangedMessage, Module, PublishedMessage,
+    config_template, home_assistant::sensors::UbiComponent, ChangedMessage, Module,
+    PublishedMessage,
 };
 
 use ubihome_core::constants::is_readable_string_option;
@@ -90,7 +90,7 @@ impl Module for Default {
         }
     }
 
-    fn components(&mut self) -> Vec<InternalComponent> {
+    fn components(&mut self) -> Vec<UbiComponent> {
         Vec::new()
     }
 
@@ -155,7 +155,7 @@ impl Module for Default {
                     PublishedMessage::Components { components } => {
                         for component in components {
                             match component.clone() {
-                                Component::Switch(switch_entity) => {
+                                UbiComponent::Switch(switch_entity) => {
                                     let key = hash_fnv1(&switch_entity.id);
                                     let component_switch_entity =
                                         ProtoMessage::ListEntitiesSwitchResponse(
@@ -176,7 +176,7 @@ impl Module for Default {
                                     api_components_by_key.insert(key, component_switch_entity);
                                     api_components_key_id.insert(switch_entity.id.clone(), key);
                                 }
-                                Component::Button(button) => {
+                                UbiComponent::Button(button) => {
                                     let key = hash_fnv1(&button.id);
                                     let component_button = ProtoMessage::ListEntitiesButtonResponse(
                                         ListEntitiesButtonResponse {
@@ -193,7 +193,7 @@ impl Module for Default {
                                     api_components_by_key.insert(key, component_button);
                                     api_components_key_id.insert(button.id.clone(), key);
                                 }
-                                Component::Sensor(sensor) => {
+                                UbiComponent::Sensor(sensor) => {
                                     let key = hash_fnv1(&sensor.id);
                                     let component_sensor = ProtoMessage::ListEntitiesSensorResponse(
                                         ListEntitiesSensorResponse {
@@ -221,7 +221,7 @@ impl Module for Default {
                                     api_components_by_key.insert(key, component_sensor);
                                     api_components_key_id.insert(sensor.id.clone(), key);
                                 }
-                                Component::BinarySensor(binary_sensor) => {
+                                UbiComponent::BinarySensor(binary_sensor) => {
                                     let key = hash_fnv1(&binary_sensor.id);
                                     let component_binary_sensor =
                                         ProtoMessage::ListEntitiesBinarySensorResponse(
@@ -242,7 +242,7 @@ impl Module for Default {
                                     api_components_by_key.insert(key, component_binary_sensor);
                                     api_components_key_id.insert(binary_sensor.id.clone(), key);
                                 }
-                                Component::Light(light) => {
+                                UbiComponent::Light(light) => {
                                     let key = hash_fnv1(&light.id);
                                     let component_light = ProtoMessage::ListEntitiesLightResponse(
                                         ListEntitiesLightResponse {
