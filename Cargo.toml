@@ -38,8 +38,8 @@ self-replace = "1.5.0"
 current_platform = "0.2.0"
 indicatif = "0.17.8"
 futures-util = "0.3.31"
-serde-saphyr = { version = "0.0.12", features = ["garde"] }
-garde = { version = "0.22.1", features = ["serde"] }
+serde-saphyr = { version = "0.0.15", features = ["garde", "miette"] }
+garde = { version = "0.22.1", features = ["serde", "regex"] }
 
 
 [build-dependencies]

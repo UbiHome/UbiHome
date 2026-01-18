@@ -99,12 +99,14 @@ class UbiHome(object):
         config=None,
         throw_on_error=True,
         wait_for_api=False,
+        extra_logging=True,
         # executable=None,
     ):
         self.arguments = arguments
         self.configuration_file = f"config{os.getpid()}.yaml"
         self.throw_on_error = throw_on_error
         self.wait_for_api = wait_for_api
+        self.extra_logging = extra_logging
         if platform.system() == "Windows":
             file = "ubihome.exe"
         else:
@@ -124,7 +126,10 @@ class UbiHome(object):
 
     async def __aenter__(self):
         my_env = os.environ.copy()
-        my_env["RUST_LOG"] = "TRACE"
+        if self.extra_logging:
+            my_env["RUST_LOG"] = "TRACE"
+        else:
+            my_env["RUST_LOG"] = ""
         my_env["RUST_BACKTRACE"] = "1"
         my_env["RUSTFLAGS"] = "-Awarnings"
         with open(self.configuration_file, "w") as f:
@@ -132,11 +137,13 @@ class UbiHome(object):
 
         if os.path.exists(self.executable):
             # Use pre-build binaries
+            arguments = [self.executable, "-c", self.configuration_file] + list(
+                self.arguments
+            )
+
+            logging.info("Starting with command: %s", " ".join(arguments))
             self.process = await asyncio.create_subprocess_exec(
-                self.executable,
-                "-c",
-                self.configuration_file,
-                *self.arguments,
+                *arguments,
                 env=my_env,
                 stderr=asyncio.subprocess.PIPE,
                 stdout=asyncio.subprocess.PIPE,
@@ -226,8 +233,10 @@ class UbiHome(object):
             print(message.rstrip())
 
 
-async def run_ubihome(*arguments, config=None) -> str:
-    async with UbiHome(*arguments, config=config) as ubihome:
+async def run_ubihome(*arguments, config=None, extra_logging=True) -> str:
+    async with UbiHome(
+        *arguments, config=config, extra_logging=extra_logging
+    ) as ubihome:
         await asyncio.sleep(1)
         return ubihome.stdout or ""
 

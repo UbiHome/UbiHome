@@ -1,6 +1,5 @@
 use esphome_native_api::esphomeapi::EspHomeApi;
 use esphome_native_api::hash::hash_fnv1;
-use esphome_native_api::parser;
 use esphome_native_api::parser::ProtoMessage;
 use esphome_native_api::proto::version_2025_12_1::BinarySensorStateResponse;
 use esphome_native_api::proto::version_2025_12_1::BluetoothLeAdvertisementResponse;
@@ -19,7 +18,6 @@ use esphome_native_api::proto::version_2025_12_1::SensorStateResponse;
 use esphome_native_api::proto::version_2025_12_1::SubscribeHomeAssistantStateResponse;
 use esphome_native_api::proto::version_2025_12_1::SubscribeLogsResponse;
 use esphome_native_api::proto::version_2025_12_1::SwitchStateResponse;
-// use garde::Validate;
 use log::debug;
 use log::info;
 use log::trace;

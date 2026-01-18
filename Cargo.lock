@@ -3,6 +3,21 @@
 version = 4
 
 [[package]]
+name = "addr2line"
+version = "0.25.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1b5d307320b3181d6d7954e663bd7c774a838b8220fe0593c86d9fb09f498b4b"
+dependencies = [
+ "gimli",
+]
+
+[[package]]
+name = "adler2"
+version = "2.0.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "320119579fcad9c21884f5c4861d16174d0e06250625266f50fe6898340abefa"
+
+[[package]]
 name = "aead"
 version = "0.5.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -399,6 +414,30 @@ dependencies = [
  "tower-layer",
  "tower-service",
  "tracing",
+]
+
+[[package]]
+name = "backtrace"
+version = "0.3.76"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "bb531853791a215d7c62a30daf0dde835f381ab5de4589cfe7c649d2cbe92bd6"
+dependencies = [
+ "addr2line",
+ "cfg-if",
+ "libc",
+ "miniz_oxide",
+ "object",
+ "rustc-demangle",
+ "windows-link 0.2.1",
+]
+
+[[package]]
+name = "backtrace-ext"
+version = "0.2.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "537beee3be4a18fb023b570f80e3ae28003db9167a751266b259926e25539d50"
+dependencies = [
+ "backtrace",
 ]
 
 [[package]]
@@ -1250,12 +1289,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "foldhash"
-version = "0.1.5"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d9c4f5dac5e15c24eb999c26181a6ca40b39fe946cbe4c263c7209467bc83af2"
-
-[[package]]
 name = "form_urlencoded"
 version = "1.2.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1429,6 +1462,8 @@ checksum = "3a74b56a4039a46e8c91cc9d84e8a7df4e1f8b24239ca57d1304b3263cb599b9"
 dependencies = [
  "compact_str",
  "garde_derive",
+ "once_cell",
+ "regex",
  "serde",
  "smallvec 1.15.1",
 ]
@@ -1441,6 +1476,7 @@ checksum = "7224c08ec489e2840af29ed882b47f7f6ac8f4ce15c275d9fc0d6d1b94578ae6"
 dependencies = [
  "proc-macro2",
  "quote",
+ "regex",
  "syn 2.0.114",
 ]
 
@@ -1504,6 +1540,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "gimli"
+version = "0.32.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e629b9b98ef3dd8afe6ca2bd0f89306cec16d43d907889945bc5d6687f2f13c7"
+
+[[package]]
 name = "gpio-cdev"
 version = "0.6.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1522,27 +1564,9 @@ checksum = "e5274423e17b7c9fc20b6e7e208532f9b19825d82dfd615708b70edd83df41f1"
 
 [[package]]
 name = "hashbrown"
-version = "0.15.5"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9229cfe53dfd69f0609a49f65461bd93001ea1ef889cd5529dd176593f5338a1"
-dependencies = [
- "foldhash",
-]
-
-[[package]]
-name = "hashbrown"
 version = "0.16.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "841d1cc9bed7f9236f321df977030373f4a4163ae1a7dbfe1a51a2c1a51d9100"
-
-[[package]]
-name = "hashlink"
-version = "0.10.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7382cf6263419f2d8df38c55d7da83da5c18aef87fc7a7fc1fb1e344edfe14c1"
-dependencies = [
- "hashbrown 0.15.5",
-]
 
 [[package]]
 name = "heck"
@@ -1952,6 +1976,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "is_ci"
+version = "1.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7655c9839580ee829dfacba1d1278c2b7883e50a277ff7541299489d6bdfdc45"
+
+[[package]]
 name = "is_terminal_polyfill"
 version = "1.70.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2231,10 +2261,49 @@ dependencies = [
 ]
 
 [[package]]
+name = "miette"
+version = "7.6.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5f98efec8807c63c752b5bd61f862c165c115b0a35685bdcfd9238c7aeb592b7"
+dependencies = [
+ "backtrace",
+ "backtrace-ext",
+ "cfg-if",
+ "miette-derive",
+ "owo-colors",
+ "supports-color",
+ "supports-hyperlinks",
+ "supports-unicode",
+ "terminal_size",
+ "textwrap",
+ "unicode-width 0.1.14",
+]
+
+[[package]]
+name = "miette-derive"
+version = "7.6.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "db5b29714e950dbb20d5e6f74f9dcec4edbcc1067bb7f8ed198c097b8c1a818b"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 2.0.114",
+]
+
+[[package]]
 name = "mime"
 version = "0.3.17"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6877bb514081ee2a7ff5ef9de3281f14a4dd4bceac4c09388074a6b5df8a139a"
+
+[[package]]
+name = "miniz_oxide"
+version = "0.8.9"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1fa76a2c86f704bdb222d66965fb3d63269ce38518b83cb0575fca855ebb6316"
+dependencies = [
+ "adler2",
+]
 
 [[package]]
 name = "mio"
@@ -2451,6 +2520,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "object"
+version = "0.37.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ff76201f031d8863c38aa7f905eca4f53abbfa15f609db4277d44cd8938f33fe"
+dependencies = [
+ "memchr",
+]
+
+[[package]]
 name = "once_cell"
 version = "1.21.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2489,6 +2567,12 @@ dependencies = [
  "futures-core",
  "pin-project-lite",
 ]
+
+[[package]]
+name = "owo-colors"
+version = "4.2.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9c6901729fa79e91a0913333229e9ca5dc725089d1c363b2f4b4760709dc4a52"
 
 [[package]]
 name = "parking"
@@ -3071,6 +3155,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "rustc-demangle"
+version = "0.1.27"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b50b8869d9fc858ce7266cce0194bd74df58b9d0e3f6df3a9fc8eb470d95c09d"
+
+[[package]]
 name = "rustc-hash"
 version = "2.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3229,13 +3319,14 @@ dependencies = [
 ]
 
 [[package]]
-name = "saphyr-parser"
-version = "0.0.6"
+name = "saphyr-parser-bw"
+version = "0.0.601"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4fb771b59f6b1985d1406325ec28f97cfb14256abcec4fdfb37b36a1766d6af7"
+checksum = "774c33a6543af6939bd9b250c86c72d2dcc169db3c028e13ae07a6927c863dab"
 dependencies = [
  "arraydeque",
- "hashlink",
+ "smallvec 2.0.0-alpha.12",
+ "thiserror 2.0.17",
 ]
 
 [[package]]
@@ -3305,22 +3396,24 @@ dependencies = [
 
 [[package]]
 name = "serde-saphyr"
-version = "0.0.12"
+version = "0.0.15"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ef7e021087b4b525edcbb93045ca3f1dafeff7800b3c7960a90a75f197e257da"
+checksum = "abbf50012d4bcae3935e6c4f961fdcd9f99bba08522696113c1df7c151150a68"
 dependencies = [
  "ahash",
  "annotate-snippets",
  "base64",
  "encoding_rs_io",
  "garde",
+ "miette",
  "nohash-hasher",
  "num-traits",
- "ryu",
- "saphyr-parser",
+ "regex",
+ "saphyr-parser-bw",
  "serde",
  "serde_json",
  "smallvec 2.0.0-alpha.12",
+ "zmij",
 ]
 
 [[package]]
@@ -3643,6 +3736,27 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "13c2bddecc57b384dee18652358fb23172facb8a2c51ccc10d74c157bdea3292"
 
 [[package]]
+name = "supports-color"
+version = "3.0.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c64fc7232dd8d2e4ac5ce4ef302b1d81e0b80d055b9d77c7c4f51f6aa4c867d6"
+dependencies = [
+ "is_ci",
+]
+
+[[package]]
+name = "supports-hyperlinks"
+version = "3.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e396b6523b11ccb83120b115a0b7366de372751aa6edf19844dfb13a6af97e91"
+
+[[package]]
+name = "supports-unicode"
+version = "3.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b7401a30af6cb5818bb64852270bb722533397edcfc7344954a38f420819ece2"
+
+[[package]]
 name = "syn"
 version = "1.0.109"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3732,6 +3846,26 @@ dependencies = [
  "once_cell",
  "rustix 1.1.3",
  "windows-sys 0.61.2",
+]
+
+[[package]]
+name = "terminal_size"
+version = "0.4.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "60b8cb979cb11c32ce1603f8137b22262a9d131aaa5c37b5678025f22b8becd0"
+dependencies = [
+ "rustix 1.1.3",
+ "windows-sys 0.60.2",
+]
+
+[[package]]
+name = "textwrap"
+version = "0.16.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c13547615a44dc9c452a8a534638acdf07120d4b6847c8178705da06306a3057"
+dependencies = [
+ "unicode-linebreak",
+ "unicode-width 0.2.2",
 ]
 
 [[package]]
@@ -4183,6 +4317,7 @@ dependencies = [
  "log",
  "network-interface",
  "paste",
+ "regex",
  "serde",
  "tokio",
 ]
@@ -4341,6 +4476,12 @@ name = "unicode-ident"
 version = "1.0.22"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9312f7c4f6ff9069b165498234ce8be658059c6728633667c526e27dc2cf1df5"
+
+[[package]]
+name = "unicode-linebreak"
+version = "0.1.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3b09c83c3c29d37506a3e260c08c03743a6bb66a9cd432c6934ab501a190571f"
 
 [[package]]
 name = "unicode-segmentation"

@@ -1,6 +1,7 @@
+use crate::config::BaseConfig;
 use flexi_logger::writers::FileLogWriter;
 use flexi_logger::{detailed_format, Age, Cleanup, Criterion, Duplicate, FileSpec, Logger, Naming};
-use ubihome::CoreConfig;
+
 use ubihome_core::binary_sensor::{ActionType, FilterType};
 use ubihome_core::home_assistant::sensors::Component;
 use ubihome_core::internal::sensors::InternalComponent;
@@ -38,64 +39,71 @@ fn read_base_config(path: Option<String>) -> Result<String, String> {
     panic!("oh no!");
 }
 
-fn get_all_modules(yaml: &String) -> Vec<Box<dyn Module>> {
+fn configure_platforms(
+    config_string: &String,
+    platforms: &Vec<String>,
+) -> Result<Vec<Box<dyn Module>>, String> {
     // Match all top level keys in the YAML file
-    let modules_to_load = yaml
-        .lines()
-        .filter_map(|line| {
-            let line = line;
-            if line.starts_with(' ') {
-                None
-            } else if line.is_empty() {
-                None
-            } else if line.starts_with('#') {
-                None
-            } else {
-                line.split(':').next().map(|key| key.trim().to_string())
-            }
-        })
-        .collect::<Vec<String>>();
-    println!("Modules to load: {:?}", modules_to_load);
+
+    println!("Modules to load: {:?}", platforms);
 
     let mut modules: Vec<Box<dyn Module>> = Vec::new();
-    if modules_to_load.contains(&"bme280".to_string()) {
-        modules.push(Box::new(ubihome_bme280::Default::new(&yaml).unwrap()));
-    }
-    if modules_to_load.contains(&"gpio".to_string()) {
-        modules.push(Box::new(ubihome_gpio::Default::new(&yaml).unwrap()));
-    }
-    if modules_to_load.contains(&"shell".to_string()) {
-        modules.push(Box::new(ubihome_shell::Default::new(&yaml).unwrap()));
-    }
-    if modules_to_load.contains(&"illuminance".to_string()) {
-        modules.push(Box::new(ubihome_illuminance::Default::new(&yaml).unwrap()));
-    }
-    // if modules_to_load.contains(&"mdns".to_string()) {
-    modules.push(Box::new(ubihome_mdns::Default::new(&yaml).unwrap()));
-    // }
-    if modules_to_load.contains(&"mqtt".to_string()) {
-        modules.push(Box::new(ubihome_mqtt::Default::new(&yaml).unwrap()));
-    }
-    if modules_to_load.contains(&"api".to_string()) {
-        modules.push(Box::new(ubihome_api::UbiHomeDefault::new(&yaml).unwrap()));
-    }
-    if modules_to_load.contains(&"power_utils".to_string()) {
-        modules.push(Box::new(ubihome_power_utils::Default::new(&yaml).unwrap()));
-    }
-    if modules_to_load.contains(&"web_server".to_string()) {
-        modules.push(Box::new(ubihome_web_server::Default::new(&yaml).unwrap()));
+    for module in platforms.iter() {
+        match module.as_str() {
+            "bme280" => {
+                modules.push(Box::new(
+                    ubihome_bme280::Default::new(config_string).unwrap(),
+                ));
+            }
+            "gpio" => {
+                modules.push(Box::new(ubihome_gpio::Default::new(config_string).unwrap()));
+            }
+            "shell" => {
+                modules.push(Box::new(
+                    ubihome_shell::Default::new(config_string).unwrap(),
+                ));
+            }
+            "illuminance" => {
+                modules.push(Box::new(
+                    ubihome_illuminance::Default::new(config_string).unwrap(),
+                ));
+            }
+            "mdns" => {
+                modules.push(Box::new(ubihome_mdns::Default::new(config_string).unwrap()));
+            }
+            "mqtt" => {
+                modules.push(Box::new(ubihome_mqtt::Default::new(config_string).unwrap()));
+            }
+            "api" => {
+                modules.push(Box::new(
+                    ubihome_api::UbiHomeDefault::new(config_string).unwrap(),
+                ));
+            }
+            "power_utils" => {
+                modules.push(Box::new(
+                    ubihome_power_utils::Default::new(config_string).unwrap(),
+                ));
+            }
+            "web_server" => {
+                modules.push(Box::new(
+                    ubihome_web_server::Default::new(config_string).unwrap(),
+                ));
+            }
+            "bluetooth_proxy" => {
+                modules.push(Box::new(
+                    ubihome_bluetooth_proxy::Default::new(config_string).unwrap(),
+                ));
+            }
+            _ => {
+                return Err(format!("Unknown module platform: {}", module));
+            }
+        }
     }
 
-    // TODO: Throw error if platform is used in sensor but not configured
-    if modules_to_load.contains(&"bluetooth_proxy".to_string()) {
-        modules.push(Box::new(
-            ubihome_bluetooth_proxy::Default::new(&yaml).unwrap(),
-        ));
-    }
-    return modules;
+    return Ok(modules);
 }
 
-async fn initialize_modules(
+fn initialize_platforms(
     modules: &mut Vec<Box<dyn Module>>,
 ) -> Result<Vec<InternalComponent>, String> {
     let mut all_components: Vec<InternalComponent> = Vec::new();
@@ -125,6 +133,7 @@ async fn run_modules(
 
 pub(crate) fn run(
     config_path: Option<String>,
+    validate_only: bool,
     shutdown_signal: Option<mpsc::Receiver<()>>,
 ) -> Result<(), Box<dyn std::error::Error>> {
     #[cfg(not(debug_assertions))]
@@ -167,11 +176,17 @@ pub(crate) fn run(
     let config_string: String =
         read_base_config(config_path).expect("Failed to load base configuration");
 
+    let no_snippet = serde_saphyr::Options {
+        with_snippet: false,
+        ..Default::default()
+    };
     let validation_result =
-        serde_saphyr::from_str_with_options_valid::<CoreConfig>(&config_string, Default::default());
+        serde_saphyr::from_str_with_options_valid::<BaseConfig>(&config_string, no_snippet.clone());
+
     if let Err(errors) = validation_result {
-        error!("Configuration is invalid:");
-        error!("{}", errors);
+        let report = serde_saphyr::miette::to_miette_report(&errors, &config_string, "config.yml");
+        println!("Configuration is invalid:");
+        eprintln!("{report:?}");
         return Ok(());
     }
     let config = validation_result.unwrap();
@@ -192,15 +207,58 @@ pub(crate) fn run(
             .unwrap();
     };
 
-    // warn!("Config: {:?}", &config);
+    debug!("Configuration loaded: {:?}", config);
+    let platforms = config_string
+        .lines()
+        .filter_map(|line| {
+            let line = line;
+            if line.starts_with(' ') {
+                None
+            } else if line.is_empty() {
+                None
+            } else if line.starts_with('#') {
+                None
+            } else {
+                line.split(':').next().map(|property| property.to_string())
+            }
+        })
+        .collect::<Vec<String>>();
+    debug!("Configured modules: {:?}", platforms);
+
+    let mut referenced_platforms: Vec<String> = config
+        .binary_sensor
+        .iter()
+        .flatten()
+        .chain(config.sensor.iter().flatten())
+        .chain(config.button.iter().flatten())
+        .map(|s| s.platform.clone())
+        .collect();
+    referenced_platforms.push("mdns".to_string());
+    referenced_platforms.dedup();
+
+    // Check that all referenced platforms are configured
+    for platform in referenced_platforms.iter() {
+        if !platforms.contains(platform) {
+            error!(
+                "Platform '{}' is referenced in entities but not configured in the configuration file.",
+                platform
+            );
+        }
+    }
+
+    let mut configured_platforms = configure_platforms(&config_string, &platforms).unwrap();
+    log::info!("Loaded {} modules", configured_platforms.len());
+    let initialized_platforms = initialize_platforms(&mut configured_platforms).unwrap();
+
+    if validate_only {
+        println!("Configuration is valid.");
+        return Ok(());
+    }
 
     // Spawn the root task
     let rt = Runtime::new().unwrap();
     rt.block_on(async {
-        let mut modules = get_all_modules(&config_string);
-        log::info!("Loaded {} modules", modules.len());
 
-        let components = initialize_modules(&mut modules).await.unwrap();
 
         let (internal_tx, modules_rx) = broadcast::channel::<PublishedMessage>(16);
         let (modules_tx, mut internal_rx) = broadcast::channel::<ChangedMessage>(16);
@@ -209,7 +267,7 @@ pub(crate) fn run(
         let mut signal_map_binary_sensor: HashMap<String, Mutable<Option<Option<bool>>>> = HashMap::new();
         let mut signal_map_sensor: HashMap<String, Mutable<Option<Option<f32>>>> = HashMap::new();
 
-        for component in components.clone() {
+        for component in initialized_platforms.clone() {
             match component {
                 InternalComponent::Button(button) => {
                     // println!("Button: {:?}", button);
@@ -476,12 +534,12 @@ pub(crate) fn run(
             }
         });
 
-        run_modules(modules, modules_tx.clone(), modules_rx).await;
+        run_modules(configured_platforms, modules_tx.clone(), modules_rx).await;
 
-        println!("Components: {:?}", components);
+        println!("Components: {:?}", initialized_platforms);
         internal_tx
             .send(PublishedMessage::Components {
-                components: components
+                components: initialized_platforms
                     .iter()
                     .map(|c| match c {
                         InternalComponent::Switch(switch) => Component::Switch(switch.ha.clone()),
@@ -538,6 +596,6 @@ pub(crate) fn run(
             }
         }
     });
-    info!("Shutdown complete");
+    debug!("Shutdown complete");
     Ok(())
 }

@@ -1,5 +1,7 @@
 pub mod binary_sensor;
 pub mod button;
+pub mod configuration;
+pub mod constants;
 pub mod features;
 pub mod home_assistant;
 pub mod internal;
@@ -15,8 +17,10 @@ use garde::Validate;
 use home_assistant::sensors::Component;
 use internal::sensors::InternalComponent;
 use serde::Deserialize;
-use std::{collections::HashMap, pin::Pin};
+use std::{collections::HashMap, pin::Pin, sync::LazyLock};
 use tokio::sync::broadcast::{Receiver, Sender};
+
+use crate::constants::{is_readable_string, is_readable_string_option};
 
 pub type BoxFuture<'a, T> = Pin<Box<dyn Future<Output = T> + Send + 'a>>;
 
@@ -142,11 +146,11 @@ pub struct NoConfig {}
 #[derive(Clone, Deserialize, Debug, Validate)]
 #[serde(deny_unknown_fields)]
 pub struct UbiHome {
-    #[garde(ascii, length(min = 3, max = 25))]
+    #[garde(custom(is_readable_string), length(min = 3, max = 100))]
     pub name: String,
-    #[garde(ascii, length(min = 3, max = 25))]
+    #[garde(custom(is_readable_string_option), length(min = 3, max = 100))]
     pub friendly_name: Option<String>,
-    #[garde(ascii, length(max = 25))]
+    #[garde(custom(is_readable_string_option), length(min = 3, max = 100))]
     pub area: Option<String>,
 }
 

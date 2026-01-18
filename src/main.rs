@@ -1,10 +1,10 @@
+mod config;
 mod constants;
 
 use commands::run;
 use commands::un_install::{install, uninstall};
 use commands::update::update;
 use flexi_logger::{Duplicate, Logger};
-use inquire::Text;
 
 use clap::{Arg, ArgAction, Command};
 use log::{debug, error, info, trace, warn};
@@ -70,7 +70,7 @@ fn windows_service_main(_arguments: Vec<std::ffi::OsString>) {
     dir.push("config.yaml");
     let config_file = dir.to_string_lossy().to_string();
 
-    if let Err(e) = run::run(Some(config_file), Some(shutdown_rx)) {
+    if let Err(e) = run::run(Some(config_file), false, Some(shutdown_rx)) {
         error!("{}", e)
     }
 
@@ -185,7 +185,7 @@ fn main() {
                     uninstall(location.cloned());
                 }
                 Some(("validate", _)) => {
-                    todo!("Validate UbiHome");
+                    run::run(config_file, true, None).unwrap();
                 }
                 Some(("run", sub_matches)) => {
                     println!("UbiHome - {}", VERSION);
@@ -204,7 +204,7 @@ fn main() {
                         panic!("Running as a Windows service is not supported on Linux.");
                     } else {
                         // Run normally
-                        run::run(config_file, None).unwrap();
+                        run::run(config_file, false, None).unwrap();
                     }
                     #[cfg(not(target_os = "windows"))]
                     run::run(config_file, None).unwrap();

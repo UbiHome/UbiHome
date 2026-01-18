@@ -9,7 +9,7 @@ log = "0.4"
 serde = { version = "1.0", features = ["derive"] }
 tokio = { version = "1", features = ["full"] }
 ubihome-core = { path = "../core", features = ["ip"] }
-serde-saphyr = "0.0.12"
+serde-saphyr = { version = "0.0.15", features = ["garde", "miette"] }
 duration-str = "0.16.1"
 esphome-native-api = "2.0.6"
 # esphome-native-api = {path = "../../../esphome-native-api/"}
