@@ -46,56 +46,64 @@ fn main() {
         .dependencies
         .iter()
         .filter(|k| k.0.starts_with("ubihome-"))
+        .filter(|p| p.0 != "ubihome-core")
         .map(|(k, _)| k)
         .collect::<Vec<_>>();
 
-    let usings = import_packages
+    let macro_arguments = import_packages
         .clone()
         .iter()
-        .map(|p| p.replace("-", "_"))
-        .map(|p| format!(r#"use {}::start;"#, p))
+        .map(|p| {
+            format!(
+                r#"({}, "{}", {}, Default),"#,
+                package_name_to_camel_case(p.replace("ubihome-", "")),
+                p.replace("ubihome-", ""),
+                p.replace("-", "_")
+            )
+        })
         .collect::<Vec<_>>()
         .join("\n");
 
+    let components_content = "generate_component_methods!(".to_string() + &macro_arguments + "\n);";
+
     let out_dir = env::var_os("OUT_DIR").unwrap();
-    let dest_path = Path::new(&out_dir).join("start.rs");
-    fs::write(&dest_path, usings).unwrap();
+    let dest_path = Path::new(&out_dir).join("components.rs");
+    fs::write(&dest_path, components_content).unwrap();
+    //     let dest_path = Path::new(&out_dir).join("config.rs");
+    //     fs::write(
+    //         &dest_path,
+    //         format!(
+    //             "#[derive(Clone, Deserialize, Debug)]
+    // pub struct Config {{
+    //     pub ubihome: UbiHome,
+    //     pub logger: Option<Logger>,
 
-    let dest_path = Path::new(&out_dir).join("config.rs");
-    fs::write(
-        &dest_path,
-        format!(
-            "#[derive(Clone, Deserialize, Debug)]
-pub struct Config {{
-    pub ubihome: UbiHome,
-    pub logger: Option<Logger>,
+    //     pub button: Option<Vec<ButtonConfig>>,
+    //     pub binary_sensor: Option<Vec<BinarySensor>>,
 
-    pub button: Option<Vec<ButtonConfig>>,
-    pub binary_sensor: Option<Vec<BinarySensor>>,
-
-{}
-    // pub mqtt: Option<MqttConfig>,
-    // pub shell: Option<ShellConfig>,
-    // pub web_server: Option<WebServerConfig>,
-    // pub gpio: Option<GpioConfig>,
-}}",
-            &import_packages
-                .iter()
-                .map(|p| format!(
-                    "    pub {}: Option<{}Config>",
-                    p.replace("ubihome-", ""),
-                    package_name_to_camel_case(p.replace("ubihome-", ""))
-                ))
-                .collect::<Vec<_>>()
-                .join(",\n")
-        ),
-    )
-    .unwrap();
+    // {}
+    //     // pub mqtt: Option<MqttConfig>,
+    //     // pub shell: Option<ShellConfig>,
+    //     // pub web_server: Option<WebServerConfig>,
+    //     // pub gpio: Option<GpioConfig>,
+    // }}",
+    //             &import_packages
+    //                 .iter()
+    //                 .map(|p| format!(
+    //                     "    pub {}: Option<{}Config>",
+    //                     p.replace("ubihome-", ""),
+    //                     package_name_to_camel_case(p.replace("ubihome-", ""))
+    //                 ))
+    //                 .collect::<Vec<_>>()
+    //                 .join(",\n")
+    //         ),
+    //     )
+    //     .unwrap();
 }
 
 fn package_name_to_camel_case(package_name: String) -> String {
     package_name
-        .split('-')
+        .split('_')
         .map(|s| s.chars().next().unwrap().to_uppercase().collect::<String>() + &s[1..])
         .collect::<Vec<_>>()
         .join("")

@@ -3330,6 +3330,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "saphyr-parser-bw"
+version = "0.0.603"
+source = "git+https://github.com/bourumir-wyngs/saphyr?branch=dev%2Fsaphyr-parser#467ef9aa750faa6cffed06c4e4cc35c59c2a78bd"
+dependencies = [
+ "arraydeque",
+ "smallvec 2.0.0-alpha.12",
+ "thiserror 2.0.17",
+]
+
+[[package]]
 name = "schannel"
 version = "0.1.28"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3409,7 +3419,28 @@ dependencies = [
  "nohash-hasher",
  "num-traits",
  "regex",
- "saphyr-parser-bw",
+ "saphyr-parser-bw 0.0.601",
+ "serde",
+ "serde_json",
+ "smallvec 2.0.0-alpha.12",
+ "zmij",
+]
+
+[[package]]
+name = "serde-saphyr"
+version = "0.0.16"
+source = "git+https://github.com/DanielHabenicht/serde-saphyr?branch=fix%2F59-validate-with-context#bff9fb484e3b4e6d2e5fe29865bd5f0021fe62da"
+dependencies = [
+ "ahash",
+ "annotate-snippets",
+ "base64",
+ "encoding_rs_io",
+ "garde",
+ "miette",
+ "nohash-hasher",
+ "num-traits",
+ "regex",
+ "saphyr-parser-bw 0.0.603",
  "serde",
  "serde_json",
  "smallvec 2.0.0-alpha.12",
@@ -4242,7 +4273,7 @@ dependencies = [
  "rust-embed",
  "self-replace",
  "serde",
- "serde-saphyr",
+ "serde-saphyr 0.0.16",
  "shell_exec",
  "tokio",
  "ubihome-api",
@@ -4269,7 +4300,7 @@ dependencies = [
  "garde",
  "log",
  "serde",
- "serde-saphyr",
+ "serde-saphyr 0.0.15",
  "tokio",
  "ubihome-core",
  "whoami",
@@ -4287,7 +4318,7 @@ dependencies = [
  "libdbus-sys",
  "log",
  "serde",
- "serde-saphyr",
+ "serde-saphyr 0.0.15",
  "tokio",
  "ubihome-core",
 ]
@@ -4302,7 +4333,7 @@ dependencies = [
  "linux-embedded-hal",
  "log",
  "serde",
- "serde-saphyr",
+ "serde-saphyr 0.0.15",
  "tokio",
  "ubihome-core",
 ]
@@ -4332,7 +4363,7 @@ dependencies = [
  "garde",
  "log",
  "serde",
- "serde-saphyr",
+ "serde-saphyr 0.0.15",
  "tokio",
  "ubihome-core",
 ]
@@ -4347,7 +4378,7 @@ dependencies = [
  "log",
  "rppal",
  "serde",
- "serde-saphyr",
+ "serde-saphyr 0.0.15",
  "tokio",
  "ubihome-core",
 ]
@@ -4361,7 +4392,7 @@ dependencies = [
  "industrial-io",
  "log",
  "serde",
- "serde-saphyr",
+ "serde-saphyr 0.0.15",
  "tokio",
  "ubihome-core",
  "windows 0.61.3",
@@ -4377,7 +4408,7 @@ dependencies = [
  "log",
  "mdns-sd",
  "serde",
- "serde-saphyr",
+ "serde-saphyr 0.0.15",
  "tokio",
  "ubihome-core",
 ]
@@ -4391,7 +4422,7 @@ dependencies = [
  "log",
  "rumqttc",
  "serde",
- "serde-saphyr",
+ "serde-saphyr 0.0.15",
  "serde_json",
  "serde_tuple",
  "tokio",
@@ -4407,7 +4438,7 @@ dependencies = [
  "garde",
  "log",
  "serde",
- "serde-saphyr",
+ "serde-saphyr 0.0.15",
  "system_shutdown",
  "tokio",
  "ubihome-core",
@@ -4421,7 +4452,7 @@ dependencies = [
  "garde",
  "log",
  "serde",
- "serde-saphyr",
+ "serde-saphyr 0.0.15",
  "shell_exec",
  "tokio",
  "ubihome-core",
@@ -4438,7 +4469,7 @@ dependencies = [
  "garde",
  "log",
  "serde",
- "serde-saphyr",
+ "serde-saphyr 0.0.15",
  "tokio",
  "tokio-stream",
  "tower-http",

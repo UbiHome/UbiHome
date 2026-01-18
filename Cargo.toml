@@ -38,7 +38,9 @@ self-replace = "1.5.0"
 current_platform = "0.2.0"
 indicatif = "0.17.8"
 futures-util = "0.3.31"
-serde-saphyr = { version = "0.0.15", features = ["garde", "miette"] }
+# Use package again when https://github.com/bourumir-wyngs/serde-saphyr/issues/59 is resolved
+# serde-saphyr = { version = "0.0.15", features = ["garde", "miette"] }
+serde-saphyr = { git = "https://github.com/DanielHabenicht/serde-saphyr", branch = "fix/59-validate-with-context", features = ["garde", "miette"] }
 garde = { version = "0.22.1", features = ["serde", "regex"] }
 
 

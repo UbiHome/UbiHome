@@ -1,6 +1,9 @@
 use regex::Regex;
 use std::sync::LazyLock;
 
+use crate::configuration::base::BaseConfigContext;
+
+#[macro_export]
 macro_rules! regex_pair {
     ($name:ident, $remover_name:ident, $pattern:literal) => {
         static $name: LazyLock<Regex> =
@@ -23,7 +26,7 @@ fn test_id_re_matches() {
     assert!(!ID_RE.is_match("test😀"));
 }
 
-pub(crate) fn is_id_string_option(value: &Option<String>, _: &()) -> garde::Result {
+pub fn is_id_string_option(value: &Option<String>, _: &BaseConfigContext) -> garde::Result {
     if let Some(inner_value) = value {
         if !ID_RE.is_match(inner_value) {
             let invalid_values = ID_RE_REMOVER.replace_all(inner_value, "");
@@ -64,13 +67,21 @@ fn readable_string_error(value: &str) -> garde::Error {
     ))
 }
 
-pub(crate) fn is_readable_string(value: &str, _: &()) -> garde::Result {
+pub(crate) fn is_readable_string_with_context(value: &str, _: &BaseConfigContext) -> garde::Result {
     if !READABLE_RE.is_match(value) {
         return Err(readable_string_error(value));
     }
     Ok(())
 }
-pub(crate) fn is_readable_string_option(value: &Option<String>, _: &()) -> garde::Result {
+
+pub fn is_readable_string(value: &str, _: &()) -> garde::Result {
+    if !READABLE_RE.is_match(value) {
+        return Err(readable_string_error(value));
+    }
+    Ok(())
+}
+
+pub fn is_readable_string_option(value: &Option<String>, _: &()) -> garde::Result {
     if let Some(inner_value) = value {
         if !READABLE_RE.is_match(inner_value) {
             return Err(readable_string_error(inner_value));

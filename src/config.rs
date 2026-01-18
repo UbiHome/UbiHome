@@ -1,24 +1,22 @@
-use std::collections::HashMap;
-
 use garde::Validate;
 use serde::Deserialize;
-use serde::Deserializer;
 use ubihome::Logger;
+use ubihome_core::configuration::base::BaseConfigContext;
 use ubihome_core::configuration::base::BaseEntityProperties;
-use ubihome_core::{template_mapper, UbiHome};
+use ubihome_core::UbiHome;
 
 // Base configuration structure
 #[derive(Clone, Deserialize, Debug, Validate)]
+#[garde(context(BaseConfigContext as ctx))]
 pub struct BaseConfig {
-    #[garde(dive)]
+    #[garde(dive(&()))]
     pub ubihome: UbiHome,
 
-    #[garde(dive)]
+    #[garde(dive(&()))]
     pub logger: Option<Logger>,
 
     #[garde(dive)]
     pub button: Option<Vec<BaseEntityProperties>>,
-
     #[garde(dive)]
     pub sensor: Option<Vec<BaseEntityProperties>>,
 

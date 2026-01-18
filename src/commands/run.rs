@@ -1,8 +1,11 @@
+use crate::components::{configure_platforms, initialize_platforms, run_platforms, Platform};
 use crate::config::BaseConfig;
 use flexi_logger::writers::FileLogWriter;
 use flexi_logger::{detailed_format, Age, Cleanup, Criterion, Duplicate, FileSpec, Logger, Naming};
 
+use garde::Validate;
 use ubihome_core::binary_sensor::{ActionType, FilterType};
+use ubihome_core::configuration::base::BaseConfigContext;
 use ubihome_core::home_assistant::sensors::Component;
 use ubihome_core::internal::sensors::InternalComponent;
 use ubihome_core::sensor::SensorFilterType;
@@ -10,7 +13,7 @@ use ubihome_core::{ChangedMessage, Module, PublishedMessage};
 
 use futures_signals::signal::{Mutable, SignalExt};
 use log::{debug, error, info, trace, warn};
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::fs;
 use std::path::Path;
 use std::sync::mpsc;
@@ -37,98 +40,6 @@ fn read_base_config(path: Option<String>) -> Result<String, String> {
     // printlm!(DEFAULT_CONFIG);
     // DEFAULT_CONFIG
     panic!("oh no!");
-}
-
-fn configure_platforms(
-    config_string: &String,
-    platforms: &Vec<String>,
-) -> Result<Vec<Box<dyn Module>>, String> {
-    // Match all top level keys in the YAML file
-
-    println!("Modules to load: {:?}", platforms);
-
-    let mut modules: Vec<Box<dyn Module>> = Vec::new();
-    for module in platforms.iter() {
-        match module.as_str() {
-            "bme280" => {
-                modules.push(Box::new(
-                    ubihome_bme280::Default::new(config_string).unwrap(),
-                ));
-            }
-            "gpio" => {
-                modules.push(Box::new(ubihome_gpio::Default::new(config_string).unwrap()));
-            }
-            "shell" => {
-                modules.push(Box::new(
-                    ubihome_shell::Default::new(config_string).unwrap(),
-                ));
-            }
-            "illuminance" => {
-                modules.push(Box::new(
-                    ubihome_illuminance::Default::new(config_string).unwrap(),
-                ));
-            }
-            "mdns" => {
-                modules.push(Box::new(ubihome_mdns::Default::new(config_string).unwrap()));
-            }
-            "mqtt" => {
-                modules.push(Box::new(ubihome_mqtt::Default::new(config_string).unwrap()));
-            }
-            "api" => {
-                modules.push(Box::new(
-                    ubihome_api::UbiHomeDefault::new(config_string).unwrap(),
-                ));
-            }
-            "power_utils" => {
-                modules.push(Box::new(
-                    ubihome_power_utils::Default::new(config_string).unwrap(),
-                ));
-            }
-            "web_server" => {
-                modules.push(Box::new(
-                    ubihome_web_server::Default::new(config_string).unwrap(),
-                ));
-            }
-            "bluetooth_proxy" => {
-                modules.push(Box::new(
-                    ubihome_bluetooth_proxy::Default::new(config_string).unwrap(),
-                ));
-            }
-            _ => {
-                return Err(format!("Unknown module platform: {}", module));
-            }
-        }
-    }
-
-    return Ok(modules);
-}
-
-fn initialize_platforms(
-    modules: &mut Vec<Box<dyn Module>>,
-) -> Result<Vec<InternalComponent>, String> {
-    let mut all_components: Vec<InternalComponent> = Vec::new();
-    for module in modules.iter_mut() {
-        let mut components = module.components();
-        // println!("Module: {:?}", &components);
-        all_components.append(&mut components);
-    }
-    Ok(all_components)
-}
-
-async fn run_modules(
-    modules: Vec<Box<dyn Module>>,
-    sender: Sender<ChangedMessage>,
-    receiver: Receiver<PublishedMessage>,
-) {
-    for module in modules {
-        let tx = sender.clone();
-        let rx = receiver.resubscribe();
-        tokio::spawn({
-            async move {
-                module.run(tx, rx).await.unwrap();
-            }
-        });
-    }
 }
 
 pub(crate) fn run(
@@ -176,12 +87,44 @@ pub(crate) fn run(
     let config_string: String =
         read_base_config(config_path).expect("Failed to load base configuration");
 
+    let platforms = config_string
+        .lines()
+        .filter_map(|line| {
+            let line = line;
+            if line.starts_with(' ') {
+                None
+            } else if line.is_empty() {
+                None
+            } else if line.starts_with('#') {
+                None
+            } else {
+                line.split(':').next().map(|property| property.to_string())
+            }
+        })
+        .filter(|platform| {
+            platform != "logger"
+                && platform != "ubihome"
+                && platform != "sensor"
+                && platform != "binary_sensor"
+                && platform != "button"
+                && platform != "switch"
+                && platform != "light"
+        })
+        .collect::<Vec<String>>();
+    debug!("Configured modules: {:?}", &platforms);
+
     let no_snippet = serde_saphyr::Options {
         with_snippet: false,
         ..Default::default()
     };
-    let validation_result =
-        serde_saphyr::from_str_with_options_valid::<BaseConfig>(&config_string, no_snippet.clone());
+    let ctx = BaseConfigContext {
+        allowed_platforms: Some(platforms.clone()),
+    };
+    let validation_result = serde_saphyr::from_str_with_options_context_valid::<BaseConfig>(
+        &config_string,
+        no_snippet.clone(),
+        &ctx,
+    );
 
     if let Err(errors) = validation_result {
         let report = serde_saphyr::miette::to_miette_report(&errors, &config_string, "config.yml");
@@ -190,6 +133,7 @@ pub(crate) fn run(
         return Ok(());
     }
     let config = validation_result.unwrap();
+
     if let Some(logger_config) = config.logger.clone() {
         logger
             .reset_flw(&FileLogWriter::builder(
@@ -207,46 +151,29 @@ pub(crate) fn run(
             .unwrap();
     };
 
-    debug!("Configuration loaded: {:?}", config);
-    let platforms = config_string
-        .lines()
-        .filter_map(|line| {
-            let line = line;
-            if line.starts_with(' ') {
-                None
-            } else if line.is_empty() {
-                None
-            } else if line.starts_with('#') {
-                None
-            } else {
-                line.split(':').next().map(|property| property.to_string())
-            }
-        })
-        .collect::<Vec<String>>();
-    debug!("Configured modules: {:?}", platforms);
+    debug!("BaseConfiguration: {:?}", config);
 
-    let mut referenced_platforms: Vec<String> = config
-        .binary_sensor
-        .iter()
-        .flatten()
-        .chain(config.sensor.iter().flatten())
-        .chain(config.button.iter().flatten())
-        .map(|s| s.platform.clone())
-        .collect();
-    referenced_platforms.push("mdns".to_string());
-    referenced_platforms.dedup();
-
-    // Check that all referenced platforms are configured
-    for platform in referenced_platforms.iter() {
-        if !platforms.contains(platform) {
-            error!(
-                "Platform '{}' is referenced in entities but not configured in the configuration file.",
-                platform
+    let mut platforms_to_load: HashSet<Platform> = HashSet::new();
+    for platform in platforms.iter() {
+        if let Ok(platform_enum) = Platform::from_str(&platform) {
+            platforms_to_load.insert(platform_enum);
+        } else {
+            println!("Configuration is invalid:");
+            eprintln!(
+                r#"Unknown platform specified: {}
+Remove the "{}:" entry from your configuration or install the cargo crate containing the platform."#,
+                platform, platform
             );
+            return Ok(());
         }
     }
-
-    let mut configured_platforms = configure_platforms(&config_string, &platforms).unwrap();
+    let configuration_result = configure_platforms(&config_string, &platforms_to_load);
+    if let Err(e) = configuration_result {
+        println!("Configuration is invalid:");
+        eprintln!("{}", e);
+        return Ok(());
+    }
+    let mut configured_platforms = configuration_result.unwrap();
     log::info!("Loaded {} modules", configured_platforms.len());
     let initialized_platforms = initialize_platforms(&mut configured_platforms).unwrap();
 
@@ -534,9 +461,9 @@ pub(crate) fn run(
             }
         });
 
-        run_modules(configured_platforms, modules_tx.clone(), modules_rx).await;
+        run_platforms(configured_platforms, modules_tx.clone(), modules_rx).await;
 
-        println!("Components: {:?}", initialized_platforms);
+        println!("Platforms: {:?}", initialized_platforms);
         internal_tx
             .send(PublishedMessage::Components {
                 components: initialized_platforms
