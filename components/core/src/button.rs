@@ -5,7 +5,6 @@ use garde::Validate;
 use serde::Deserialize;
 
 with_base_entity_properties! {
-
     #[derive(Clone, Deserialize, Debug, Validate)]
     pub struct ButtonBase {
     }

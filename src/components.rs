@@ -56,7 +56,7 @@ macro_rules! generate_platform_methods {
                                     modules.push(Box::new(component));
                                 }
                                 Err(e) => {
-                                    return Err(format!("Failed to load platform {}: {}", $platform_name, e));
+                                    return Err(e);
                                 }
                             }
                         }

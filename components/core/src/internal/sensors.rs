@@ -34,7 +34,6 @@ pub struct InternalBinarySensor {
 #[derive(Clone, Debug)]
 pub struct InternalSwitch {
     pub ha: UbiSwitch,
-    // pub filters: Option<Vec<BinarySensorFilter>>,
 }
 
 #[derive(Clone, Debug)]

@@ -17,7 +17,7 @@ use ubihome_core::{
     ChangedMessage, Module, PublishedMessage,
 };
 
-#[derive(Debug, Copy, Clone, Deserialize)]
+#[derive(Debug, Copy, Clone, Deserialize, Validate)]
 #[serde(rename_all = "camelCase")]
 pub enum CustomShell {
     Zsh,
@@ -29,13 +29,14 @@ pub enum CustomShell {
 }
 
 #[derive(Clone, Deserialize, Debug, Validate)]
-#[garde(allow_unvalidated)]
 pub struct ShellConfig {
     #[serde(rename = "type")]
+    #[garde(dive)]
     pub kind: Option<CustomShell>,
 
     #[serde(default = "default_timeout")]
     #[serde(deserialize_with = "deserialize_duration")]
+    #[garde(skip)]
     pub timeout: Duration,
 }
 
@@ -63,28 +64,33 @@ pub struct ShellSensorConfig {
 }
 
 #[derive(Clone, Deserialize, Debug, Validate)]
-#[garde(allow_unvalidated)]
 pub struct ShellButtonConfig {
+    #[garde(skip)]
     pub command: String,
 }
 
 #[derive(Clone, Deserialize, Debug, Validate)]
-#[garde(allow_unvalidated)]
 pub struct ShellSwitchConfig {
+    #[garde(skip)]
     pub command_on: String,
+    #[garde(skip)]
     pub command_off: String,
+    #[garde(skip)]
     pub command_state: Option<String>,
 
     #[serde(default = "default_timeout_none")]
     #[serde(deserialize_with = "deserialize_option_duration")]
+    #[garde(skip)]
     pub update_interval: Option<Duration>,
 }
 
 #[derive(Clone, Deserialize, Debug, Validate)]
-#[garde(allow_unvalidated)]
 pub struct ShellLightConfig {
+    #[garde(skip)]
     pub command_on: String,
+    #[garde(skip)]
     pub command_off: String,
+    #[garde(skip)]
     pub command_state: Option<String>,
     // pub command_brightness: Option<String>,
     // pub command_rgb: Option<String>,
@@ -95,6 +101,7 @@ pub struct ShellLightConfig {
     // pub supports_color_temperature: Option<bool>,
     #[serde(default = "default_timeout_none")]
     #[serde(deserialize_with = "deserialize_option_duration")]
+    #[garde(skip)]
     pub update_interval: Option<Duration>,
 }
 
@@ -124,7 +131,8 @@ pub struct Default {
 
 impl Module for Default {
     fn new(config_string: &String) -> Result<Self, String> {
-        let config = serde_saphyr::from_str::<CoreConfig>(config_string).unwrap();
+        let config =
+            serde_saphyr::from_str::<CoreConfig>(config_string).map_err(|e| e.to_string())?;
         debug!("Shell config: {:?}", config);
         let mut components: Vec<InternalComponent> = Vec::new();
 

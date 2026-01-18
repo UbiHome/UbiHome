@@ -77,39 +77,3 @@ macro_rules! with_base_entity_properties {
     //     }
     // };
 }
-
-// with_base_entity_properties! {
-//     #[derive(Clone, Debug, Deserialize, Validate)]
-//     #[garde(context(BaseConfigContext as ctx))]
-//     pub struct BaseEntity {
-//         #[garde(custom(only_allow_configured_platforms), length(min = 3, max = 100))]
-//         pub platform: String,
-//     }
-// }
-
-// #[derive(Clone, Debug, Deserialize, Validate)]
-// #[garde(context(BaseConfigContext as ctx))]
-// pub struct BaseEntityProperties {
-//     #[garde(custom(is_id_string_option), length(min = 3, max = 100))]
-//     id: Option<String>,
-
-//     #[garde(custom(is_readable_string_with_context), length(min = 3, max = 100))]
-//     name: String,
-//     #[garde(custom(only_allow_configured_platforms), length(min = 3, max = 100))]
-//     pub platform: String,
-// }
-
-// #[derive(Clone, Debug, Deserialize, Validate)]
-// #[garde(transparent)]
-// #[garde(context(BaseConfigContext as ctx))]
-// pub struct BaseEntity {
-//     #[serde(flatten)]
-//     #[garde(dive)]
-//     pub default: BaseEntityProperties,
-// }
-
-// impl BaseEntityProperties {
-//     pub fn get_object_id(&self) -> String {
-//         format_id(&self.id, &self.name)
-//     }
-// }
