@@ -85,6 +85,11 @@ fn get_all_modules(yaml: &String) -> Vec<Box<dyn Module>> {
     if modules_to_load.contains(&"web_server".to_string()) {
         modules.push(Box::new(ubihome_web_server::Default::new(&yaml).unwrap()));
     }
+    if modules_to_load.contains(&"sendspin".to_string()) {
+        modules.push(Box::new(
+            ubihome_sendspin::UbiHomeDefault::new(&yaml).unwrap(),
+        ));
+    }
 
     // TODO: Throw error if platform is used in sensor but not configured
     if modules_to_load.contains(&"bluetooth_proxy".to_string()) {
