@@ -15,6 +15,6 @@ duration-str = "0.16.1"
 sendspin = { git = "https://github.com/DanielHabenicht/fork.sendspin-rs", branch = "fix-homeassistant-connection" }
 # sendspin = { git = "https://github.com/Sendspin/sendspin-rs", branch = "main" }
 uuid = "1.19.0"
-tokio-tungstenite = { version = "0.24.0", features = ["native-tls"] }
+tokio-tungstenite = { version = "0.24.0", features = ["rustls-tls-native-roots"] }
 parking_lot = "0.12"
 mdns-sd = "0.17.2"
