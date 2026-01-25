@@ -12,7 +12,7 @@ ubihome-core = { path = "../core", features = ["ip"] }
 serde_yaml = "0.9.34"
 duration-str = "0.16.1"
 # sendspin = { path = "../../../../DanielHabenicht/fork.sendspin-rs" }
-sendspin = { git = "https://github.com/DanielHabenicht/fork.sendspin-rs", branch = "fix-homeassistant-connection" }
+sendspin = { git = "https://github.com/DanielHabenicht/fork.sendspin-rs", rev = "084d7e50ad72bf640d2a51763837be6cb7294942"  }
 # sendspin = { git = "https://github.com/Sendspin/sendspin-rs", branch = "main" }
 uuid = "1.19.0"
 tokio-tungstenite = "0.24.0"
