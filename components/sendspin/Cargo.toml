@@ -17,3 +17,4 @@ sendspin = { git = "https://github.com/DanielHabenicht/fork.sendspin-rs", branch
 uuid = "1.19.0"
 tokio-tungstenite = { version = "0.24.0", features = ["native-tls"] }
 parking_lot = "0.12"
+mdns-sd = "0.17.2"

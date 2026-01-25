@@ -1,3 +1,5 @@
+use core::panic;
+use log::info;
 use sendspin::audio::decode::{Decoder, PcmDecoder, PcmEndian};
 use sendspin::audio::{AudioBuffer, AudioFormat, Codec, SyncedPlayer};
 use sendspin::protocol::client::ProtocolClient;
@@ -50,9 +52,9 @@ fn env_bool(key: &str) -> bool {
 
 #[derive(Clone, Deserialize, Debug)]
 pub struct SendspinConfig {
-    pub name: String,
-    pub server: String,
-    pub id: String,
+    pub name: Option<String>,
+    pub server: Option<String>,
+    pub id: Option<String>,
 }
 
 config_template!(
@@ -97,9 +99,56 @@ impl Module for UbiHomeDefault {
         mut receiver: Receiver<PublishedMessage>,
     ) -> Pin<Box<dyn Future<Output = Result<(), Box<dyn std::error::Error>>> + Send + 'static>>
     {
-        let name = self.sendspin_config.name.clone();
-        let server = self.sendspin_config.server.clone();
-        let id = self.sendspin_config.id.clone();
+        let name = self
+            .sendspin_config
+            .name
+            .clone()
+            .unwrap_or(self.config.ubihome.name.clone());
+        let id = self.sendspin_config.id.clone().unwrap_or(name.clone());
+
+        use mdns_sd::{ServiceDaemon, ServiceEvent};
+
+        // Create a daemon
+        let mdns = ServiceDaemon::new().expect("Failed to create daemon");
+
+        // Browse for sendspin servers
+        let server = if let Some(s) = self.sendspin_config.server.clone() {
+            info!("Using configured Sendspin server at {}", s);
+            s
+        } else {
+            let mut mdns_found_server = None;
+            let service_type = "_sendspin-server._tcp.local.";
+            let receiver = mdns.browse(service_type).expect("Failed to browse");
+            while let Ok(event) = receiver.recv() {
+                match event {
+                    ServiceEvent::ServiceResolved(resolved) => {
+                        info!("Resolved a new service: {:?}", resolved);
+                        let path = resolved
+                            .txt_properties
+                            .get_property_val("path")
+                            .and_then(|opt_v| opt_v.and_then(|v| str::from_utf8(v).ok()))
+                            .unwrap_or("");
+                        let address = resolved.get_addresses().iter().next();
+
+                        if let Some(addr) = address {
+                            let server = format!("ws://{}:{}{}", addr, resolved.get_port(), path);
+                            info!("Using Sendspin server at {}", server);
+                            mdns_found_server = Some(server);
+                            break;
+                        } else {
+                            info!("No address found for resolved service.");
+                            continue;
+                        }
+                    }
+                    _ => {}
+                }
+            }
+            if let Some(mdns_servier) = mdns_found_server {
+                mdns_servier
+            } else {
+                panic!("No Sendspin server found via mDNS");
+            }
+        };
 
         Box::pin(async move {
             let hello = ClientHello {
@@ -126,13 +175,13 @@ impl Module for UbiHomeDefault {
                 visualizer_v1_support: None,
             };
 
-            println!("Connecting to {}...", server);
+            info!("Connecting to {}...", server);
             let mut request = server.into_client_request().unwrap();
             request
                 .headers_mut()
                 .insert("cookie", "ingress_session=c406f7d8a873021595de0200efb438dd342c15511720af945c582fe7a36f818837edab80a999cc708ca2903430d38bd14b3b4abb9215aa2fb5e8e2bd0150bb29".parse().unwrap());
             let client = ProtocolClient::connect(request, hello).await.unwrap();
-            println!("Connected!");
+            info!("Connected!");
 
             // Split client into separate receivers for concurrent processing
             let (mut message_rx, mut audio_rx, clock_sync, ws_tx) = client.split();
@@ -146,7 +195,7 @@ impl Module for UbiHomeDefault {
                 }),
             });
             ws_tx.send_message(client_state).await.unwrap();
-            println!("Sent initial client/state");
+            info!("Sent initial client/state");
 
             // Send immediate initial clock sync
             let client_transmitted = SystemTime::now()
@@ -155,9 +204,9 @@ impl Module for UbiHomeDefault {
                 .as_micros() as i64;
             let time_msg = Message::ClientTime(ClientTime { client_transmitted });
             ws_tx.send_message(time_msg).await.unwrap();
-            println!("Sent initial client/time for clock sync");
+            info!("Sent initial client/time for clock sync");
 
-            println!("Waiting for stream to start...");
+            info!("Waiting for stream to start...");
 
             // Spawn clock sync task that sends client/time every 5 seconds
             tokio::spawn(async move {
@@ -184,7 +233,7 @@ impl Module for UbiHomeDefault {
             // // Configuration from environment variables
             let start_buffer_ms = env_u64("SS_PLAY_START_BUFFER_MS", 500);
             let log_lead = env_bool("SS_LOG_LEAD");
-            println!(
+            info!(
                 "Player config: start_buffer={}ms, log_lead={}",
                 start_buffer_ms, log_lead
             );
@@ -201,7 +250,7 @@ impl Module for UbiHomeDefault {
                         PlayerCommand::Init(fmt, clock_sync) => {
                             match SyncedPlayer::new(fmt, clock_sync, None) {
                                 Ok(player) => {
-                                    println!("Synced audio output initialized");
+                                    info!("Synced audio output initialized");
                                     synced_player = Some(player);
                                 }
                                 Err(e) => {
