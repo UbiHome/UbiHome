@@ -106,18 +106,16 @@ impl Module for UbiHomeDefault {
             .unwrap_or(self.config.ubihome.name.clone());
         let id = self.sendspin_config.id.clone().unwrap_or(name.clone());
 
-        use mdns_sd::{ServiceDaemon, ServiceEvent};
-
-        // Create a daemon
-        let mdns = ServiceDaemon::new().expect("Failed to create daemon");
-
-        // Browse for sendspin servers
         let server = if let Some(s) = self.sendspin_config.server.clone() {
             info!("Using configured Sendspin server at {}", s);
             s
         } else {
+            use mdns_sd::{ServiceDaemon, ServiceEvent};
+            // Create a daemon
+            let mdns = ServiceDaemon::new().expect("Failed to create daemon");
             let mut mdns_found_server = None;
             let service_type = "_sendspin-server._tcp.local.";
+            // Browse for sendspin servers
             let receiver = mdns.browse(service_type).expect("Failed to browse");
             while let Ok(event) = receiver.recv() {
                 match event {
@@ -177,9 +175,6 @@ impl Module for UbiHomeDefault {
 
             info!("Connecting to {}...", server);
             let mut request = server.into_client_request().unwrap();
-            request
-                .headers_mut()
-                .insert("cookie", "ingress_session=c406f7d8a873021595de0200efb438dd342c15511720af945c582fe7a36f818837edab80a999cc708ca2903430d38bd14b3b4abb9215aa2fb5e8e2bd0150bb29".parse().unwrap());
             let client = ProtocolClient::connect(request, hello).await.unwrap();
             info!("Connected!");
 
