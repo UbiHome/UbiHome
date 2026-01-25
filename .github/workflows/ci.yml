@@ -3,10 +3,9 @@ name: CI
 on:
   # push:
   #   branches: [ main ]
-      
+
   pull_request:
 
-    
 jobs:
   build:
     strategy:
@@ -15,23 +14,23 @@ jobs:
         include:
           - target: x86_64-unknown-linux-gnu
             runs-on: ubuntu-24.04
-            fileending: ""
+            fileending: ''
 
           - target: arm-unknown-linux-musleabi
-            runs-on: ubuntu-24.04
-            fileending: ""
+            runs-on: ubuntu-24.04-arm
+            fileending: ''
 
-          - target: x86_64-apple-darwin 
+          - target: x86_64-apple-darwin
             runs-on: macOS-latest
-            fileending: ""
+            fileending: ''
 
           - target: x86_64-pc-windows-msvc
             runs-on: windows-latest
-            fileending: ".exe"
+            fileending: '.exe'
 
           - target: armv7-unknown-linux-musleabi
-            runs-on: ubuntu-24.04
-            fileending: ""
+            runs-on: ubuntu-24.04-arm
+            fileending: ''
     uses: ./.github/workflows/build-and-test-template.yml
     with:
       runs-on: ${{ matrix.runs-on }}
@@ -40,10 +39,9 @@ jobs:
     # If you might want to use a secret in the build or test job then you would need to pass secrets, inherit disables secret isolation
     secrets: inherit
 
-
   format:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
       - name: Check formatting
-        run: cargo fmt --check 
+        run: cargo fmt --check

@@ -6,11 +6,11 @@
 [target.armv7-unknown-linux-musleabi]
 pre-build = [
     "apt-get update",
-    "apt-get install -y libdbus-1-dev pkg-config musl-tools libasound2-dev:armhf libjack-jackd2-dev:armhf libjack-jackd2-0:armhf",
+    "apt-get install -y libdbus-1-dev pkg-config musl-tools libasound2-dev libjack-jackd2-dev libjack-jackd2-0",
 ]
 
 [target.arm-unknown-linux-musleabi]
 pre-build = [
     "apt-get update",
-    "apt-get install -y libdbus-1-dev pkg-config musl-tools libasound2-dev:armhf libjack-jackd2-dev:armhf libjack-jackd2-0:armhf",
+    "apt-get install -y libdbus-1-dev pkg-config musl-tools libasound2-dev libjack-jackd2-dev libjack-jackd2-0",
 ]
