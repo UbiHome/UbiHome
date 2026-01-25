@@ -23,8 +23,8 @@ jobs:
         run: brew install libmodbus
 
       - name: Add extra packages (Linux)
-        if: inputs.runs-on == 'ubuntu-24.04'
-        run: sudo apt install -y libdbus-1-dev pkg-config
+        if: matrix.runs-on == 'ubuntu-24.04'
+        run: sudo apt install -y libdbus-1-dev pkg-config libasound2-dev
 
       - name: Set up Rust
         if: inputs.runs-on == 'macOS-latest'
@@ -95,7 +95,7 @@ jobs:
         uses: astral-sh/setup-uv@v6
         with:
           # Install a specific version of uv.
-          version: "0.8.4"
+          version: '0.8.4'
       - name: Run tests
         run: |-
           cd tests
