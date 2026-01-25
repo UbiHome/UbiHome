@@ -5,12 +5,43 @@
 # https://github.com/cross-rs/cross/blob/main/docs/config_file.md
 [target.armv7-unknown-linux-musleabi]
 pre-build = [
-    "apt-get update",
-    "apt-get install -y libdbus-1-dev pkg-config musl-tools libasound2-dev:armel libjack-jackd2-dev libjack-jackd2-0",
+    """
+apt-get update && apt-get install -y libdbus-1-dev pkg-config musl-tools wget
+# Download and cross-compile ALSA for ARM musl
+cd /tmp && wget -q https://www.alsa-project.org/files/pub/lib/alsa-lib-1.2.10.tar.bz2
+tar xf alsa-lib-1.2.10.tar.bz2 && cd alsa-lib-1.2.10
+CC=arm-linux-musleabi-gcc ./configure --host=arm-linux-musleabi --prefix=/usr/local/arm-linux-musleabi --enable-static --disable-shared --disable-python
+make -j$(nproc) && make install
+# Set PKG_CONFIG path for cross-compilation
+echo 'export PKG_CONFIG_PATH=/usr/local/arm-linux-musleabi/lib/pkgconfig:$PKG_CONFIG_PATH' >> /etc/profile
+echo 'export ALSA_LIB_DIR=/usr/local/arm-linux-musleabi/lib' >> /etc/profile
+""",
 ]
 
 [target.arm-unknown-linux-musleabi]
 pre-build = [
-    "apt-get update",
-    "apt-get install -y libdbus-1-dev pkg-config musl-tools libasound2-dev libjack-jackd2-dev libjack-jackd2-0",
+    """
+apt-get update && apt-get install -y libdbus-1-dev pkg-config musl-tools wget
+# Download and cross-compile ALSA for ARM musl
+cd /tmp && wget -q https://www.alsa-project.org/files/pub/lib/alsa-lib-1.2.10.tar.bz2
+tar xf alsa-lib-1.2.10.tar.bz2 && cd alsa-lib-1.2.10
+CC=arm-linux-musleabi-gcc ./configure --host=arm-linux-musleabi --prefix=/usr/local/arm-linux-musleabi --enable-static --disable-shared --disable-python
+make -j$(nproc) && make install
+# Set PKG_CONFIG path for cross-compilation
+echo 'export PKG_CONFIG_PATH=/usr/local/arm-linux-musleabi/lib/pkgconfig:$PKG_CONFIG_PATH' >> /etc/profile
+echo 'export ALSA_LIB_DIR=/usr/local/arm-linux-musleabi/lib' >> /etc/profile
+""",
+]
+
+# Set environment variables for the linker
+[target.arm-unknown-linux-musleabi.env]
+passthrough = [
+    "PKG_CONFIG_PATH=/usr/local/arm-linux-musleabi/lib/pkgconfig",
+    "PKG_CONFIG_ALLOW_CROSS=1",
+]
+
+[target.armv7-unknown-linux-musleabi.env]
+passthrough = [
+    "PKG_CONFIG_PATH=/usr/local/arm-linux-musleabi/lib/pkgconfig",
+    "PKG_CONFIG_ALLOW_CROSS=1",
 ]
