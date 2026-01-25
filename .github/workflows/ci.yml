@@ -29,7 +29,7 @@ jobs:
             fileending: '.exe'
 
           - target: armv7-unknown-linux-musleabi
-            runs-on: ubuntu-24.04-arm
+            runs-on: ubuntu-24.04
             fileending: ''
     uses: ./.github/workflows/build-and-test-template.yml
     with:
