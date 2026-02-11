@@ -123,6 +123,7 @@ impl Module for UbiHomeDefault {
                 .map(|dev| dev.name().unwrap())
                 .map(|name| name.to_string());
             println!("  Default Output Device:\n    {default_out:?}");
+            selected_device = host.default_output_device();
 
             let devices = host.devices().unwrap();
             println!("  Devices: ");
@@ -162,6 +163,11 @@ impl Module for UbiHomeDefault {
                 // }
             }
         }
+
+        info!(
+            "Using Device Sendspin server at {}",
+            selected_device.unwrap().name().unwrap()
+        );
 
         // End List Hosts
 
