@@ -1,5 +1,6 @@
 use core::panic;
 use cpal::traits::{DeviceTrait, HostTrait};
+use cpal::Device;
 use log::info;
 use sendspin::audio::decode::{Decoder, PcmDecoder, PcmEndian};
 use sendspin::audio::{AudioBuffer, AudioFormat, Codec, SyncedPlayer};
@@ -56,6 +57,7 @@ pub struct SendspinConfig {
     pub name: Option<String>,
     pub server: Option<String>,
     pub id: Option<String>,
+    pub device_name: Option<String>,
 }
 
 config_template!(
@@ -107,6 +109,7 @@ impl Module for UbiHomeDefault {
             .unwrap_or(self.config.ubihome.name.clone());
         let id = self.sendspin_config.id.clone().unwrap_or(name.clone());
 
+        let mut selected_device: Option<Device> = None;
         // List Hosts
         let available_hosts = cpal::available_hosts();
         println!("Available hosts:\n  {available_hosts:?}");
@@ -117,25 +120,27 @@ impl Module for UbiHomeDefault {
 
             let default_out = host
                 .default_output_device()
-                .map(|dev| dev.id().unwrap())
-                .map(|id| id.to_string());
+                .map(|dev| dev.name().unwrap())
+                .map(|name| name.to_string());
             println!("  Default Output Device:\n    {default_out:?}");
 
             let devices = host.devices().unwrap();
             println!("  Devices: ");
             for (device_index, device) in devices.enumerate() {
-                let id = device
-                    .id()
-                    .map_or("Unknown ID".to_string(), |id| id.to_string());
-                if let Ok(desc) = device.description() {
-                    println!("  {}. {id} ({})", device_index + 1, desc);
-                } else {
-                    println!("  {}. {id}", device_index + 1);
-                }
+                let name = device
+                    .name()
+                    .map_or("Unknown Name".to_string(), |id| id.to_string());
+                println!("  {}. {name}", device_index + 1);
 
                 // Output configs
                 if let Ok(conf) = device.default_output_config() {
                     println!("    Default output stream config:\n      {conf:?}");
+                }
+
+                if let Some(device_name) = &self.config.sendspin.device_name {
+                    if device_name == &name {
+                        selected_device = Some(device)
+                    }
                 }
                 // let output_configs = match device.supported_output_configs() {
                 //     Ok(f) => f.collect(),
@@ -297,7 +302,8 @@ impl Module for UbiHomeDefault {
                 while let Ok(cmd) = player_rx.recv() {
                     match cmd {
                         PlayerCommand::Init(fmt, clock_sync) => {
-                            match SyncedPlayer::new(fmt, clock_sync, None) {
+                            // Use selected_device_for_thread only once
+                            match SyncedPlayer::new(fmt, clock_sync, selected_device.clone()) {
                                 Ok(player) => {
                                     info!("Synced audio output initialized");
                                     synced_player = Some(player);
