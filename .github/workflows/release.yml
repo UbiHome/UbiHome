@@ -20,12 +20,12 @@ jobs:
             target: x86_64-unknown-linux-musl
             file: ubihome
             release_file_name: ubihome-linux-x86_64
-            
+
           - runs-on: windows-latest
             target: x86_64-pc-windows-msvc
             file: ubihome.exe
             release_file_name: ubihome-windows-x86_64.exe
-            
+
           - runs-on: macOS-latest
             target: x86_64-apple-darwin
             file: ubihome
@@ -41,7 +41,6 @@ jobs:
             file: ubihome
             release_file_name: ubihome-linux-arm
 
-
           # - runs-on: ubuntu-24.04
           #   target: aarch64-unknown-linux-musl
 
@@ -50,8 +49,6 @@ jobs:
 
           # - runs-on: ubuntu-24.04
           #   target: x86_64-unknown-freebsd
-
-
 
     runs-on: ${{ matrix.runs-on }}
     steps:
@@ -64,7 +61,7 @@ jobs:
 
       - name: Add extra packages (Linux)
         if: matrix.runs-on == 'ubuntu-24.04'
-        run: sudo apt install -y libdbus-1-dev pkg-config
+        run: sudo apt install -y libdbus-1-dev pkg-config libasound2-dev
 
       - name: Build binary
         uses: houseabsolute/actions-rust-cross@v1
@@ -72,7 +69,7 @@ jobs:
           command: build
           target: ${{ matrix.target }}
           # Add "--locked" again when release please is not updating all Cargo.toml files
-          args: "--release"
+          args: '--release'
           strip: true
 
       - name: Copy example config (Linux)

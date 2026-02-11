@@ -23,6 +23,7 @@ ubihome-illuminance = { path = "components/illuminance" }
 ubihome-mdns = { path = "components/mdns" }
 ubihome-mqtt = { path = "components/mqtt" }
 ubihome-power_utils = { path = "components/power_utils" }
+ubihome-sendspin = { path = "components/sendspin" }
 ubihome-shell = { path = "components/shell" }
 ubihome-web_server = { path = "components/web_server" }
 inquire = "0.7.5"
@@ -68,6 +69,7 @@ members = [
     "components/mdns",
     "components/mqtt",
     "components/power_utils",
+    "components/sendspin",
     "components/shell",
     "components/web_server",
 ]

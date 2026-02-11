@@ -4,7 +4,7 @@ import pytest
 
 @pytest.fixture(scope="session")
 async def mqtt_container():
-    with MosquittoContainer() as mosquitto_broker:
+    with MosquittoContainer("eclipse-mosquitto:2.0.22") as mosquitto_broker:
         yield mosquitto_broker
 
 
