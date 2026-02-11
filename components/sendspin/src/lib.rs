@@ -143,29 +143,11 @@ impl Module for UbiHomeDefault {
                         selected_device = Some(device)
                     }
                 }
-                // let output_configs = match device.supported_output_configs() {
-                //     Ok(f) => f.collect(),
-                //     Err(e) => {
-                //         println!("    Error getting supported output configs: {e:?}");
-                //         Vec::new()
-                //     }
-                // };
-                // if !output_configs.is_empty() {
-                //     println!("    All supported output stream configs:");
-                //     for (config_index, config) in output_configs.into_iter().enumerate() {
-                //         println!(
-                //             "      {}.{}. {:?}",
-                //             device_index + 1,
-                //             config_index + 1,
-                //             config
-                //         );
-                //     }
-                // }
             }
         }
 
         info!(
-            "Using Device Sendspin server at {}",
+            "Using Device: {}",
             selected_device.clone().unwrap().name().unwrap()
         );
 
