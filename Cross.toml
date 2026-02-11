@@ -1,8 +1,5 @@
-# Added because of sendspin cpal dependency:
-# libasound2-dev libjack-jackd2-dev libjack-jackd2-0 libdbus-1-dev
-# Added because of?: libdbus-1-dev pkg-config musl-tools
-
 # https://github.com/cross-rs/cross/blob/main/docs/config_file.md
+
 [target.armv7-unknown-linux-musleabi]
 pre-build = [
     """

@@ -101,5 +101,4 @@ jobs:
           cd tests
           chmod +x ubihome
           ls -l
-          uv sync
-          uv run pytest
+          uv run --locked pytest -vvv
