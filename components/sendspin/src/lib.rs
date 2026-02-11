@@ -166,7 +166,7 @@ impl Module for UbiHomeDefault {
 
         info!(
             "Using Device Sendspin server at {}",
-            selected_device.unwrap().name().unwrap()
+            selected_device.clone().unwrap().name().unwrap()
         );
 
         // End List Hosts
