@@ -1,4 +1,5 @@
 use core::panic;
+use cpal::traits::{DeviceTrait, HostTrait};
 use log::info;
 use sendspin::audio::decode::{Decoder, PcmDecoder, PcmEndian};
 use sendspin::audio::{AudioBuffer, AudioFormat, Codec, SyncedPlayer};
@@ -113,7 +114,7 @@ impl Module for UbiHomeDefault {
 
         for host_id in available_hosts {
             println!("{}", host_id.name());
-            let host = cpal::host_from_id(host_id)?;
+            let host = cpal::host_from_id(host_id).unwrap();
 
             let default_in = host
                 .default_input_device()
@@ -126,7 +127,7 @@ impl Module for UbiHomeDefault {
             println!("  Default Input Device:\n    {default_in:?}");
             println!("  Default Output Device:\n    {default_out:?}");
 
-            let devices = host.devices()?;
+            let devices = host.devices().unwrap();
             println!("  Devices: ");
             for (device_index, device) in devices.enumerate() {
                 let id = device

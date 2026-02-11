@@ -19,3 +19,4 @@ tokio-tungstenite = "0.24.0"
 # tokio-tungstenite = { version = "0.24.0", features = ["rustls-tls-native-roots"] }
 parking_lot = "0.12"
 mdns-sd = "0.17.2"
+cpal = "0.17.1"
