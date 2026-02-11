@@ -1,7 +1,7 @@
 use core::panic;
 use cpal::traits::{DeviceTrait, HostTrait};
 use cpal::Device;
-use log::info;
+use log::{debug, error, info, trace};
 use sendspin::audio::decode::{Decoder, PcmDecoder, PcmEndian};
 use sendspin::audio::{AudioBuffer, AudioFormat, Codec, SyncedPlayer};
 use sendspin::protocol::client::ProtocolClient;
@@ -57,7 +57,7 @@ pub struct SendspinConfig {
     pub name: Option<String>,
     pub server: Option<String>,
     pub id: Option<String>,
-    pub device_name: Option<String>,
+    pub output_name: Option<String>,
 }
 
 config_template!(
@@ -112,33 +112,30 @@ impl Module for UbiHomeDefault {
         let mut selected_device: Option<Device> = None;
         // List Hosts
         let available_hosts = cpal::available_hosts();
-        println!("Available hosts:\n  {available_hosts:?}");
 
         for host_id in available_hosts {
-            println!("{}", host_id.name());
             let host = cpal::host_from_id(host_id).unwrap();
 
             let default_out = host
                 .default_output_device()
                 .map(|dev| dev.name().unwrap())
                 .map(|name| name.to_string());
-            println!("  Default Output Device:\n    {default_out:?}");
             selected_device = host.default_output_device();
 
             let devices = host.devices().unwrap();
-            println!("  Devices: ");
+            debug!("  Devices: ");
             for (device_index, device) in devices.enumerate() {
                 let name = device
                     .name()
                     .map_or("Unknown Name".to_string(), |id| id.to_string());
-                println!("  {}. {name}", device_index + 1);
+                debug!("  {}. {name}", device_index + 1);
 
                 // Output configs
                 if let Ok(conf) = device.default_output_config() {
-                    println!("    Default output stream config:\n      {conf:?}");
+                    debug!("    Default output stream config:\n      {conf:?}");
                 }
 
-                if let Some(device_name) = &self.config.sendspin.device_name {
+                if let Some(device_name) = &self.config.sendspin.output_name {
                     if device_name == &name {
                         selected_device = Some(device)
                     }
@@ -266,7 +263,7 @@ impl Module for UbiHomeDefault {
 
                     // Send time sync message
                     if let Err(e) = ws_tx.send_message(time_msg).await {
-                        eprintln!("Failed to send time sync: {}", e);
+                        debug!("Failed to send time sync: {}", e);
                         break;
                     }
                 }
@@ -297,7 +294,7 @@ impl Module for UbiHomeDefault {
                                     synced_player = Some(player);
                                 }
                                 Err(e) => {
-                                    eprintln!("Failed to create synced output: {}", e);
+                                    debug!("Failed to create synced output: {}", e);
                                 }
                             }
                         }
@@ -334,7 +331,7 @@ impl Module for UbiHomeDefault {
                         match msg {
                             Message::StreamStart(stream_start) => {
                                 if let Some(ref player_config) = stream_start.player {
-                                    println!(
+                                    debug!(
                                         "Stream starting: codec='{}' {}Hz {}ch {}bit",
                                         player_config.codec,
                                         player_config.sample_rate,
@@ -344,13 +341,13 @@ impl Module for UbiHomeDefault {
 
                                     // Validate codec before proceeding
                                     if player_config.codec != "pcm" {
-                                        eprintln!("ERROR: Unsupported codec '{}' - only 'pcm' is supported!", player_config.codec);
-                                        eprintln!("Server is sending compressed audio that we can't decode!");
+                                        error!("ERROR: Unsupported codec '{}' - only 'pcm' is supported!", player_config.codec);
+                                        error!("Server is sending compressed audio that we can't decode!");
                                         continue;
                                     }
 
                                     if player_config.bit_depth != 16 && player_config.bit_depth != 24 {
-                                        eprintln!("ERROR: Unsupported bit depth {} - only 16 or 24-bit PCM supported!", player_config.bit_depth);
+                                        error!("ERROR: Unsupported bit depth {} - only 16 or 24-bit PCM supported!", player_config.bit_depth);
                                         continue;
                                     }
 
@@ -368,9 +365,9 @@ impl Module for UbiHomeDefault {
                                     buffered_duration_us = 0; // Reset on new stream
                                     playback_started = false;
                                     first_chunk_logged = false; // Reset for new stream
-                                    println!("Waiting for first audio chunk to auto-detect endianness...");
+                                    debug!("Waiting for first audio chunk to auto-detect endianness...");
                                 } else {
-                                    println!("Received stream/start without player config");
+                                    debug!("Received stream/start without player config");
                                 }
                             }
                             Message::ServerTime(server_time) => {
@@ -391,7 +388,7 @@ impl Module for UbiHomeDefault {
                                 let sync = clock_sync.lock();
                                 if let Some(rtt) = sync.rtt_micros() {
                                     let quality = sync.quality();
-                                    println!(
+                                    debug!(
                                         "Clock sync updated: RTT={:.2}ms, quality={:?}",
                                         rtt as f64 / 1000.0,
                                         quality
@@ -399,7 +396,7 @@ impl Module for UbiHomeDefault {
                                 }
                             }
                             Message::StreamEnd(stream_end) => {
-                                println!("Stream ended: {:?}", stream_end.roles);
+                                debug!("Stream ended: {:?}", stream_end.roles);
                                 let _ = player_tx.send(PlayerCommand::Clear);
                                 buffered_duration_us = 0;
                                 playback_started = false;
@@ -407,7 +404,7 @@ impl Module for UbiHomeDefault {
                                 player_initialized = false;
                             }
                             Message::StreamClear(stream_clear) => {
-                                println!("Stream cleared: {:?}", stream_clear.roles);
+                                debug!("Stream cleared: {:?}", stream_clear.roles);
                                 let _ = player_tx.send(PlayerCommand::Clear);
                                 buffered_duration_us = 0;
                                 playback_started = false;
@@ -415,22 +412,18 @@ impl Module for UbiHomeDefault {
                                 player_initialized = false;
                             }
                             _ => {
-                                println!("Received message: {:?}", msg);
+                                debug!("Received message: {:?}", msg);
                             }
                         }
                     }
                     Some(chunk) = audio_rx.recv() => {
                         // Log first chunk bytes for diagnostics
                         if !first_chunk_logged {
-                            println!("\n=== FIRST AUDIO CHUNK DIAGNOSTICS ===");
-                            println!("Chunk timestamp: {} µs", chunk.timestamp);
-                            println!("Chunk data length: {} bytes", chunk.data.len());
                             let preview_len = chunk.data.len().min(32);
                             print!("First {} bytes (hex): ", preview_len);
                             for byte in &chunk.data[..preview_len] {
                                 print!("{:02X} ", byte);
                             }
-                            println!("\n=====================================\n");
                             first_chunk_logged = true;
                         }
 
@@ -440,14 +433,14 @@ impl Module for UbiHomeDefault {
                                 16 => 2,
                                 24 => 3,
                                 _ => {
-                                    eprintln!("Unsupported bit depth: {}", fmt.bit_depth);
+                                    error!("Unsupported bit depth: {}", fmt.bit_depth);
                                     continue;
                                 }
                             } as usize;
                             let frame_size = bytes_per_sample * fmt.channels as usize;
 
                             if chunk.data.len() % frame_size != 0 {
-                                eprintln!(
+                                error!(
                                     "BAD FRAME: {} bytes not multiple of frame size {} ({}-bit, {}ch)",
                                     chunk.data.len(), frame_size, fmt.bit_depth, fmt.channels
                                 );
@@ -462,7 +455,7 @@ impl Module for UbiHomeDefault {
                                 let endian = PcmEndian::Little;
                                 endian_locked = Some(endian);
                                 decoder = Some(PcmDecoder::with_endian(fmt.bit_depth, endian));
-                                println!("Using Little-Endian PCM (standard for modern systems)");
+                                debug!("Using Little-Endian PCM (standard for modern systems)");
                             }
                         }
 
@@ -479,7 +472,7 @@ impl Module for UbiHomeDefault {
                                     // Check if we've buffered enough to start playback
                                     if !playback_started && buffered_duration_us >= start_buffer_ms * 1000 {
                                         playback_started = true;
-                                        println!(
+                                        debug!(
                                             "Prebuffering complete ({:.1}ms buffered), starting playback!",
                                             buffered_duration_us as f64 / 1000.0
                                         );
@@ -487,7 +480,7 @@ impl Module for UbiHomeDefault {
 
                                     // Track and log lead time
                                     if log_lead {
-                                        println!(
+                                        trace!(
                                             "Enqueued chunk ts={} buffered={:.1}ms len={} bytes",
                                             chunk.timestamp,
                                             buffered_duration_us as f64 / 1000.0,
@@ -512,7 +505,7 @@ impl Module for UbiHomeDefault {
                                     let _ = player_tx.send(PlayerCommand::Enqueue(buffer));
                                 }
                                 Err(e) => {
-                                    eprintln!("Decode error: {}", e);
+                                    error!("Decode error: {}", e);
                                 }
                             }
                         }
