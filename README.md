@@ -1,6 +1,6 @@
 # UbiHome
 
-[Repository](https://github.com/UbiHome/UbiHome) -- [Documentation](https://ubihome.github.io/UbiHome/) -- [Issues](https://github.com/UbiHome/UbiHome/issues)
+[Repository](https://github.com/UbiHome/UbiHome) -- [Documentation](https://ubihome.github.io/) -- [Issues](https://github.com/UbiHome/UbiHome/issues)
 
 ---
 
