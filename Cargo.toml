@@ -42,6 +42,7 @@ futures-util = "0.3.31"
 serde-saphyr = { version = "0.0.23", features = ["garde", "miette"] }
 garde = { version = "0.22.1", features = ["serde", "regex"] }
 paste = "1.0.15"
+parameterized = "2.1.0"
 
 
 [build-dependencies]
@@ -75,3 +76,4 @@ members = [
     "components/shell",
     "components/web_server",
 ]
+cargo_toml = "0.22.1"

@@ -81,51 +81,108 @@ pub struct BaseConfig {
 }
 
 // Load Platforms
-
-#[derive(Clone, Debug, Deserialize, Validate)]
-pub struct PlatformConfig {
-    #[garde(length(min = 3, max = 100))]
-    pub platform: String,
+pub fn get_platforms_from_config(config_string: &String) -> Vec<String> {
+    config_string
+        .lines()
+        .filter_map(|line| {
+            let line = line;
+            if line.starts_with(' ')
+                || line.is_empty()
+                || line.starts_with('#')
+                || line.starts_with('-')
+            {
+                None
+            } else {
+                line.split(':').next().map(|property| property.to_string())
+            }
+        })
+        .filter(|platform| {
+            platform != "logger"
+                && platform != "ubihome"
+                && platform != "sensor"
+                && platform != "binary_sensor"
+                && platform != "button"
+                && platform != "switch"
+                && platform != "light"
+        })
+        .collect::<Vec<String>>()
 }
 
-// Base configuration structure
-#[derive(Clone, Deserialize, Debug, Validate)]
-pub struct RootPlatformConfig {
-    #[garde(dive)]
-    pub button: Option<Vec<PlatformConfig>>,
-    #[garde(dive)]
-    pub sensor: Option<Vec<PlatformConfig>>,
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use parameterized::parameterized;
 
-    #[garde(dive)]
-    pub binary_sensor: Option<Vec<PlatformConfig>>,
-}
+    #[parameterized(config = {
+        r#"
+ubihome:
+  name: "Test API Config"
 
-pub fn get_platforms_from_config(config_string: &String) -> Result<Vec<String>, String> {
-    let config = serde_saphyr::from_str::<RootPlatformConfig>(config_string)
-        .map_err(|e| format!("Failed to parse configuration: {}", e))?;
+api:
+  port: 8053
+  encryption:
+    key: 'xiahAckHBW7BcKEQ6mRfasIW20Md9uMh/5PjrjbAhXQ='
+"#, 
+r#"
+ubihome:
+  name: "Test API Config"
 
-    let mut platforms = Vec::new();
+api:
+  port: 8053
+  encryption:
+    key: 'xiahAckHBW7BcKEQ6mRfasIW20Md9uMh/5PjrjbAhXQ='
 
-    if let Some(buttons) = config.button {
-        for button in buttons {
-            platforms.push(button.platform);
-        }
+# mdns:
+"#, 
+r#"
+ubihome:
+  name: "Test API Config"
+
+api:
+  port: 8053
+  encryption:
+    key: 'xiahAckHBW7BcKEQ6mRfasIW20Md9uMh/5PjrjbAhXQ='
+
+button:
+ - command: "echo 'Hello World'"
+   platform: test
+"#, 
+r#"
+api:
+  port: 56441
+button:
+- command: echo 'Hello World!' > b2dc877d-a7b3-4342-8bc5-b31e5cb9269c.mock
+  id: my_button
+  name: Write Hello World
+  platform: shell
+ubihome:
+  name: test_device
+"#
+    })]
+    fn test_get_platforms_from_config(config: &str) {
+        let platforms = get_platforms_from_config(&config.to_string());
+        // Check that the API config is parsed correctly
+        assert_eq!(platforms, vec!["api"], "Platform should be api");
     }
 
-    if let Some(sensors) = config.sensor {
-        for sensor in sensors {
-            platforms.push(sensor.platform);
-        }
-    }
+    //     #[test]
+    //     fn test_api_config_defaults() {
+    //         let config = r#"
+    // ubihome:
+    //   name: "Test API Config"
 
-    if let Some(binary_sensors) = config.binary_sensor {
-        for binary_sensor in binary_sensors {
-            platforms.push(binary_sensor.platform);
-        }
-    }
+    // api: {}
+    // "#;
 
-    // && platform != "switch"
-    // && platform != "light"
+    //         let api_module = UbiHomePlatform::new(&config.to_string());
+    //         assert!(api_module.is_ok(), "API module should parse successfully");
 
-    Ok(platforms)
+    //         let module = api_module.unwrap();
+
+    //         // Check that the API config uses defaults when empty object
+    //         assert_eq!(
+    //             module.api_config.port, None,
+    //             "Port should be None (default)"
+    //         );
+    //     }
 }

@@ -84,8 +84,7 @@ pub(crate) fn run(
     let config_string: String =
         read_base_config(config_path).expect("Failed to load base configuration");
 
-    let platforms =
-        get_platforms_from_config(&config_string).expect("Failed to load configuration");
+    let platforms = get_platforms_from_config(&config_string);
     debug!("Configured modules: {:?}", &platforms);
 
     let no_snippet = serde_saphyr::Options {
