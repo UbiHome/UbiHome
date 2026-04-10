@@ -94,7 +94,7 @@ fn cli() -> Command {
             .long("as-windows-service")
             .help("Flag to identify if run as windows service.")
             .hide(true)
-            .action(ArgAction::SetTrue)
+            .action(clap::ArgAction::SetTrue)
             .num_args(0),
     ];
 
@@ -186,9 +186,8 @@ fn main() {
                 Some(("validate", _)) => {
                     run::run(config_file, true, None).unwrap();
                 }
-                Some(("run", _sub_matches)) => {
+                Some(("run", sub_matches)) => {
                     println!("UbiHome - {}", VERSION);
-                    #[cfg(target_os = "windows")]
                     let is_windows_service =
                         sub_matches.get_one::<bool>("as-windows-service").unwrap();
                     #[cfg(target_os = "windows")]

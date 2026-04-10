@@ -1,11 +1,7 @@
 use duration_str::deserialize_option_duration;
-use log::{debug, warn};
 use serde::Deserialize;
 use std::{collections::HashMap, future::Future, pin::Pin, str, time::Duration};
-use tokio::{
-    sync::broadcast::{Receiver, Sender},
-    time,
-};
+use tokio::sync::broadcast::{Receiver, Sender};
 use ubihome_core::{
     internal::sensors::{UbiComponent, UbiSensor},
     sensor::{SensorBase, UnknownSensor},
@@ -238,23 +234,26 @@ impl Module for Default {
     {
         // let mqtt_config = self.mqtt_config.clone();
         // let config = self.config.clone();
+
+        #[allow(unused_variables)]
         let sensors = self.sensors.clone();
+        #[allow(unused_variables)]
         let c_sender = sender.clone();
         Box::pin(async move {
             #[cfg(any(target_os = "macos", target_os = "windows"))]
             {
-                warn!("BME280 is not supported on this platform.");
-                return Ok(());
+                log::warn!("BME280 is not supported on this platform.");
             }
             #[cfg(target_os = "linux")]
             {
                 use bme280::i2c::BME280;
                 use linux_embedded_hal::{Delay, I2cdev};
+                use tokio::time;
 
                 let result = I2cdev::new("/dev/i2c-1");
                 match result {
                     Err(e) => {
-                        warn!("Error initializing I2C: {}", e);
+                        log::warn!("Error initializing I2C: {}", e);
                         return Ok(());
                     }
                     _ => {}
@@ -285,9 +284,10 @@ impl Module for Default {
                             .update_interval
                             .unwrap_or(Duration::from_secs(30));
                         let mut interval = time::interval(duration);
-                        debug!(
+                        log::debug!(
                             "Address {:?} has update interval: {:?}",
-                            cloned_sensor.address, interval
+                            cloned_sensor.address,
+                            interval
                         );
                         loop {
                             // measure temperature, pressure, and humidity
@@ -296,7 +296,7 @@ impl Module for Default {
                             for (sensor_type, id) in cloned_sensor.entries.clone() {
                                 match sensor_type {
                                     Measurement::Temperature => {
-                                        debug!("Temperature: {}", measurements.temperature);
+                                        log::debug!("Temperature: {}", measurements.temperature);
                                         let msg = ChangedMessage::SensorValueChange {
                                             key: id.clone(),
                                             value: measurements.temperature,
@@ -304,7 +304,7 @@ impl Module for Default {
                                         cloned_sender.send(msg).unwrap();
                                     }
                                     Measurement::Pressure => {
-                                        debug!("Pressure: {}", measurements.pressure);
+                                        log::debug!("Pressure: {}", measurements.pressure);
                                         let msg = ChangedMessage::SensorValueChange {
                                             key: id.clone(),
                                             value: measurements.pressure,
@@ -312,7 +312,7 @@ impl Module for Default {
                                         cloned_sender.send(msg).unwrap();
                                     }
                                     Measurement::Humidity => {
-                                        debug!("Humidity: {}", measurements.humidity);
+                                        log::debug!("Humidity: {}", measurements.humidity);
                                         let msg = ChangedMessage::SensorValueChange {
                                             key: id.clone(),
                                             value: measurements.humidity,

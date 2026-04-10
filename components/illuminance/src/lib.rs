@@ -259,7 +259,7 @@ async fn read_illuminance(_device_path: Option<&String>) -> Result<f64, String> 
             ISensorDataReport, ISensorManager, SENSOR_DATA_TYPE_LIGHT_LEVEL_LUX,
             SENSOR_TYPE_AMBIENT_LIGHT,
         },
-        Win32::System::Com::StructuredStorage::{PropVariantToDouble, PROPVARIANT},
+        Win32::System::Com::StructuredStorage::PropVariantToDouble,
         Win32::System::Com::{
             CoCreateInstance, CoInitializeEx, CoUninitialize, CLSCTX_INPROC_SERVER,
         },
@@ -268,10 +268,7 @@ async fn read_illuminance(_device_path: Option<&String>) -> Result<f64, String> 
     unsafe {
         // Initialize COM
 
-        use windows::Win32::{
-            Devices::Sensors::{SensorManager, SENSOR_DATA_TYPE_LIGHT_GUID},
-            System::Com::COINIT_MULTITHREADED,
-        };
+        use windows::Win32::{Devices::Sensors::SensorManager, System::Com::COINIT_MULTITHREADED};
         let hr = CoInitializeEx(None, COINIT_MULTITHREADED);
         if hr.is_err() {
             return Err("Failed to initialize COM".to_string());

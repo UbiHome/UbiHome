@@ -1,6 +1,6 @@
 use log::{debug, warn};
 use serde::{Deserialize, Deserializer};
-use std::{collections::HashMap, future};
+use std::collections::HashMap;
 use std::{future::Future, pin::Pin, str};
 use tokio::sync::broadcast::{Receiver, Sender};
 use ubihome_core::constants::is_id_string_option;
@@ -99,16 +99,16 @@ impl Module for Default {
 
     fn run(
         &self,
-        sender: Sender<ChangedMessage>,
+        #[allow(unused_variables)] sender: Sender<ChangedMessage>,
         _: Receiver<PublishedMessage>,
     ) -> Pin<Box<dyn Future<Output = Result<(), Box<dyn std::error::Error>>> + Send + 'static>>
     {
+        #[allow(unused_variables)]
         let binary_sensors = self.binary_sensors.clone();
         Box::pin(async move {
             #[cfg(any(target_os = "macos", target_os = "windows"))]
             {
                 warn!("GPIO is not supported on this platform.");
-                return Ok(());
             }
             #[cfg(target_os = "linux")]
             {
