@@ -3598,7 +3598,8 @@ dependencies = [
 [[package]]
 name = "saphyr-parser-bw"
 version = "0.0.611"
-source = "git+https://github.com/bourumir-wyngs/saphyr?branch=dev%2Fsaphyr-parser#50127cf7fbefe1de5e515c5a08dee3599aa6e6d1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "67dec0c833db75dc98957956b303fe447ffc5eb13f2325ef4c2350f7f3aa69e3"
 dependencies = [
  "arraydeque",
  "smallvec 1.15.1",
@@ -3713,22 +3714,23 @@ dependencies = [
 
 [[package]]
 name = "serde-saphyr"
-version = "0.0.16"
-source = "git+https://github.com/DanielHabenicht/serde-saphyr?branch=fix%2F59-validate-with-context#bff9fb484e3b4e6d2e5fe29865bd5f0021fe62da"
+version = "0.0.23"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "09fbdfe7a27a1b1633dfc0c4c8e65940b8d819c5ddb9cca48ebc3223b00c8b14"
 dependencies = [
  "ahash",
  "annotate-snippets",
  "base64",
  "encoding_rs_io",
  "garde",
+ "getrandom 0.3.4",
  "miette",
  "nohash-hasher",
  "num-traits",
  "regex",
  "saphyr-parser-bw 0.0.611",
  "serde",
- "serde_json",
- "smallvec 2.0.0-alpha.12",
+ "smallvec 1.15.1",
  "zmij",
 ]
 
@@ -4607,7 +4609,7 @@ dependencies = [
  "rust-embed",
  "self-replace",
  "serde",
- "serde-saphyr 0.0.16",
+ "serde-saphyr 0.0.23",
  "shell_exec",
  "tokio",
  "ubihome-api",
