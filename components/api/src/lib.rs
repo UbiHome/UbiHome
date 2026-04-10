@@ -15,13 +15,11 @@ use esphome_native_api::proto::version_2025_12_1::ListEntitiesSwitchResponse;
 use esphome_native_api::proto::version_2025_12_1::SensorLastResetType;
 use esphome_native_api::proto::version_2025_12_1::SensorStateClass;
 use esphome_native_api::proto::version_2025_12_1::SensorStateResponse;
-use esphome_native_api::proto::version_2025_12_1::SubscribeHomeAssistantStateResponse;
+// use esphome_native_api::proto::version_2025_12_1::SubscribeHomeAssistantStateResponse;
 use esphome_native_api::proto::version_2025_12_1::SubscribeLogsResponse;
 use esphome_native_api::proto::version_2025_12_1::SwitchStateResponse;
 use log::debug;
 use log::info;
-use log::trace;
-use log::warn;
 use serde::{Deserialize, Deserializer};
 use std::collections::HashMap;
 use std::net::SocketAddr;
@@ -194,6 +192,7 @@ impl Module for Default {
                                 }
                                 UbiComponent::Sensor(sensor) => {
                                     let key = hash_fnv1(&sensor.id);
+                                    #[allow(deprecated)]
                                     let component_sensor = ProtoMessage::ListEntitiesSensorResponse(
                                         ListEntitiesSensorResponse {
                                             object_id: sensor.id.clone(),
@@ -243,6 +242,7 @@ impl Module for Default {
                                 }
                                 UbiComponent::Light(light) => {
                                     let key = hash_fnv1(&light.id);
+                                    #[allow(deprecated)]
                                     let component_light = ProtoMessage::ListEntitiesLightResponse(
                                         ListEntitiesLightResponse {
                                             object_id: light.id.clone(),
@@ -387,6 +387,7 @@ impl Module for Default {
                                     }
                                     PublishedMessage::BluetoothProxyMessage(msg) => {
                                         debug!("BluetoothProxyMessage: {:?}", &msg);
+                                        #[allow(deprecated)]
                                         let service_data: Vec<BluetoothServiceData> = msg
                                             .service_data
                                             .iter()
@@ -396,6 +397,7 @@ impl Module for Default {
                                                 legacy_data: Vec::new(),
                                             })
                                             .collect();
+                                        #[allow(deprecated)]
                                         let manufacturer_data = msg
                                             .manufacturer_data
                                             .iter()
@@ -437,7 +439,7 @@ impl Module for Default {
                                     ProtoMessage::ListEntitiesRequest(list_entities_request) => {
                                         debug!("ListEntitiesRequest: {:?}", list_entities_request);
 
-                                        for (key, sensor) in &api_components_clone {
+                                        for (_key, sensor) in &api_components_clone {
                                             tx.send(sensor.clone()).await.unwrap();
                                         }
                                         tx.send(ProtoMessage::ListEntitiesDoneResponse(
@@ -525,12 +527,12 @@ impl Module for Default {
                                             "SubscribeHomeAssistantStatesRequest: {:?}",
                                             subscribe_homeassistant_services_request
                                         );
-                                        let response_message =
-                                            SubscribeHomeAssistantStateResponse {
-                                                entity_id: "test".to_string(),
-                                                attribute: "test".to_string(),
-                                                once: true,
-                                            };
+                                        // let response_message =
+                                        //     SubscribeHomeAssistantStateResponse {
+                                        //         entity_id: "test".to_string(),
+                                        //         attribute: "test".to_string(),
+                                        //         once: true,
+                                        //     };
                                     }
                                     ProtoMessage::ButtonCommandRequest(button_command_request) => {
                                         debug!(

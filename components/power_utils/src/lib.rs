@@ -6,7 +6,6 @@ use tokio::sync::broadcast::{Receiver, Sender};
 use ubihome_core::constants::is_id_string_option;
 use ubihome_core::constants::is_readable_string;
 use ubihome_core::internal::sensors::UbiComponent;
-use ubihome_core::template_binary_sensor;
 use ubihome_core::template_button;
 use ubihome_core::with_base_entity_properties;
 use ubihome_core::{
@@ -80,7 +79,7 @@ config_template!(
 );
 
 pub struct Default {
-    config: PowerUtilsConfig,
+    // config: PowerUtilsConfig,
     components: Vec<UbiComponent>,
     buttons: HashMap<String, PowerAction>,
 }
@@ -151,7 +150,7 @@ impl Module for Default {
             }
         }
         Ok(Default {
-            config: config.power_utils,
+            // config: config.power_utils,
             components,
             buttons,
         })

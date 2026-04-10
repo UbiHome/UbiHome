@@ -1,5 +1,5 @@
 use duration_str::deserialize_duration;
-use log::{debug, error, info, trace, warn};
+use log::{debug, trace, warn};
 use serde::{Deserialize, Deserializer};
 use shell_exec::{Execution, Shell, ShellError};
 use std::collections::HashMap;

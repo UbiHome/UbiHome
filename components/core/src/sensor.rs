@@ -7,7 +7,7 @@ use crate::constants::is_readable_string;
 #[derive(Clone, Deserialize, Debug)]
 #[serde(rename_all = "lowercase")]
 pub enum SensorFilterType {
-    round(usize),
+    Round(usize),
 }
 
 #[derive(Clone, Deserialize, Debug)]

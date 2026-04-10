@@ -7,8 +7,7 @@ use commands::un_install::{install, uninstall};
 use commands::update::update;
 use flexi_logger::{Duplicate, Logger};
 
-use clap::{Arg, ArgAction, Command};
-use log::{debug, error, info, trace, warn};
+use clap::{Arg, Command};
 use std::{env, fs};
 
 mod commands;
@@ -36,7 +35,6 @@ define_windows_service!(ffi_service_main, windows_service_main);
 
 #[cfg(target_os = "windows")]
 fn windows_service_main(_arguments: Vec<std::ffi::OsString>) {
-    use log::error;
     use std::time::Duration;
 
     use constants::SERVICE_NAME;
@@ -72,10 +70,10 @@ fn windows_service_main(_arguments: Vec<std::ffi::OsString>) {
     let config_file = dir.to_string_lossy().to_string();
 
     if let Err(e) = run::run(Some(config_file), false, Some(shutdown_rx)) {
-        error!("{}", e)
+        log::error!("{}", e)
     }
 
-    info!("Service is stopping...");
+    log::info!("Service is stopping...");
     status_handle
         .set_service_status(ServiceStatus {
             process_id: None,
@@ -188,7 +186,7 @@ fn main() {
                 Some(("validate", _)) => {
                     run::run(config_file, true, None).unwrap();
                 }
-                Some(("run", sub_matches)) => {
+                Some(("run", _sub_matches)) => {
                     println!("UbiHome - {}", VERSION);
                     #[cfg(target_os = "windows")]
                     let is_windows_service =
@@ -196,7 +194,7 @@ fn main() {
                     #[cfg(target_os = "windows")]
                     if *is_windows_service {
                         // Run as a Windows service
-                        info!("Running as Windows service");
+                        log::info!("Running as Windows service");
                         #[cfg(target_os = "windows")]
                         use windows_service::service_dispatcher;
                         #[cfg(target_os = "windows")]
@@ -208,7 +206,7 @@ fn main() {
                         run::run(config_file, false, None).unwrap();
                     }
                     #[cfg(not(target_os = "windows"))]
-                    run::run(config_file, None).unwrap();
+                    run::run(config_file, false, None).unwrap();
                 }
                 _ => {
                     println!("No subcommand was used");

@@ -10,8 +10,6 @@ use tokio::{
 use ubihome_core::constants::is_id_string_option;
 use ubihome_core::constants::is_readable_string;
 use ubihome_core::internal::sensors::UbiComponent;
-use ubihome_core::template_binary_sensor;
-use ubihome_core::template_button;
 use ubihome_core::template_sensor;
 use ubihome_core::with_base_entity_properties;
 use ubihome_core::{
@@ -51,7 +49,7 @@ config_template!(
 );
 
 pub struct Default {
-    config: AmbientLightConfig,
+    // config: AmbientLightConfig,
     components: Vec<UbiComponent>,
     sensors: HashMap<String, AmbientLightSensorConfig>,
 }
@@ -101,7 +99,7 @@ impl Module for Default {
         }
 
         Ok(Default {
-            config: config.illuminance,
+            // config: config.illuminance,
             components,
             sensors,
         })
@@ -118,7 +116,7 @@ impl Module for Default {
     ) -> Pin<Box<dyn Future<Output = Result<(), Box<dyn std::error::Error>>> + Send + 'static>>
     {
         let sensors = self.sensors.clone();
-        let global_config = self.config.clone();
+        // let global_config = self.config.clone();
 
         Box::pin(async move {
             if sensors.is_empty() {
@@ -128,7 +126,7 @@ impl Module for Default {
 
             for (sensor_id, sensor_config) in sensors {
                 let cloned_sender = sender.clone();
-                let cloned_global_config = global_config.clone();
+                // let cloned_global_config = global_config.clone();
 
                 tokio::spawn(async move {
                     let update_interval = sensor_config.update_interval;

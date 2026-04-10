@@ -3,20 +3,19 @@ use crate::config::{BaseConfig, BaseConfigContext};
 use flexi_logger::writers::FileLogWriter;
 use flexi_logger::{detailed_format, Age, Cleanup, Criterion, Duplicate, FileSpec, Logger, Naming};
 
-use garde::Validate;
 use ubihome_core::configuration::binary_sensor::{ActionType, FilterType};
 use ubihome_core::internal::sensors::UbiComponent;
 use ubihome_core::sensor::SensorFilterType;
-use ubihome_core::{ChangedMessage, Module, PublishedMessage};
+use ubihome_core::{ChangedMessage, PublishedMessage};
 
 use futures_signals::signal::{Mutable, SignalExt};
-use log::{debug, error, info, trace, warn};
+use log::{debug, trace, warn};
 use std::collections::{HashMap, HashSet};
 use std::fs;
 use std::path::Path;
 use std::sync::mpsc;
 use std::time::Duration;
-use tokio::sync::broadcast::{self, Receiver, Sender};
+use tokio::sync::broadcast;
 use tokio::{runtime::Runtime, signal};
 
 fn read_base_config(path: Option<String>) -> Result<String, String> {
@@ -194,7 +193,7 @@ Remove the "{}:" entry from your configuration or install the cargo crate contai
 
         for component in initialized_platforms.clone() {
             match component {
-                UbiComponent::Button(button) => {
+                UbiComponent::Button(_button) => {
                     // println!("Button: {:?}", button);
                 }
                 UbiComponent::Sensor(sensor) => {
@@ -210,7 +209,7 @@ Remove the "{}:" entry from your configuration or install the cargo crate contai
                         let mut signal = mutable_clone.signal_cloned().boxed();
                         for filter in sensor.filters.unwrap_or_default() {
                             match filter.filter {
-                                SensorFilterType::round(decimals) => {
+                                SensorFilterType::Round(decimals) => {
                                     trace!("round");
                                     signal = signal
                                     .map(move |value| {
@@ -249,10 +248,10 @@ Remove the "{}:" entry from your configuration or install the cargo crate contai
                             .await;
                     });
                 }
-                UbiComponent::Switch(switch) => {
+                UbiComponent::Switch(_switch) => {
                     // println!("Switch: {:?}", switch);
                 }
-                UbiComponent::Light(light) => {
+                UbiComponent::Light(_light) => {
                     // println!("Light: {:?}", light);
                 }
                 UbiComponent::BinarySensor(binary_sensor) => {
@@ -268,7 +267,7 @@ Remove the "{}:" entry from your configuration or install the cargo crate contai
                         let mut signal = mutable_clone.signal().boxed();
                         for filter in binary_sensor.filters.unwrap_or_default() {
                             match filter.filter {
-                                FilterType::delayed_on(time) => {
+                                FilterType::DelayedOn(time) => {
                                     trace!("delayed_on");
                                     let time_clone = time.clone();
                                     signal = signal
@@ -288,7 +287,7 @@ Remove the "{}:" entry from your configuration or install the cargo crate contai
                                         })
                                         .boxed();
                                 }
-                                FilterType::delayed_off(time) => {
+                                FilterType::DelayedOff(time) => {
                                     trace!("delayed_off");
                                     let time_clone = time.clone();
                                     signal = signal
@@ -309,7 +308,7 @@ Remove the "{}:" entry from your configuration or install the cargo crate contai
                                         })
                                         .boxed();
                                 }
-                                FilterType::invert(_) => {
+                                FilterType::Invert(_) => {
                                     signal = signal
                                         .map(|value| {
                                             trace!("invert");
@@ -323,12 +322,7 @@ Remove the "{}:" entry from your configuration or install the cargo crate contai
                             }
                         }
 
-
-
-
-
                         // React to signal changes
-
                         signal
                             .for_each(|value| {
                                 let signal_tx_clone = internal_tx_clone.clone();
@@ -339,7 +333,7 @@ Remove the "{}:" entry from your configuration or install the cargo crate contai
                                         if let Some(on_press) = binary_sensor.on_press.clone() {
                                             for action in on_press.then {
                                                 match &action.action {
-                                                    ActionType::switch_turn_on(key) => {
+                                                    ActionType::SwitchTurnOn(key) => {
                                                         let pcmd = PublishedMessage::SwitchStateCommand {
                                                             key: key.clone(),
                                                             state: true,
@@ -347,7 +341,7 @@ Remove the "{}:" entry from your configuration or install the cargo crate contai
                                                         debug!("Publishing command from action {:?}: {:?}", action.clone(), pcmd);
                                                         internal_tx_clone.send(pcmd).unwrap();
                                                     }
-                                                    ActionType::switch_turn_off(key) => {
+                                                    ActionType::SwitchTurnOff(key) => {
                                                         let pcmd = PublishedMessage::SwitchStateCommand {
                                                             key: key.clone(),
                                                             state: false,
@@ -362,7 +356,7 @@ Remove the "{}:" entry from your configuration or install the cargo crate contai
                                         if let Some(on_release) = binary_sensor.on_release.clone() {
                                             for action in on_release.then {
                                                 match &action.action {
-                                                    ActionType::switch_turn_on(key) => {
+                                                    ActionType::SwitchTurnOn(key) => {
                                                         let pcmd = PublishedMessage::SwitchStateCommand {
                                                             key: key.clone(),
                                                             state: true,
@@ -370,7 +364,7 @@ Remove the "{}:" entry from your configuration or install the cargo crate contai
                                                         debug!("Publishing command from action {:?}: {:?}", action.clone(), pcmd);
                                                         internal_tx_clone.send(pcmd).unwrap();
                                                     }
-                                                    ActionType::switch_turn_off(key) => {
+                                                    ActionType::SwitchTurnOff(key) => {
                                                         let pcmd = PublishedMessage::SwitchStateCommand {
                                                             key: key.clone(),
                                                             state: false,

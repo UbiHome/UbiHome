@@ -7,7 +7,6 @@ use ubihome_core::constants::is_id_string_option;
 use ubihome_core::constants::is_readable_string;
 use ubihome_core::internal::sensors::UbiComponent;
 use ubihome_core::template_binary_sensor;
-use ubihome_core::template_button;
 use ubihome_core::with_base_entity_properties;
 use ubihome_core::{
     config_template, internal::sensors::UbiBinarySensor, ChangedMessage, Module, NoConfig,

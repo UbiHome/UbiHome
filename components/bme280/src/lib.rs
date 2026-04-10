@@ -9,7 +9,7 @@ use tokio::{
 use ubihome_core::{
     internal::sensors::{UbiComponent, UbiSensor},
     sensor::{SensorBase, UnknownSensor},
-    ChangedMessage, Module, PublishedMessage, UbiHome,
+    ChangedMessage, Module, PublishedMessage,
 };
 
 #[derive(Clone, Deserialize, Debug)]
@@ -45,7 +45,7 @@ pub struct BME280SensorConfig {
 
 #[derive(Clone, Deserialize, Debug)]
 struct CoreConfig {
-    pub ubihome: UbiHome,
+    // pub ubihome: UbiHome,
     pub sensor: Vec<SensorConfig>,
 }
 

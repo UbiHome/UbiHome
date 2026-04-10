@@ -78,7 +78,7 @@ async fn handle_request(
     State(_): State<Arc<AppState>>,
 ) -> impl IntoResponse {
     debug!("Handling request {} {}", domain, id);
-    (StatusCode::OK, Json("state.current_directory".clone()))
+    (StatusCode::OK, Json("state.current_directory"))
 }
 
 async fn handle_action(
@@ -86,7 +86,7 @@ async fn handle_action(
     State(_): State<Arc<AppState>>,
 ) -> impl IntoResponse {
     debug!("Handling request {} {} {}", domain, id, action);
-    (StatusCode::OK, Json("state.current_directory".clone()))
+    (StatusCode::OK, Json("state.current_directory"))
 }
 
 async fn events_stream(
@@ -107,7 +107,7 @@ async fn events_stream(
         .map(Ok)
         .take(1);
 
-    let mut entities: Vec<String> = Vec::new();
+    let entities: Vec<String> = Vec::new();
     // TODO: Add back
     // for (key, binary_sensor) in config.binary_sensor.unwrap() {
     //     let object_id = binary_sensor.default.get_object_id();
@@ -217,7 +217,10 @@ impl Module for Default {
                     TraceLayer::new_for_http(),
                     // Graceful shutdown will wait for outstanding requests to complete. Add a timeout so
                     // requests don't hang forever.
-                    TimeoutLayer::new(Duration::from_secs(1)),
+                    TimeoutLayer::with_status_code(
+                        axum::http::StatusCode::SERVICE_UNAVAILABLE,
+                        Duration::from_secs(1),
+                    ),
                 ))
                 .with_state(app_state.clone());
 

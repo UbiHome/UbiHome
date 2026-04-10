@@ -1,13 +1,9 @@
-use btleplug::api::BDAddr;
-use btleplug::api::{
-    bleuuid::BleUuid, Central, CentralEvent, Manager as _, Peripheral, ScanFilter,
-};
-use btleplug::platform::{Adapter, Manager, PeripheralId};
+use btleplug::api::{Central, CentralEvent, Manager as _, Peripheral, ScanFilter};
+use btleplug::platform::{Adapter, Manager};
 use futures::stream::StreamExt;
 use log::{debug, info, trace};
-use serde::{ser, Deserialize, Deserializer};
+use serde::{Deserialize, Deserializer};
 use std::collections::HashMap;
-use std::future;
 use std::{future::Future, pin::Pin, str};
 use tokio::sync::broadcast::{Receiver, Sender};
 use ubihome_core::{

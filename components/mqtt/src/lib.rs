@@ -380,7 +380,7 @@ impl Module for Default {
                                 if let Some(component) = component {
                                     let mut msg: Option<ChangedMessage> = None;
                                     match component {
-                                        HAMqttComponent::Switch(switch) => {
+                                        HAMqttComponent::Switch(_switch) => {
                                             msg = Some(ChangedMessage::SwitchStateChange {
                                                 key: topic.to_string(),
                                                 state: str::from_utf8(
@@ -390,7 +390,7 @@ impl Module for Default {
                                                     == "on",
                                             })
                                         }
-                                        HAMqttComponent::Button(button) => {
+                                        HAMqttComponent::Button(_button) => {
                                             msg = Some(ChangedMessage::ButtonPress {
                                                 key: topic.to_string(),
                                             });

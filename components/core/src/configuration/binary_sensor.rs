@@ -1,27 +1,28 @@
 use duration_str::deserialize_duration;
 use garde::Validate;
-use std::{collections::HashMap, time::Duration};
+use std::time::Duration;
 
 use serde::Deserialize;
 use serde::Serialize;
 
-use crate::constants::is_id_string_option;
-use crate::constants::is_readable_string;
-use crate::{utils::format_id, with_base_entity_properties};
+// use crate::constants::is_id_string_option;
+// use crate::constants::is_readable_string;
+// use crate::{utils::format_id, with_base_entity_properties};
+
 #[derive(Clone, Serialize, Deserialize, Debug, Validate)]
+#[serde(rename_all = "lowercase")]
 pub enum FilterType {
-    invert(#[garde(required)] Option<String>),
+    Invert(#[garde(required)] Option<String>),
 
     #[serde(deserialize_with = "deserialize_duration")]
-    delayed_off(#[garde(skip)] Duration),
+    DelayedOff(#[garde(skip)] Duration),
 
     #[serde(deserialize_with = "deserialize_duration")]
-    delayed_on(#[garde(skip)] Duration),
+    DelayedOn(#[garde(skip)] Duration),
 }
 
 #[derive(Clone, Serialize, Deserialize, Debug, Validate)]
 #[serde(deny_unknown_fields)]
-
 pub struct BinarySensorFilter {
     #[serde(flatten)]
     #[garde(skip)]
@@ -31,10 +32,10 @@ pub struct BinarySensorFilter {
 #[derive(Clone, Serialize, Deserialize, Debug, Validate)]
 pub enum ActionType {
     #[serde(rename = "switch.turn_on")]
-    switch_turn_on(#[garde(ascii)] String),
+    SwitchTurnOn(#[garde(ascii)] String),
 
     #[serde(rename = "switch.turn_off")]
-    switch_turn_off(#[garde(ascii)] String),
+    SwitchTurnOff(#[garde(ascii)] String),
 }
 
 #[derive(Clone, Serialize, Deserialize, Debug, Validate)]
