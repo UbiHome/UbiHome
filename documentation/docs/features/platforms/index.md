@@ -44,6 +44,23 @@ Platforms extend the functionality of UbiHome. They implement how [Components](.
 
     [:octicons-arrow-right-24: View Documentation](./bluetooth.md)
 
+-   :fontawesome-solid-arrows-spin:{ .lg .middle } [__Sendspin__](./sendspin.md)
+
+    ---
+
+    Stream Music via Sendspin Protocol. 
+
+    [:octicons-arrow-right-24: View Documentation](./sendspin.md)
+
+-   :material-brightness-percent:{ .lg .middle } [__Illuminance__](./illuminance.md)
+
+    ---
+
+    Read out the Integrated Light sensor of your device. 
+
+    [:octicons-arrow-right-24: View Documentation](./illuminance.md)
+
+
 -   :material-unfold-more-vertical:{ .lg .middle } More 
 
     ---

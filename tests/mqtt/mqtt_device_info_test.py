@@ -3,8 +3,9 @@ import json
 from unittest.mock import Mock
 from utils import UbiHome
 from paho.mqtt.client import Client
+import pytest
 
-
+@pytest.mark.timeout(60)
 async def test_run(mqtt_client: Client, mqtt_connection):
     name = "test_device_info"
     DEVICE_INFO_CONFIG = f"""

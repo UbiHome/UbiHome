@@ -1,12 +1,13 @@
 from asyncio import sleep
 import json
+import pytest
 import os
 from unittest.mock import Mock
 from mock_file import IOMock
 from utils import UbiHome
 from paho.mqtt.client import Client
 
-
+@pytest.mark.timeout(60)
 async def test_button_triggered(mqtt_client: Client, mqtt_connection, io_mock: IOMock):
     name = "test_device"
     button_id = "my_button"

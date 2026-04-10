@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.10.3](https://github.com/UbiHome/UbiHome/compare/v0.10.2...v0.10.3) (2026-01-17)
+
+
+### Bug Fixes
+
+* entities in mixed order ([80638c4](https://github.com/UbiHome/UbiHome/commit/80638c48ef75e9b7dc7bcac09aa914c800020f93))
+* windows service for existing installs ([5c06178](https://github.com/UbiHome/UbiHome/commit/5c0617871acd4a15487e3581a887e54d7561006e))
+
 ## [0.10.2](https://github.com/UbiHome/UbiHome/compare/v0.10.1...v0.10.2) (2025-12-30)
 
 ## [0.10.1](https://github.com/UbiHome/UbiHome/compare/v0.10.0...v0.10.1) (2025-12-29)
