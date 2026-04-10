@@ -188,6 +188,7 @@ fn main() {
                 }
                 Some(("run", sub_matches)) => {
                     println!("UbiHome - {}", VERSION);
+                    #[allow(unused_variables)]
                     let is_windows_service =
                         sub_matches.get_one::<bool>("as-windows-service").unwrap();
                     #[cfg(target_os = "windows")]

@@ -200,7 +200,7 @@ impl Module for Default {
                             debug!("Waiting for interrupts.");
 
                             // Wait indefinitely for the interrupts
-                            let future = future::pending();
+                            let future = std::future::pending();
                             let () = future.await;
                             debug!("Interrupts stopped.");
                         }
