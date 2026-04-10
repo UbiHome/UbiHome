@@ -63,12 +63,12 @@ fn mac_to_u64(mac: &str) -> Result<u64, ParseIntError> {
 config_template!(api, ApiConfig, NoConfig, NoConfig, NoConfig, NoConfig, NoConfig);
 
 #[derive(Clone, Debug)]
-pub struct Default {
+pub struct UbiHomePlatform {
     config: CoreConfig,
     pub api_config: ApiConfig,
 }
 
-impl Module for Default {
+impl Module for UbiHomePlatform {
     fn new(config_string: &String) -> Result<Self, String> {
         match serde_saphyr::from_str_with_options_valid::<CoreConfig>(
             config_string,
@@ -76,7 +76,7 @@ impl Module for Default {
         ) {
             Ok(config) => {
                 let config_clone = config.clone();
-                Ok(Default {
+                Ok(UbiHomePlatform {
                     config: config,
                     api_config: config_clone.api,
                 })
@@ -655,7 +655,7 @@ api:
 
 "#;
 
-        let api_module = Default::new(&config.to_string());
+        let api_module = UbiHomePlatform::new(&config.to_string());
         assert!(api_module.is_ok(), "API module should parse successfully");
 
         let module = api_module.unwrap();
@@ -678,7 +678,7 @@ ubihome:
 api: {}
 "#;
 
-        let api_module = Default::new(&config.to_string());
+        let api_module = UbiHomePlatform::new(&config.to_string());
         assert!(api_module.is_ok(), "API module should parse successfully");
 
         let module = api_module.unwrap();

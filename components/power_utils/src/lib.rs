@@ -78,13 +78,13 @@ config_template!(
     NoConfig
 );
 
-pub struct Default {
+pub struct UbiHomePlatform {
     // config: PowerUtilsConfig,
     components: Vec<UbiComponent>,
     buttons: HashMap<String, PowerAction>,
 }
 
-impl Module for Default {
+impl Module for UbiHomePlatform {
     fn new(config_string: &String) -> Result<Self, String> {
         let config =
             serde_saphyr::from_str::<CoreConfig>(config_string).map_err(|e| e.to_string())?;
@@ -149,7 +149,7 @@ impl Module for Default {
                 }
             }
         }
-        Ok(Default {
+        Ok(UbiHomePlatform {
             // config: config.power_utils,
             components,
             buttons,

@@ -54,12 +54,12 @@ config_template!(
 );
 
 #[derive(Clone, Debug)]
-pub struct Default {
+pub struct UbiHomePlatform {
     components: Vec<UbiComponent>,
     binary_sensors: HashMap<String, GpioSensorConfig>,
 }
 
-impl Module for Default {
+impl Module for UbiHomePlatform {
     fn new(config_string: &String) -> Result<Self, String> {
         let config = serde_saphyr::from_str::<CoreConfig>(config_string).unwrap();
         // info!("GPIO config: {:?}", config);
@@ -87,7 +87,7 @@ impl Module for Default {
             );
         }
 
-        Ok(Default {
+        Ok(UbiHomePlatform {
             components,
             binary_sensors,
         })

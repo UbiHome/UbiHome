@@ -48,13 +48,13 @@ config_template!(
     NoConfig
 );
 
-pub struct Default {
+pub struct UbiHomePlatform {
     // config: AmbientLightConfig,
     components: Vec<UbiComponent>,
     sensors: HashMap<String, AmbientLightSensorConfig>,
 }
 
-impl Module for Default {
+impl Module for UbiHomePlatform {
     fn new(config_string: &String) -> Result<Self, String> {
         let config = serde_saphyr::from_str::<CoreConfig>(config_string)
             .map_err(|e| format!("Failed to parse light sensor config: {}", e))?;
@@ -98,7 +98,7 @@ impl Module for Default {
             }
         }
 
-        Ok(Default {
+        Ok(UbiHomePlatform {
             // config: config.illuminance,
             components,
             sensors,

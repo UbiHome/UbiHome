@@ -32,15 +32,15 @@ config_template!(
 );
 
 #[derive(Clone, Debug)]
-pub struct Default {
+pub struct UbiHomePlatform {
     config: CoreConfig,
 }
 
-impl Module for Default {
+impl Module for UbiHomePlatform {
     fn new(config_string: &String) -> Result<Self, String> {
         let config = serde_saphyr::from_str::<CoreConfig>(config_string).unwrap();
 
-        Ok(Default { config: config })
+        Ok(UbiHomePlatform { config: config })
     }
     fn components(&mut self) -> Vec<UbiComponent> {
         let components: Vec<UbiComponent> = Vec::new();

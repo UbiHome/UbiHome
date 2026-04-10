@@ -39,17 +39,17 @@ pub struct MqttConfig {
 config_template!(mqtt, MqttConfig, NoConfig, NoConfig, NoConfig, NoConfig, NoConfig);
 
 #[derive(Clone, Debug)]
-pub struct Default {
+pub struct UbiHomePlatform {
     config: CoreConfig,
     core: CoreConfig,
 }
 
-impl Module for Default {
+impl Module for UbiHomePlatform {
     fn new(config_string: &String) -> Result<Self, String> {
         let config = serde_saphyr::from_str::<CoreConfig>(config_string).unwrap();
         let core_config = serde_saphyr::from_str::<CoreConfig>(config_string).unwrap();
 
-        Ok(Default {
+        Ok(UbiHomePlatform {
             config: config,
             core: core_config,
         })

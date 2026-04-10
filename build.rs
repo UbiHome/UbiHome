@@ -57,7 +57,7 @@ fn main() {
         .iter()
         .map(|p| {
             format!(
-                r#"({}, "{}", {}, Default),"#,
+                r#"({}, "{}", {}, UbiHomePlatform),"#,
                 package_name_to_camel_case(p.replace("ubihome-", "")),
                 p.replace("ubihome-", ""),
                 p.replace("-", "_")

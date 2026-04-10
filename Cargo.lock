@@ -4787,6 +4787,7 @@ version = "0.10.1"
 dependencies = [
  "cpal",
  "duration-str",
+ "garde",
  "log",
  "mdns-sd 0.17.2",
  "parking_lot",

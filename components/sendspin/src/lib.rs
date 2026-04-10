@@ -19,7 +19,7 @@ use tokio::sync::broadcast::Receiver;
 use tokio::sync::broadcast::Sender;
 use tokio::time::interval;
 use tokio_tungstenite::tungstenite::client::IntoClientRequest;
-use ubihome_core::internal::sensors::InternalComponent;
+use ubihome_core::internal::sensors::UbiComponent;
 use ubihome_core::NoConfig;
 use ubihome_core::{config_template, ChangedMessage, Module, PublishedMessage};
 
@@ -52,7 +52,8 @@ fn env_bool(key: &str) -> bool {
         .unwrap_or(false)
 }
 
-#[derive(Clone, Deserialize, Debug)]
+#[derive(Clone, Deserialize, Debug, Validate)]
+#[garde(allow_unvalidated)]
 pub struct SendspinConfig {
     pub name: Option<String>,
     pub server: Option<String>,
@@ -70,18 +71,18 @@ config_template!(
     NoConfig
 );
 
-#[derive(Clone, Debug)]
-pub struct UbiHomeDefault {
+// #[derive(Clone, Debug)]
+pub struct UbiHomePlatform {
     config: CoreConfig,
     pub sendspin_config: SendspinConfig,
 }
 
-impl Module for UbiHomeDefault {
+impl Module for UbiHomePlatform {
     fn new(config_string: &String) -> Result<Self, String> {
         match serde_yaml::from_str::<CoreConfig>(config_string) {
             Ok(config) => {
                 let config_clone = config.clone();
-                Ok(UbiHomeDefault {
+                Ok(UbiHomePlatform {
                     config: config,
                     sendspin_config: config_clone.sendspin,
                 })
@@ -92,7 +93,7 @@ impl Module for UbiHomeDefault {
         }
     }
 
-    fn components(&mut self) -> Vec<InternalComponent> {
+    fn components(&mut self) -> Vec<UbiComponent> {
         Vec::new()
     }
 

@@ -131,7 +131,7 @@ config_template!(
     ShellLightConfig
 );
 
-pub struct Default {
+pub struct UbiHomePlatform {
     config: ShellConfig,
     components: Vec<UbiComponent>,
     binary_sensors: HashMap<String, ShellBinarySensorConfig>,
@@ -141,7 +141,7 @@ pub struct Default {
     lights: HashMap<String, ShellLightConfig>,
 }
 
-impl Module for Default {
+impl Module for UbiHomePlatform {
     fn new(config_string: &String) -> Result<Self, String> {
         let config =
             serde_saphyr::from_str::<CoreConfig>(config_string).map_err(|e| e.to_string())?;
@@ -240,7 +240,7 @@ impl Module for Default {
             }
         }
 
-        Ok(Default {
+        Ok(UbiHomePlatform {
             config: config.shell,
             components,
             binary_sensors,

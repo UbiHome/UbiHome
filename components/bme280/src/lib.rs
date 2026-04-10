@@ -60,13 +60,13 @@ pub struct BME280Sensor {
 }
 
 #[derive(Clone, Debug)]
-pub struct Default {
+pub struct UbiHomePlatform {
     // config: CoreConfig,
     components: Vec<UbiComponent>,
     sensors: Vec<BME280Sensor>,
 }
 
-impl Module for Default {
+impl Module for UbiHomePlatform {
     fn new(config_string: &String) -> Result<Self, String> {
         let config = serde_saphyr::from_str::<CoreConfig>(config_string).unwrap();
         // info!("BME280 config: {:?}", config);
@@ -215,7 +215,7 @@ impl Module for Default {
                 _ => {}
             }
         }
-        Ok(Default {
+        Ok(UbiHomePlatform {
             // config,
             components,
             sensors,
