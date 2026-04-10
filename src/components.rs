@@ -44,7 +44,6 @@ macro_rules! generate_component_methods {
             config_string: &String,
             platforms: &HashSet::<Platform>,
         ) -> Result<Vec<Box<dyn Module>>, String> {
-            println!("Modules to load: {:?}", platforms);
 
             let mut modules: Vec<Box<dyn Module>> = Vec::new();
             for module in platforms.iter() {

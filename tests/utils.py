@@ -96,7 +96,7 @@ class UbiHome(object):
     def __init__(
         self,
         *arguments,
-        config=None,
+        config=DEFAULT_CONFIG,
         throw_on_error=True,
         wait_for_api=False,
         extra_logging=True,
@@ -115,14 +115,17 @@ class UbiHome(object):
         self.executable = os.path.join(os.getcwd(), file)
         logging.info("Using UbiHome executable: %s", self.executable)
 
-        config_yaml = yaml.safe_load(config if config else DEFAULT_CONFIG)
-        if "api" in config_yaml:
-            if config_yaml["api"] is None:
-                config_yaml["api"] = {}
-            self.port = random.randint(1024, 65535)
-            config_yaml["api"]["port"] = self.port
+        if config:
+            config_yaml = yaml.safe_load(config)
+            if "api" in config_yaml:
+                if config_yaml["api"] is None:
+                    config_yaml["api"] = {}
+                self.port = random.randint(1024, 65535)
+                config_yaml["api"]["port"] = self.port
 
-        self.config = yaml.dump(config_yaml)
+            self.config = yaml.dump(config_yaml)
+        else:
+            self.config = None
 
     async def __aenter__(self):
         my_env = os.environ.copy()
@@ -132,14 +135,17 @@ class UbiHome(object):
             my_env["RUST_LOG"] = ""
         my_env["RUST_BACKTRACE"] = "1"
         my_env["RUSTFLAGS"] = "-Awarnings"
-        with open(self.configuration_file, "w") as f:
-            f.write(self.config)
+        if self.config:
+            with open(self.configuration_file, "w") as f:
+                f.write(self.config)
 
         if os.path.exists(self.executable):
             # Use pre-build binaries
-            arguments = [self.executable, "-c", self.configuration_file] + list(
-                self.arguments
-            )
+            arguments = [self.executable] 
+            if self.config:
+                arguments += ["-c", self.configuration_file]
+            if len(self.arguments) > 0 and self.arguments[0]:
+                arguments += list(self.arguments)
 
             logging.info("Starting with command: %s", " ".join(arguments))
             self.process = await asyncio.create_subprocess_exec(
@@ -171,7 +177,10 @@ class UbiHome(object):
         return self
 
     async def __aexit__(self, exctype, value, tb):
-        os.remove(self.configuration_file)
+        try:
+            os.remove(self.configuration_file)
+        except OSError:
+            pass
         if self.process:
 
             # Try to terminate gracefully
@@ -238,7 +247,7 @@ async def run_ubihome(*arguments, config=None, extra_logging=True) -> str:
         *arguments, config=config, extra_logging=extra_logging
     ) as ubihome:
         await asyncio.sleep(1)
-        return ubihome.stdout or ""
+        return ubihome.stdout or ubihome.stderr or ""
 
 
 # FROM https://github.com/esphome/esphome/blob/58a9e30017b7094c9cf8bfb0739b610ba5bcd450/esphome/helpers.py#L65

@@ -46,8 +46,9 @@ power_utils:
 Config: config"""
         in output
     )
+
     assert (
-        """Modules to load: ["button", "gpio", "mqtt", "power_utils", "sensor", "shell", "ubihome"]
+        """Platforms to load: ["gpio", "mqtt", "power_utils", "shell"]
 Configuration is valid.
 """
         in output

@@ -128,6 +128,7 @@ pub(crate) fn run(
     debug!("BaseConfiguration: {:?}", config);
 
     let mut platforms_to_load: HashSet<Platform> = HashSet::new();
+    println!("Platforms to load: {:?}", platforms);
     for platform in platforms.iter() {
         if let Ok(platform_enum) = Platform::from_str(&platform) {
             platforms_to_load.insert(platform_enum);
