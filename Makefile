@@ -1,4 +1,4 @@
-.PHONY: prepare-test-linux test prepare-test-linux-fast
+.PHONY: prepare-test-linux test prepare-test-linux-fast lint
 
 prepare-test-linux:
 	cargo build --release
@@ -13,3 +13,7 @@ test-fast: prepare-test-linux-fast
 
 test: prepare-test-linux
 	cd tests && uv run pytest -vvv
+
+lint:
+	cargo fmt --all -- --check
+	cargo clippy --all-targets --all-features -- -D warnings
