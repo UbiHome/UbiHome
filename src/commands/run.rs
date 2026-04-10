@@ -1,5 +1,5 @@
 use crate::components::{configure_platforms, initialize_platforms, run_platforms, Platform};
-use crate::config::{BaseConfig, BaseConfigContext};
+use crate::config::{get_platforms_from_config, BaseConfig, BaseConfigContext};
 use flexi_logger::writers::FileLogWriter;
 use flexi_logger::{detailed_format, Age, Cleanup, Criterion, Duplicate, FileSpec, Logger, Naming};
 
@@ -84,30 +84,8 @@ pub(crate) fn run(
     let config_string: String =
         read_base_config(config_path).expect("Failed to load base configuration");
 
-    let platforms = config_string
-        .lines()
-        .filter_map(|line| {
-            let line = line;
-            if line.starts_with(' ') {
-                None
-            } else if line.is_empty() {
-                None
-            } else if line.starts_with('#') {
-                None
-            } else {
-                line.split(':').next().map(|property| property.to_string())
-            }
-        })
-        .filter(|platform| {
-            platform != "logger"
-                && platform != "ubihome"
-                && platform != "sensor"
-                && platform != "binary_sensor"
-                && platform != "button"
-                && platform != "switch"
-                && platform != "light"
-        })
-        .collect::<Vec<String>>();
+    let platforms =
+        get_platforms_from_config(&config_string).expect("Failed to load configuration");
     debug!("Configured modules: {:?}", &platforms);
 
     let no_snippet = serde_saphyr::Options {

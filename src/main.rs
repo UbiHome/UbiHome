@@ -186,9 +186,10 @@ fn main() {
                 Some(("validate", _)) => {
                     run::run(config_file, true, None).unwrap();
                 }
+                #[allow(unused_variables)]
                 Some(("run", sub_matches)) => {
                     println!("UbiHome - {}", VERSION);
-                    #[allow(unused_variables)]
+                    #[cfg(target_os = "windows")]
                     let is_windows_service =
                         sub_matches.get_one::<bool>("as-windows-service").unwrap();
                     #[cfg(target_os = "windows")]
