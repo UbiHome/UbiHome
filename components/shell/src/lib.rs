@@ -56,6 +56,7 @@ template_binary_sensor! {
     pub struct ShellBinarySensorConfig {
         #[serde(default = "default_timeout_none")]
         #[serde(deserialize_with = "deserialize_option_duration")]
+        #[garde(skip)]
         pub update_interval: Option<Duration>,
         pub command: String,
     }
@@ -63,12 +64,13 @@ template_binary_sensor! {
 
 template_sensor! {
     #[derive(Clone, Deserialize, Debug, Validate)]
-    #[garde(allow_unvalidated)]
     pub struct ShellSensorConfig {
+        #[garde(skip)]
         pub command: String,
 
         #[serde(default = "default_timeout_none")]
         #[serde(deserialize_with = "deserialize_option_duration")]
+        #[garde(skip)]
         pub update_interval: Option<Duration>,
     }
 }
@@ -76,16 +78,16 @@ template_sensor! {
 template_button! {
 #[derive(Clone, Deserialize, Debug, Validate)]
 pub struct ShellButtonConfig {
-    #[garde(skip)]
+    #[garde(length(min = 1))]
     pub command: String,
 }
 }
 
 #[derive(Clone, Deserialize, Debug, Validate)]
 pub struct ShellSwitchConfig {
-    #[garde(skip)]
+    #[garde(length(min = 1))]
     pub command_on: String,
-    #[garde(skip)]
+    #[garde(length(min = 1))]
     pub command_off: String,
     #[garde(skip)]
     pub command_state: Option<String>,
@@ -98,9 +100,9 @@ pub struct ShellSwitchConfig {
 
 #[derive(Clone, Deserialize, Debug, Validate)]
 pub struct ShellLightConfig {
-    #[garde(skip)]
+    #[garde(length(min = 1))]
     pub command_on: String,
-    #[garde(skip)]
+    #[garde(length(min = 1))]
     pub command_off: String,
     #[garde(skip)]
     pub command_state: Option<String>,
