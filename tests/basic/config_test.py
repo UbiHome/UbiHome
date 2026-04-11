@@ -1,6 +1,7 @@
 import pytest
 
 from utils import OS_PLATFORM, Platform, run_ubihome
+from platformdirs import user_data_dir
 
 
 @pytest.mark.asyncio
@@ -40,9 +41,14 @@ mqtt:
 power_utils:
 """
     output = await run_ubihome("validate", config=config, extra_logging=False)
+    log_dir = user_data_dir()
 
     assert (
         """LogDirectory: ./logs
+Config: config"""
+        in output
+    ) or (
+        f"""LogDirectory: {log_dir}
 Config: config"""
         in output
     )
