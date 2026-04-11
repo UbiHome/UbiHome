@@ -141,7 +141,7 @@ class UbiHome(object):
 
         if os.path.exists(self.executable):
             # Use pre-build binaries
-            arguments = [self.executable] 
+            arguments = [self.executable]
             if self.config:
                 arguments += ["-c", self.configuration_file]
             if len(self.arguments) > 0 and self.arguments[0]:
@@ -182,7 +182,6 @@ class UbiHome(object):
         except OSError:
             pass
         if self.process:
-
             # Try to terminate gracefully
             try:
                 self.process.terminate()
@@ -242,12 +241,12 @@ class UbiHome(object):
             print(message.rstrip())
 
 
-async def run_ubihome(*arguments, config=None, extra_logging=True) -> str:
+async def run_ubihome(*arguments, config=None, extra_logging=True) -> tuple[str, str]:
     async with UbiHome(
         *arguments, config=config, extra_logging=extra_logging
     ) as ubihome:
         await asyncio.sleep(1)
-        return ubihome.stdout or ubihome.stderr or ""
+        return (ubihome.stdout or "", ubihome.stderr or "")
 
 
 # FROM https://github.com/esphome/esphome/blob/58a9e30017b7094c9cf8bfb0739b610ba5bcd450/esphome/helpers.py#L65

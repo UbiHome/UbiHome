@@ -5,13 +5,13 @@ from utils import OS_PLATFORM, Platform, run_ubihome
 
 @pytest.mark.asyncio
 async def test_version_help():
-    version = await run_ubihome("--version")
+    version, error = await run_ubihome("--version")
 
     executable = "ubihome"
     if OS_PLATFORM == Platform.WINDOWS:
         executable += ".exe"
 
-    output = await run_ubihome("--help")
+    output, error = await run_ubihome("--help")
     assert (
         output
         == f"""{version}
@@ -44,15 +44,15 @@ Options:
 
 @pytest.mark.asyncio
 async def test_no_parameters():
-    version = await run_ubihome("--version")
+    version, error = await run_ubihome("--version")
 
     executable = "ubihome"
     if OS_PLATFORM == Platform.WINDOWS:
         executable += ".exe"
 
-    output = await run_ubihome("")
+    output, error = await run_ubihome("")
     assert (
-        output
+        error
         == f"""{version}
 UbiHome is a system which allows you to integrate any device running an OS into your smart home.
 Documentation: https://ubihome.github.io/

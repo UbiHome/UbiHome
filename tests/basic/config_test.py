@@ -3,10 +3,7 @@ import pytest
 from utils import OS_PLATFORM, Platform, run_ubihome
 from platformdirs import user_data_dir
 
-
-@pytest.mark.asyncio
-async def test_validate_config():
-    config = """
+CONFIG = """
 ubihome:
   name: new_awesome
 
@@ -40,9 +37,14 @@ mqtt:
 
 power_utils:
 """
-    output = await run_ubihome("validate", config=config, extra_logging=False)
+
+
+@pytest.mark.asyncio
+async def test_validate_config():
+    output, error = await run_ubihome("validate", config=CONFIG, extra_logging=False)
     log_dir = user_data_dir()
 
+    assert not error
     assert (
         """LogDirectory: ./logs
 Config: config"""
@@ -61,33 +63,61 @@ Configuration is valid.
     )
 
 
-# Invalid character in area
-"""
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "config,expected_error",
+    [
+        (
+            # Invalid character in area
+            """
 ubihome:
   name: test_a_1%
   friendly_name: 'test'
   area: test123\u200b
-"""
-
-
-# Unknown platform
-"""
+""",
+            "validation error: This string contains non-printable characters:",
+        ),
+        (
+            # Unknown platform
+            """
 ubihome:
   name: test_a_1%
   friendly_name: 'test'
-  area: test123\u200b
+  area: test123
 
 unknown_platform:
-"""
-
-# No base platform config
-"""
+""",
+            'Unknown platform specified: unknown_platform\nRemove the "unknown_platform:" entry from your configuration or install the cargo crate containing the platform',
+        ),
+        (
+            # No base platform config
+            """
 ubihome:
   name: test_a_1%
   friendly_name: 'test'
-  area: test123\u200b
+  area: test123
+
+shell:
 
 sensor:
   - platform: unknown_platform
     name: "RAM Usage"
-"""
+""",
+            [
+                "Platform 'unknown_platform' is not configured in the",
+                "Allowed platforms are: shell for `sensor[0].platform`",
+            ],
+        ),
+    ],
+)
+async def test_validate_config_error(config, expected_error: str | list[str]):
+    output, error = await run_ubihome("validate", config=config, extra_logging=False)
+    assert "Configuration is invalid:" in error
+
+    if isinstance(expected_error, str):
+        expected_error = [expected_error]
+
+    for expected in expected_error:
+        assert expected in error, (
+            f"Expected error '{expected}' not found in output: {error}"
+        )
