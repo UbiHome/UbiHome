@@ -121,9 +121,6 @@ macro_rules! template_sensor {
                 #[garde(skip)]
                 pub filters: Option<Vec<SensorFilter>>,
 
-                #[garde(length(min = 3, max = 100))]
-                pub platform: String,
-
                 $(
                     $(#[$field_meta])*
                     $field_vis $field_name : $field_type,
