@@ -5,7 +5,6 @@ authors = ["Daniel Habenicht <daniel-habenicht@outlook.de>"]
 edition = "2021"
 
 [dependencies]
-sendspin = { git = "https://github.com/DanielHabenicht/fork.sendspin-rs", rev = "425cdb01d160c7f997ea8d31b7bf5e707f8acfc3" } #branch = "rollback-sendspin"
 log = "0.4"
 serde = { version = "1.0", features = ["derive"] }
 tokio = { version = "1", features = ["full"] }
@@ -17,4 +16,5 @@ tokio-tungstenite = "0.24.0"
 # tokio-tungstenite = { version = "0.24.0", features = ["rustls-tls-native-roots"] }
 parking_lot = "0.12"
 mdns-sd = "0.17.2"
+sendspin = { git = "https://github.com/DanielHabenicht/fork.sendspin-rs", rev = "098ec3503dc1958579df4b59c46ea117ac179ad1" } #branch = "pi-zero-w-cpal-errors"
 cpal = { git = "https://github.com/rustaudio/cpal", branch = "master" }

@@ -3643,7 +3643,7 @@ checksum = "56e6fa9c48d24d85fb3de5ad847117517440f6beceb7798af16b4a87d616b8d0"
 [[package]]
 name = "sendspin"
 version = "0.1.2"
-source = "git+https://github.com/DanielHabenicht/fork.sendspin-rs?rev=425cdb01d160c7f997ea8d31b7bf5e707f8acfc3#425cdb01d160c7f997ea8d31b7bf5e707f8acfc3"
+source = "git+https://github.com/DanielHabenicht/fork.sendspin-rs?rev=098ec3503dc1958579df4b59c46ea117ac179ad1#098ec3503dc1958579df4b59c46ea117ac179ad1"
 dependencies = [
  "cpal",
  "crossbeam",
