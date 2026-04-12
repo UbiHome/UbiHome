@@ -56,7 +56,7 @@ pub struct SendspinConfig {
     pub name: Option<String>,
     pub server: Option<String>,
     pub id: Option<String>,
-    pub output_name: Option<String>,
+    pub output_id: Option<String>,
 }
 
 config_template!(
@@ -114,6 +114,7 @@ impl Module for UbiHomePlatform {
 
         for host_id in available_hosts {
             let host = cpal::host_from_id(host_id).unwrap();
+            debug!("Host: {}", host_id);
 
             // let default_out = host
             //     .default_output_device()
@@ -123,19 +124,20 @@ impl Module for UbiHomePlatform {
 
             let devices = host.devices().unwrap();
             debug!("  Devices: ");
-            for (device_index, device) in devices.enumerate() {
-                let name = device
+            for (_, device) in devices.enumerate() {
+                let id = device
                     .id()
                     .map_or("Unknown Id".to_string(), |id| id.to_string());
-                debug!("  {}. {name}", device_index + 1);
+                let description = device.description().unwrap();
+                debug!("  {id}: {description}");
 
                 // Output configs
                 if let Ok(conf) = device.default_output_config() {
                     debug!("    Default output stream config:\n      {conf:?}");
                 }
 
-                if let Some(device_name) = &self.config.sendspin.output_name {
-                    if device_name == &name {
+                if let Some(output_id) = &self.config.sendspin.output_id {
+                    if output_id == &id {
                         selected_device = Some(device)
                     }
                 }
@@ -143,7 +145,12 @@ impl Module for UbiHomePlatform {
         }
 
         info!(
-            "Using Device: {}",
+            "Using Device: {} - {}",
+            selected_device
+                .clone()
+                .unwrap()
+                .id()
+                .map_or("Unknown Id".to_string(), |id| id.to_string()),
             selected_device.clone().unwrap().description().unwrap()
         );
 
@@ -204,7 +211,7 @@ impl Module for UbiHomePlatform {
                 .build();
 
             let client = test.connect(&server).await.unwrap();
-            println!("Connected!");
+            debug!("Connected!");
 
             let (mut message_rx, mut audio_rx, clock_sync, ws_tx, _guard) = client.split();
 
@@ -409,9 +416,9 @@ impl Module for UbiHomePlatform {
                         // Log first chunk bytes for diagnostics
                         if !first_chunk_logged {
                             let preview_len = chunk.data.len().min(32);
-                            print!("First {} bytes (hex): ", preview_len);
+                            debug!("First {} bytes (hex): ", preview_len);
                             for byte in &chunk.data[..preview_len] {
-                                print!("{:02X} ", byte);
+                                debug!("{:02X} ", byte);
                             }
                             first_chunk_logged = true;
                         }
