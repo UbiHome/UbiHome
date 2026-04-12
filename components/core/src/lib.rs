@@ -1,21 +1,21 @@
-pub mod binary_sensor;
-pub mod button;
+pub mod configuration;
+pub mod constants;
 pub mod features;
-pub mod home_assistant;
 pub mod internal;
 pub mod light;
 pub mod mapper;
 pub mod sensor;
-pub mod sensor_mapper;
 pub mod switch;
 pub mod utils;
 pub extern crate paste;
 
-use home_assistant::sensors::Component;
-use internal::sensors::InternalComponent;
+use garde::Validate;
+use internal::sensors::UbiComponent;
 use serde::Deserialize;
 use std::{collections::HashMap, pin::Pin};
 use tokio::sync::broadcast::{Receiver, Sender};
+
+use crate::constants::{is_readable_string, is_readable_string_option};
 
 pub type BoxFuture<'a, T> = Pin<Box<dyn Future<Output = T> + Send + 'a>>;
 
@@ -31,7 +31,7 @@ where
     /// This will be called to validate the module configuration and set the module up for the later run command.
     /// It is guaranteed to be be called before the run command.
     /// Do not do any heavy lifting in this function, as it will block the main thread.
-    fn components(&mut self) -> Vec<InternalComponent>;
+    fn components(&mut self) -> Vec<UbiComponent>;
 
     // This will be called in a separate Thread to run the module and its functionality.
     fn run(
@@ -95,7 +95,7 @@ pub enum ChangedMessage {
 #[derive(Debug, Clone)]
 pub enum PublishedMessage {
     Components {
-        components: Vec<Component>,
+        components: Vec<UbiComponent>,
     },
     ButtonPressed {
         key: String,
@@ -135,13 +135,29 @@ pub enum PublishedMessage {
     BluetoothProxyMessage(BluetoothProxyMessage),
 }
 
-#[derive(Clone, Deserialize, Debug)]
-pub struct NoConfig {}
+#[derive(Clone, Deserialize, Debug, Validate)]
+#[garde(allow_unvalidated)]
+pub struct NoConfig {
+    pub platform: String,
+}
 
-#[derive(Clone, Deserialize, Debug)]
+impl NoConfig {
+    pub fn is_configured(&self) -> bool {
+        false
+    }
+    pub fn get_object_id(&self) -> String {
+        unimplemented!();
+    }
+}
+
+#[derive(Clone, Deserialize, Debug, Validate)]
+#[serde(deny_unknown_fields)]
 pub struct UbiHome {
+    #[garde(custom(is_readable_string), length(min = 3, max = 100))]
     pub name: String,
+    #[garde(custom(is_readable_string_option), length(min = 3, max = 100))]
     pub friendly_name: Option<String>,
+    #[garde(custom(is_readable_string_option), length(min = 3, max = 100))]
     pub area: Option<String>,
 }
 
@@ -156,45 +172,57 @@ macro_rules! config_template {
         $switch_extension:ident,
         $light_extension:ident) => {
         use duration_str::deserialize_option_duration;
+        use garde::Validate;
         use ubihome_core::UbiHome;
-        use ubihome_core::template_binary_sensor;
-        use ubihome_core::template_button;
+        // use ubihome_core::template_binary_sensor;
+        use ubihome_core::template_entity;
         use ubihome_core::template_light;
         use ubihome_core::template_mapper;
-        use ubihome_core::template_sensor;
+        use ubihome_core::template_mapper_kind;
+        use ubihome_core::template_mapper_new;
+        use ubihome_core::template_mapper3;
         use ubihome_core::template_switch;
 
-        template_button!($component_name, $button_extension);
-        template_binary_sensor!($component_name, $binary_sensor_extension);
-        template_sensor!($component_name, $sensor_extension);
+        // template_button!($component_name, $button_extension);
+        // template_binary_sensor!($component_name, $binary_sensor_extension);
+        template_entity!($component_name, $sensor_extension);
         template_switch!($component_name, $switch_extension);
         template_light!($component_name, $light_extension);
 
-        template_mapper!(map_sensor, Sensor);
-        template_mapper!(map_button, ButtonConfig);
-        template_mapper!(map_binary_sensor, BinarySensor);
+        // template_mapper!(map_sensor, Sensor);
+        template_mapper_kind!(map_sensor, $component_name, Sensor);
+        template_mapper3!(map_button, $component_name, $button_extension);
+        template_mapper_new!(map_binary_sensor, $component_name, $binary_sensor_extension);
         template_mapper!(map_switch, Switch);
         template_mapper!(map_light, Light);
 
-        #[derive(Clone, Deserialize, Debug)]
+        #[derive(Clone, Deserialize, Debug, Validate)]
+        #[garde(allow_unvalidated)]
         pub struct CoreConfig {
+            #[garde(dive)]
             pub ubihome: UbiHome,
 
+            #[garde(dive)]
             pub $component_name: $component_config,
 
             #[serde(default, deserialize_with = "map_button")]
-            pub button: Option<HashMap<String, ButtonConfig>>,
+            #[garde(dive)]
+            pub button: Option<HashMap<String, $button_extension>>,
 
             #[serde(default, deserialize_with = "map_sensor")]
+            #[garde(dive)]
             pub sensor: Option<HashMap<String, Sensor>>,
 
             #[serde(default, deserialize_with = "map_binary_sensor")]
-            pub binary_sensor: Option<HashMap<String, BinarySensor>>,
+            #[garde(dive)]
+            pub binary_sensor: Option<HashMap<String, $binary_sensor_extension>>,
 
             #[serde(default, deserialize_with = "map_switch")]
+            #[garde(dive)]
             pub switch: Option<HashMap<String, Switch>>,
 
             #[serde(default, deserialize_with = "map_light")]
+            #[garde(dive)]
             pub light: Option<HashMap<String, Light>>,
         }
     };

@@ -1,11 +1,10 @@
 use std::collections::HashMap;
 
-use log::debug;
+use garde::Validate;
 use serde::Deserialize;
-use serde::Deserializer;
-use ubihome_core::{binary_sensor::BinarySensorBase, template_mapper, UbiHome};
+use ubihome_core::UbiHome;
 
-#[derive(Clone, Deserialize, Debug)]
+#[derive(Clone, Deserialize, Debug, Validate)]
 pub enum LogLevel {
     #[serde(alias = "error", alias = "ERROR")]
     Error,
@@ -19,10 +18,14 @@ pub enum LogLevel {
     Trace,
 }
 
-#[derive(Clone, Deserialize, Debug)]
+#[derive(Clone, Deserialize, Debug, Validate)]
 pub struct Logger {
+    #[garde(dive)]
     pub level: LogLevel,
+    #[garde(ascii)]
     pub directory: Option<String>,
+
+    #[garde(skip)]
     pub logs: Option<HashMap<String, LogLevel>>,
 }
 
@@ -75,24 +78,12 @@ impl Logger {
     }
 }
 
-#[derive(Clone, Debug, Deserialize)]
-pub struct BinarySensor {
-    #[serde(flatten)]
-    pub default: BinarySensorBase,
-}
-
-template_mapper!(map_binary_sensor, BinarySensor);
-
-#[derive(Clone, Deserialize, Debug)]
+// Base configuration structure
+#[derive(Clone, Deserialize, Debug, Validate)]
 pub struct CoreConfig {
+    #[garde(dive)]
     pub ubihome: UbiHome,
+
+    #[garde(dive)]
     pub logger: Option<Logger>,
-
-    // #[serde(default, deserialize_with = "map_button")]
-    // pub button: Option<HashMap<String, ButtonConfig>>,
-
-    // #[serde(default, deserialize_with = "map_sensor")]
-    // pub sensor: Option<HashMap<String, Sensor>>,
-    #[serde(default, deserialize_with = "map_binary_sensor")]
-    pub binary_sensor: Option<HashMap<String, BinarySensor>>,
 }

@@ -1,6 +1,5 @@
 use esphome_native_api::esphomeapi::EspHomeApi;
 use esphome_native_api::hash::hash_fnv1;
-use esphome_native_api::parser;
 use esphome_native_api::parser::ProtoMessage;
 use esphome_native_api::proto::version_2025_12_1::BinarySensorStateResponse;
 use esphome_native_api::proto::version_2025_12_1::BluetoothLeAdvertisementResponse;
@@ -16,13 +15,11 @@ use esphome_native_api::proto::version_2025_12_1::ListEntitiesSwitchResponse;
 use esphome_native_api::proto::version_2025_12_1::SensorLastResetType;
 use esphome_native_api::proto::version_2025_12_1::SensorStateClass;
 use esphome_native_api::proto::version_2025_12_1::SensorStateResponse;
-use esphome_native_api::proto::version_2025_12_1::SubscribeHomeAssistantStateResponse;
+// use esphome_native_api::proto::version_2025_12_1::SubscribeHomeAssistantStateResponse;
 use esphome_native_api::proto::version_2025_12_1::SubscribeLogsResponse;
 use esphome_native_api::proto::version_2025_12_1::SwitchStateResponse;
 use log::debug;
 use log::info;
-use log::trace;
-use log::warn;
 use serde::{Deserialize, Deserializer};
 use std::collections::HashMap;
 use std::net::SocketAddr;
@@ -33,16 +30,28 @@ use tokio::sync::broadcast::Receiver;
 use tokio::sync::broadcast::Sender;
 use ubihome_core::features::ip::get_ip_address;
 use ubihome_core::features::ip::get_network_mac_address;
-use ubihome_core::internal::sensors::InternalComponent;
 use ubihome_core::NoConfig;
 use ubihome_core::{
-    config_template, home_assistant::sensors::Component, ChangedMessage, Module, PublishedMessage,
+    config_template, internal::sensors::UbiComponent, ChangedMessage, Module, PublishedMessage,
 };
 
-#[derive(Clone, Deserialize, Debug)]
+use ubihome_core::constants::is_readable_string_option;
+
+#[derive(Clone, Deserialize, Debug, Validate)]
+#[serde(deny_unknown_fields)]
+pub struct ApiEncryptionConfig {
+    #[garde(ascii, length(min = 44, max = 44))]
+    pub key: Option<String>,
+}
+
+#[derive(Clone, Deserialize, Debug, Validate)]
+#[serde(deny_unknown_fields)]
 pub struct ApiConfig {
+    #[garde(range(min = 1, max = 65535))]
     pub port: Option<u16>,
-    pub encryption_key: Option<String>,
+    #[garde(dive)]
+    pub encryption: Option<ApiEncryptionConfig>,
+    #[garde(custom(is_readable_string_option), length(min = 3, max = 64))]
     pub suggested_area: Option<String>,
 }
 
@@ -54,28 +63,31 @@ fn mac_to_u64(mac: &str) -> Result<u64, ParseIntError> {
 config_template!(api, ApiConfig, NoConfig, NoConfig, NoConfig, NoConfig, NoConfig);
 
 #[derive(Clone, Debug)]
-pub struct UbiHomeDefault {
+pub struct UbiHomePlatform {
     config: CoreConfig,
     pub api_config: ApiConfig,
 }
 
-impl Module for UbiHomeDefault {
+impl Module for UbiHomePlatform {
     fn new(config_string: &String) -> Result<Self, String> {
-        match serde_yaml::from_str::<CoreConfig>(config_string) {
+        match serde_saphyr::from_str_with_options_valid::<CoreConfig>(
+            config_string,
+            std::default::Default::default(),
+        ) {
             Ok(config) => {
                 let config_clone = config.clone();
-                Ok(UbiHomeDefault {
+                Ok(UbiHomePlatform {
                     config: config,
                     api_config: config_clone.api,
                 })
             }
             Err(e) => {
-                return Err(format!("Failed to parse API config: {:?}", e));
+                return Err(format!("Failed to parse API config:\n\n {e}"));
             }
         }
     }
 
-    fn components(&mut self) -> Vec<InternalComponent> {
+    fn components(&mut self) -> Vec<UbiComponent> {
         Vec::new()
     }
 
@@ -91,7 +103,13 @@ impl Module for UbiHomeDefault {
         let server_base = EspHomeApi::builder()
             .api_version_major(1)
             .api_version_minor(42)
-            .encryption_key_opt(self.config.api.encryption_key.clone())
+            .encryption_key_opt(
+                self.config
+                    .api
+                    .encryption
+                    .as_ref()
+                    .and_then(|e| e.key.clone()),
+            )
             .server_info("UbiHome".to_string())
             .name(self.config.ubihome.name.clone())
             .friendly_name(
@@ -134,7 +152,7 @@ impl Module for UbiHomeDefault {
                     PublishedMessage::Components { components } => {
                         for component in components {
                             match component.clone() {
-                                Component::Switch(switch_entity) => {
+                                UbiComponent::Switch(switch_entity) => {
                                     let key = hash_fnv1(&switch_entity.id);
                                     let component_switch_entity =
                                         ProtoMessage::ListEntitiesSwitchResponse(
@@ -155,7 +173,7 @@ impl Module for UbiHomeDefault {
                                     api_components_by_key.insert(key, component_switch_entity);
                                     api_components_key_id.insert(switch_entity.id.clone(), key);
                                 }
-                                Component::Button(button) => {
+                                UbiComponent::Button(button) => {
                                     let key = hash_fnv1(&button.id);
                                     let component_button = ProtoMessage::ListEntitiesButtonResponse(
                                         ListEntitiesButtonResponse {
@@ -172,8 +190,9 @@ impl Module for UbiHomeDefault {
                                     api_components_by_key.insert(key, component_button);
                                     api_components_key_id.insert(button.id.clone(), key);
                                 }
-                                Component::Sensor(sensor) => {
+                                UbiComponent::Sensor(sensor) => {
                                     let key = hash_fnv1(&sensor.id);
+                                    #[allow(deprecated)]
                                     let component_sensor = ProtoMessage::ListEntitiesSensorResponse(
                                         ListEntitiesSensorResponse {
                                             object_id: sensor.id.clone(),
@@ -200,7 +219,7 @@ impl Module for UbiHomeDefault {
                                     api_components_by_key.insert(key, component_sensor);
                                     api_components_key_id.insert(sensor.id.clone(), key);
                                 }
-                                Component::BinarySensor(binary_sensor) => {
+                                UbiComponent::BinarySensor(binary_sensor) => {
                                     let key = hash_fnv1(&binary_sensor.id);
                                     let component_binary_sensor =
                                         ProtoMessage::ListEntitiesBinarySensorResponse(
@@ -221,8 +240,9 @@ impl Module for UbiHomeDefault {
                                     api_components_by_key.insert(key, component_binary_sensor);
                                     api_components_key_id.insert(binary_sensor.id.clone(), key);
                                 }
-                                Component::Light(light) => {
+                                UbiComponent::Light(light) => {
                                     let key = hash_fnv1(&light.id);
+                                    #[allow(deprecated)]
                                     let component_light = ProtoMessage::ListEntitiesLightResponse(
                                         ListEntitiesLightResponse {
                                             object_id: light.id.clone(),
@@ -367,6 +387,7 @@ impl Module for UbiHomeDefault {
                                     }
                                     PublishedMessage::BluetoothProxyMessage(msg) => {
                                         debug!("BluetoothProxyMessage: {:?}", &msg);
+                                        #[allow(deprecated)]
                                         let service_data: Vec<BluetoothServiceData> = msg
                                             .service_data
                                             .iter()
@@ -376,6 +397,7 @@ impl Module for UbiHomeDefault {
                                                 legacy_data: Vec::new(),
                                             })
                                             .collect();
+                                        #[allow(deprecated)]
                                         let manufacturer_data = msg
                                             .manufacturer_data
                                             .iter()
@@ -417,7 +439,7 @@ impl Module for UbiHomeDefault {
                                     ProtoMessage::ListEntitiesRequest(list_entities_request) => {
                                         debug!("ListEntitiesRequest: {:?}", list_entities_request);
 
-                                        for (key, sensor) in &api_components_clone {
+                                        for (_key, sensor) in &api_components_clone {
                                             tx.send(sensor.clone()).await.unwrap();
                                         }
                                         tx.send(ProtoMessage::ListEntitiesDoneResponse(
@@ -505,12 +527,12 @@ impl Module for UbiHomeDefault {
                                             "SubscribeHomeAssistantStatesRequest: {:?}",
                                             subscribe_homeassistant_services_request
                                         );
-                                        let response_message =
-                                            SubscribeHomeAssistantStateResponse {
-                                                entity_id: "test".to_string(),
-                                                attribute: "test".to_string(),
-                                                once: true,
-                                            };
+                                        // let response_message =
+                                        //     SubscribeHomeAssistantStateResponse {
+                                        //         entity_id: "test".to_string(),
+                                        //         attribute: "test".to_string(),
+                                        //         once: true,
+                                        //     };
                                     }
                                     ProtoMessage::ButtonCommandRequest(button_command_request) => {
                                         debug!(
@@ -628,11 +650,12 @@ ubihome:
 
 api:
   port: 8053
-  encryption_key: 'xiahAckHBW7BcKEQ6mRfasIW20Md9uMh/5PjrjbAhXQ='
+  encryption:
+    key: 'xiahAckHBW7BcKEQ6mRfasIW20Md9uMh/5PjrjbAhXQ='
 
 "#;
 
-        let api_module = UbiHomeDefault::new(&config.to_string());
+        let api_module = UbiHomePlatform::new(&config.to_string());
         assert!(api_module.is_ok(), "API module should parse successfully");
 
         let module = api_module.unwrap();
@@ -640,7 +663,7 @@ api:
         // Check that the API config is parsed correctly
         assert_eq!(module.api_config.port, Some(8053), "Port should be 8053");
         assert_eq!(
-            module.api_config.encryption_key,
+            module.api_config.encryption.unwrap().key,
             Some("xiahAckHBW7BcKEQ6mRfasIW20Md9uMh/5PjrjbAhXQ=".to_string()),
             "Encryption key should be xiahAckHBW7BcKEQ6mRfasIW20Md9uMh/5PjrjbAhXQ="
         );
@@ -655,7 +678,7 @@ ubihome:
 api: {}
 "#;
 
-        let api_module = UbiHomeDefault::new(&config.to_string());
+        let api_module = UbiHomePlatform::new(&config.to_string());
         assert!(api_module.is_ok(), "API module should parse successfully");
 
         let module = api_module.unwrap();

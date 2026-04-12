@@ -19,15 +19,15 @@ use tokio::{
 use ubihome_core::{
     config_template,
     features::ip::{get_ip_address, get_network_mac_address},
-    home_assistant::sensors::Component,
-    internal::sensors::InternalComponent,
+    internal::sensors::UbiComponent,
     ChangedMessage, Module, NoConfig, PublishedMessage,
 };
 
 mod discovery;
 use discovery::*;
 
-#[derive(Clone, Deserialize, Debug)]
+#[derive(Clone, Deserialize, Debug, Validate)]
+#[garde(allow_unvalidated)]
 pub struct MqttConfig {
     pub discovery_prefix: Option<String>,
     pub broker: String,
@@ -39,24 +39,24 @@ pub struct MqttConfig {
 config_template!(mqtt, MqttConfig, NoConfig, NoConfig, NoConfig, NoConfig, NoConfig);
 
 #[derive(Clone, Debug)]
-pub struct Default {
+pub struct UbiHomePlatform {
     config: CoreConfig,
     core: CoreConfig,
 }
 
-impl Module for Default {
+impl Module for UbiHomePlatform {
     fn new(config_string: &String) -> Result<Self, String> {
-        let config = serde_yaml::from_str::<CoreConfig>(config_string).unwrap();
-        let core_config = serde_yaml::from_str::<CoreConfig>(config_string).unwrap();
+        let config = serde_saphyr::from_str::<CoreConfig>(config_string).unwrap();
+        let core_config = serde_saphyr::from_str::<CoreConfig>(config_string).unwrap();
 
-        Ok(Default {
+        Ok(UbiHomePlatform {
             config: config,
             core: core_config,
         })
     }
 
-    fn components(&mut self) -> Vec<InternalComponent> {
-        let components: Vec<InternalComponent> = Vec::new();
+    fn components(&mut self) -> Vec<UbiComponent> {
+        let components: Vec<UbiComponent> = Vec::new();
 
         components
     }
@@ -126,7 +126,7 @@ impl Module for Default {
                                             //     "{}_{}",
                                             //     core_config.ubihome.name, sensor.name
                                             // ));
-                                            Component::Switch(switch) => {
+                                            UbiComponent::Switch(switch) => {
                                                 let topic = format!(
                                                     "{}/{}/set",
                                                     base_topic_clone.clone(),
@@ -151,7 +151,7 @@ impl Module for Default {
                                                     }),
                                                 );
                                             }
-                                            Component::Button(button) => {
+                                            UbiComponent::Button(button) => {
                                                 let topic = format!(
                                                     "{}/{}",
                                                     base_topic_clone.clone(),
@@ -170,7 +170,7 @@ impl Module for Default {
                                                     }),
                                                 );
                                             }
-                                            Component::Sensor(sensor) => {
+                                            UbiComponent::Sensor(sensor) => {
                                                 mqtt_components.insert(
                                                     sensor.id.clone(),
                                                     HAMqttComponent::Sensor(HAMqttSensor {
@@ -195,7 +195,7 @@ impl Module for Default {
                                                     }),
                                                 );
                                             }
-                                            Component::BinarySensor(sensor) => {
+                                            UbiComponent::BinarySensor(sensor) => {
                                                 mqtt_components.insert(
                                                     sensor.id.clone(),
                                                     HAMqttComponent::BinarySensor(
@@ -218,7 +218,7 @@ impl Module for Default {
                                                     ),
                                                 );
                                             }
-                                            Component::Light(_light) => {
+                                            UbiComponent::Light(_light) => {
                                                 // TODO: Add MQTT light support if needed
                                                 // For now, just skip light components for MQTT
                                             }
@@ -380,7 +380,7 @@ impl Module for Default {
                                 if let Some(component) = component {
                                     let mut msg: Option<ChangedMessage> = None;
                                     match component {
-                                        HAMqttComponent::Switch(switch) => {
+                                        HAMqttComponent::Switch(_switch) => {
                                             msg = Some(ChangedMessage::SwitchStateChange {
                                                 key: topic.to_string(),
                                                 state: str::from_utf8(
@@ -390,7 +390,7 @@ impl Module for Default {
                                                     == "on",
                                             })
                                         }
-                                        HAMqttComponent::Button(button) => {
+                                        HAMqttComponent::Button(_button) => {
                                             msg = Some(ChangedMessage::ButtonPress {
                                                 key: topic.to_string(),
                                             });

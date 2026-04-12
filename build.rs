@@ -8,19 +8,21 @@ use cargo_toml::Manifest;
 // const RESERVED_KEYWORDS: [&str; 5] = ["ubihome", "button", "sensor", "binary_sensor", "text_sensor"];
 
 fn main() {
-    let mut config_path: Option<String> = None;
-    let config_yaml_path = "config.yaml";
-    if Path::new(config_yaml_path).exists() {
-        config_path = Some(config_yaml_path.to_string())
-    }
-    let config_yml_path = "config.yml";
-    if Path::new(config_yml_path).exists() {
-        config_path = Some(config_yml_path.to_string())
-    }
-    if let Some(path) = &config_path {
-        let config_yaml_content = fs::read_to_string(path).unwrap();
-        #[cfg(not(debug_assertions))]
-        println!("cargo:rustc-env=CONFIG_YAML={}", config_yaml_content);
+    #[cfg(not(debug_assertions))]
+    {
+        let mut config_path: Option<String> = None;
+        let config_yaml_path = "config.yaml";
+        if Path::new(config_yaml_path).exists() {
+            config_path = Some(config_yaml_path.to_string())
+        }
+        let config_yml_path = "config.yml";
+        if Path::new(config_yml_path).exists() {
+            config_path = Some(config_yml_path.to_string())
+        }
+        if let Some(path) = &config_path {
+            let config_yaml_content = fs::read_to_string(path).unwrap();
+            println!("cargo:rustc-env=CONFIG_YAML={}", config_yaml_content);
+        }
     }
     // let
     // println!("cargo:rerun-if-changed=NULL");
@@ -46,56 +48,64 @@ fn main() {
         .dependencies
         .iter()
         .filter(|k| k.0.starts_with("ubihome-"))
+        .filter(|p| p.0 != "ubihome-core")
         .map(|(k, _)| k)
         .collect::<Vec<_>>();
 
-    let usings = import_packages
+    let macro_arguments = import_packages
         .clone()
         .iter()
-        .map(|p| p.replace("-", "_"))
-        .map(|p| format!(r#"use {}::start;"#, p))
+        .map(|p| {
+            format!(
+                r#"({}, "{}", {}, UbiHomePlatform),"#,
+                package_name_to_camel_case(p.replace("ubihome-", "")),
+                p.replace("ubihome-", ""),
+                p.replace("-", "_")
+            )
+        })
         .collect::<Vec<_>>()
         .join("\n");
 
+    let components_content = "generate_component_methods!(".to_string() + &macro_arguments + "\n);";
+
     let out_dir = env::var_os("OUT_DIR").unwrap();
-    let dest_path = Path::new(&out_dir).join("start.rs");
-    fs::write(&dest_path, usings).unwrap();
+    let dest_path = Path::new(&out_dir).join("components.rs");
+    fs::write(&dest_path, components_content).unwrap();
+    //     let dest_path = Path::new(&out_dir).join("config.rs");
+    //     fs::write(
+    //         &dest_path,
+    //         format!(
+    //             "#[derive(Clone, Deserialize, Debug)]
+    // pub struct Config {{
+    //     pub ubihome: UbiHome,
+    //     pub logger: Option<Logger>,
 
-    let dest_path = Path::new(&out_dir).join("config.rs");
-    fs::write(
-        &dest_path,
-        format!(
-            "#[derive(Clone, Deserialize, Debug)]
-pub struct Config {{
-    pub ubihome: UbiHome,
-    pub logger: Option<Logger>,
+    //     pub button: Option<Vec<ButtonConfig>>,
+    //     pub binary_sensor: Option<Vec<BinarySensor>>,
 
-    pub button: Option<Vec<ButtonConfig>>,
-    pub binary_sensor: Option<Vec<BinarySensor>>,
-
-{}
-    // pub mqtt: Option<MqttConfig>,
-    // pub shell: Option<ShellConfig>,
-    // pub web_server: Option<WebServerConfig>,
-    // pub gpio: Option<GpioConfig>,
-}}",
-            &import_packages
-                .iter()
-                .map(|p| format!(
-                    "    pub {}: Option<{}Config>",
-                    p.replace("ubihome-", ""),
-                    package_name_to_camel_case(p.replace("ubihome-", ""))
-                ))
-                .collect::<Vec<_>>()
-                .join(",\n")
-        ),
-    )
-    .unwrap();
+    // {}
+    //     // pub mqtt: Option<MqttConfig>,
+    //     // pub shell: Option<ShellConfig>,
+    //     // pub web_server: Option<WebServerConfig>,
+    //     // pub gpio: Option<GpioConfig>,
+    // }}",
+    //             &import_packages
+    //                 .iter()
+    //                 .map(|p| format!(
+    //                     "    pub {}: Option<{}Config>",
+    //                     p.replace("ubihome-", ""),
+    //                     package_name_to_camel_case(p.replace("ubihome-", ""))
+    //                 ))
+    //                 .collect::<Vec<_>>()
+    //                 .join(",\n")
+    //         ),
+    //     )
+    //     .unwrap();
 }
 
 fn package_name_to_camel_case(package_name: String) -> String {
     package_name
-        .split('-')
+        .split('_')
         .map(|s| s.chars().next().unwrap().to_uppercase().collect::<String>() + &s[1..])
         .collect::<Vec<_>>()
         .join("")

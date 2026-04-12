@@ -1,13 +1,13 @@
+mod components;
+mod config;
 mod constants;
 
 use commands::run;
 use commands::un_install::{install, uninstall};
 use commands::update::update;
 use flexi_logger::{Duplicate, Logger};
-use inquire::Text;
 
-use clap::{Arg, ArgAction, Command};
-use log::{debug, error, info, trace, warn};
+use clap::{Arg, Command};
 use std::{env, fs};
 
 mod commands;
@@ -35,7 +35,6 @@ define_windows_service!(ffi_service_main, windows_service_main);
 
 #[cfg(target_os = "windows")]
 fn windows_service_main(_arguments: Vec<std::ffi::OsString>) {
-    use log::error;
     use std::time::Duration;
 
     use constants::SERVICE_NAME;
@@ -70,11 +69,11 @@ fn windows_service_main(_arguments: Vec<std::ffi::OsString>) {
     dir.push("config.yaml");
     let config_file = dir.to_string_lossy().to_string();
 
-    if let Err(e) = run::run(Some(config_file), Some(shutdown_rx)) {
-        error!("{}", e)
+    if let Err(e) = run::run(Some(config_file), false, Some(shutdown_rx)) {
+        log::error!("{}", e)
     }
 
-    info!("Service is stopping...");
+    log::info!("Service is stopping...");
     status_handle
         .set_service_status(ServiceStatus {
             process_id: None,
@@ -95,7 +94,7 @@ fn cli() -> Command {
             .long("as-windows-service")
             .help("Flag to identify if run as windows service.")
             .hide(true)
-            .action(ArgAction::SetTrue)
+            .action(clap::ArgAction::SetTrue)
             .num_args(0),
     ];
 
@@ -175,7 +174,7 @@ fn main() {
                 Some(("update", _)) => {
                     if let Some(log_level) = log_level {
                         let mut logger_builder = Logger::try_with_env_or_str(log_level).unwrap();
-                        logger_builder = logger_builder.duplicate_to_stdout(Duplicate::Debug);
+                        logger_builder = logger_builder.duplicate_to_stdout(Duplicate::Trace);
                         logger_builder.start().unwrap();
                     }
                     update().unwrap();
@@ -185,8 +184,9 @@ fn main() {
                     uninstall(location.cloned());
                 }
                 Some(("validate", _)) => {
-                    todo!("Validate UbiHome");
+                    run::run(config_file, true, None).unwrap();
                 }
+                #[allow(unused_variables)]
                 Some(("run", sub_matches)) => {
                     println!("UbiHome - {}", VERSION);
                     #[cfg(target_os = "windows")]
@@ -195,7 +195,7 @@ fn main() {
                     #[cfg(target_os = "windows")]
                     if *is_windows_service {
                         // Run as a Windows service
-                        info!("Running as Windows service");
+                        log::info!("Running as Windows service");
                         #[cfg(target_os = "windows")]
                         use windows_service::service_dispatcher;
                         #[cfg(target_os = "windows")]
@@ -204,10 +204,10 @@ fn main() {
                         panic!("Running as a Windows service is not supported on Linux.");
                     } else {
                         // Run normally
-                        run::run(config_file, None).unwrap();
+                        run::run(config_file, false, None).unwrap();
                     }
                     #[cfg(not(target_os = "windows"))]
-                    run::run(config_file, None).unwrap();
+                    run::run(config_file, false, None).unwrap();
                 }
                 _ => {
                     println!("No subcommand was used");

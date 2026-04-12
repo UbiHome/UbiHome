@@ -1,10 +1,13 @@
+use garde::Validate;
 use serde::Deserialize;
 
-use crate::utils::format_id;
+use crate::constants::is_id_string_option;
+use crate::constants::is_readable_string;
 
 #[derive(Clone, Deserialize, Debug)]
+#[serde(rename_all = "lowercase")]
 pub enum SensorFilterType {
-    round(usize),
+    Round(usize),
 }
 
 #[derive(Clone, Deserialize, Debug)]
@@ -15,24 +18,61 @@ pub struct SensorFilter {
     pub filter: SensorFilterType,
 }
 
-#[derive(Clone, Deserialize, Debug)]
-pub struct SensorBase {
-    pub id: Option<String>,
-    pub name: String,
-    pub icon: Option<String>,
-    pub device_class: Option<String>,
-    pub unit_of_measurement: Option<String>,
-    pub state_class: Option<String>,
+use crate::with_base_entity_properties;
 
-    pub filters: Option<Vec<SensorFilter>>,
-}
+with_base_entity_properties! {
+    #[derive(Clone, Deserialize, Debug, Validate)]
+    pub struct SensorBase {
+        #[garde(skip)]
+        pub unit_of_measurement: Option<String>,
+        #[garde(skip)]
+        pub state_class: Option<String>,
 
-// TODO implement as procedural macro
-impl SensorBase {
-    pub fn get_object_id(&self) -> String {
-        format_id(&self.id, &self.name)
+        #[garde(skip)]
+        pub filters: Option<Vec<SensorFilter>>,
     }
 }
 
-#[derive(Clone, Deserialize, Debug)]
+#[derive(Clone, Deserialize, Debug, Validate)]
 pub struct UnknownSensor {}
+
+#[macro_export]
+macro_rules! template_entity {
+    ($component_name:ident, $sensor_extension:ident) => {
+        use $crate::sensor::SensorBase;
+        use $crate::sensor::UnknownSensor;
+
+        #[allow(non_camel_case_types)]
+        #[derive(Clone, Deserialize, Debug, Validate)]
+        #[serde(tag = "platform")]
+        #[serde(rename_all = "camelCase")]
+        pub enum SensorKind {
+            $component_name(#[garde(dive)] $sensor_extension),
+            #[serde(untagged)]
+            Unknown(#[garde(dive)] UnknownSensor),
+        }
+
+        #[derive(Clone, Deserialize, Debug, Validate)]
+        pub struct Sensor {
+            #[garde(dive)]
+            #[serde(flatten)]
+            pub parsed: SensorKind,
+        }
+
+        impl Sensor {
+            pub fn is_configured(&self) -> bool {
+                match &self.parsed {
+                    SensorKind::$component_name(ext) => true,
+                    SensorKind::Unknown(_) => false,
+                }
+            }
+
+            pub fn get_object_id(&self) -> String {
+                match &self.parsed {
+                    SensorKind::$component_name(ext) => ext.get_object_id(),
+                    SensorKind::Unknown(_) => panic!("Cannot get base from UnknownSensor"),
+                }
+            }
+        }
+    };
+}

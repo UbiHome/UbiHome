@@ -1,4 +1,4 @@
-use std::{f32::consts::E, net::IpAddr};
+use std::net::IpAddr;
 
 use log::debug;
 use network_interface::{Addr, NetworkInterface, NetworkInterfaceConfig};
