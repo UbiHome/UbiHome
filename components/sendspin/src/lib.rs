@@ -4,12 +4,12 @@ use cpal::Device;
 use log::{debug, error, info, trace};
 use sendspin::audio::decode::{Decoder, PcmDecoder, PcmEndian};
 use sendspin::audio::{AudioBuffer, AudioFormat, Codec, SyncedPlayer};
+use sendspin::protocol::client::ProtocolClient;
 use sendspin::protocol::messages::{
-    AudioFormatSpec, ClientState, ClientTime, Message, PlayerState, PlayerSyncState,
-    PlayerV1Support,
+    AudioFormatSpec, ClientHello, ClientState, ClientTime, DeviceInfo, Message, PlayerState,
+    PlayerSyncState, PlayerV1Support,
 };
 use sendspin::sync::ClockSync;
-use sendspin::ProtocolClientBuilder;
 use serde::{Deserialize, Deserializer};
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -18,6 +18,7 @@ use std::{future::Future, pin::Pin, str};
 use tokio::sync::broadcast::Receiver;
 use tokio::sync::broadcast::Sender;
 use tokio::time::interval;
+use tokio_tungstenite::tungstenite::client::IntoClientRequest;
 use ubihome_core::internal::sensors::UbiComponent;
 use ubihome_core::NoConfig;
 use ubihome_core::{config_template, ChangedMessage, Module, PublishedMessage};
@@ -57,9 +58,7 @@ pub struct SendspinConfig {
     pub name: Option<String>,
     pub server: Option<String>,
     pub id: Option<String>,
-    pub output_id: Option<String>,
-    pub bit_depth: Option<u8>,
-    pub sample_rate: Option<u32>,
+    pub output_name: Option<String>,
 }
 
 config_template!(
@@ -72,7 +71,7 @@ config_template!(
     NoConfig
 );
 
-// #[derive(Clone, Debug)]
+#[derive(Clone, Debug)]
 pub struct UbiHomePlatform {
     config: CoreConfig,
     pub sendspin_config: SendspinConfig,
@@ -100,8 +99,8 @@ impl Module for UbiHomePlatform {
 
     fn run(
         &self,
-        _sender: Sender<ChangedMessage>,
-        mut _receiver: Receiver<PublishedMessage>,
+        sender: Sender<ChangedMessage>,
+        mut receiver: Receiver<PublishedMessage>,
     ) -> Pin<Box<dyn Future<Output = Result<(), Box<dyn std::error::Error>>> + Send + 'static>>
     {
         let name = self
@@ -110,8 +109,6 @@ impl Module for UbiHomePlatform {
             .clone()
             .unwrap_or(self.config.ubihome.name.clone());
         let id = self.sendspin_config.id.clone().unwrap_or(name.clone());
-        let bit_depth = self.sendspin_config.bit_depth.unwrap_or(16);
-        let sample_rate = self.sendspin_config.sample_rate.unwrap_or(48000);
 
         let mut selected_device: Option<Device> = None;
         // List Hosts
@@ -119,38 +116,28 @@ impl Module for UbiHomePlatform {
 
         for host_id in available_hosts {
             let host = cpal::host_from_id(host_id).unwrap();
-            debug!("Host: {}", host_id);
 
-            // let default_out = host
-            //     .default_output_device()
-            //     .map(|dev| dev.name().unwrap())
-            //     .map(|name| name.to_string());
+            let default_out = host
+                .default_output_device()
+                .map(|dev| dev.name().unwrap())
+                .map(|name| name.to_string());
             selected_device = host.default_output_device();
 
             let devices = host.devices().unwrap();
             debug!("  Devices: ");
-            for (_, device) in devices.enumerate() {
-                let id = device
-                    .id()
-                    .map_or("Unknown Id".to_string(), |id| id.to_string());
-                let description = device.description().unwrap();
-                debug!("  {id} - {description}");
+            for (device_index, device) in devices.enumerate() {
+                let name = device
+                    .name()
+                    .map_or("Unknown Name".to_string(), |id| id.to_string());
+                debug!("  {}. {name}", device_index + 1);
 
                 // Output configs
                 if let Ok(conf) = device.default_output_config() {
-                    debug!("    Default output stream config:");
-                    debug!("      {conf:?}");
+                    debug!("    Default output stream config:\n      {conf:?}");
                 }
 
-                if let Ok(configs) = device.supported_output_configs() {
-                    debug!("    Supported output stream config:\n");
-                    for conf in configs {
-                        debug!("      {conf:?}");
-                    }
-                }
-
-                if let Some(output_id) = &self.config.sendspin.output_id {
-                    if output_id == &id {
+                if let Some(device_name) = &self.config.sendspin.output_name {
+                    if device_name == &name {
                         selected_device = Some(device)
                     }
                 }
@@ -158,13 +145,8 @@ impl Module for UbiHomePlatform {
         }
 
         info!(
-            "Using Device: {} - {}",
-            selected_device
-                .clone()
-                .unwrap()
-                .id()
-                .map_or("Unknown Id".to_string(), |id| id.to_string()),
-            selected_device.clone().unwrap().description().unwrap()
+            "Using Device: {}",
+            selected_device.clone().unwrap().name().unwrap()
         );
 
         // End List Hosts
@@ -212,31 +194,37 @@ impl Module for UbiHomePlatform {
         };
 
         Box::pin(async move {
-            let test = ProtocolClientBuilder::builder()
-                .client_id(id.clone())
-                .name(name.clone())
-                .player_v1_support(PlayerV1Support {
+            let hello = ClientHello {
+                client_id: id.clone(),
+                name: name.clone(),
+                version: 1,
+                supported_roles: vec!["player@v1".to_string()],
+                device_info: Some(DeviceInfo {
+                    product_name: Some(name.clone()),
+                    manufacturer: Some("Sendspin".to_string()),
+                    software_version: Some("0.1.0".to_string()),
+                }),
+                player_v1_support: Some(PlayerV1Support {
                     supported_formats: vec![AudioFormatSpec {
                         codec: "pcm".to_string(),
                         channels: 2,
-                        sample_rate: sample_rate.clone(),
-                        bit_depth: bit_depth.clone(),
+                        sample_rate: 48000,
+                        bit_depth: 16,
                     }],
                     buffer_capacity: 50 * 1024 * 1024, // 50 MB
                     supported_commands: vec!["volume".to_string(), "mute".to_string()],
-                })
-                // .initial_player_state(PlayerState {
-                //     volume: Some(100),
-                //     muted: Some(false),
-                //     static_delay_ms: Some(0),
-                //     supported_commands: None,
-                // })
-                .build();
+                }),
+                artwork_v1_support: None,
+                visualizer_v1_support: None,
+            };
 
-            let client = test.connect(&server).await.unwrap();
-            debug!("Connected!");
+            info!("Connecting to {}...", server);
+            let mut request = server.into_client_request().unwrap();
+            let client = ProtocolClient::connect(request, hello).await.unwrap();
+            info!("Connected!");
 
-            let (mut message_rx, mut audio_rx, clock_sync, ws_tx, _guard) = client.split();
+            // Split client into separate receivers for concurrent processing
+            let (mut message_rx, mut audio_rx, clock_sync, ws_tx) = client.split();
 
             //Send initial client/state message (handshake step 3)
             let client_state = Message::ClientState(ClientState {
@@ -301,13 +289,7 @@ impl Module for UbiHomePlatform {
                     match cmd {
                         PlayerCommand::Init(fmt, clock_sync) => {
                             // Use selected_device_for_thread only once
-                            match SyncedPlayer::new(
-                                fmt,
-                                clock_sync,
-                                selected_device.clone(),
-                                100,
-                                false,
-                            ) {
+                            match SyncedPlayer::new(fmt, clock_sync, selected_device.clone()) {
                                 Ok(player) => {
                                     info!("Synced audio output initialized");
                                     synced_player = Some(player);
@@ -439,12 +421,10 @@ impl Module for UbiHomePlatform {
                         // Log first chunk bytes for diagnostics
                         if !first_chunk_logged {
                             let preview_len = chunk.data.len().min(32);
-                            let hex_string = chunk.data[..preview_len]
-                                .iter()
-                                .map(|b| format!("{:02X}", b))
-                                .collect::<Vec<_>>()
-                                .join(" ");
-                            debug!("First {} bytes (hex): {}", preview_len, hex_string);
+                            print!("First {} bytes (hex): ", preview_len);
+                            for byte in &chunk.data[..preview_len] {
+                                print!("{:02X} ", byte);
+                            }
                             first_chunk_logged = true;
                         }
 
