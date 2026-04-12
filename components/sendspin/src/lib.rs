@@ -5,7 +5,8 @@ use log::{debug, error, info, trace};
 use sendspin::audio::decode::{Decoder, PcmDecoder, PcmEndian};
 use sendspin::audio::{AudioBuffer, AudioFormat, Codec, SyncedPlayer};
 use sendspin::protocol::messages::{
-    ClientState, ClientTime, Message, PlayerState, PlayerSyncState,
+    AudioFormatSpec, ClientState, ClientTime, Message, PlayerState, PlayerSyncState,
+    PlayerV1Support,
 };
 use sendspin::sync::ClockSync;
 use sendspin::ProtocolClientBuilder;
@@ -57,6 +58,8 @@ pub struct SendspinConfig {
     pub server: Option<String>,
     pub id: Option<String>,
     pub output_id: Option<String>,
+    pub bit_depth: Option<u8>,
+    pub sample_rate: Option<u32>,
 }
 
 config_template!(
@@ -107,6 +110,8 @@ impl Module for UbiHomePlatform {
             .clone()
             .unwrap_or(self.config.ubihome.name.clone());
         let id = self.sendspin_config.id.clone().unwrap_or(name.clone());
+        let bit_depth = self.sendspin_config.bit_depth.unwrap_or(16);
+        let sample_rate = self.sendspin_config.sample_rate.unwrap_or(48000);
 
         let mut selected_device: Option<Device> = None;
         // List Hosts
@@ -129,7 +134,7 @@ impl Module for UbiHomePlatform {
                     .id()
                     .map_or("Unknown Id".to_string(), |id| id.to_string());
                 let description = device.description().unwrap();
-                debug!("  {id}: {description}");
+                debug!("  {id} - {description}");
 
                 // Output configs
                 if let Ok(conf) = device.default_output_config() {
@@ -202,6 +207,16 @@ impl Module for UbiHomePlatform {
             let test = ProtocolClientBuilder::builder()
                 .client_id(id.clone())
                 .name(name.clone())
+                .player_v1_support(PlayerV1Support {
+                    supported_formats: vec![AudioFormatSpec {
+                        codec: "pcm".to_string(),
+                        channels: 2,
+                        sample_rate: sample_rate.clone(),
+                        bit_depth: bit_depth.clone(),
+                    }],
+                    buffer_capacity: 50 * 1024 * 1024, // 50 MB
+                    supported_commands: vec!["volume".to_string(), "mute".to_string()],
+                })
                 // .initial_player_state(PlayerState {
                 //     volume: Some(100),
                 //     muted: Some(false),
@@ -416,10 +431,12 @@ impl Module for UbiHomePlatform {
                         // Log first chunk bytes for diagnostics
                         if !first_chunk_logged {
                             let preview_len = chunk.data.len().min(32);
-                            debug!("First {} bytes (hex): ", preview_len);
-                            for byte in &chunk.data[..preview_len] {
-                                debug!("{:02X} ", byte);
-                            }
+                            let hex_string = chunk.data[..preview_len]
+                                .iter()
+                                .map(|b| format!("{:02X}", b))
+                                .collect::<Vec<_>>()
+                                .join(" ");
+                            debug!("First {} bytes (hex): {}", preview_len, hex_string);
                             first_chunk_logged = true;
                         }
 
