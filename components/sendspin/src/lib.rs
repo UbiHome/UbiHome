@@ -118,7 +118,7 @@ impl Module for UbiHomeDefault {
 
         for host_id in available_hosts {
             let host = cpal::host_from_id(host_id).unwrap();
-            debug!("Host: {}", host_id);
+            debug!("Host: {}", host_id.name());
 
             // let default_out = host
             //     .default_output_device()
@@ -130,9 +130,9 @@ impl Module for UbiHomeDefault {
             debug!("  Devices: ");
             for (_, device) in devices.enumerate() {
                 let id = device
-                    .id()
+                    .name() // id()
                     .map_or("Unknown Id".to_string(), |id| id.to_string());
-                let description = device.description().unwrap();
+                let description = device.name().unwrap(); // description
                 debug!("  {id} - {description}");
 
                 // Output configs
@@ -161,9 +161,9 @@ impl Module for UbiHomeDefault {
             selected_device
                 .clone()
                 .unwrap()
-                .id()
+                .name() // id
                 .map_or("Unknown Id".to_string(), |id| id.to_string()),
-            selected_device.clone().unwrap().description().unwrap()
+            selected_device.clone().unwrap().name().unwrap() // description
         );
 
         // End List Hosts
