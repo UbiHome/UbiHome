@@ -12,7 +12,7 @@ use std::{env, fs};
 
 mod commands;
 
-const VERSION: &str = env!("CARGO_PKG_VERSION");
+const VERSION: &str = concat!(env!("CARGO_PKG_VERSION"), " (", env!("GIT_HASH"), ")");
 const DESCRIPTION: &str = env!("CARGO_PKG_DESCRIPTION");
 const CARGO_PKG_HOMEPAGE: &str = env!("CARGO_PKG_HOMEPAGE");
 const DEFAULT_CONFIG_FILE_YML: &str = "config.yml";
