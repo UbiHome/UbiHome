@@ -76,4 +76,3 @@ members = [
     "components/shell",
     "components/web_server",
 ]
-cargo_toml = "0.22.1"
