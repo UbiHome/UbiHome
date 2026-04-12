@@ -138,7 +138,15 @@ impl Module for UbiHomePlatform {
 
                 // Output configs
                 if let Ok(conf) = device.default_output_config() {
-                    debug!("    Default output stream config:\n      {conf:?}");
+                    debug!("    Default output stream config:");
+                    debug!("      {conf:?}");
+                }
+
+                if let Ok(configs) = device.supported_output_configs() {
+                    debug!("    Supported output stream config:\n");
+                    for conf in configs {
+                        debug!("      {conf:?}");
+                    }
                 }
 
                 if let Some(output_id) = &self.config.sendspin.output_id {
