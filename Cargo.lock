@@ -867,9 +867,8 @@ dependencies = [
 
 [[package]]
 name = "cpal"
-version = "0.17.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d8942da362c0f0d895d7cac616263f2f9424edc5687364dfd1d25ef7eba506d7"
+version = "0.18.0"
+source = "git+https://github.com/rustaudio/cpal?branch=master#58a635b9f207b628a09f2caf6e6ce849943279c3"
 dependencies = [
  "alsa",
  "coreaudio-rs",
@@ -3644,7 +3643,7 @@ checksum = "56e6fa9c48d24d85fb3de5ad847117517440f6beceb7798af16b4a87d616b8d0"
 [[package]]
 name = "sendspin"
 version = "0.1.2"
-source = "git+https://github.com/DanielHabenicht/fork.sendspin-rs?rev=752c02d8c6723fe7ca217e12dd1ec8373eda00f0#752c02d8c6723fe7ca217e12dd1ec8373eda00f0"
+source = "git+https://github.com/DanielHabenicht/fork.sendspin-rs?rev=425cdb01d160c7f997ea8d31b7bf5e707f8acfc3#425cdb01d160c7f997ea8d31b7bf5e707f8acfc3"
 dependencies = [
  "cpal",
  "crossbeam",
