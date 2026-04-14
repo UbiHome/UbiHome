@@ -1,5 +1,7 @@
 # Changelog
 
+## [0.10.4](https://github.com/UbiHome/UbiHome/compare/v0.9.3...ubihome-mdns-v0.10.4) (2026-04-14)
+
 ## [0.9.2](https://github.com/UbiHome/UbiHome/compare/v0.9.1...ubihome-mdns-v0.9.2) (2025-12-21)
 
 

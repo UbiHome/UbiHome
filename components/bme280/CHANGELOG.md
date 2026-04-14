@@ -1,5 +1,7 @@
 # Changelog
 
+## [0.10.4](https://github.com/UbiHome/UbiHome/compare/v0.9.0...ubihome-bme280-v0.10.4) (2026-04-14)
+
 ## [0.9.0](https://github.com/UbiHome/UbiHome/compare/ubihome-bme280-v0.8.12...ubihome-bme280-v0.9.0) (2025-08-04)
 
 
