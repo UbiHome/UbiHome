@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.11.2](https://github.com/UbiHome/UbiHome/compare/v0.11.1...v0.11.2) (2026-04-14)
+
+
+### Bug Fixes
+
+* update native api package ([372358e](https://github.com/UbiHome/UbiHome/commit/372358e90953e4e22a641012e959fd637aecd4df))
+
 ## [0.11.1](https://github.com/UbiHome/UbiHome/compare/v0.11.0...v0.11.1) (2026-04-14)
 
 

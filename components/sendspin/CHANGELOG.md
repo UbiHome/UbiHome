@@ -2,6 +2,8 @@
 
 
 
+## [0.11.1](https://github.com/UbiHome/UbiHome/compare/v0.11.0...ubihome-sendspin-v0.11.1) (2026-04-14)
+
 ## [0.11.0](https://github.com/UbiHome/UbiHome/compare/v0.10.2...ubihome-sendspin-v0.11.0) (2026-04-14)
 
 
