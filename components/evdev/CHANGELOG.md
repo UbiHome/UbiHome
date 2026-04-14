@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.11.0](https://github.com/UbiHome/UbiHome/compare/ubihome-evdev-v0.10.4...ubihome-evdev-v0.11.0) (2026-04-14)
+
+
+### Features
+
+* add password and key authentcation + light sensor ([#82](https://github.com/UbiHome/UbiHome/issues/82)) ([89c11f2](https://github.com/UbiHome/UbiHome/commit/89c11f2aeec96048663c64edc0b351c8ba7df911))
+* switch shell entity via mqtt ([b0e4bd4](https://github.com/UbiHome/UbiHome/commit/b0e4bd45affcb8494ddc53903a132d9edb871509))
+
 ## [0.10.4](https://github.com/UbiHome/UbiHome/compare/v0.9.0...ubihome-evdev-v0.10.4) (2026-04-14)
 
 ## [0.9.0](https://github.com/UbiHome/UbiHome/compare/v0.8.11...ubihome-evdev-v0.9.0) (2025-08-03)

@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.9.2](https://github.com/UbiHome/UbiHome/compare/v0.9.1...ubihome-core-v0.9.2) (2026-04-14)
+
+
+### Bug Fixes
+
+* [#105](https://github.com/UbiHome/UbiHome/issues/105) ([b564199](https://github.com/UbiHome/UbiHome/commit/b5641993f3825ac0f7f690f543318dd3db08092e))
+
 ## [0.9.1](https://github.com/UbiHome/UbiHome/compare/v0.9.0...ubihome-core-v0.9.1) (2026-04-14)
 
 
