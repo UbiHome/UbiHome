@@ -1,82 +1,62 @@
-use std::{f32::consts::E, net::IpAddr};
+use std::net::IpAddr;
 
+use getifs::{best_local_addrs, interfaces};
 use log::debug;
-use network_interface::{Addr, NetworkInterface, NetworkInterfaceConfig};
 
 pub fn get_ip_address() -> Result<IpAddr, String> {
-    let network_interfaces = NetworkInterface::show().unwrap();
-    let mut addresses: Vec<IpAddr> = Vec::new();
+    let network_interfaces = interfaces().map_err(|e| format!("Failed to list interfaces: {e}"))?;
 
     debug!("Detected Networks:");
     for interface in network_interfaces.iter() {
+        let interface_name = interface.name().as_str().to_string();
+        let interface_addrs = interface.addrs().map_err(|e| e.to_string())?;
+
         debug!(
             "{}[{:?}]:\t{:?}",
-            &interface.name, &interface.mac_addr, &interface.addr
+            interface_name,
+            interface.mac_addr(),
+            interface_addrs
         );
-
-        // Windows uses "Wi-Fi"
-        if interface.name == "Wi-Fi" {
-            addresses = [
-                interface
-                    .clone()
-                    .addr
-                    .iter()
-                    .filter_map(|addr| match addr {
-                        Addr::V4(v4) => Some(IpAddr::V4(v4.ip)),
-                        Addr::V6(v6) => Some(IpAddr::V6(v6.ip)),
-                    })
-                    .collect(),
-                addresses,
-            ]
-            .concat();
-        }
-
-        // Linux uses "wlan0" or "eth0"
-        if interface.name == "wlan0" || interface.name == "eth0" {
-            addresses = [
-                interface
-                    .addr
-                    .iter()
-                    .filter_map(|addr| match addr {
-                        Addr::V4(v4) => Some(IpAddr::V4(v4.ip)),
-                        Addr::V6(v6) => Some(IpAddr::V6(v6.ip)),
-                    })
-                    .collect(),
-                addresses,
-            ]
-            .concat();
-        }
     }
 
-    addresses.sort_by(|a, b| match (a, b) {
+    let mut all_addrs: Vec<IpAddr> = best_local_addrs()
+        .unwrap()
+        .into_iter()
+        .map(|addr| addr.addr())
+        .collect();
+    // Will only contain addresses from interfaces with best default routes
+
+    all_addrs.sort_by(|a, b| match (a, b) {
         (IpAddr::V4(_), IpAddr::V6(_)) => std::cmp::Ordering::Less,
         (IpAddr::V6(_), IpAddr::V4(_)) => std::cmp::Ordering::Greater,
         _ => std::cmp::Ordering::Equal,
     });
 
-    addresses
-        .into_iter()
-        .next()
-        .ok_or_else(|| "No valid IP address found".to_string())
+    debug!("Best local addresses: {:?}", all_addrs);
+    all_addrs
+        .first()
+        .cloned()
+        .ok_or("No valid IP address found".to_string())
 }
 
 // use mac_address::MacAddressIterator;
 // use nix::ifaddrs::getifaddrs;
 
 pub fn get_network_mac_address(ip: IpAddr) -> Result<String, String> {
-    let network_interfaces = NetworkInterface::show().unwrap();
+    let network_interfaces = interfaces().map_err(|e| format!("Failed to list interfaces: {e}"))?;
+
     for interface in network_interfaces.iter() {
-        let contains_ip = interface.addr.iter().any(|addr| match addr {
-            Addr::V4(v4) => v4.ip == ip,
-            Addr::V6(v6) => v6.ip == ip,
-        });
+        let interface_addrs = interface.addrs().map_err(|e| e.to_string())?;
+        let contains_ip = interface_addrs.iter().any(|addr| addr.addr() == ip);
+
         if contains_ip {
-            if let Some(mac) = &interface.mac_addr {
-                return Ok(mac.clone());
+            if let Some(mac) = interface.mac_addr() {
+                return Ok(mac.to_string());
             } else {
                 return Err("No MAC address found".to_string());
             }
         }
     }
-    return Err("Ip Address not found".to_string());
+
+    Err("Ip Address not found".to_string())
 }
