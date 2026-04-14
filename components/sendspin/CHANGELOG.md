@@ -1,5 +1,7 @@
 # Changelog
 
+
+
 ## [0.10.1](https://github.com/UbiHome/UbiHome/compare/v0.10.0...ubihome-api-v0.10.1) (2026-01-17)
 
 
