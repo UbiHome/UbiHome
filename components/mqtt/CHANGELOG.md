@@ -1,5 +1,7 @@
 # Changelog
 
+## [0.11.1](https://github.com/UbiHome/UbiHome/compare/v0.11.0...ubihome-mqtt-v0.11.1) (2026-04-14)
+
 ## [0.11.0](https://github.com/UbiHome/UbiHome/compare/ubihome-mqtt-v0.10.4...ubihome-mqtt-v0.11.0) (2026-04-14)
 
 
