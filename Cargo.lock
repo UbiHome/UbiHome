@@ -4736,7 +4736,7 @@ dependencies = [
 
 [[package]]
 name = "ubihome-api"
-version = "0.10.4"
+version = "0.11.1"
 dependencies = [
  "duration-str",
  "esphome-native-api",
