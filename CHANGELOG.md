@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.11.1](https://github.com/UbiHome/UbiHome/compare/v0.11.0...v0.11.1) (2026-04-14)
+
+
+### Bug Fixes
+
+* linux-x86_64 release build ([7bd266d](https://github.com/UbiHome/UbiHome/commit/7bd266d4fc6af2e6d90ca053da9ab4a948d43b2f))
+
 ## [0.11.0](https://github.com/UbiHome/UbiHome/compare/v0.10.3...v0.11.0) (2026-04-14)
 
 
