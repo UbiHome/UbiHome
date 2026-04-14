@@ -11,7 +11,7 @@
     "components/mqtt": "0.10.4",
     "components/power_utils": "0.10.4",
     "components/python": "0.4.9",
-    "components/shell": "0.10.4",
     "components/sendspin": "0.10.2",
+    "components/shell": "0.10.4",
     "components/web_server": "0.10.4"
 }

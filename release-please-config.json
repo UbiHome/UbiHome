@@ -43,10 +43,10 @@
         "components/python": {
             "skip-github-release": true
         },
-        "components/shell": {
+        "components/sendspin": {
             "skip-github-release": true
         },
-        "components/sendspin": {
+        "components/shell": {
             "skip-github-release": true
         },
         "components/web_server": {
