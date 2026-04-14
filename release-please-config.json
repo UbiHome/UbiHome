@@ -46,6 +46,9 @@
         "components/shell": {
             "skip-github-release": true
         },
+        "components/sendspin": {
+            "skip-github-release": true
+        },
         "components/web_server": {
             "skip-github-release": true
         }
