@@ -5,6 +5,7 @@ pub mod home_assistant;
 pub mod internal;
 pub mod light;
 pub mod mapper;
+pub mod number;
 pub mod sensor;
 pub mod sensor_mapper;
 pub mod switch;
@@ -89,6 +90,14 @@ pub enum ChangedMessage {
         green: Option<f32>,
         blue: Option<f32>,
     },
+    NumberValueChange {
+        key: String,
+        value: f32,
+    },
+    NumberValueCommand {
+        key: String,
+        value: f32,
+    },
     BluetoothProxyMessage(BluetoothProxyMessage),
 }
 
@@ -132,6 +141,14 @@ pub enum PublishedMessage {
         green: Option<f32>,
         blue: Option<f32>,
     },
+    NumberValueChanged {
+        key: String,
+        value: f32,
+    },
+    NumberValueCommand {
+        key: String,
+        value: f32,
+    },
     BluetoothProxyMessage(BluetoothProxyMessage),
 }
 
@@ -154,13 +171,15 @@ macro_rules! config_template {
         $binary_sensor_extension:ident,
         $sensor_extension:ident,
         $switch_extension:ident,
-        $light_extension:ident) => {
+        $light_extension:ident,
+        $number_extension:ident) => {
         use duration_str::deserialize_option_duration;
         use ubihome_core::UbiHome;
         use ubihome_core::template_binary_sensor;
         use ubihome_core::template_button;
         use ubihome_core::template_light;
         use ubihome_core::template_mapper;
+        use ubihome_core::template_number;
         use ubihome_core::template_sensor;
         use ubihome_core::template_switch;
 
@@ -169,12 +188,14 @@ macro_rules! config_template {
         template_sensor!($component_name, $sensor_extension);
         template_switch!($component_name, $switch_extension);
         template_light!($component_name, $light_extension);
+        template_number!($component_name, $number_extension);
 
         template_mapper!(map_sensor, Sensor);
         template_mapper!(map_button, ButtonConfig);
         template_mapper!(map_binary_sensor, BinarySensor);
         template_mapper!(map_switch, Switch);
         template_mapper!(map_light, Light);
+        template_mapper!(map_number, Number);
 
         #[derive(Clone, Deserialize, Debug)]
         pub struct CoreConfig {
@@ -196,6 +217,9 @@ macro_rules! config_template {
 
             #[serde(default, deserialize_with = "map_light")]
             pub light: Option<HashMap<String, Light>>,
+
+            #[serde(default, deserialize_with = "map_number")]
+            pub number: Option<HashMap<String, Number>>,
         }
     };
 }

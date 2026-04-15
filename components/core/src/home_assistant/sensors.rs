@@ -8,6 +8,7 @@ pub enum Component {
     BinarySensor(UbiBinarySensor),
     Switch(UbiSwitch),
     Light(UbiLight),
+    Number(UbiNumber),
 }
 
 // Icons: https://pictogrammers.com/library/mdi/
@@ -67,4 +68,19 @@ pub struct UbiLight {
     // pub supports_rgb: bool,
     // pub supports_white_value: bool,
     // pub supports_color_temperature: bool,
+}
+
+// https://developers.home-assistant.io/docs/core/entity/number
+#[derive(Clone, Serialize, Deserialize, Debug)]
+pub struct UbiNumber {
+    pub name: String,
+    pub platform: String,
+    pub icon: Option<String>,
+    pub id: String,
+    pub min_value: f32,
+    pub max_value: f32,
+    pub step: f32,
+    pub unit_of_measurement: Option<String>,
+    pub device_class: Option<String>,
+    pub mode: i32,
 }
