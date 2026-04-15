@@ -184,7 +184,7 @@ impl Module for UbiHomeDefault {
                                             unit_of_measurement: sensor
                                                 .unit_of_measurement
                                                 .unwrap_or("".to_string()),
-                                            accuracy_decimals: 2, //sensor.accuracy_decimals,
+                                            accuracy_decimals: sensor.accuracy_decimals.unwrap_or(2),
                                             force_update: false,
                                             device_class: sensor
                                                 .device_class
