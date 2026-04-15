@@ -771,8 +771,8 @@ impl Module for Default {
                                                 },
                                             );
                                         }
-                                        Err(_) => {
-                                            debug!("Invalid number state output: {}", output);
+                                        Err(e) => {
+                                            debug!("Invalid number state output '{}': {}", output.trim(), e);
                                             interval.tick().await;
                                             continue;
                                         }
@@ -787,7 +787,7 @@ impl Module for Default {
                         }
                     });
                 } else {
-                    debug!("Number {} has no command_state", key);
+                    warn!("Number {} has no command_state", key);
                 }
             }
             Ok(())
