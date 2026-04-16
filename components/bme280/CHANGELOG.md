@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.12.0](https://github.com/UbiHome/UbiHome/compare/v0.11.1...ubihome-bme280-v0.12.0) (2026-04-16)
+
+
+### Features
+
+* support `accuracy_decimals` in sensor entity configuration ([#113](https://github.com/UbiHome/UbiHome/issues/113)) ([9ccbcd4](https://github.com/UbiHome/UbiHome/commit/9ccbcd4efd39304b4a1960d548eb33b6e282ff41))
+
 ## [0.11.1](https://github.com/UbiHome/UbiHome/compare/v0.11.0...ubihome-bme280-v0.11.1) (2026-04-14)
 
 ## [0.11.0](https://github.com/UbiHome/UbiHome/compare/ubihome-bme280-v0.10.4...ubihome-bme280-v0.11.0) (2026-04-14)

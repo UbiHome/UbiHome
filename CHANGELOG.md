@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.12.0](https://github.com/UbiHome/UbiHome/compare/v0.11.2...v0.12.0) (2026-04-16)
+
+
+### Features
+
+* support `accuracy_decimals` in sensor entity configuration ([#113](https://github.com/UbiHome/UbiHome/issues/113)) ([9ccbcd4](https://github.com/UbiHome/UbiHome/commit/9ccbcd4efd39304b4a1960d548eb33b6e282ff41))
+
 ## [0.11.2](https://github.com/UbiHome/UbiHome/compare/v0.11.1...v0.11.2) (2026-04-14)
 
 

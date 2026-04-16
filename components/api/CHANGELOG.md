@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.12.0](https://github.com/UbiHome/UbiHome/compare/v0.11.1...ubihome-api-v0.12.0) (2026-04-16)
+
+
+### Features
+
+* support `accuracy_decimals` in sensor entity configuration ([#113](https://github.com/UbiHome/UbiHome/issues/113)) ([9ccbcd4](https://github.com/UbiHome/UbiHome/commit/9ccbcd4efd39304b4a1960d548eb33b6e282ff41))
+
+
+### Bug Fixes
+
+* update native api package ([372358e](https://github.com/UbiHome/UbiHome/commit/372358e90953e4e22a641012e959fd637aecd4df))
+
 ## [0.10.4](https://github.com/UbiHome/UbiHome/compare/v0.10.3...ubihome-api-v0.10.4) (2026-04-14)
 
 
