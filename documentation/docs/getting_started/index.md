@@ -152,7 +152,7 @@ For now[^1] a single executable is provided. You can download them from the [Git
     1. Download and extract the archive and place the ubihome executable in a directory of your choice.
 
         ```bash
-        curl -L -o ubihome.tar.gz https://github.com/UbiHome/UbiHome/releases/download/v0.11.2/ubihome-Linux-musleabi-armv7.tar.gz
+        curl -L -o ubihome.tar.gz https://github.com/UbiHome/UbiHome/releases/download/v0.11.2/ubihome-macOS-x86_64.tar.gz
         tar xvzf ./ubihome.tar.gz
         ```
 
