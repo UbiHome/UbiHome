@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.11.0](https://github.com/UbiHome/UbiHome/compare/v0.10.0...ubihome-core-v0.11.0) (2026-04-16)
+
+
+### Features
+
+* support `accuracy_decimals` in sensor entity configuration ([#113](https://github.com/UbiHome/UbiHome/issues/113)) ([9ccbcd4](https://github.com/UbiHome/UbiHome/commit/9ccbcd4efd39304b4a1960d548eb33b6e282ff41))
+
+
+### Bug Fixes
+
+* [#105](https://github.com/UbiHome/UbiHome/issues/105) ([b564199](https://github.com/UbiHome/UbiHome/commit/b5641993f3825ac0f7f690f543318dd3db08092e))
+
 ## [0.10.0](https://github.com/UbiHome/UbiHome/compare/v0.9.3...ubihome-core-v0.10.0) (2026-04-16)
 
 
