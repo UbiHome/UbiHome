@@ -12,7 +12,10 @@ use esphome_native_api::proto::version_2025_12_1::ListEntitiesButtonResponse;
 use esphome_native_api::proto::version_2025_12_1::ListEntitiesDoneResponse;
 use esphome_native_api::proto::version_2025_12_1::ListEntitiesLightResponse;
 use esphome_native_api::proto::version_2025_12_1::ListEntitiesSensorResponse;
+use esphome_native_api::proto::version_2025_12_1::ListEntitiesNumberResponse;
 use esphome_native_api::proto::version_2025_12_1::ListEntitiesSwitchResponse;
+use esphome_native_api::proto::version_2025_12_1::NumberCommandRequest;
+use esphome_native_api::proto::version_2025_12_1::NumberStateResponse;
 use esphome_native_api::proto::version_2025_12_1::SensorLastResetType;
 use esphome_native_api::proto::version_2025_12_1::SensorStateClass;
 use esphome_native_api::proto::version_2025_12_1::SensorStateResponse;
@@ -51,7 +54,7 @@ fn mac_to_u64(mac: &str) -> Result<u64, ParseIntError> {
     u64::from_str_radix(&mac, 16)
 }
 
-config_template!(api, ApiConfig, NoConfig, NoConfig, NoConfig, NoConfig, NoConfig);
+config_template!(api, ApiConfig, NoConfig, NoConfig, NoConfig, NoConfig, NoConfig, NoConfig);
 
 #[derive(Clone, Debug)]
 pub struct UbiHomeDefault {
@@ -247,6 +250,33 @@ impl Module for UbiHomeDefault {
                                     api_components_by_key.insert(key, component_light);
                                     api_components_key_id.insert(light.id.clone(), key);
                                 }
+                                Component::Number(number) => {
+                                    let key = hash_fnv1(&number.id);
+                                    let component_number =
+                                        ProtoMessage::ListEntitiesNumberResponse(
+                                            ListEntitiesNumberResponse {
+                                                object_id: number.id.clone(),
+                                                key: key,
+                                                name: number.name,
+                                                device_id: 0,
+                                                icon: number.icon.unwrap_or_default(),
+                                                min_value: number.min_value,
+                                                max_value: number.max_value,
+                                                step: number.step,
+                                                disabled_by_default: false,
+                                                entity_category: EntityCategory::None as i32,
+                                                unit_of_measurement: number
+                                                    .unit_of_measurement
+                                                    .unwrap_or_default(),
+                                                mode: number.mode,
+                                                device_class: number
+                                                    .device_class
+                                                    .unwrap_or_default(),
+                                            },
+                                        );
+                                    api_components_by_key.insert(key, component_number);
+                                    api_components_key_id.insert(number.id.clone(), key);
+                                }
                             }
                         }
                     }
@@ -366,6 +396,23 @@ impl Module for UbiHomeDefault {
                                             ))
                                             .await
                                             .unwrap();
+                                    }
+                                    PublishedMessage::NumberValueChanged { key, value } => {
+                                        if let Some(key) = api_components_key_id_clone.get(&key) {
+                                            debug!("NumberValueChanged: {:?}", &value);
+
+                                            tx_clone
+                                                .send(ProtoMessage::NumberStateResponse(
+                                                    NumberStateResponse {
+                                                        key: key.clone(),
+                                                        device_id: 0,
+                                                        state: value,
+                                                        missing_state: false,
+                                                    },
+                                                ))
+                                                .await
+                                                .unwrap();
+                                        }
                                     }
                                     PublishedMessage::BluetoothProxyMessage(msg) => {
                                         debug!("BluetoothProxyMessage: {:?}", &msg);
@@ -595,6 +642,32 @@ impl Module for UbiHomeDefault {
                                                     } else {
                                                         None
                                                     },
+                                                };
+
+                                                cloned_sender.send(msg).unwrap();
+                                            }
+                                            _ => {}
+                                        }
+                                    }
+                                    ProtoMessage::NumberCommandRequest(number_command_request) => {
+                                        debug!(
+                                            "NumberCommandRequest: {:?}",
+                                            number_command_request
+                                        );
+                                        let number_entity = api_components_clone
+                                            .get(&number_command_request.key)
+                                            .unwrap();
+                                        match number_entity {
+                                            ProtoMessage::ListEntitiesNumberResponse(
+                                                number_entity,
+                                            ) => {
+                                                debug!(
+                                                    "NumberCommandRequest: {:?}",
+                                                    number_entity
+                                                );
+                                                let msg = ChangedMessage::NumberValueCommand {
+                                                    key: number_entity.object_id.clone(),
+                                                    value: number_command_request.state,
                                                 };
 
                                                 cloned_sender.send(msg).unwrap();
