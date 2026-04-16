@@ -23,6 +23,7 @@ pub struct SensorBase {
     pub device_class: Option<String>,
     pub unit_of_measurement: Option<String>,
     pub state_class: Option<String>,
+    pub accuracy_decimals: Option<i32>,
 
     pub filters: Option<Vec<SensorFilter>>,
 }

@@ -29,6 +29,7 @@ pub struct UbiSensor {
     pub state_class: Option<String>,
     pub device_class: Option<String>,
     pub unit_of_measurement: Option<String>,
+    pub accuracy_decimals: Option<i32>,
     pub id: String,
 }
 

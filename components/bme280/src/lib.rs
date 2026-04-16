@@ -89,6 +89,7 @@ impl Module for Default {
                         state_class: None,
                         device_class: None,
                         unit_of_measurement: None,
+                        accuracy_decimals: None,
                         filters: None,
                     });
                     let object_id = temperature.get_object_id();
@@ -122,6 +123,7 @@ impl Module for Default {
                                     .clone()
                                     .unwrap_or("°C".to_string()),
                             ),
+                            accuracy_decimals: temperature.accuracy_decimals,
                             name: temperature.name.clone(),
                             id: object_id.clone(),
                         },
@@ -134,6 +136,7 @@ impl Module for Default {
                         state_class: None,
                         device_class: None,
                         unit_of_measurement: None,
+                        accuracy_decimals: None,
                         filters: None,
                     });
                     let object_id = pressure.get_object_id();
@@ -168,6 +171,7 @@ impl Module for Default {
                                     .unwrap_or("Pa".to_string()),
                             ),
 
+                            accuracy_decimals: pressure.accuracy_decimals,
                             name: pressure.name.clone(),
                             id: id.clone(),
                         },
@@ -180,6 +184,7 @@ impl Module for Default {
                         state_class: None,
                         device_class: None,
                         unit_of_measurement: None,
+                        accuracy_decimals: None,
                         filters: None,
                     });
                     let object_id = humidity.get_object_id();
@@ -212,6 +217,7 @@ impl Module for Default {
                                     .clone()
                                     .unwrap_or("%".to_string()),
                             ),
+                            accuracy_decimals: humidity.accuracy_decimals,
                             name: humidity.name.clone(),
                             id: id.clone(),
                         },
