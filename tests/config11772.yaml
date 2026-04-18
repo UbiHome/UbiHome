@@ -1,0 +1,5 @@
+mqtt:
+  broker: localhost
+  port: 32769
+ubihome:
+  name: test_device_info
