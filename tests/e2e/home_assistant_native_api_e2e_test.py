@@ -8,7 +8,6 @@ import re
 import urllib.parse
 from dataclasses import dataclass
 from pathlib import Path
-from tempfile import TemporaryDirectory
 import tempfile
 from urllib.request import Request, urlopen
 
@@ -30,7 +29,7 @@ pytestmark = [pytest.mark.e2e, pytest.mark.timeout(300)]
 @dataclass
 class UbiHomeRuntime:
     process: subprocess.Popen
-    temp_dir: TemporaryDirectory
+    temp_dir: tempfile.TemporaryDirectory
     button_log: Path
     switch_log: Path
 
@@ -77,6 +76,7 @@ def _wait_for_http_ok(url: str, timeout_seconds: float) -> None:
 
 
 def _api_request(url: str, *, method: str = "GET", data=None, headers=None, form: bool = False):
+    """Send an HTTP request and return a parsed JSON payload."""
     if data is None:
         payload = None
     elif form:
@@ -100,7 +100,7 @@ def ubihome_runtime() -> UbiHomeRuntime:
     if not executable.exists():
         raise FileNotFoundError(f"Missing executable: {executable}. Run `make prepare-test-linux` first.")
 
-    temp_dir = TemporaryDirectory(prefix="ubihome-ha-e2e-", dir="/tmp")
+    temp_dir = tempfile.TemporaryDirectory(prefix="ubihome-ha-e2e-", dir=tempfile.gettempdir())
     base = Path(temp_dir.name)
     button_log = base / "button.log"
     switch_log = base / "switch.log"
@@ -170,7 +170,7 @@ sensor:
 
 @pytest.fixture(scope="session")
 def home_assistant_runtime() -> HomeAssistantRuntime:
-    config_dir = tempfile.mkdtemp(prefix="home-assistant-e2e-", dir="/tmp")
+    config_dir = tempfile.mkdtemp(prefix="home-assistant-e2e-", dir=tempfile.gettempdir())
 
     container = DockerContainer("ghcr.io/home-assistant/home-assistant:stable")
     container.with_bind_ports(8123, None)
@@ -337,4 +337,4 @@ def test_accuracy_decimals_are_displayed_in_ui(e2e_context: E2EContext):
             return
         page.wait_for_timeout(500)
 
-    assert False, "No sensor value with at least 4 decimal places was displayed in Home Assistant UI"
+    pytest.fail("No sensor value with at least 4 decimal places was displayed in Home Assistant UI")
