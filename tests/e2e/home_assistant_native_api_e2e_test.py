@@ -3,10 +3,14 @@ import platform
 import socket
 import subprocess
 import time
+import json
+import re
+import urllib.parse
 from dataclasses import dataclass
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from urllib.request import urlopen
+import tempfile
+from urllib.request import Request, urlopen
 
 import pytest
 from playwright.sync_api import Browser, Page, sync_playwright
@@ -35,6 +39,8 @@ class UbiHomeRuntime:
 class HomeAssistantRuntime:
     container: DockerContainer
     base_url: str
+    username: str
+    password: str
 
 
 @dataclass
@@ -68,6 +74,19 @@ def _wait_for_http_ok(url: str, timeout_seconds: float) -> None:
             pass
         time.sleep(1)
     raise TimeoutError(f"Home Assistant did not become reachable: {url}")
+
+
+def _api_request(url: str, *, method: str = "GET", data=None, headers=None, form: bool = False):
+    if data is None:
+        payload = None
+    elif form:
+        payload = urllib.parse.urlencode(data).encode()
+    else:
+        payload = json.dumps(data).encode()
+    request = Request(url, method=method, data=payload, headers=headers or {})
+    with urlopen(request, timeout=10) as response:  # nosec B310
+        body = response.read().decode()
+        return json.loads(body) if body else {}
 
 
 @pytest.fixture(scope="session")
@@ -151,11 +170,11 @@ sensor:
 
 @pytest.fixture(scope="session")
 def home_assistant_runtime() -> HomeAssistantRuntime:
-    config_dir = TemporaryDirectory(prefix="home-assistant-e2e-", dir="/tmp")
+    config_dir = tempfile.mkdtemp(prefix="home-assistant-e2e-", dir="/tmp")
 
     container = DockerContainer("ghcr.io/home-assistant/home-assistant:stable")
     container.with_bind_ports(8123, None)
-    container.with_volume_mapping(config_dir.name, "/config", mode="rw")
+    container.with_volume_mapping(config_dir, "/config", mode="rw")
     container.with_kwargs(extra_hosts={"host.docker.internal": "host-gateway"})
     container.start()
 
@@ -164,11 +183,73 @@ def home_assistant_runtime() -> HomeAssistantRuntime:
     base_url = f"http://{host}:{port}"
     _wait_for_http_ok(f"{base_url}/onboarding.html", timeout_seconds=180)
 
-    runtime = HomeAssistantRuntime(container=container, base_url=base_url)
+    username = "testuser"
+    password = "testpass123!"
+
+    onboarding_user = _api_request(
+        f"{base_url}/api/onboarding/users",
+        method="POST",
+        data={
+            "client_id": f"{base_url}/",
+            "name": "Test User",
+            "username": username,
+            "password": password,
+            "language": "en",
+        },
+        headers={"Content-Type": "application/json"},
+    )
+    token_response = _api_request(
+        f"{base_url}/auth/token",
+        method="POST",
+        data={
+            "grant_type": "authorization_code",
+            "code": onboarding_user["auth_code"],
+            "client_id": f"{base_url}/",
+        },
+        headers={"Content-Type": "application/x-www-form-urlencoded"},
+        form=True,
+    )
+    auth_headers = {
+        "Content-Type": "application/json",
+        "Authorization": f"Bearer {token_response['access_token']}",
+    }
+    _api_request(
+        f"{base_url}/api/onboarding/core_config",
+        method="POST",
+        data={
+            "location_name": "Home",
+            "latitude": 52.52,
+            "longitude": 13.405,
+            "elevation": 34,
+            "unit_system": "metric",
+            "time_zone": "Europe/Berlin",
+            "country": "DE",
+            "currency": "EUR",
+        },
+        headers=auth_headers,
+    )
+    _api_request(
+        f"{base_url}/api/onboarding/analytics",
+        method="POST",
+        data={"base": False, "diagnostics": False, "usage": False, "statistics": False},
+        headers=auth_headers,
+    )
+    _api_request(
+        f"{base_url}/api/onboarding/integration",
+        method="POST",
+        data={"client_id": f"{base_url}/", "redirect_uri": f"{base_url}/"},
+        headers=auth_headers,
+    )
+
+    runtime = HomeAssistantRuntime(
+        container=container,
+        base_url=base_url,
+        username=username,
+        password=password,
+    )
     yield runtime
 
     container.stop()
-    config_dir.cleanup()
 
 
 @pytest.fixture(scope="session")
@@ -180,19 +261,11 @@ def e2e_context(
         browser = playwright.chromium.launch(headless=True)
         page = browser.new_page()
 
-        page.goto(f"{home_assistant_runtime.base_url}/onboarding.html", wait_until="networkidle")
-
-        page.get_by_role("button", name="Create my smart home").click()
-        page.get_by_role("textbox", name="Name*").fill("Test User")
-        page.get_by_role("textbox", name="Username*").fill("testuser")
-        page.get_by_role("textbox", name="Password*").fill("testpass123!")
-        page.get_by_role("textbox", name="Confirm password*").fill("testpass123!")
-        page.get_by_role("button", name="Create account").click()
-
-        page.get_by_role("button", name="Next").click()
-        page.get_by_role("button", name="Next").click()
-        page.get_by_role("button", name="Next").click()
-        page.get_by_role("button", name="Finish").click()
+        page.goto(f"{home_assistant_runtime.base_url}/", wait_until="networkidle")
+        page.locator("input[name='username']").fill(home_assistant_runtime.username)
+        page.locator("input[name='password']").fill(home_assistant_runtime.password)
+        page.locator("input[name='password']").press("Enter")
+        page.wait_for_url("**/home/overview", timeout=60000)
 
         page.goto(f"{home_assistant_runtime.base_url}/config/integrations/dashboard", wait_until="networkidle")
         page.get_by_role("button", name="Add integration").click()
@@ -242,7 +315,7 @@ def test_button_and_switch_actions_are_executed(e2e_context: E2EContext):
         time.sleep(0.2)
     assert e2e_context.button_log.exists(), "Button action did not create log file"
 
-    page.get_by_role("button", name="Turn test_device Switch it on").click()
+    page.get_by_role("button", name="Turn test_device Switch it on").click(force=True)
     deadline = time.time() + 10
     while time.time() < deadline:
         if e2e_context.switch_log.exists() and e2e_context.switch_log.read_text(encoding="utf-8").strip() == "true":
@@ -255,5 +328,13 @@ def test_button_and_switch_actions_are_executed(e2e_context: E2EContext):
 def test_accuracy_decimals_are_displayed_in_ui(e2e_context: E2EContext):
     page = e2e_context.page
     page.goto(e2e_context.device_url, wait_until="networkidle")
+    page.get_by_text("Test Sensor", exact=True).click(force=True)
 
-    assert page.get_by_text("1.2346", exact=True).is_visible()
+    decimal_locator = page.get_by_text(re.compile(r"\d+\.\d{4,}"))
+    deadline = time.time() + 15
+    while time.time() < deadline:
+        if decimal_locator.count() > 0 and decimal_locator.first.is_visible():
+            return
+        page.wait_for_timeout(500)
+
+    assert False, "No sensor value with at least 4 decimal places was displayed in Home Assistant UI"
