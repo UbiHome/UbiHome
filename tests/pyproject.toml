@@ -10,6 +10,7 @@ dependencies = [
     "paho-mqtt==2.1",
     "pytest-timeout==2.4",
     "pyyaml>=6.0.3",
+    "playwright==1.55.0",
 ]
 
 [tool.uv]
