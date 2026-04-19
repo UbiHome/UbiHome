@@ -1,8 +1,7 @@
-import os
 import platform
 import socket
-import subprocess
 import time
+import asyncio
 import json
 import re
 import urllib.parse
@@ -12,15 +11,10 @@ import tempfile
 from urllib.request import Request, urlopen
 
 import pytest
+import yaml
 from playwright.sync_api import Browser, Page, sync_playwright
 from testcontainers.core.container import DockerContainer
-
-
-if not os.getenv("RUN_PLAYWRIGHT_E2E"):
-    pytest.skip(
-        "Set RUN_PLAYWRIGHT_E2E=1 to run Playwright Home Assistant e2e tests",
-        allow_module_level=True,
-    )
+from utils import UbiHome
 
 
 pytestmark = [pytest.mark.e2e, pytest.mark.timeout(300)]
@@ -28,10 +22,12 @@ pytestmark = [pytest.mark.e2e, pytest.mark.timeout(300)]
 
 @dataclass
 class UbiHomeRuntime:
-    process: subprocess.Popen
+    runtime: "E2EUbiHome"
+    loop: asyncio.AbstractEventLoop
     temp_dir: tempfile.TemporaryDirectory
     button_log: Path
     switch_log: Path
+    sensor_value_file: Path
 
 
 @dataclass
@@ -49,6 +45,18 @@ class E2EContext:
     device_url: str
     button_log: Path
     switch_log: Path
+    sensor_value_file: Path
+
+
+class E2EUbiHome(UbiHome):
+    def __init__(self, config: str, api_port: int):
+        super().__init__("run", config=config, wait_for_api=True)
+        config_yaml = yaml.safe_load(self.config)
+        if config_yaml.get("api") is None:
+            config_yaml["api"] = {}
+        config_yaml["api"]["port"] = api_port
+        self.port = api_port
+        self.config = yaml.dump(config_yaml)
 
 
 def _wait_for_tcp_port(host: str, port: int, timeout_seconds: float) -> None:
@@ -104,6 +112,8 @@ def ubihome_runtime() -> UbiHomeRuntime:
     base = Path(temp_dir.name)
     button_log = base / "button.log"
     switch_log = base / "switch.log"
+    sensor_value_file = base / "sensor_value.txt"
+    sensor_value_file.write_text("1.23456\n", encoding="utf-8")
     config_path = base / "config.yaml"
 
     config_path.write_text(
@@ -132,39 +142,35 @@ switch:
    command_state: "cat {switch_log} || echo false"
 
 sensor:
- - platform: shell
-   id: my_sensor
-   update_interval: 1s
-   name: "Test Sensor"
-   accuracy_decimals: 4
-   command: "echo 1.23456"
+  - platform: shell
+    id: my_sensor
+    update_interval: 1s
+    name: "Test Sensor"
+    accuracy_decimals: 4
+    command: "cat {sensor_value_file}"
 """.strip()
         + "\n",
         encoding="utf-8",
     )
 
-    process = subprocess.Popen(
-        [str(executable), "-c", str(config_path), "run"],
-        cwd=str(tests_root),
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.DEVNULL,
-    )
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    runtime = E2EUbiHome(config=config_path.read_text(encoding="utf-8"), api_port=6053)
+    loop.run_until_complete(runtime.__aenter__())
     _wait_for_tcp_port("127.0.0.1", 6053, timeout_seconds=30)
 
-    runtime = UbiHomeRuntime(
-        process=process,
+    runtime_state = UbiHomeRuntime(
+        runtime=runtime,
+        loop=loop,
         temp_dir=temp_dir,
         button_log=button_log,
         switch_log=switch_log,
+        sensor_value_file=sensor_value_file,
     )
-    yield runtime
+    yield runtime_state
 
-    process.terminate()
-    try:
-        process.wait(timeout=5)
-    except subprocess.TimeoutExpired:
-        process.kill()
-        process.wait(timeout=5)
+    loop.run_until_complete(runtime.__aexit__(None, None, None))
+    loop.close()
     temp_dir.cleanup()
 
 
@@ -262,9 +268,9 @@ def e2e_context(
         page = browser.new_page()
 
         page.goto(f"{home_assistant_runtime.base_url}/", wait_until="networkidle")
-        page.locator("input[name='username']").fill(home_assistant_runtime.username)
-        page.locator("input[name='password']").fill(home_assistant_runtime.password)
-        page.locator("input[name='password']").press("Enter")
+        page.get_by_role("textbox", name="Username").fill(home_assistant_runtime.username)
+        page.get_by_role("textbox", name="Password").fill(home_assistant_runtime.password)
+        page.get_by_role("textbox", name="Password").press("Enter")
         page.wait_for_url("**/home/overview", timeout=60000)
 
         page.goto(f"{home_assistant_runtime.base_url}/config/integrations/dashboard", wait_until="networkidle")
@@ -285,6 +291,7 @@ def e2e_context(
             device_url=page.url,
             button_log=ubihome_runtime.button_log,
             switch_log=ubihome_runtime.switch_log,
+            sensor_value_file=ubihome_runtime.sensor_value_file,
         )
 
         browser.close()
@@ -338,3 +345,20 @@ def test_accuracy_decimals_are_displayed_in_ui(e2e_context: E2EContext):
         page.wait_for_timeout(500)
 
     pytest.fail("No sensor value with at least 4 decimal places was displayed in Home Assistant UI")
+
+
+def test_sensor_value_updates_when_source_changes(e2e_context: E2EContext):
+    page = e2e_context.page
+    page.goto(e2e_context.device_url, wait_until="networkidle")
+    page.get_by_text("Test Sensor", exact=True).click(force=True)
+
+    e2e_context.sensor_value_file.write_text("9.87654\n", encoding="utf-8")
+
+    updated_value = page.get_by_text(re.compile(r"9\.8765"))
+    deadline = time.time() + 20
+    while time.time() < deadline:
+        if updated_value.count() > 0 and updated_value.first.is_visible():
+            return
+        page.wait_for_timeout(500)
+
+    pytest.fail("Sensor value did not update in Home Assistant UI after source configuration value changed")
