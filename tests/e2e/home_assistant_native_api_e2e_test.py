@@ -12,7 +12,7 @@ from urllib.request import Request, urlopen
 
 import pytest
 import yaml
-from playwright.sync_api import Browser, Page, sync_playwright
+from playwright.sync_api import Browser, BrowserContext, Page, sync_playwright
 from testcontainers.core.container import DockerContainer
 from utils import UbiHome
 
@@ -41,6 +41,7 @@ class HomeAssistantRuntime:
 @dataclass
 class E2EContext:
     browser: Browser
+    context: BrowserContext
     page: Page
     device_url: str
     button_log: Path
@@ -83,7 +84,9 @@ def _wait_for_http_ok(url: str, timeout_seconds: float) -> None:
     raise TimeoutError(f"Home Assistant did not become reachable: {url}")
 
 
-def _api_request(url: str, *, method: str = "GET", data=None, headers=None, form: bool = False):
+def _api_request(
+    url: str, *, method: str = "GET", data=None, headers=None, form: bool = False
+):
     """Send an HTTP request and return a parsed JSON payload."""
     if data is None:
         payload = None
@@ -106,9 +109,13 @@ def ubihome_runtime() -> UbiHomeRuntime:
     tests_root = repo_root / "tests"
     executable = tests_root / "ubihome"
     if not executable.exists():
-        raise FileNotFoundError(f"Missing executable: {executable}. Run `make prepare-test-linux` first.")
+        raise FileNotFoundError(
+            f"Missing executable: {executable}. Run `make prepare-test-linux` first."
+        )
 
-    temp_dir = tempfile.TemporaryDirectory(prefix="ubihome-ha-e2e-", dir=tempfile.gettempdir())
+    temp_dir = tempfile.TemporaryDirectory(
+        prefix="ubihome-ha-e2e-", dir=tempfile.gettempdir()
+    )
     base = Path(temp_dir.name)
     button_log = base / "button.log"
     switch_log = base / "switch.log"
@@ -176,9 +183,11 @@ sensor:
 
 @pytest.fixture(scope="session")
 def home_assistant_runtime() -> HomeAssistantRuntime:
-    config_dir = tempfile.mkdtemp(prefix="home-assistant-e2e-", dir=tempfile.gettempdir())
+    config_dir = tempfile.mkdtemp(
+        prefix="home-assistant-e2e-", dir=tempfile.gettempdir()
+    )
 
-    container = DockerContainer("ghcr.io/home-assistant/home-assistant:stable")
+    container = DockerContainer("ghcr.io/home-assistant/home-assistant:2026.4.3")
     container.with_bind_ports(8123, None)
     container.with_volume_mapping(config_dir, "/config", mode="rw")
     container.with_kwargs(extra_hosts={"host.docker.internal": "host-gateway"})
@@ -260,20 +269,30 @@ def home_assistant_runtime() -> HomeAssistantRuntime:
 
 @pytest.fixture(scope="session")
 def e2e_context(
+    request: pytest.FixtureRequest,
     ubihome_runtime: UbiHomeRuntime,
     home_assistant_runtime: HomeAssistantRuntime,
 ) -> E2EContext:
+    headed = bool(request.config.getoption("--headed"))
     with sync_playwright() as playwright:
-        browser = playwright.chromium.launch(headless=True)
-        page = browser.new_page()
+        browser = playwright.chromium.launch(headless=not headed)
+        context = browser.new_context()
+        page = context.new_page()
 
         page.goto(f"{home_assistant_runtime.base_url}/", wait_until="networkidle")
-        page.get_by_role("textbox", name="Username").fill(home_assistant_runtime.username)
-        page.get_by_role("textbox", name="Password").fill(home_assistant_runtime.password)
+        page.get_by_role("textbox", name="Username").fill(
+            home_assistant_runtime.username
+        )
+        page.get_by_role("textbox", name="Password").fill(
+            home_assistant_runtime.password
+        )
         page.get_by_role("textbox", name="Password").press("Enter")
         page.wait_for_url("**/home/overview", timeout=60000)
 
-        page.goto(f"{home_assistant_runtime.base_url}/config/integrations/dashboard", wait_until="networkidle")
+        page.goto(
+            f"{home_assistant_runtime.base_url}/config/integrations/dashboard",
+            wait_until="networkidle",
+        )
         page.get_by_role("button", name="Add integration").click()
         page.get_by_placeholder("Search for a brand name").fill("ESPHome")
         page.get_by_text("ESPHome", exact=True).first.click()
@@ -287,6 +306,7 @@ def e2e_context(
 
         yield E2EContext(
             browser=browser,
+            context=context,
             page=page,
             device_url=page.url,
             button_log=ubihome_runtime.button_log,
@@ -294,7 +314,35 @@ def e2e_context(
             sensor_value_file=ubihome_runtime.sensor_value_file,
         )
 
+        context.close()
         browser.close()
+
+
+@pytest.fixture(autouse=True)
+def save_trace_on_failure(
+    request: pytest.FixtureRequest,
+    e2e_context: E2EContext,
+):
+    if not request.config.getoption("--trace-on-failure"):
+        yield
+        return
+
+    trace_dir = Path("test-results")
+    trace_dir.mkdir(parents=True, exist_ok=True)
+    safe_node_id = re.sub(r"[^a-zA-Z0-9_.-]+", "_", request.node.nodeid)
+    trace_path = trace_dir / f"{safe_node_id}.zip"
+
+    e2e_context.context.tracing.start(screenshots=True, snapshots=True, sources=True)
+    yield
+
+    rep_setup = getattr(request.node, "rep_setup", None)
+    rep_call = getattr(request.node, "rep_call", None)
+    failed = bool((rep_setup and rep_setup.failed) or (rep_call and rep_call.failed))
+    if failed:
+        e2e_context.context.tracing.stop(path=str(trace_path))
+        print(f"Playwright trace saved: {trace_path}")
+    else:
+        e2e_context.context.tracing.stop()
 
 
 def test_components_are_displayed(e2e_context: E2EContext):
@@ -325,7 +373,10 @@ def test_button_and_switch_actions_are_executed(e2e_context: E2EContext):
     page.get_by_role("button", name="Turn test_device Switch it on").click(force=True)
     deadline = time.time() + 10
     while time.time() < deadline:
-        if e2e_context.switch_log.exists() and e2e_context.switch_log.read_text(encoding="utf-8").strip() == "true":
+        if (
+            e2e_context.switch_log.exists()
+            and e2e_context.switch_log.read_text(encoding="utf-8").strip() == "true"
+        ):
             break
         time.sleep(0.2)
     assert e2e_context.switch_log.exists(), "Switch action did not create log file"
@@ -344,7 +395,9 @@ def test_accuracy_decimals_are_displayed_in_ui(e2e_context: E2EContext):
             return
         page.wait_for_timeout(500)
 
-    pytest.fail("No sensor value with at least 4 decimal places was displayed in Home Assistant UI")
+    pytest.fail(
+        "No sensor value with at least 4 decimal places was displayed in Home Assistant UI"
+    )
 
 
 def test_sensor_value_updates_when_source_changes(e2e_context: E2EContext):
@@ -361,4 +414,6 @@ def test_sensor_value_updates_when_source_changes(e2e_context: E2EContext):
             return
         page.wait_for_timeout(500)
 
-    pytest.fail("Sensor value did not update in Home Assistant UI after source configuration value changed")
+    pytest.fail(
+        "Sensor value did not update in Home Assistant UI after source configuration value changed"
+    )
