@@ -295,7 +295,10 @@ def e2e_context(
         )
         page.get_by_role("button", name="Add integration").click()
         page.get_by_placeholder("Search for a brand name").fill("ESPHome")
-        page.get_by_text("ESPHome", exact=True).first.click()
+        page.locator("ha-integration-list-item").get_by_text(
+            "ESPHome", exact=True
+        ).first.click()
+        page.get_by_text("Set up another instance of").click()
 
         page.get_by_role("textbox", name="Host*").fill("host.docker.internal")
         page.get_by_role("spinbutton", name="Port").fill("6053")
