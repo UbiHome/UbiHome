@@ -305,7 +305,7 @@ impl Module for UbiHomeDefault {
                                     }
                                     PublishedMessage::BinarySensorValueChanged { key, value } => {
                                         let key = api_components_key_id_clone.get(&key).unwrap();
-                                        debug!("SensorValueChanged: {:?}", &value);
+                                        debug!("BinarySensorValueChanged: {:?}", &value);
 
                                         tx_clone
                                             .send(ProtoMessage::BinarySensorStateResponse(
@@ -321,7 +321,7 @@ impl Module for UbiHomeDefault {
                                     }
                                     PublishedMessage::SwitchStateChange { key, state } => {
                                         let key = api_components_key_id_clone.get(&key).unwrap();
-                                        debug!("SensorValueChanged: {:?}", &state);
+                                        debug!("SwitchStateChanged: {:?}", &state);
 
                                         tx_clone
                                             .send(ProtoMessage::SwitchStateResponse(
