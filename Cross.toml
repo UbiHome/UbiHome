@@ -1,38 +1,58 @@
 # https://github.com/cross-rs/cross/blob/main/docs/config_file.md
 
-[target.armv7-unknown-linux-musleabi]
-pre-build = [
-    """
-apt-get update && apt-get install -y libdbus-1-dev pkg-config musl-tools wget
-# Download and cross-compile ALSA for ARM musl
-cd /tmp && wget -q https://www.alsa-project.org/files/pub/lib/alsa-lib-1.2.10.tar.bz2
-tar xf alsa-lib-1.2.10.tar.bz2 && cd alsa-lib-1.2.10
-CC=arm-linux-musleabi-gcc ./configure --host=arm-linux-musleabi --prefix=/usr --enable-static --disable-shared --disable-python
-make -j$(nproc) && make install
-# Set PKG_CONFIG path for cross-compilation
-echo 'export PKG_CONFIG_PATH=/usr/lib/pkgconfig:$PKG_CONFIG_PATH' >> /etc/profile
-echo 'export ALSA_LIB_DIR=/usr/lib' >> /etc/profile
-""",
-]
-
 [target.arm-unknown-linux-musleabi]
 pre-build = [
-    """
-apt-get update && apt-get install -y libdbus-1-dev pkg-config musl-tools wget
-# Download and cross-compile ALSA for ARM musl
-cd /tmp && wget -q https://www.alsa-project.org/files/pub/lib/alsa-lib-1.2.10.tar.bz2
-tar xf alsa-lib-1.2.10.tar.bz2 && cd alsa-lib-1.2.10
+    '''set -e
+# The cross image (ghcr.io/cross-rs/arm-unknown-linux-musleabi:0.2.5) is based on
+# Ubuntu Bionic (18.04 EOL). Its sources.list contains a broken double-archive URL
+# (archive.archive.ubuntu.com). Redirect all bionic mirror URLs to old-releases.ubuntu.com
+# so that apt-get update and apt-get install succeed reliably.
+sed -i 's|http://archive.archive.ubuntu.com/ubuntu|http://old-releases.ubuntu.com/ubuntu|g; s|http://archive.ubuntu.com/ubuntu|http://old-releases.ubuntu.com/ubuntu|g; s|http://security.archive.ubuntu.com/ubuntu|http://old-releases.ubuntu.com/ubuntu|g; s|http://security.ubuntu.com/ubuntu|http://old-releases.ubuntu.com/ubuntu|g' /etc/apt/sources.list
+apt-get update
+apt-get install -y --no-install-recommends ca-certificates wget bzip2 pkg-config musl-tools libdbus-1-dev
+# Download and cross-compile ALSA for ARM musl (required by cpal -> alsa-sys)
+mkdir -p /build-alsa && cd /build-alsa
+wget -q https://www.alsa-project.org/files/pub/lib/alsa-lib-1.2.10.tar.bz2
+tar xf alsa-lib-1.2.10.tar.bz2
+cd alsa-lib-1.2.10
 CC=arm-linux-musleabi-gcc ./configure --host=arm-linux-musleabi --prefix=/usr --enable-static --disable-shared --disable-python
-make -j$(nproc) && make install
-# Set PKG_CONFIG path for cross-compilation
-echo 'export PKG_CONFIG_PATH=/usr/lib/pkgconfig:$PKG_CONFIG_PATH' >> /etc/profile
-echo 'export ALSA_LIB_DIR=/usr/lib' >> /etc/profile
-""",
+make -j$(nproc)
+make install
+rm -rf /build-alsa
+''',
 ]
 
-# Set environment variables for the linker
 [target.arm-unknown-linux-musleabi.env]
-passthrough = ["PKG_CONFIG_PATH=/usr/lib/pkgconfig", "PKG_CONFIG_ALLOW_CROSS=1"]
+passthrough = [
+    "PKG_CONFIG_PATH=/usr/lib/pkgconfig:/usr/share/pkgconfig",
+    "PKG_CONFIG_ALLOW_CROSS=1",
+]
+
+[target.armv7-unknown-linux-musleabi]
+pre-build = [
+    '''set -e
+# The cross image (ghcr.io/cross-rs/armv7-unknown-linux-musleabi:0.2.5) is based on
+# Ubuntu Bionic (18.04 EOL). Its sources.list contains a broken double-archive URL
+# (archive.archive.ubuntu.com). Redirect all bionic mirror URLs to old-releases.ubuntu.com
+# so that apt-get update and apt-get install succeed reliably.
+# Note: Cross.toml has no shared/inherited sections, so this is duplicated from the arm target.
+sed -i 's|http://archive.archive.ubuntu.com/ubuntu|http://old-releases.ubuntu.com/ubuntu|g; s|http://archive.ubuntu.com/ubuntu|http://old-releases.ubuntu.com/ubuntu|g; s|http://security.archive.ubuntu.com/ubuntu|http://old-releases.ubuntu.com/ubuntu|g; s|http://security.ubuntu.com/ubuntu|http://old-releases.ubuntu.com/ubuntu|g' /etc/apt/sources.list
+apt-get update
+apt-get install -y --no-install-recommends ca-certificates wget bzip2 pkg-config musl-tools libdbus-1-dev
+# Download and cross-compile ALSA for ARMv7 musl (required by cpal -> alsa-sys)
+mkdir -p /build-alsa && cd /build-alsa
+wget -q https://www.alsa-project.org/files/pub/lib/alsa-lib-1.2.10.tar.bz2
+tar xf alsa-lib-1.2.10.tar.bz2
+cd alsa-lib-1.2.10
+CC=arm-linux-musleabi-gcc ./configure --host=arm-linux-musleabi --prefix=/usr --enable-static --disable-shared --disable-python
+make -j$(nproc)
+make install
+rm -rf /build-alsa
+''',
+]
 
 [target.armv7-unknown-linux-musleabi.env]
-passthrough = ["PKG_CONFIG_PATH=/usr/lib/pkgconfig", "PKG_CONFIG_ALLOW_CROSS=1"]
+passthrough = [
+    "PKG_CONFIG_PATH=/usr/lib/pkgconfig:/usr/share/pkgconfig",
+    "PKG_CONFIG_ALLOW_CROSS=1",
+]

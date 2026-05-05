@@ -22,9 +22,12 @@ jobs:
         if: inputs.runs-on == 'macOS-latest'
         run: brew install libmodbus
 
-      - name: Add extra packages (Linux)
-        if: inputs.runs-on == 'ubuntu-24.04'
-        run: sudo apt install -y libdbus-1-dev pkg-config libasound2-dev
+      # For native x86_64 Linux builds, cargo runs directly on the runner (no Docker).
+      # For cross-compiled targets (arm*, armv7*), packages are installed inside the
+      # cross container via Cross.toml pre-build commands instead.
+      - name: Add extra packages (native x86_64 Linux)
+        if: inputs.target == 'x86_64-unknown-linux-gnu'
+        run: sudo apt-get install -y --no-install-recommends libdbus-1-dev pkg-config libasound2-dev
 
       - name: Set up Rust
         if: inputs.runs-on == 'macOS-latest'
