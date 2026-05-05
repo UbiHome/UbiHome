@@ -21,11 +21,11 @@ jobs:
             fileending: ''
 
           - target: x86_64-apple-darwin
-            runs-on: macOS-latest
+            runs-on: macos-26-intel
             fileending: ''
 
           - target: aarch64-apple-darwin
-            runs-on: macOS-latest
+            runs-on: macos-26
             fileending: ''
 
           - target: x86_64-pc-windows-msvc
