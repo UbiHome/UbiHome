@@ -101,4 +101,5 @@ jobs:
           cd tests
           chmod +x ubihome
           ls -l
+          uv run --locked playwright install --with-deps
           uv run --locked pytest -vvv
