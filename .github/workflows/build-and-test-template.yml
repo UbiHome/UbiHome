@@ -104,3 +104,11 @@ jobs:
           ls -l
           uv run --locked playwright install --with-deps
           uv run --locked pytest -vvv
+
+      - name: Archive artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-${{ inputs.target }}
+          path: |
+            tests/test-results
+            tests/allure-results
