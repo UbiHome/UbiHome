@@ -44,7 +44,7 @@ def _wait_for_http_ok(url: str, timeout_seconds: float) -> None:
     raise TimeoutError(f"Home Assistant did not become reachable: {url}")
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="function")
 def home_assistant_runtime() -> Generator[HomeAssistantRuntime, None, None]:
 
     container = DockerContainer("ghcr.io/home-assistant/home-assistant:2026.4.3")
