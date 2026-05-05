@@ -1,16 +1,16 @@
 # https://github.com/cross-rs/cross/blob/main/docs/config_file.md
 
+# Use the `edge` image tag for ARM musl targets. The v0.2.5 release images are based on
+# Ubuntu Bionic (18.04 EOL) which has unreliable apt mirrors; the `edge` images are
+# based on Ubuntu Focal (20.04 LTS) and were last published 2026-04-30.
 [target.arm-unknown-linux-musleabi]
+image = "ghcr.io/cross-rs/arm-unknown-linux-musleabi:edge"
 pre-build = [
     '''set -e
-# The cross image (ghcr.io/cross-rs/arm-unknown-linux-musleabi:0.2.5) is based on
-# Ubuntu Bionic (18.04 EOL). Its sources.list contains a broken double-archive URL
-# (archive.archive.ubuntu.com). Redirect all bionic mirror URLs to old-releases.ubuntu.com
-# so that apt-get update and apt-get install succeed reliably.
-sed -i 's|http://archive.archive.ubuntu.com/ubuntu|http://old-releases.ubuntu.com/ubuntu|g; s|http://archive.ubuntu.com/ubuntu|http://old-releases.ubuntu.com/ubuntu|g; s|http://security.archive.ubuntu.com/ubuntu|http://old-releases.ubuntu.com/ubuntu|g; s|http://security.ubuntu.com/ubuntu|http://old-releases.ubuntu.com/ubuntu|g' /etc/apt/sources.list
 apt-get update
 apt-get install -y --no-install-recommends ca-certificates wget bzip2 pkg-config musl-tools libdbus-1-dev
-# Download and cross-compile ALSA for ARM musl (required by cpal -> alsa-sys)
+# Download and cross-compile ALSA for ARM musl (required by cpal -> alsa-sys).
+# libasound2-dev from apt is glibc-linked and cannot be used for musl targets.
 mkdir -p /build-alsa && cd /build-alsa
 wget -q https://www.alsa-project.org/files/pub/lib/alsa-lib-1.2.10.tar.bz2
 tar xf alsa-lib-1.2.10.tar.bz2
@@ -29,17 +29,13 @@ passthrough = [
 ]
 
 [target.armv7-unknown-linux-musleabi]
+image = "ghcr.io/cross-rs/armv7-unknown-linux-musleabi:edge"
 pre-build = [
     '''set -e
-# The cross image (ghcr.io/cross-rs/armv7-unknown-linux-musleabi:0.2.5) is based on
-# Ubuntu Bionic (18.04 EOL). Its sources.list contains a broken double-archive URL
-# (archive.archive.ubuntu.com). Redirect all bionic mirror URLs to old-releases.ubuntu.com
-# so that apt-get update and apt-get install succeed reliably.
-# Note: Cross.toml has no shared/inherited sections, so this is duplicated from the arm target.
-sed -i 's|http://archive.archive.ubuntu.com/ubuntu|http://old-releases.ubuntu.com/ubuntu|g; s|http://archive.ubuntu.com/ubuntu|http://old-releases.ubuntu.com/ubuntu|g; s|http://security.archive.ubuntu.com/ubuntu|http://old-releases.ubuntu.com/ubuntu|g; s|http://security.ubuntu.com/ubuntu|http://old-releases.ubuntu.com/ubuntu|g' /etc/apt/sources.list
 apt-get update
 apt-get install -y --no-install-recommends ca-certificates wget bzip2 pkg-config musl-tools libdbus-1-dev
-# Download and cross-compile ALSA for ARMv7 musl (required by cpal -> alsa-sys)
+# Download and cross-compile ALSA for ARMv7 musl (required by cpal -> alsa-sys).
+# libasound2-dev from apt is glibc-linked and cannot be used for musl targets.
 mkdir -p /build-alsa && cd /build-alsa
 wget -q https://www.alsa-project.org/files/pub/lib/alsa-lib-1.2.10.tar.bz2
 tar xf alsa-lib-1.2.10.tar.bz2
