@@ -108,7 +108,7 @@ jobs:
       - name: Archive artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: release-${{ inputs.target }}
+          name: results-${{ inputs.target }}
           path: |
             tests/test-results
             tests/allure-results
