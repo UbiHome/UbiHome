@@ -31,6 +31,11 @@ jobs:
             file: ubihome
             release_file_name: ubihome-macos-x86_64
 
+          - runs-on: macOS-latest
+            target: aarch64-apple-darwin
+            file: ubihome
+            release_file_name: ubihome-macos-aarch64
+
           - runs-on: ubuntu-24.04
             target: armv7-unknown-linux-musleabi
             file: ubihome

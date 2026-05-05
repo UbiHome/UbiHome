@@ -142,7 +142,8 @@ For now[^1] a single executable is provided. You can download them from the [Git
 
     | Device         | Download                                                                                                          | Target                       |
     | -------------- | ----------------------------------------------------------------------------------------------------------------- | ---------------------------- |
-    | MacOS        | [TAR Link](https://github.com/UbiHome/UbiHome/releases/download/v0.12.0/ubihome-macOS-x86_64.tar.gz)    | x86_64-apple-darwin |
+    | MacOS (Intel)  | [TAR Link](https://github.com/UbiHome/UbiHome/releases/download/v0.12.0/ubihome-macos-x86_64.tar.gz)     | x86_64-apple-darwin          |
+    | MacOS (Apple Silicon / M series) | [TAR Link](https://github.com/UbiHome/UbiHome/releases/download/v0.12.0/ubihome-macos-aarch64.tar.gz) | aarch64-apple-darwin |
 
     ## Installation
 
@@ -152,7 +153,7 @@ For now[^1] a single executable is provided. You can download them from the [Git
     1. Download and extract the archive and place the ubihome executable in a directory of your choice.
 
         ```bash
-        curl -L -o ubihome.tar.gz https://github.com/UbiHome/UbiHome/releases/download/v0.12.0/ubihome-macOS-x86_64.tar.gz
+        curl -L -o ubihome.tar.gz https://github.com/UbiHome/UbiHome/releases/download/v0.12.0/ubihome-macos-aarch64.tar.gz
         tar xvzf ./ubihome.tar.gz
         ```
 

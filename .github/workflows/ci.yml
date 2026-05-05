@@ -24,6 +24,10 @@ jobs:
             runs-on: macOS-latest
             fileending: ''
 
+          - target: aarch64-apple-darwin
+            runs-on: macOS-latest
+            fileending: ''
+
           - target: x86_64-pc-windows-msvc
             runs-on: windows-latest
             fileending: '.exe'
