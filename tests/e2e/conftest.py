@@ -1,4 +1,3 @@
-import contextlib
 import time
 import json
 from typing import AsyncGenerator
@@ -8,7 +7,7 @@ from urllib.request import Request, urlopen
 
 import pytest
 import pytest_asyncio
-from playwright.async_api import BrowserContext, Page
+from playwright.async_api import Page
 from pytest_playwright_asyncio.pytest_playwright import CreateContextCallback
 
 from testcontainers.core.container import DockerContainer
@@ -120,9 +119,10 @@ def home_assistant_runtime() -> Generator[HomeAssistantRuntime, None, None]:
         username=username,
         password=password,
     )
-    yield runtime
-
-    container.stop()
+    try:
+        yield runtime
+    finally:
+        container.stop()
 
 
 @pytest_asyncio.fixture(scope="function")
@@ -143,5 +143,7 @@ async def ha_page(
     await page.get_by_role("textbox", name="Password").press("Enter")
     await page.wait_for_url("**/home/overview", timeout=60000)
 
-    yield page
-    context.close()
+    try:
+        yield page
+    finally:
+        await context.close()
