@@ -88,15 +88,15 @@ class UbiHomeInstance(UbiHome):
         config_overrides: Mapping[str, Any] | None = None,
         value_overrides: Mapping[str, Any] | None = None,
     ) -> None:
-        self.button_sensor_mock = io_mock_factory.create_mock()
+        self.button_sensor_mock = io_mock_factory.create_mock("button_sensor")
 
-        self.sensor_mock = io_mock_factory.create_mock()
+        self.sensor_mock = io_mock_factory.create_mock("sensor")
         self.sensor_id = "my_sensor"
         self.sensor_name = "Test Sensor"
 
-        self.switch_mock = io_mock_factory.create_mock()
+        self.switch_mock = io_mock_factory.create_mock("switch")
 
-        self.binary_sensor_mock = io_mock_factory.create_mock()
+        self.binary_sensor_mock = io_mock_factory.create_mock("binary_sensor")
         self.binary_sensor_mock.set_value("false")
         self.binary_sensor_id = "my_binary_sensor"
         self.binary_sensor_name = "Test Binary Sensor"
@@ -176,9 +176,9 @@ async def test_button_and_switch_actions_are_executed(
         await ha_page.get_by_role("button", name="Press").click()
         ubihome.button_sensor_mock.wait_for_mock_state("button")
 
-        await ha_page.get_by_role("button", name="Turn test_device Switch it on").click(
-            force=True
-        )
+        await ha_page.get_by_role(
+            "button", name=f"Turn {ubihome.device_name} Switch it on"
+        ).click()
         ubihome.switch_mock.wait_for_mock_state("true")
 
 

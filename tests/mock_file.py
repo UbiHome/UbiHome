@@ -5,9 +5,10 @@ import platform
 
 
 class IOMock:
-    def __init__(self, base_path: str | None = None) -> None:
+    def __init__(self, base_path: str | None = None, name: str | None = None) -> None:
         self._base_path = base_path
-        self._file = f"{uuid4()}.mock"
+        name = uuid4().hex if name is None else name + f"_{uuid4().hex}"
+        self._file = f"{name}.mock"
         self._full_path = self._file  # os.path.join(base_path, self._file)
 
     def __str__(self) -> str:
@@ -63,8 +64,8 @@ class IOMockFactory:
         self._base_path = base_path
         self.mock_files: list[IOMock] = []
 
-    def create_mock(self) -> IOMock:
-        mock = IOMock(self._base_path)
+    def create_mock(self, name: str | None = None) -> IOMock:
+        mock = IOMock(self._base_path, name=name)
         self.mock_files.append(mock)
         return mock
 
