@@ -21,26 +21,13 @@ class IOMock:
         with open(self._full_path, "w") as f:
             f.write(content)
 
-    def wait_and_get_file(self, timeout=5):
-        """
-        Wait for a file to be created or modified.
-        """
-        start_time = time.time()
-        while not os.path.exists(self._full_path):
-            if time.time() - start_time > timeout:
-                raise TimeoutError(
-                    f"File {self._full_path} was not created within {timeout} seconds."
-                )
-            time.sleep(0.1)
-        return open(self._full_path, "r").read()
-
     def wait_for_mock_state(self, expected_state, timeout=5):
         """
         Wait for a file to be created or modified.
         """
         state: str = ""
         start_time = time.time()
-        while expected_state in state:
+        while expected_state not in state:
             if time.time() - start_time > timeout:
                 raise TimeoutError(
                     f"State does not match within {timeout} seconds: {expected_state} != {state}."
