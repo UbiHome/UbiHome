@@ -1,4 +1,3 @@
-import contextlib
 import time
 import json
 from typing import AsyncGenerator
@@ -8,7 +7,7 @@ from urllib.request import Request, urlopen
 
 import pytest
 import pytest_asyncio
-from playwright.async_api import BrowserContext, Page
+from playwright.async_api import Page
 from pytest_playwright_asyncio.pytest_playwright import CreateContextCallback
 
 from testcontainers.core.container import DockerContainer
