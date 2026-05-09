@@ -5,7 +5,6 @@ import platform
 
 
 class IOMock:
-
     def __init__(self, base_path: str | None = None) -> None:
         self._base_path = base_path
         self._file = f"{uuid4()}.mock"
@@ -78,7 +77,9 @@ class IOMockFactory:
         self.mock_files: list[IOMock] = []
 
     def create_mock(self) -> IOMock:
-        return IOMock(self._base_path)
+        mock = IOMock(self._base_path)
+        self.mock_files.append(mock)
+        return mock
 
     def cleanup(self) -> None:
         for mock_file in self.mock_files:

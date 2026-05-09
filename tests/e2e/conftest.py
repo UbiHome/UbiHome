@@ -120,9 +120,10 @@ def home_assistant_runtime() -> Generator[HomeAssistantRuntime, None, None]:
         username=username,
         password=password,
     )
-    yield runtime
-
-    container.stop()
+    try:
+        yield runtime
+    finally:
+        container.stop()
 
 
 @pytest_asyncio.fixture(scope="function")
@@ -143,5 +144,7 @@ async def ha_page(
     await page.get_by_role("textbox", name="Password").press("Enter")
     await page.wait_for_url("**/home/overview", timeout=60000)
 
-    yield page
-    context.close()
+    try:
+        yield page
+    finally:
+        await context.close()
