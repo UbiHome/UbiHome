@@ -102,7 +102,7 @@ class UbiHomeInstance(UbiHome):
         self.binary_sensor_id = "my_binary_sensor"
         self.binary_sensor_name = "Test Binary Sensor"
 
-        # Generate random readable device name (simply hexadecimal with 6 digits)
+        # Generate random readable device name (simply hexadecimal with 15 digits)
         self.device_name = f"test_device_{urandom(15).hex()}"
         config_dict = {
             "api": {},
@@ -174,10 +174,10 @@ async def test_button_and_switch_actions_are_executed(
     async with UbiHomeInstance(io_mock_factory) as ubihome:
         await add_esphome_integration(ha_page, ubihome.port)
 
-        ha_page.get_by_role("button", name="Press").click()
+        await ha_page.get_by_role("button", name="Press").click()
         ubihome.button_sensor_mock.wait_for_mock_state("button")
 
-        ha_page.get_by_role("button", name="Turn test_device Switch it on").click(
+        await ha_page.get_by_role("button", name="Turn test_device Switch it on").click(
             force=True
         )
         ubihome.switch_mock.wait_for_mock_state("true")
