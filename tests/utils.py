@@ -7,10 +7,10 @@ import re
 import signal
 import socket
 import platform
-import time
 from typing import Optional
 import yaml
 import random
+from dataclasses import dataclass
 
 
 def represent_none(self, _):
@@ -18,6 +18,13 @@ def represent_none(self, _):
 
 
 yaml.add_representer(type(None), represent_none)
+
+
+@dataclass
+class HomeAssistantRuntime:
+    base_url: str
+    username: str
+    password: str
 
 
 class Platform(Enum):
@@ -166,7 +173,6 @@ class UbiHome(object):
     async def __aexit__(self, exctype, value, tb):
         os.remove(self.configuration_file)
         if self.process:
-
             # Try to terminate gracefully
             try:
                 self.process.terminate()

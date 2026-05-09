@@ -13,6 +13,6 @@ def io_mock() -> Generator[IOMock, Any, Any]:
 
 @pytest.fixture(scope="function")
 def io_mock_factory() -> Generator[IOMockFactory, Any, Any]:
-    mock_file = IOMockFactory(base_path="")
-    yield mock_file
-    mock_file.cleanup()
+    mock_factory = IOMockFactory(base_path="")
+    yield mock_factory
+    mock_factory.cleanup()

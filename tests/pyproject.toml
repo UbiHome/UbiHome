@@ -10,6 +10,8 @@ dependencies = [
     "paho-mqtt==2.1",
     "pytest-timeout==2.4",
     "pyyaml>=6.0.3",
+    "pytest-playwright-asyncio>=0.7.2",
+    "allure-pytest>=2.15.3",
 ]
 
 [tool.uv]
