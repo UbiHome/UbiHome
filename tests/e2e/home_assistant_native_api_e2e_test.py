@@ -1,4 +1,3 @@
-from random import random
 import re
 from collections.abc import Mapping
 from typing import Any
