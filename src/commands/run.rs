@@ -1,9 +1,9 @@
 use flexi_logger::writers::FileLogWriter;
 use flexi_logger::{detailed_format, Age, Cleanup, Criterion, Duplicate, FileSpec, Logger, Naming};
-use ubihome::CoreConfig;
+use ubihome::{BinarySensorKind, CoreConfig};
 use ubihome_core::binary_sensor::{ActionType, FilterType};
-use ubihome_core::home_assistant::sensors::Component;
-use ubihome_core::internal::sensors::InternalComponent;
+use ubihome_core::home_assistant::sensors::{Component, UbiBinarySensor};
+use ubihome_core::internal::sensors::{InternalBinarySensor, InternalComponent};
 use ubihome_core::sensor::SensorFilterType;
 use ubihome_core::{ChangedMessage, Module, PublishedMessage};
 
@@ -198,7 +198,30 @@ pub(crate) fn run(
         let mut modules = get_all_modules(&config_string);
         log::info!("Loaded {} modules", modules.len());
 
-        let components = initialize_modules(&mut modules).await.unwrap();
+        let mut components = initialize_modules(&mut modules).await.unwrap();
+
+        // Collect status binary sensors from the main config and add them as components
+        let mut status_binary_sensor_ids: Vec<String> = Vec::new();
+        for (_, binary_sensor) in config.binary_sensor.clone().unwrap_or_default() {
+            match binary_sensor.extra {
+                BinarySensorKind::status(_) => {
+                    let id = binary_sensor.default.get_object_id();
+                    debug!("Adding status binary sensor: {}", id);
+                    components.push(InternalComponent::BinarySensor(InternalBinarySensor {
+                        ha: UbiBinarySensor {
+                            platform: "binary_sensor".to_string(),
+                            icon: binary_sensor.default.icon.clone(),
+                            device_class: binary_sensor.default.device_class.clone(),
+                            name: binary_sensor.default.name.clone(),
+                            id: id.clone(),
+                        },
+                        base: binary_sensor.default.clone(),
+                    }));
+                    status_binary_sensor_ids.push(id);
+                }
+                BinarySensorKind::Unknown(_) => {}
+            }
+        }
 
         let (internal_tx, modules_rx) = broadcast::channel::<PublishedMessage>(16);
         let (modules_tx, mut internal_rx) = broadcast::channel::<ChangedMessage>(16);
@@ -505,6 +528,18 @@ pub(crate) fn run(
                     .collect(),
             })
             .unwrap();
+
+        // Report initial ON state for all status binary sensors after the Components message
+        // so that MQTT discovery is published before the state is reported
+        for id in &status_binary_sensor_ids {
+            debug!("Sending initial ON state for status binary sensor: {}", id);
+            modules_tx
+                .send(ChangedMessage::BinarySensorValueChange {
+                    key: id.clone(),
+                    value: true,
+                })
+                .unwrap();
+        }
 
         let ctrl_c = async {
             signal::ctrl_c()
