@@ -4724,9 +4724,9 @@ dependencies = [
  "ubihome-core",
  "ubihome-gpio",
  "ubihome-illuminance",
- "ubihome-internet",
  "ubihome-mdns",
  "ubihome-mqtt",
+ "ubihome-online",
  "ubihome-power_utils",
  "ubihome-sendspin",
  "ubihome-shell",
@@ -4835,18 +4835,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "ubihome-internet"
-version = "0.13.0"
-dependencies = [
- "duration-str",
- "log",
- "serde",
- "serde_yaml",
- "tokio",
- "ubihome-core",
-]
-
-[[package]]
 name = "ubihome-mdns"
 version = "0.12.0"
 dependencies = [
@@ -4874,6 +4862,18 @@ dependencies = [
  "tokio",
  "ubihome-core",
  "whoami",
+]
+
+[[package]]
+name = "ubihome-online"
+version = "0.13.0"
+dependencies = [
+ "duration-str",
+ "log",
+ "serde",
+ "serde_yaml",
+ "tokio",
+ "ubihome-core",
 ]
 
 [[package]]
