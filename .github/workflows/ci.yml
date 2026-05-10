@@ -110,6 +110,12 @@ jobs:
           path: ${{ env.ENGINE_TAR }}
           key: ${{ steps.read-engine-version.outputs.dagger_engine_cache_key }}
 
+      - name: Fix Dagger cache permissions
+        if: always()
+        run: |
+          docker stop dagger-engine-${{ steps.read-engine-version.outputs.dagger_version }} || true
+          sudo chown -R "$USER" ${{ env.ENGINE_CACHE_DIR }}
+
       - uses: actions/cache/save@v5
         if: always() && steps.cache-dagger-cache.outputs.cache-hit != 'true'
         with:
