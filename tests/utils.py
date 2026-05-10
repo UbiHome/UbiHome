@@ -113,7 +113,10 @@ class UbiHome:
         raise AssertionError("UbiHome stderr reader task failed") from error
 
     async def _cleanup(self):
-        os.remove(self.configuration_file)
+        try:
+            os.remove(self.configuration_file)
+        except FileNotFoundError:
+            pass
         if self.process:
             # Try to terminate gracefully
             try:
