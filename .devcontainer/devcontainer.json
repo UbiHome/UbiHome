@@ -17,7 +17,8 @@
 				"ms-azuretools.vscode-docker",
 				"github.vscode-github-actions",
 				"streetsidesoftware.code-spell-checker",
-				"ms-python.python"
+				"ms-python.python",
+				"biomejs.biome"
 			]
 		},
 		"settings": {
