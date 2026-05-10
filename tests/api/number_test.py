@@ -78,3 +78,15 @@ number:
 
         state = mock.call_args.args[0]
         assert state.state == pytest.approx(75.0)
+
+        mock.reset_mock()
+
+        # Test the write path: send a number command via the API
+        api.number_command(number_key, 42.0)
+
+        # Wait for the state update after command_set execution
+        while not mock.called:
+            await sleep(0.1)
+
+        state = mock.call_args.args[0]
+        assert state.state == pytest.approx(42.0)

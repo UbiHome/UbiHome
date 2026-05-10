@@ -204,7 +204,7 @@ async def test_number_action_is_executed(ha_page: Page, io_mock_factory: IOMockF
 
         await ha_page.get_by_text(ubihome.number_name, exact=True).click()
 
-        number_input = ha_page.locator("state-card-number").get_by_label("", exact=True)
+        number_input = ha_page.locator("state-card-number input")
         await number_input.fill("25")
         await number_input.press("Enter")
         ubihome.number_set_mock.wait_for_mock_state("25")
