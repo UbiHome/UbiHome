@@ -56,7 +56,7 @@ jobs:
           DAGGER_VERSION=$(jq -r '.engineVersion' dagger.json | sed 's/^v//')
           echo "Dagger Engine version: $DAGGER_VERSION"
           echo "dagger_version=$DAGGER_VERSION" >> "$GITHUB_OUTPUT"
-          echo "dagger_engine_cache_key=dagger-engine-$DAGGER_VERSION" >> "$GITHUB_ENV"
+          echo "dagger_engine_cache_key=dagger-engine-$DAGGER_VERSION" >> "$GITHUB_OUTPUT"
 
       - name: Cache Dagger Engine image
         id: cache-dagger
