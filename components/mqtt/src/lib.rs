@@ -443,12 +443,11 @@ impl Module for Default {
                                             });
                                         }
                                         HAMqttComponent::Number(_number) => {
-                                            if let Ok(value) = str::from_utf8(
-                                                &received_message.payload,
-                                            )
-                                            .unwrap_or("")
-                                            .trim()
-                                            .parse::<f32>()
+                                            if let Ok(value) =
+                                                str::from_utf8(&received_message.payload)
+                                                    .unwrap_or("")
+                                                    .trim()
+                                                    .parse::<f32>()
                                             {
                                                 msg = Some(ChangedMessage::NumberValueCommand {
                                                     key: topic.to_string(),

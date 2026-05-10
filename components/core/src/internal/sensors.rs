@@ -1,6 +1,8 @@
 use crate::{
     binary_sensor::BinarySensorBase,
-    home_assistant::sensors::{UbiBinarySensor, UbiButton, UbiLight, UbiNumber, UbiSensor, UbiSwitch},
+    home_assistant::sensors::{
+        UbiBinarySensor, UbiButton, UbiLight, UbiNumber, UbiSensor, UbiSwitch,
+    },
     sensor::SensorBase,
 };
 
