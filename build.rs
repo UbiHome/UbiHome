@@ -3,26 +3,32 @@ use std::fs;
 use std::path::Path;
 
 use cargo_toml::Manifest;
+use std::process::Command;
 // use saphyr::Yaml;
 
 // const RESERVED_KEYWORDS: [&str; 5] = ["ubihome", "button", "sensor", "binary_sensor", "text_sensor"];
 
 fn main() {
-    #[cfg(not(debug_assertions))]
-    {
-        let mut config_path: Option<String> = None;
-        let config_yaml_path = "config.yaml";
-        if Path::new(config_yaml_path).exists() {
-            config_path = Some(config_yaml_path.to_string())
-        }
-        let config_yml_path = "config.yml";
-        if Path::new(config_yml_path).exists() {
-            config_path = Some(config_yml_path.to_string())
-        }
-        if let Some(path) = &config_path {
-            let config_yaml_content = fs::read_to_string(path).unwrap();
-            println!("cargo:rustc-env=CONFIG_YAML={}", config_yaml_content);
-        }
+    let output = Command::new("git")
+        .args(&["rev-parse", "--short", "HEAD"])
+        .output()
+        .unwrap();
+    let git_hash = String::from_utf8(output.stdout).unwrap();
+    println!("cargo:rustc-env=GIT_HASH={}", git_hash);
+
+    let mut config_path: Option<String> = None;
+    let config_yaml_path = "config.yaml";
+    if Path::new(config_yaml_path).exists() {
+        config_path = Some(config_yaml_path.to_string())
+    }
+    let config_yml_path = "config.yml";
+    if Path::new(config_yml_path).exists() {
+        config_path = Some(config_yml_path.to_string())
+    }
+    if let Some(path) = &config_path {
+        let config_yaml_content = fs::read_to_string(path).unwrap();
+        #[cfg(not(debug_assertions))]
+        println!("cargo:rustc-env=CONFIG_YAML={}", config_yaml_content);
     }
     // let
     // println!("cargo:rerun-if-changed=NULL");

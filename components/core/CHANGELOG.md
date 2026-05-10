@@ -1,5 +1,51 @@
 # Changelog
 
+## [0.11.0](https://github.com/UbiHome/UbiHome/compare/v0.10.0...ubihome-core-v0.11.0) (2026-05-10)
+
+
+### Features
+
+* add `number` platform support for shell component ([#112](https://github.com/UbiHome/UbiHome/issues/112)) ([1799769](https://github.com/UbiHome/UbiHome/commit/1799769ccddf70cfff0f73e764e659cdef5280cd))
+* support `accuracy_decimals` in sensor entity configuration ([#113](https://github.com/UbiHome/UbiHome/issues/113)) ([9ccbcd4](https://github.com/UbiHome/UbiHome/commit/9ccbcd4efd39304b4a1960d548eb33b6e282ff41))
+
+
+### Bug Fixes
+
+* [#105](https://github.com/UbiHome/UbiHome/issues/105) ([b564199](https://github.com/UbiHome/UbiHome/commit/b5641993f3825ac0f7f690f543318dd3db08092e))
+
+## [0.10.0](https://github.com/UbiHome/UbiHome/compare/v0.9.3...ubihome-core-v0.10.0) (2026-04-16)
+
+
+### Features
+
+* support `accuracy_decimals` in sensor entity configuration ([#113](https://github.com/UbiHome/UbiHome/issues/113)) ([9ccbcd4](https://github.com/UbiHome/UbiHome/commit/9ccbcd4efd39304b4a1960d548eb33b6e282ff41))
+
+
+### Bug Fixes
+
+* [#105](https://github.com/UbiHome/UbiHome/issues/105) ([b564199](https://github.com/UbiHome/UbiHome/commit/b5641993f3825ac0f7f690f543318dd3db08092e))
+
+## [0.9.3](https://github.com/UbiHome/UbiHome/compare/v0.9.2...ubihome-core-v0.9.3) (2026-04-14)
+
+
+### Bug Fixes
+
+* [#105](https://github.com/UbiHome/UbiHome/issues/105) ([b564199](https://github.com/UbiHome/UbiHome/commit/b5641993f3825ac0f7f690f543318dd3db08092e))
+
+## [0.9.2](https://github.com/UbiHome/UbiHome/compare/v0.9.1...ubihome-core-v0.9.2) (2026-04-14)
+
+
+### Bug Fixes
+
+* [#105](https://github.com/UbiHome/UbiHome/issues/105) ([b564199](https://github.com/UbiHome/UbiHome/commit/b5641993f3825ac0f7f690f543318dd3db08092e))
+
+## [0.9.1](https://github.com/UbiHome/UbiHome/compare/v0.9.0...ubihome-core-v0.9.1) (2026-04-14)
+
+
+### Bug Fixes
+
+* [#105](https://github.com/UbiHome/UbiHome/issues/105) ([b564199](https://github.com/UbiHome/UbiHome/commit/b5641993f3825ac0f7f690f543318dd3db08092e))
+
 ## [0.9.0](https://github.com/UbiHome/UbiHome/compare/v0.8.6...ubihome-core-v0.9.0) (2025-08-03)
 
 

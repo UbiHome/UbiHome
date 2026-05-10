@@ -84,6 +84,7 @@ impl Module for UbiHomePlatform {
                         state_class: None,
                         device_class: None,
                         unit_of_measurement: None,
+                        accuracy_decimals: None,
                         filters: None,
                     });
                     let object_id = temperature.get_object_id();
@@ -127,6 +128,7 @@ impl Module for UbiHomePlatform {
                         state_class: None,
                         device_class: None,
                         unit_of_measurement: None,
+                        accuracy_decimals: None,
                         filters: None,
                     });
                     let object_id = pressure.get_object_id();
@@ -170,6 +172,7 @@ impl Module for UbiHomePlatform {
                         state_class: None,
                         device_class: None,
                         unit_of_measurement: None,
+                        accuracy_decimals: None,
                         filters: None,
                     });
                     let object_id = humidity.get_object_id();

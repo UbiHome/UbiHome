@@ -98,7 +98,17 @@ jobs:
           version: '0.8.4'
       - name: Run tests
         run: |-
+          docker pull ghcr.io/home-assistant/home-assistant:2026.4.3
           cd tests
           chmod +x ubihome
           ls -l
+          uv run --locked playwright install --with-deps
           uv run --locked pytest -vvv
+
+      - name: Archive artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: results-${{ inputs.target }}
+          path: |
+            tests/test-results
+            tests/allure-results

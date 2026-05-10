@@ -1,12 +1,12 @@
 [package]
 name = "ubihome-core"
-version = "0.10.3"
+version = "0.11.0"
 authors = ["Daniel Habenicht <daniel-habenicht@outlook.de>"]
 edition = "2024"
 description = "Core package"
 
 [features]
-ip = ["dep:network-interface"]
+ip = ["dep:getifs"]
 
 [dependencies]
 log = "0.4"
@@ -15,6 +15,7 @@ duration-str = "0.16.1"
 tokio = { version = "1", features = ["full"] }
 paste = "1.0.15"
 convert_case = "0.8.0"
-network-interface = { version = "2.0.1", optional = true } 
+network-interface = { version = "2.0.1", optional = true }
 garde = { version = "0.22.1", features = ["serde", "regex", "derive"] }
 regex = "1.12.2"
+getifs = { version = "0.4", optional = true }

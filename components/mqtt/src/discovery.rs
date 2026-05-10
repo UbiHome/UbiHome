@@ -13,6 +13,7 @@ pub(crate) enum HAMqttComponent {
     Sensor(HAMqttSensor),
     BinarySensor(HAMqttBinarySensor),
     Switch(HAMqttSwitch),
+    Number(HAMqttNumber),
 }
 
 #[derive(Clone, Serialize, Deserialize, Debug)]
@@ -113,6 +114,44 @@ pub(crate) struct HAMqttBinarySensor {
 
     #[serde(rename = "dev_cla")]
     pub(crate) device_class: String,
+}
+
+#[derive(Clone, Serialize, Deserialize, Debug)]
+pub(crate) struct HAMqttNumber {
+    #[serde(rename = "p")]
+    pub(crate) platform: String,
+
+    #[serde(rename = "uniq_id")]
+    pub(crate) unique_id: String,
+
+    #[serde(rename = "name")]
+    pub(crate) name: String,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "ic")]
+    pub(crate) icon: Option<String>,
+
+    #[serde(rename = "obj_id")]
+    pub(crate) object_id: String,
+
+    #[serde(rename = "stat_t")]
+    pub(crate) state_topic: String,
+
+    #[serde(rename = "cmd_t")]
+    pub(crate) command_topic: String,
+
+    #[serde(rename = "min")]
+    pub(crate) min: f32,
+
+    #[serde(rename = "max")]
+    pub(crate) max: f32,
+
+    #[serde(rename = "step")]
+    pub(crate) step: f32,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "unit_of_meas")]
+    pub(crate) unit_of_measurement: Option<String>,
 }
 
 #[derive(Clone, Serialize_tuple, Deserialize_tuple, Debug)]

@@ -1,5 +1,25 @@
 # Changelog
 
+
+
+## [0.12.0](https://github.com/UbiHome/UbiHome/compare/v0.11.2...ubihome-sendspin-v0.12.0) (2026-05-10)
+
+
+### Features
+
+* add `number` platform support for shell component ([#112](https://github.com/UbiHome/UbiHome/issues/112)) ([1799769](https://github.com/UbiHome/UbiHome/commit/1799769ccddf70cfff0f73e764e659cdef5280cd))
+
+## [0.11.2](https://github.com/UbiHome/UbiHome/compare/v0.11.1...ubihome-sendspin-v0.11.2) (2026-04-16)
+
+## [0.11.1](https://github.com/UbiHome/UbiHome/compare/v0.11.0...ubihome-sendspin-v0.11.1) (2026-04-14)
+
+## [0.11.0](https://github.com/UbiHome/UbiHome/compare/v0.10.2...ubihome-sendspin-v0.11.0) (2026-04-14)
+
+
+### Features
+
+* add sendspin ([#103](https://github.com/UbiHome/UbiHome/issues/103)) ([ae13951](https://github.com/UbiHome/UbiHome/commit/ae139514d94c5b9e86f9d6438d1bf9f85a6fa434))
+
 ## [0.10.1](https://github.com/UbiHome/UbiHome/compare/v0.10.0...ubihome-api-v0.10.1) (2026-01-17)
 
 

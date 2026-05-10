@@ -1,10 +1,9 @@
 from asyncio import sleep
 from unittest.mock import Mock
 
-import pytest
+import aioesphomeapi
 from mock_file import IOMock
 from utils import OS_PLATFORM, Platform, UbiHome
-import aioesphomeapi
 
 
 async def test_run(io_mock: IOMock):
@@ -19,7 +18,7 @@ api:
 
 shell:
   type: {"bash" if OS_PLATFORM is Platform.LINUX else "powershell"}
-  
+
 light:
   - platform: shell
     id: {light_id}
@@ -39,7 +38,7 @@ light:
         assert len(entities) == 1, entities
         entity = entities[0]
 
-        assert type(entity) == aioesphomeapi.LightInfo
+        assert isinstance(entity, aioesphomeapi.LightInfo)
         assert entity.object_id == light_id
         assert entity.name == light_name
 

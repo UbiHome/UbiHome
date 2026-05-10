@@ -36,7 +36,7 @@ pub struct MqttConfig {
     pub password: Option<String>,
 }
 
-config_template!(mqtt, MqttConfig, NoConfig, NoConfig, NoConfig, NoConfig, NoConfig);
+config_template!(mqtt, MqttConfig, NoConfig, NoConfig, NoConfig, NoConfig, NoConfig, NoConfig);
 
 #[derive(Clone, Debug)]
 pub struct UbiHomePlatform {
@@ -222,6 +222,39 @@ impl Module for UbiHomePlatform {
                                                 // TODO: Add MQTT light support if needed
                                                 // For now, just skip light components for MQTT
                                             }
+                                            Component::Number(number) => {
+                                                let state_topic = format!(
+                                                    "{}/{}",
+                                                    base_topic_clone.clone(),
+                                                    number.id.clone()
+                                                );
+                                                let command_topic = format!(
+                                                    "{}/{}/set",
+                                                    base_topic_clone.clone(),
+                                                    number.id.clone()
+                                                );
+                                                topics.push(command_topic.clone());
+
+                                                mqtt_components.insert(
+                                                    number.id.clone(),
+                                                    HAMqttComponent::Number(HAMqttNumber {
+                                                        platform: "number".to_string(),
+                                                        unique_id: number.id.clone(),
+                                                        command_topic,
+                                                        state_topic,
+                                                        name: number.name.clone(),
+                                                        icon: number.icon.clone(),
+                                                        object_id: number.id.clone(),
+                                                        min: number.min_value,
+                                                        max: number.max_value,
+                                                        step: number.step,
+                                                        unit_of_measurement: number
+                                                            .unit_of_measurement
+                                                            .clone()
+                                                            .filter(|s| !s.is_empty()),
+                                                    }),
+                                                );
+                                            }
                                         }
                                     }
                                     {
@@ -338,6 +371,20 @@ impl Module for UbiHomePlatform {
                                         error!("{}", e)
                                     }
                                 }
+                                PublishedMessage::NumberValueChanged { key, value } => {
+                                    debug!("Number value published: {} = {}", key, value);
+                                    if let Err(e) = client
+                                        .publish(
+                                            format!("{}/{}", base_topic_clone, key),
+                                            QoS::AtMostOnce,
+                                            false,
+                                            value.to_string(),
+                                        )
+                                        .await
+                                    {
+                                        error!("{}", e)
+                                    }
+                                }
                                 _ => {}
                             }
                         }
@@ -394,6 +441,19 @@ impl Module for UbiHomePlatform {
                                             msg = Some(ChangedMessage::ButtonPress {
                                                 key: topic.to_string(),
                                             });
+                                        }
+                                        HAMqttComponent::Number(_number) => {
+                                            if let Ok(value) =
+                                                str::from_utf8(&received_message.payload)
+                                                    .unwrap_or("")
+                                                    .trim()
+                                                    .parse::<f32>()
+                                            {
+                                                msg = Some(ChangedMessage::NumberValueCommand {
+                                                    key: topic.to_string(),
+                                                    value,
+                                                });
+                                            }
                                         }
                                         _ => {}
                                     }

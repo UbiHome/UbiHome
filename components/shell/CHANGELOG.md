@@ -1,5 +1,46 @@
 # Changelog
 
+## [0.13.0](https://github.com/UbiHome/UbiHome/compare/v0.12.0...ubihome-shell-v0.13.0) (2026-05-10)
+
+
+### Features
+
+* add `number` platform support for shell component ([#112](https://github.com/UbiHome/UbiHome/issues/112)) ([1799769](https://github.com/UbiHome/UbiHome/commit/1799769ccddf70cfff0f73e764e659cdef5280cd))
+
+## [0.12.0](https://github.com/UbiHome/UbiHome/compare/v0.11.1...ubihome-shell-v0.12.0) (2026-04-16)
+
+
+### Features
+
+* support `accuracy_decimals` in sensor entity configuration ([#113](https://github.com/UbiHome/UbiHome/issues/113)) ([9ccbcd4](https://github.com/UbiHome/UbiHome/commit/9ccbcd4efd39304b4a1960d548eb33b6e282ff41))
+
+## [0.11.1](https://github.com/UbiHome/UbiHome/compare/v0.11.0...ubihome-shell-v0.11.1) (2026-04-14)
+
+## [0.11.0](https://github.com/UbiHome/UbiHome/compare/ubihome-shell-v0.10.4...ubihome-shell-v0.11.0) (2026-04-14)
+
+
+### Features
+
+* add binary sensor ([2189379](https://github.com/UbiHome/UbiHome/commit/218937924b6f09f8bd9962c373a12b567fdad079))
+* add password and key authentcation + light sensor ([#82](https://github.com/UbiHome/UbiHome/issues/82)) ([89c11f2](https://github.com/UbiHome/UbiHome/commit/89c11f2aeec96048663c64edc0b351c8ba7df911))
+* add rpi gpio ([0fe5532](https://github.com/UbiHome/UbiHome/commit/0fe5532bcf50964675ff09a075954f4d3475a892))
+* switch shell entity via mqtt ([b0e4bd4](https://github.com/UbiHome/UbiHome/commit/b0e4bd45affcb8494ddc53903a132d9edb871509))
+* working basic binary filters ([52e0bc0](https://github.com/UbiHome/UbiHome/commit/52e0bc0f6b6c028165252675881714b6764bbdea))
+
+
+### Bug Fixes
+
+* add api binary sensor ([b9a9ff7](https://github.com/UbiHome/UbiHome/commit/b9a9ff765eec377250dd5fd10ea816fb89ec010c))
+* add switch state ([50991db](https://github.com/UbiHome/UbiHome/commit/50991db5113ad358a17d73f9881cd53b97155403))
+* add switch to native api ([7a947ad](https://github.com/UbiHome/UbiHome/commit/7a947ad3acdf891c713a654f74efb6ec6dfa21a1))
+* api switch ([#76](https://github.com/UbiHome/UbiHome/issues/76)) ([c27b34c](https://github.com/UbiHome/UbiHome/commit/c27b34cf57e886dc54878e064cd907c5c1463bc4))
+* better cli output ([4a24886](https://github.com/UbiHome/UbiHome/commit/4a24886e59bd7dc1a441d7f2e418bd700976d377))
+* keys of shell component ([5772f9e](https://github.com/UbiHome/UbiHome/commit/5772f9ed32b0d1c965dcffe7035b3ecefc202354))
+* mqtt switch topic not recognized ([92b5f47](https://github.com/UbiHome/UbiHome/commit/92b5f475cbaa9e40161081a06e29ea843c7b8986))
+* shell binary sensor not published ([2caa712](https://github.com/UbiHome/UbiHome/commit/2caa7126f9f244ece6a57ebc670574b69a27b6a3))
+
+## [0.10.4](https://github.com/UbiHome/UbiHome/compare/v0.9.0...ubihome-shell-v0.10.4) (2026-04-14)
+
 ## [0.9.0](https://github.com/UbiHome/UbiHome/compare/v0.8.7...ubihome-shell-v0.9.0) (2025-08-03)
 
 

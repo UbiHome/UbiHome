@@ -13,6 +13,7 @@ pub enum UbiComponent {
     BinarySensor(UbiBinarySensor),
     Switch(UbiSwitch),
     Light(UbiLight),
+    Number(UbiNumber),
 }
 
 // Icons: https://pictogrammers.com/library/mdi/
@@ -94,5 +95,17 @@ pub struct UbiLight {
     // pub supports_rgb: bool,
     // pub supports_white_value: bool,
     // pub supports_color_temperature: bool,
+}
+}
+
+with_base_properties! {
+#[derive(Clone, Serialize, Deserialize, Debug)]
+pub struct UbiNumber {
+    pub min_value: f32,
+    pub max_value: f32,
+    pub step: f32,
+    pub unit_of_measurement: Option<String>,
+    pub device_class: Option<String>,
+    pub mode: i32,
 }
 }

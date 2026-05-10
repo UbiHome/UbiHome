@@ -1,5 +1,33 @@
 # Changelog
 
+## [0.12.1](https://github.com/UbiHome/UbiHome/compare/v0.12.0...ubihome-bme280-v0.12.1) (2026-05-10)
+
+## [0.12.0](https://github.com/UbiHome/UbiHome/compare/v0.11.1...ubihome-bme280-v0.12.0) (2026-04-16)
+
+
+### Features
+
+* support `accuracy_decimals` in sensor entity configuration ([#113](https://github.com/UbiHome/UbiHome/issues/113)) ([9ccbcd4](https://github.com/UbiHome/UbiHome/commit/9ccbcd4efd39304b4a1960d548eb33b6e282ff41))
+
+## [0.11.1](https://github.com/UbiHome/UbiHome/compare/v0.11.0...ubihome-bme280-v0.11.1) (2026-04-14)
+
+## [0.11.0](https://github.com/UbiHome/UbiHome/compare/ubihome-bme280-v0.10.4...ubihome-bme280-v0.11.0) (2026-04-14)
+
+
+### Features
+
+* working basic binary filters ([52e0bc0](https://github.com/UbiHome/UbiHome/commit/52e0bc0f6b6c028165252675881714b6764bbdea))
+
+
+### Bug Fixes
+
+* better warnings ([0a28ec2](https://github.com/UbiHome/UbiHome/commit/0a28ec2247e82adfa04eb997528b82d4d30dab0b))
+* bme state and device classes ([17be6ae](https://github.com/UbiHome/UbiHome/commit/17be6aef08583da57e56b9b3feeff7a1714a163e))
+* bme280 not looping ([79e7998](https://github.com/UbiHome/UbiHome/commit/79e79984f9ca72c3675f27d5a11e24f9265375f0))
+* centralize logging ([86d2c2d](https://github.com/UbiHome/UbiHome/commit/86d2c2da8a1ab36c06e02bf957e55af902d53e4a))
+
+## [0.10.4](https://github.com/UbiHome/UbiHome/compare/v0.9.0...ubihome-bme280-v0.10.4) (2026-04-14)
+
 ## [0.9.0](https://github.com/UbiHome/UbiHome/compare/ubihome-bme280-v0.8.12...ubihome-bme280-v0.9.0) (2025-08-04)
 
 

@@ -1,11 +1,9 @@
-import asyncio
+import base64
 import os
 
-from pytest import mark
+import aioesphomeapi
 import pytest
 from utils import UbiHome
-import aioesphomeapi
-import base64
 
 
 async def test_right_key():

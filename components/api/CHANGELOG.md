@@ -1,5 +1,46 @@
 # Changelog
 
+## [0.13.0](https://github.com/UbiHome/UbiHome/compare/v0.12.0...ubihome-api-v0.13.0) (2026-05-10)
+
+
+### Features
+
+* add `number` platform support for shell component ([#112](https://github.com/UbiHome/UbiHome/issues/112)) ([1799769](https://github.com/UbiHome/UbiHome/commit/1799769ccddf70cfff0f73e764e659cdef5280cd))
+
+## [0.12.0](https://github.com/UbiHome/UbiHome/compare/v0.11.1...ubihome-api-v0.12.0) (2026-04-16)
+
+
+### Features
+
+* support `accuracy_decimals` in sensor entity configuration ([#113](https://github.com/UbiHome/UbiHome/issues/113)) ([9ccbcd4](https://github.com/UbiHome/UbiHome/commit/9ccbcd4efd39304b4a1960d548eb33b6e282ff41))
+
+
+### Bug Fixes
+
+* update native api package ([372358e](https://github.com/UbiHome/UbiHome/commit/372358e90953e4e22a641012e959fd637aecd4df))
+
+## [0.10.4](https://github.com/UbiHome/UbiHome/compare/v0.10.3...ubihome-api-v0.10.4) (2026-04-14)
+
+
+### Bug Fixes
+
+* update native api package ([372358e](https://github.com/UbiHome/UbiHome/commit/372358e90953e4e22a641012e959fd637aecd4df))
+
+## [0.10.3](https://github.com/UbiHome/UbiHome/compare/v0.10.2...ubihome-api-v0.10.3) (2026-04-14)
+
+
+### Bug Fixes
+
+* entities in mixed order ([80638c4](https://github.com/UbiHome/UbiHome/commit/80638c48ef75e9b7dc7bcac09aa914c800020f93))
+
+## [0.10.2](https://github.com/UbiHome/UbiHome/compare/v0.10.1...ubihome-api-v0.10.2) (2026-04-14)
+
+
+### Bug Fixes
+
+* entities in mixed order ([80638c4](https://github.com/UbiHome/UbiHome/commit/80638c48ef75e9b7dc7bcac09aa914c800020f93))
+* update native api crate ([cce2910](https://github.com/UbiHome/UbiHome/commit/cce29100e2c76d8ff9cf15398a41ce9a8a850cc6))
+
 ## [0.10.1](https://github.com/UbiHome/UbiHome/compare/v0.10.0...ubihome-api-v0.10.1) (2026-01-17)
 
 

@@ -194,7 +194,7 @@ Remove the "{}:" entry from your configuration or install the cargo crate contai
                                         if let Some(v) = value.clone().and_then(|v| v) {
                                             // let number: f64 = v.parse().unwrap();
                                             let output: f32 = format!("{:.1$}", v, decimals).parse().unwrap();
-                                            warn!("Round: {}", output);
+                                            debug!("Round: {}", output);
                                             return Some(Some(output))
                                         }
                                         return value
@@ -231,6 +231,9 @@ Remove the "{}:" entry from your configuration or install the cargo crate contai
                 }
                 UbiComponent::Light(_light) => {
                     // println!("Light: {:?}", light);
+                }
+                UbiComponent::Number(_number) => {
+                    // Numbers don't have filters, state changes are forwarded directly
                 }
                 UbiComponent::BinarySensor(binary_sensor) => {
                     let mutable: Mutable<Option<Option<bool>>> = Mutable::new(Option::None);
@@ -422,6 +425,12 @@ Remove the "{}:" entry from your configuration or install the cargo crate contai
                         ChangedMessage::BluetoothProxyMessage(msg) => {
                             publish_cmd = Some(PublishedMessage::BluetoothProxyMessage(msg));
                         }
+                        ChangedMessage::NumberValueChange { key, value } => {
+                            publish_cmd = Some(PublishedMessage::NumberValueChanged { key, value });
+                        }
+                        ChangedMessage::NumberValueCommand { key, value } => {
+                            publish_cmd = Some(PublishedMessage::NumberValueCommand { key, value });
+                        }
                     }
                     if let Some(pcmd) = publish_cmd {
                         debug!("Publishing command: {:?}", pcmd);
@@ -445,7 +454,10 @@ Remove the "{}:" entry from your configuration or install the cargo crate contai
                         UbiComponent::BinarySensor(binary_sensor) => {
                             UbiComponent::BinarySensor(binary_sensor.clone())
                         }
-                        UbiComponent::Light(light) => UbiComponent::Light(light.clone()),
+                        UbiComponent::Light(light) => Component::Light(light.clone()),
+                        UbiComponent::Number(number) => {
+                            Component::Number(number.clone())
+                        }
                     })
                     .collect(),
             })
