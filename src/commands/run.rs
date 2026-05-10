@@ -202,24 +202,27 @@ pub(crate) fn run(
 
         // Collect status binary sensors from the main config and add them as components
         let mut status_binary_sensor_ids: Vec<String> = Vec::new();
-        for (_, binary_sensor) in config.binary_sensor.clone().unwrap_or_default() {
-            match binary_sensor.extra {
-                BinarySensorKind::status(_) => {
-                    let id = binary_sensor.default.get_object_id();
-                    debug!("Adding status binary sensor: {}", id);
-                    components.push(InternalComponent::BinarySensor(InternalBinarySensor {
-                        ha: UbiBinarySensor {
-                            platform: "binary_sensor".to_string(),
-                            icon: binary_sensor.default.icon.clone(),
-                            device_class: binary_sensor.default.device_class.clone(),
-                            name: binary_sensor.default.name.clone(),
-                            id: id.clone(),
-                        },
-                        base: binary_sensor.default.clone(),
-                    }));
-                    status_binary_sensor_ids.push(id);
-                }
-                BinarySensorKind::Unknown(_) => {}
+        for binary_sensor in config
+            .binary_sensor
+            .as_ref()
+            .map(|m| m.values())
+            .into_iter()
+            .flatten()
+        {
+            if let BinarySensorKind::status(_) = &binary_sensor.extra {
+                let id = binary_sensor.default.get_object_id();
+                debug!("Adding status binary sensor: {}", id);
+                components.push(InternalComponent::BinarySensor(InternalBinarySensor {
+                    ha: UbiBinarySensor {
+                        platform: "binary_sensor".to_string(),
+                        icon: binary_sensor.default.icon.clone(),
+                        device_class: binary_sensor.default.device_class.clone(),
+                        name: binary_sensor.default.name.clone(),
+                        id: id.clone(),
+                    },
+                    base: binary_sensor.default.clone(),
+                }));
+                status_binary_sensor_ids.push(id);
             }
         }
 
