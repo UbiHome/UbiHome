@@ -33,7 +33,7 @@ export class UbiHome {
       .container()
       .from("squidfunk/mkdocs-material:latest")
       .withExec(
-        ["pip", "install", "--upgrade", "mkdocs-material[imaging]", "pillow", "cairosvg", "mkdocs-awesome-nav", "mkdocs-macros-plugin", "mkdocs-git-revision-date-localized-plugin"]
+        ["pip", "install", "--upgrade", "mkdocs-material[imaging]==9.7.6", "pillow==12.1.1", "cairosvg==2.9.0", "mkdocs-awesome-nav==3.3.0", "mkdocs-macros-plugin==1.5.0", "mkdocs-git-revision-date-localized-plugin==1.5.1"],
       )
       .withMountedDirectory("/docs", docsDir)
       .withMountedCache("/docs/.cache", dag.cacheVolume("mkdocs-material-cache"))
