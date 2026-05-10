@@ -34,6 +34,7 @@ config_template!(
     GpioBinarySensorConfig,
     NoConfig,
     NoConfig,
+    NoConfig,
     NoConfig
 );
 

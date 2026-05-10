@@ -8,8 +8,8 @@ use tokio::{
     sync::broadcast::{Receiver, Sender},
     time,
 };
-use ubihome_core::home_assistant::sensors::{UbiLight, UbiSwitch};
-use ubihome_core::internal::sensors::{InternalLight, InternalSwitch};
+use ubihome_core::home_assistant::sensors::{UbiLight, UbiNumber, UbiSwitch};
+use ubihome_core::internal::sensors::{InternalLight, InternalNumber, InternalSwitch};
 use ubihome_core::{
     config_template,
     home_assistant::sensors::{UbiBinarySensor, UbiButton, UbiSensor},
@@ -92,6 +92,16 @@ pub struct ShellLightConfig {
     pub update_interval: Option<Duration>,
 }
 
+#[derive(Clone, Deserialize, Debug)]
+pub struct ShellNumberConfig {
+    pub command_state: Option<String>,
+    pub command_set: Option<String>,
+
+    #[serde(default = "default_timeout_none")]
+    #[serde(deserialize_with = "deserialize_option_duration")]
+    pub update_interval: Option<Duration>,
+}
+
 fn default_timeout_none() -> Option<Duration> {
     None
 }
@@ -103,7 +113,8 @@ config_template!(
     ShellBinarySensorConfig,
     ShellSensorConfig,
     ShellSwitchConfig,
-    ShellLightConfig
+    ShellLightConfig,
+    ShellNumberConfig
 );
 
 pub struct Default {
@@ -114,6 +125,7 @@ pub struct Default {
     sensors: HashMap<String, ShellSensorConfig>,
     switches: HashMap<String, ShellSwitchConfig>,
     lights: HashMap<String, ShellLightConfig>,
+    numbers: HashMap<String, ShellNumberConfig>,
 }
 
 impl Module for Default {
@@ -231,6 +243,31 @@ impl Module for Default {
             }
         }
 
+        let mut numbers: HashMap<String, ShellNumberConfig> = HashMap::new();
+        for (_, any_number) in config.number.clone().unwrap_or_default() {
+            match any_number.extra {
+                NumberKind::shell(number_config) => {
+                    let id = any_number.default.get_object_id();
+                    components.push(InternalComponent::Number(InternalNumber {
+                        ha: UbiNumber {
+                            platform: "number".to_string(),
+                            icon: any_number.default.icon.clone(),
+                            name: any_number.default.name.clone(),
+                            id: id.clone(),
+                            min_value: any_number.default.min_value.unwrap_or(0.0),
+                            max_value: any_number.default.max_value.unwrap_or(100.0),
+                            step: any_number.default.step.unwrap_or(1.0),
+                            unit_of_measurement: any_number.default.unit_of_measurement.clone(),
+                            device_class: any_number.default.device_class.clone(),
+                            mode: 1, // NumberMode::Box
+                        },
+                    }));
+                    numbers.insert(id.clone(), number_config);
+                }
+                _ => {}
+            }
+        }
+
         Ok(Default {
             config: config.shell,
             components,
@@ -239,6 +276,7 @@ impl Module for Default {
             sensors,
             switches,
             lights,
+            numbers,
         })
     }
 
@@ -258,12 +296,14 @@ impl Module for Default {
         let switches = self.switches.clone();
         let sensors = self.sensors.clone();
         let lights = self.lights.clone();
+        let numbers = self.numbers.clone();
         Box::pin(async move {
             let cloned_config = config.clone();
             let csender = sender.clone();
 
             let switches_clone = switches.clone();
             let lights_clone = lights.clone();
+            let numbers_clone = numbers.clone();
             // Handle Button Presses
             tokio::spawn(async move {
                 let cloned_sender = csender.clone();
@@ -457,6 +497,42 @@ impl Module for Default {
                                             debug!("Error executing state command: {}", e);
                                         }
                                     };
+                                }
+                            }
+                        }
+                        PublishedMessage::NumberValueCommand { key, value } => {
+                            debug!("NumberValueCommand: {} {}", key, value);
+                            if let Some(number) = numbers_clone.get(&key) {
+                                if let Some(command_set) = &number.command_set {
+                                    let command =
+                                        command_set.replace("{{ value }}", &value.to_string());
+                                    debug!("Executing number set command: {}", command);
+
+                                    let output = execute_command(
+                                        &cloned_config,
+                                        &command,
+                                        &cloned_config.timeout,
+                                    )
+                                    .await;
+
+                                    match output {
+                                        Ok(output) => {
+                                            if output.is_empty() {
+                                                trace!("Number command executed successfully with no output.");
+                                            } else {
+                                                trace!("Number command executed successfully with output: {}", output);
+                                            }
+                                            _ = cloned_sender.send(
+                                                ChangedMessage::NumberValueChange {
+                                                    key: key.clone(),
+                                                    value,
+                                                },
+                                            );
+                                        }
+                                        Err(e) => {
+                                            debug!("Error executing number set command: {}", e);
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -662,6 +738,68 @@ impl Module for Default {
                     warn!("Light {} has no command_state", key);
                 }
             }
+
+            // Poll number states with update intervals
+            for (key, number) in numbers {
+                let number = number.clone();
+                debug!("Number State monitor for: {:?}", key);
+
+                if let Some(command_state) = number.command_state {
+                    let cloned_config = config.clone();
+                    let cloned_sender = sender.clone();
+                    tokio::spawn(async move {
+                        let duration = number
+                            .update_interval
+                            .unwrap_or_else(|| Duration::from_secs(60));
+
+                        let mut interval = time::interval(duration);
+                        debug!(
+                            "Number {} has update interval: {:?}",
+                            key,
+                            interval.period()
+                        );
+                        loop {
+                            let output = execute_command(
+                                &cloned_config,
+                                &command_state,
+                                &cloned_config.timeout,
+                            )
+                            .await;
+                            match output {
+                                Ok(output) => {
+                                    debug!("Number {} state: {}", key, &output);
+                                    match output.trim().parse::<f32>() {
+                                        Ok(value) => {
+                                            _ = cloned_sender.send(
+                                                ChangedMessage::NumberValueChange {
+                                                    key: key.clone(),
+                                                    value,
+                                                },
+                                            );
+                                        }
+                                        Err(e) => {
+                                            debug!(
+                                                "Invalid number state output '{}': {}",
+                                                output.trim(),
+                                                e
+                                            );
+                                            interval.tick().await;
+                                            continue;
+                                        }
+                                    }
+                                }
+                                Err(e) => {
+                                    debug!("Error executing number state command: {}", e);
+                                }
+                            };
+
+                            interval.tick().await;
+                        }
+                    });
+                } else {
+                    warn!("Number {} has no command_state", key);
+                }
+            }
             Ok(())
         })
     }
@@ -693,4 +831,106 @@ async fn execute_command(
     let output_string = str::from_utf8(&output).unwrap_or("");
     trace!("Command '{}' executed: {}", command, output_string);
     Ok(output_string.to_string())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_number_config_parsing() {
+        let config = r#"
+ubihome:
+  name: "Test Number Config"
+
+shell:
+  type: bash
+
+number:
+  - platform: shell
+    name: "Display Brightness"
+    id: display_brightness
+    unit_of_measurement: "%"
+    min_value: 0.0
+    max_value: 100.0
+    step: 1.0
+    update_interval: 5s
+    command_state: "echo 50.0"
+    command_set: "echo {{ value }}"
+"#;
+
+        let module = Default::new(&config.to_string());
+        assert!(
+            module.is_ok(),
+            "Shell module should parse number config successfully"
+        );
+
+        let module = module.unwrap();
+        assert_eq!(module.numbers.len(), 1, "Should have 1 number entity");
+        assert!(
+            module.numbers.contains_key("display_brightness"),
+            "Should contain 'display_brightness' number"
+        );
+
+        let number = module.numbers.get("display_brightness").unwrap();
+        assert!(
+            number.command_state.is_some(),
+            "Number should have command_state"
+        );
+        assert!(
+            number.command_set.is_some(),
+            "Number should have command_set"
+        );
+        assert_eq!(
+            number.command_state.as_deref(),
+            Some("echo 50.0"),
+            "command_state should match"
+        );
+        assert_eq!(
+            number.command_set.as_deref(),
+            Some("echo {{ value }}"),
+            "command_set should match"
+        );
+    }
+
+    #[test]
+    fn test_number_config_minimal() {
+        let config = r#"
+ubihome:
+  name: "Test Number Minimal"
+
+shell:
+
+number:
+  - platform: shell
+    name: "Volume"
+"#;
+
+        let module = Default::new(&config.to_string());
+        assert!(
+            module.is_ok(),
+            "Shell module should parse minimal number config successfully"
+        );
+
+        let module = module.unwrap();
+        assert_eq!(module.numbers.len(), 1, "Should have 1 number entity");
+        assert!(
+            module.numbers.contains_key("volume"),
+            "Should contain 'volume' number"
+        );
+
+        let number = module.numbers.get("volume").unwrap();
+        assert!(
+            number.command_state.is_none(),
+            "Minimal number should have no command_state"
+        );
+        assert!(
+            number.command_set.is_none(),
+            "Minimal number should have no command_set"
+        );
+        assert!(
+            number.update_interval.is_none(),
+            "Minimal number should have no update_interval"
+        );
+    }
 }

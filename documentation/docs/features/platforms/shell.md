@@ -44,3 +44,19 @@ switch:
           echo false
       fi
 ```
+
+### Number
+
+```yaml
+number:
+  - platform: shell
+    name: 'Display Brightness'
+    id: display_brightness
+    unit_of_measurement: '%'
+    min_value: 0.0
+    max_value: 100.0
+    step: 1.0
+    update_interval: 5s
+    command_state: "cat /tmp/display_brightness"
+    command_set: "echo {{ value }} > /tmp/display_brightness"
+```

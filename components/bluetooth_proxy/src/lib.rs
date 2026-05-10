@@ -27,8 +27,9 @@ pub struct BluetoothProxyConfig {
 }
 
 config_template!(
-    mdns,
+    bluetooth_proxy,
     Option<BluetoothProxyConfig>,
+    NoConfig,
     NoConfig,
     NoConfig,
     NoConfig,
@@ -61,7 +62,10 @@ impl Module for Default {
     ) -> Pin<Box<dyn Future<Output = Result<(), Box<dyn std::error::Error>>> + Send + 'static>>
     {
         let config = self.config.clone();
-        info!("Starting Bluetooth Proxy with config: {:?}", config.mdns);
+        info!(
+            "Starting Bluetooth Proxy with config: {:?}",
+            config.bluetooth_proxy
+        );
         Box::pin(async move {
             // TODO: Check if bluetooth is enabled
 
