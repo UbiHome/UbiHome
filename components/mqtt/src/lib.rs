@@ -19,8 +19,8 @@ use tokio::{
 use ubihome_core::{
     config_template,
     features::ip::{get_ip_address, get_network_mac_address},
-    home_assistant::sensors::{Component, UbiNumber},
-    internal::sensors::{InternalComponent, InternalNumber},
+    home_assistant::sensors::{Component, UbiBinarySensor},
+    internal::sensors::{InternalBinarySensor, InternalComponent},
     ChangedMessage, Module, NoConfig, PublishedMessage,
 };
 
@@ -38,7 +38,7 @@ pub struct MqttConfig {
 
 config_template!(mqtt, MqttConfig, NoConfig, NoConfig, NoConfig, NoConfig, NoConfig, NoConfig);
 
-pub const MQTT_CONNECTED_CLIENTS_NUMBER_ID: &str = "mqtt_connected_clients";
+pub const MQTT_CONNECTED_ID: &str = "mqtt_connected";
 
 #[derive(Clone, Debug)]
 pub struct Default {
@@ -58,18 +58,22 @@ impl Module for Default {
     }
 
     fn components(&mut self) -> Vec<InternalComponent> {
-        vec![InternalComponent::Number(InternalNumber {
-            ha: UbiNumber {
-                name: "MQTT Connected Clients".to_string(),
-                platform: "number".to_string(),
+        vec![InternalComponent::BinarySensor(InternalBinarySensor {
+            ha: UbiBinarySensor {
+                name: "MQTT Connected".to_string(),
+                platform: "binary_sensor".to_string(),
                 icon: Some("mdi:connection".to_string()),
-                id: MQTT_CONNECTED_CLIENTS_NUMBER_ID.to_string(),
-                min_value: 0.0,
-                max_value: 1.0,
-                step: 1.0,
-                unit_of_measurement: None,
-                device_class: None,
-                mode: 1, // NumberMode::Box
+                id: MQTT_CONNECTED_ID.to_string(),
+                device_class: Some("connectivity".to_string()),
+            },
+            base: BinarySensorBase {
+                id: None,
+                name: "MQTT Connected".to_string(),
+                icon: Some("mdi:connection".to_string()),
+                device_class: Some("connectivity".to_string()),
+                filters: None,
+                on_press: None,
+                on_release: None,
             },
         })]
     }
@@ -83,9 +87,9 @@ impl Module for Default {
         let config = self.config.clone();
         let core_config = self.core.clone();
         Box::pin(async move {
-            _ = sender.send(ChangedMessage::NumberValueChange {
-                key: MQTT_CONNECTED_CLIENTS_NUMBER_ID.to_string(),
-                value: 0.0,
+            _ = sender.send(ChangedMessage::BinarySensorValueChange {
+                key: MQTT_CONNECTED_ID.to_string(),
+                value: false,
             });
 
             let mut mqttoptions = MqttOptions::new(
@@ -430,9 +434,9 @@ impl Module for Default {
                 let set_connected_state = |connected: bool, mqtt_connected: &mut bool| {
                     if *mqtt_connected != connected {
                         *mqtt_connected = connected;
-                        _ = connection_sender.send(ChangedMessage::NumberValueChange {
-                            key: MQTT_CONNECTED_CLIENTS_NUMBER_ID.to_string(),
-                            value: if connected { 1.0 } else { 0.0 },
+                        _ = connection_sender.send(ChangedMessage::BinarySensorValueChange {
+                            key: MQTT_CONNECTED_ID.to_string(),
+                            value: connected,
                         });
                     }
                 };
@@ -460,7 +464,7 @@ impl Module for Default {
                                 if let Some(component) = component {
                                     let mut msg: Option<ChangedMessage> = None;
                                     match component {
-                                        HAMqttComponent::Switch(switch) => {
+                                        HAMqttComponent::Switch(_switch) => {
                                             msg = Some(ChangedMessage::SwitchStateChange {
                                                 key: topic.to_string(),
                                                 state: str::from_utf8(
@@ -470,7 +474,7 @@ impl Module for Default {
                                                     == "on",
                                             })
                                         }
-                                        HAMqttComponent::Button(button) => {
+                                        HAMqttComponent::Button(_button) => {
                                             msg = Some(ChangedMessage::ButtonPress {
                                                 key: topic.to_string(),
                                             });
@@ -500,64 +504,51 @@ impl Module for Default {
                         }
 
                         Ok(Event::Outgoing(_)) => {}
-                        Err(e) => match e {
-                            ConnectionError::Io(e_io) => match e_io.kind() {
-                                std::io::ErrorKind::NetworkUnreachable => {
-                                    set_connected_state(false, &mut mqtt_connected);
-                                    warn!("MQTT encountered an error, but will continue running: {:?}", e_io);
-                                    sleep(Duration::from_secs(60)).await;
-                                    continue;
-                                }
-                                std::io::ErrorKind::ConnectionAborted => {
-                                    set_connected_state(false, &mut mqtt_connected);
-                                    warn!("MQTT encountered an error, but will continue running: {:?}", e_io);
-                                    sleep(Duration::from_secs(60)).await;
-                                    continue;
-                                }
-                                _ => {
-                                    set_connected_state(false, &mut mqtt_connected);
-                                    error!("Network error: {:?}", e_io);
-                                    break;
-                                }
-                            },
-                            ConnectionError::MqttState(e_mqtt) => match e_mqtt {
-                                StateError::Io(io_error) => match io_error.kind() {
-                                    std::io::ErrorKind::NetworkUnreachable => {
-                                        set_connected_state(false, &mut mqtt_connected);
-                                        warn!("Network unreachable, trying again...");
-                                        sleep(Duration::from_secs(60)).await;
-                                        continue;
-                                    }
-                                    std::io::ErrorKind::ConnectionAborted => {
-                                        set_connected_state(false, &mut mqtt_connected);
-                                        warn!("MQTT encountered an error, but will continue running: {:?}", io_error);
+                        Err(e) => {
+                            // Global disconnect handler: mark disconnected on any error
+                            set_connected_state(false, &mut mqtt_connected);
+                            match e {
+                                ConnectionError::Io(e_io) => match e_io.kind() {
+                                    std::io::ErrorKind::NetworkUnreachable
+                                    | std::io::ErrorKind::ConnectionAborted => {
+                                        warn!("MQTT encountered an error, but will continue running: {:?}", e_io);
                                         sleep(Duration::from_secs(60)).await;
                                         continue;
                                     }
                                     _ => {
-                                        set_connected_state(false, &mut mqtt_connected);
-                                        error!("Network error: {:?}", io_error);
+                                        error!("Network error: {:?}", e_io);
                                         break;
                                     }
                                 },
-                                StateError::AwaitPingResp => {
-                                    set_connected_state(false, &mut mqtt_connected);
-                                    warn!("Ping response not received (maybe network is down?), trying again...");
-                                    sleep(Duration::from_secs(60)).await;
-                                    continue;
-                                }
+                                ConnectionError::MqttState(e_mqtt) => match e_mqtt {
+                                    StateError::Io(io_error) => match io_error.kind() {
+                                        std::io::ErrorKind::NetworkUnreachable
+                                        | std::io::ErrorKind::ConnectionAborted => {
+                                            warn!("MQTT encountered an error, but will continue running: {:?}", io_error);
+                                            sleep(Duration::from_secs(60)).await;
+                                            continue;
+                                        }
+                                        _ => {
+                                            error!("Network error: {:?}", io_error);
+                                            break;
+                                        }
+                                    },
+                                    StateError::AwaitPingResp => {
+                                        warn!("Ping response not received (maybe network is down?), trying again...");
+                                        sleep(Duration::from_secs(60)).await;
+                                        continue;
+                                    }
+                                    _ => {
+                                        error!("MqttState error: {:?}", e_mqtt);
+                                        break;
+                                    }
+                                },
                                 _ => {
-                                    set_connected_state(false, &mut mqtt_connected);
-                                    error!("MqttState error: {:?}", e_mqtt);
+                                    error!("Error in MQTT event loop: {:?}", e);
                                     break;
                                 }
-                            },
-                            _ => {
-                                set_connected_state(false, &mut mqtt_connected);
-                                error!("Error in MQTT event loop: {:?}", e);
-                                break;
                             }
-                        },
+                        }
                     }
                 }
                 set_connected_state(false, &mut mqtt_connected);
