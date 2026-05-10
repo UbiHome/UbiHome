@@ -14,11 +14,7 @@ on:
       - .dagger/**
       - dagger.json
       - .github/workflows/docs.yml
-        
-permissions:
-  contents: read
-  pages: write
-  id-token: write
+
 jobs:
   check:
     runs-on: ubuntu-latest
@@ -38,6 +34,7 @@ jobs:
     runs-on: ubuntu-latest
     # Grant GITHUB_TOKEN the permissions required to make a Pages deployment
     permissions:
+      contents: read    # to read the repository contents
       pages: write      # to deploy to Pages
       id-token: write   # to verify the deployment originates from an appropriate source
 
@@ -55,7 +52,7 @@ jobs:
         uses: dagger/dagger-for-github@v8.4.1
         with:
           version: v0.20.8
-          call: docs-build-dir | export ./documentation/site
+          call: docs-build-dir export --path=./documentation/site
           cloud-token: ${{ secrets.DAGGER_CLOUD_TOKEN }}
 
       - name: Upload Pages artifact
