@@ -4724,6 +4724,7 @@ dependencies = [
  "ubihome-core",
  "ubihome-gpio",
  "ubihome-illuminance",
+ "ubihome-internet",
  "ubihome-mdns",
  "ubihome-mqtt",
  "ubihome-power_utils",
@@ -4831,6 +4832,18 @@ dependencies = [
  "tokio",
  "ubihome-core",
  "windows 0.61.3",
+]
+
+[[package]]
+name = "ubihome-internet"
+version = "0.13.0"
+dependencies = [
+ "duration-str",
+ "log",
+ "serde",
+ "serde_yaml",
+ "tokio",
+ "ubihome-core",
 ]
 
 [[package]]

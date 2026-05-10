@@ -1,4 +1,4 @@
-use duration_str::{deserialize_duration, deserialize_option_duration};
+use duration_str::deserialize_duration;
 use log::{debug, warn};
 use serde::Deserialize;
 use serde::Deserializer;
@@ -156,6 +156,10 @@ impl Module for Default {
         let binary_sensors = self.binary_sensors.clone();
 
         Box::pin(async move {
+            if binary_sensors.is_empty() {
+                debug!("No internet binary sensors configured");
+            }
+
             for (key, binary_sensor) in binary_sensors {
                 let mut interval = time::interval(binary_sensor.update_interval);
                 let cloned_sender = sender.clone();
@@ -177,10 +181,6 @@ impl Module for Default {
                         interval.tick().await;
                     }
                 });
-            }
-
-            if binary_sensors.is_empty() {
-                debug!("No internet binary sensors configured");
             }
 
             Ok(())
