@@ -48,9 +48,32 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Read engine version from dagger.json
+        id: read-engine-version
+        run: |
+          echo "dagger_version=$(jq -r '.engineVersion' dagger.json | sed 's/^v//')" >> "$GITHUB_OUTPUT"
+
+      - name: Cache Dagger Engine image
+        id: cache-dagger
+        uses: actions/cache@v5
+        with:
+          path: /tmp/dagger-engine.tar
+          key: dagger-engine-${{ steps.read-engine-version.outputs.dagger_version }}
+
+      - name: Load cached Dagger Engine image
+        if: steps.cache-dagger.outputs.cache-hit == 'true'
+        run: docker load -i /tmp/dagger-engine.tar
+
+      - name: Pull and save Dagger Engine image
+        if: steps.cache-dagger.outputs.cache-hit != 'true'
+        run: |
+          docker pull registry.dagger.io/engine:v${{ steps.read-engine-version.outputs.dagger_version }}
+          docker save registry.dagger.io/engine:v${{ steps.read-engine-version.outputs.dagger_version }} \
+            -o /tmp/dagger-engine.tar
+
       - name: Run checks
         uses: dagger/dagger-for-github@v8.4.1
         with:
-          version: v0.20.8
+          version: ${{ steps.read-engine-version.outputs.dagger_version }}
           check: "**"
           cloud-token: ${{ secrets.DAGGER_CLOUD_TOKEN }}
