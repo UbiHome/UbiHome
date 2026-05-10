@@ -49,10 +49,6 @@ Options:
 
 - Monitor connected bluetooth devices and maybe even proxy them to home assistant.
 - [ ] Auto installation
-  - [x] Windows (https://github.com/mullvad/windows-service-rs) https://medium.com/@aleksej.gudkov/rust-windows-service-example-building-a-windows-service-in-rust-907be67d2287
-  - [x] Linux Service
-    - debian (https://github.com/kornelski/cargo-deb/blob/fc34c45fafc3904cadf652473ff7e9e0344c605c/systemd.md)
-  - [ ] MacOS?
 - [ ] Templates and Services
 - [ ] Additional Components:
   - [ ] HTTP and Web Enpoint
@@ -60,14 +56,9 @@ Options:
   - [ ] Bluetooth Proxy (https://esphome.io/components/bluetooth_proxy.html) https://docs.rs/bluer/latest/bluer/
 - [ ] Online Sensor
 - [ ] Custom compilation for modular builds and custom extensions.
-- [ ] Homeassistant Native API
 - [ ] CLI for automatic generation of executables
 - [ ] Builder Component similar to ESP Home
-- [ ] Self update (https://github.com/jaemk/self_update)
-- [x] GPIO https://github.com/golemparts/rppal
 - [ ] Kernel events (e.g. Keyboard press) https://docs.rs/evdev/latest/evdev/
-- [ ] Music Assistant Media Player integration for Windows / Linux (https://docs.rs/souvlaki/latest/souvlaki/)
-- [ ] Read Lightsensor from a laptop
 - [ ] Windows Current User https://docs.rs/wmi/latest/wmi/
 
 ... Control USB Devices?
