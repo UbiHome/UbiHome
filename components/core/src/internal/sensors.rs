@@ -1,7 +1,7 @@
 use crate::{
     binary_sensor::BinarySensorBase,
     home_assistant::sensors::{
-        UbiBinarySensor, UbiButton, UbiLight, UbiNumber, UbiSensor, UbiSwitch,
+        UbiBinarySensor, UbiButton, UbiLight, UbiNumber, UbiSensor, UbiSwitch, UbiTextSensor,
     },
     sensor::SensorBase,
 };
@@ -14,6 +14,7 @@ pub enum InternalComponent {
     Switch(InternalSwitch),
     Light(InternalLight),
     Number(InternalNumber),
+    TextSensor(InternalTextSensor),
 }
 
 #[derive(Clone, Debug)]
@@ -48,4 +49,9 @@ pub struct InternalLight {
 #[derive(Clone, Debug)]
 pub struct InternalNumber {
     pub ha: UbiNumber,
+}
+
+#[derive(Clone, Debug)]
+pub struct InternalTextSensor {
+    pub ha: UbiTextSensor,
 }

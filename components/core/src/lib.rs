@@ -9,6 +9,7 @@ pub mod number;
 pub mod sensor;
 pub mod sensor_mapper;
 pub mod switch;
+pub mod text_sensor;
 pub mod utils;
 pub extern crate paste;
 
@@ -98,6 +99,10 @@ pub enum ChangedMessage {
         key: String,
         value: f32,
     },
+    TextSensorValueChange {
+        key: String,
+        value: String,
+    },
     BluetoothProxyMessage(BluetoothProxyMessage),
 }
 
@@ -149,6 +154,10 @@ pub enum PublishedMessage {
         key: String,
         value: f32,
     },
+    TextSensorValueChanged {
+        key: String,
+        value: String,
+    },
     BluetoothProxyMessage(BluetoothProxyMessage),
 }
 
@@ -172,7 +181,8 @@ macro_rules! config_template {
         $sensor_extension:ident,
         $switch_extension:ident,
         $light_extension:ident,
-        $number_extension:ident) => {
+        $number_extension:ident,
+        $text_sensor_extension:ident) => {
         use duration_str::deserialize_option_duration;
         use ubihome_core::UbiHome;
         use ubihome_core::template_binary_sensor;
@@ -182,6 +192,7 @@ macro_rules! config_template {
         use ubihome_core::template_number;
         use ubihome_core::template_sensor;
         use ubihome_core::template_switch;
+        use ubihome_core::template_text_sensor;
 
         template_button!($component_name, $button_extension);
         template_binary_sensor!($component_name, $binary_sensor_extension);
@@ -189,6 +200,7 @@ macro_rules! config_template {
         template_switch!($component_name, $switch_extension);
         template_light!($component_name, $light_extension);
         template_number!($component_name, $number_extension);
+        template_text_sensor!($component_name, $text_sensor_extension);
 
         template_mapper!(map_sensor, Sensor);
         template_mapper!(map_button, ButtonConfig);
@@ -196,6 +208,7 @@ macro_rules! config_template {
         template_mapper!(map_switch, Switch);
         template_mapper!(map_light, Light);
         template_mapper!(map_number, Number);
+        template_mapper!(map_text_sensor, TextSensor);
 
         #[derive(Clone, Deserialize, Debug)]
         pub struct CoreConfig {
@@ -220,6 +233,9 @@ macro_rules! config_template {
 
             #[serde(default, deserialize_with = "map_number")]
             pub number: Option<HashMap<String, Number>>,
+
+            #[serde(default, deserialize_with = "map_text_sensor")]
+            pub text_sensor: Option<HashMap<String, TextSensor>>,
         }
     };
 }

@@ -8,8 +8,8 @@ use tokio::{
     sync::broadcast::{Receiver, Sender},
     time,
 };
-use ubihome_core::home_assistant::sensors::{UbiLight, UbiNumber, UbiSwitch};
-use ubihome_core::internal::sensors::{InternalLight, InternalNumber, InternalSwitch};
+use ubihome_core::home_assistant::sensors::{UbiLight, UbiNumber, UbiSwitch, UbiTextSensor};
+use ubihome_core::internal::sensors::{InternalLight, InternalNumber, InternalSwitch, InternalTextSensor};
 use ubihome_core::{
     config_template,
     home_assistant::sensors::{UbiBinarySensor, UbiButton, UbiSensor},
@@ -102,6 +102,15 @@ pub struct ShellNumberConfig {
     pub update_interval: Option<Duration>,
 }
 
+#[derive(Clone, Deserialize, Debug)]
+pub struct ShellTextSensorConfig {
+    pub command: String,
+
+    #[serde(default = "default_timeout_none")]
+    #[serde(deserialize_with = "deserialize_option_duration")]
+    pub update_interval: Option<Duration>,
+}
+
 fn default_timeout_none() -> Option<Duration> {
     None
 }
@@ -114,7 +123,8 @@ config_template!(
     ShellSensorConfig,
     ShellSwitchConfig,
     ShellLightConfig,
-    ShellNumberConfig
+    ShellNumberConfig,
+    ShellTextSensorConfig
 );
 
 pub struct Default {
@@ -126,6 +136,7 @@ pub struct Default {
     switches: HashMap<String, ShellSwitchConfig>,
     lights: HashMap<String, ShellLightConfig>,
     numbers: HashMap<String, ShellNumberConfig>,
+    text_sensors: HashMap<String, ShellTextSensorConfig>,
 }
 
 impl Module for Default {
@@ -268,6 +279,26 @@ impl Module for Default {
             }
         }
 
+        let mut text_sensors: HashMap<String, ShellTextSensorConfig> = HashMap::new();
+        for (_, any_text_sensor) in config.text_sensor.clone().unwrap_or_default() {
+            match any_text_sensor.extra {
+                TextSensorKind::shell(text_sensor_config) => {
+                    let id = any_text_sensor.default.get_object_id();
+                    components.push(InternalComponent::TextSensor(InternalTextSensor {
+                        ha: UbiTextSensor {
+                            platform: "text_sensor".to_string(),
+                            icon: any_text_sensor.default.icon.clone(),
+                            name: any_text_sensor.default.name.clone(),
+                            id: id.clone(),
+                            device_class: any_text_sensor.default.device_class.clone(),
+                        },
+                    }));
+                    text_sensors.insert(id.clone(), text_sensor_config);
+                }
+                _ => {}
+            }
+        }
+
         Ok(Default {
             config: config.shell,
             components,
@@ -277,6 +308,7 @@ impl Module for Default {
             switches,
             lights,
             numbers,
+            text_sensors,
         })
     }
 
@@ -297,6 +329,7 @@ impl Module for Default {
         let sensors = self.sensors.clone();
         let lights = self.lights.clone();
         let numbers = self.numbers.clone();
+        let text_sensors = self.text_sensors.clone();
         Box::pin(async move {
             let cloned_config = config.clone();
             let csender = sender.clone();
@@ -800,6 +833,51 @@ impl Module for Default {
                     warn!("Number {} has no command_state", key);
                 }
             }
+
+            // Poll text sensor states with update intervals
+            for (key, text_sensor) in text_sensors {
+                let text_sensor = text_sensor.clone();
+                debug!("Text Sensor State monitor for: {:?}", key);
+
+                if let Some(duration) = text_sensor.update_interval {
+                    let cloned_config = config.clone();
+                    let cloned_sender = sender.clone();
+                    tokio::spawn(async move {
+                        let mut interval = time::interval(duration);
+                        debug!(
+                            "Text Sensor {} has update interval: {:?}",
+                            key,
+                            interval.period()
+                        );
+                        loop {
+                            let output = execute_command(
+                                &cloned_config,
+                                &text_sensor.command,
+                                &cloned_config.timeout,
+                            )
+                            .await;
+                            match output {
+                                Ok(output) => {
+                                    debug!("Text Sensor {} state: {}", key, &output);
+                                    _ = cloned_sender.send(
+                                        ChangedMessage::TextSensorValueChange {
+                                            key: key.clone(),
+                                            value: output.trim().to_string(),
+                                        },
+                                    );
+                                }
+                                Err(e) => {
+                                    debug!("Error executing text sensor command: {}", e);
+                                }
+                            };
+
+                            interval.tick().await;
+                        }
+                    });
+                } else {
+                    debug!("Text Sensor {} has no update interval", key);
+                }
+            }
             Ok(())
         })
     }
@@ -931,6 +1009,90 @@ number:
         assert!(
             number.update_interval.is_none(),
             "Minimal number should have no update_interval"
+        );
+    }
+
+    #[test]
+    fn test_text_sensor_config_parsing() {
+        let config = r#"
+ubihome:
+  name: "Test Text Sensor Config"
+
+shell:
+  type: bash
+
+text_sensor:
+  - platform: shell
+    name: "Current User"
+    id: current_user
+    update_interval: 10s
+    command: "whoami"
+"#;
+
+        let module = Default::new(&config.to_string());
+        assert!(
+            module.is_ok(),
+            "Shell module should parse text_sensor config successfully"
+        );
+
+        let module = module.unwrap();
+        assert_eq!(
+            module.text_sensors.len(),
+            1,
+            "Should have 1 text_sensor entity"
+        );
+        assert!(
+            module.text_sensors.contains_key("current_user"),
+            "Should contain 'current_user' text_sensor"
+        );
+
+        let text_sensor = module.text_sensors.get("current_user").unwrap();
+        assert_eq!(
+            text_sensor.command, "whoami",
+            "command should match"
+        );
+        assert!(
+            text_sensor.update_interval.is_some(),
+            "Text sensor should have update_interval"
+        );
+    }
+
+    #[test]
+    fn test_text_sensor_config_minimal() {
+        let config = r#"
+ubihome:
+  name: "Test Text Sensor Minimal"
+
+shell:
+
+text_sensor:
+  - platform: shell
+    name: "Hostname"
+    command: "hostname"
+"#;
+
+        let module = Default::new(&config.to_string());
+        assert!(
+            module.is_ok(),
+            "Shell module should parse minimal text_sensor config successfully"
+        );
+
+        let module = module.unwrap();
+        assert_eq!(
+            module.text_sensors.len(),
+            1,
+            "Should have 1 text_sensor entity"
+        );
+        assert!(
+            module.text_sensors.contains_key("hostname"),
+            "Should contain 'hostname' text_sensor"
+        );
+
+        let text_sensor = module.text_sensors.get("hostname").unwrap();
+        assert_eq!(text_sensor.command, "hostname", "command should match");
+        assert!(
+            text_sensor.update_interval.is_none(),
+            "Minimal text_sensor should have no update_interval"
         );
     }
 }

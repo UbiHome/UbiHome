@@ -474,6 +474,10 @@ pub(crate) fn run(
                         ChangedMessage::NumberValueCommand { key, value } => {
                             publish_cmd = Some(PublishedMessage::NumberValueCommand { key, value });
                         }
+                        ChangedMessage::TextSensorValueChange { key, value } => {
+                            publish_cmd =
+                                Some(PublishedMessage::TextSensorValueChanged { key, value });
+                        }
                     }
                     if let Some(pcmd) = publish_cmd {
                         debug!("Publishing command: {:?}", pcmd);
@@ -500,6 +504,9 @@ pub(crate) fn run(
                         InternalComponent::Light(light) => Component::Light(light.ha.clone()),
                         InternalComponent::Number(number) => {
                             Component::Number(number.ha.clone())
+                        }
+                        InternalComponent::TextSensor(text_sensor) => {
+                            Component::TextSensor(text_sensor.ha.clone())
                         }
                     })
                     .collect(),
