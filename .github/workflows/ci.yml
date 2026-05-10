@@ -43,9 +43,14 @@ jobs:
     # If you might want to use a secret in the build or test job then you would need to pass secrets, inherit disables secret isolation
     secrets: inherit
 
-  format:
-    runs-on: ubuntu-24.04
+  check:
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Check formatting
-        run: cargo fmt --check
+
+      - name: Run checks
+        uses: dagger/dagger-for-github@v8.4.1
+        with:
+          version: v0.20.8
+          check: "**"
+          cloud-token: ${{ secrets.DAGGER_CLOUD_TOKEN }}

@@ -1,70 +1,64 @@
 {
-    "$schema": "https://raw.githubusercontent.com/googleapis/release-please/main/schemas/config.json",
-    "packages": {
-        ".": {
-            "component": "ubihome",
-            "include-component-in-tag": false,
-            "exclude-paths": [
-                "components/*",
-                "examples/*",
-                "documentation/*"
-            ]
-        },
-        "components/api": {
-            "skip-github-release": true
-        },
-        "components/bluetooth_proxy": {
-            "skip-github-release": true
-        },
-        "components/bme280": {
-            "skip-github-release": true
-        },
-        "components/core": {
-            "skip-github-release": true
-        },
-        "components/evdev": {
-            "skip-github-release": true
-        },
-        "components/gpio": {
-            "skip-github-release": true
-        },
-        "components/illuminance": {
-            "skip-github-release": true
-        },
-        "components/mdns": {
-            "skip-github-release": true
-        },
-        "components/mqtt": {
-            "skip-github-release": true
-        },
-        "components/power_utils": {
-            "skip-github-release": true
-        },
-        "components/python": {
-            "skip-github-release": true
-        },
-        "components/sendspin": {
-            "skip-github-release": true
-        },
-        "components/shell": {
-            "skip-github-release": true
-        },
-        "components/web_server": {
-            "skip-github-release": true
-        }
-    },
-    "plugins": [
-        "cargo-workspace"
-    ],
-    "release-type": "rust",
-    "extra-files": [
-        {
-            "type": "generic",
-            "path": "documentation/docs/getting_started/index.md"
-        },
-        {
-            "type": "generic",
-            "path": "documentation/docs/index.md"
-        }
-    ]
+	"$schema": "https://raw.githubusercontent.com/googleapis/release-please/main/schemas/config.json",
+	"packages": {
+		".": {
+			"component": "ubihome",
+			"include-component-in-tag": false,
+			"exclude-paths": ["components/*", "examples/*", "documentation/*"]
+		},
+		"components/api": {
+			"skip-github-release": true
+		},
+		"components/bluetooth_proxy": {
+			"skip-github-release": true
+		},
+		"components/bme280": {
+			"skip-github-release": true
+		},
+		"components/core": {
+			"skip-github-release": true
+		},
+		"components/evdev": {
+			"skip-github-release": true
+		},
+		"components/gpio": {
+			"skip-github-release": true
+		},
+		"components/illuminance": {
+			"skip-github-release": true
+		},
+		"components/mdns": {
+			"skip-github-release": true
+		},
+		"components/mqtt": {
+			"skip-github-release": true
+		},
+		"components/power_utils": {
+			"skip-github-release": true
+		},
+		"components/python": {
+			"skip-github-release": true
+		},
+		"components/sendspin": {
+			"skip-github-release": true
+		},
+		"components/shell": {
+			"skip-github-release": true
+		},
+		"components/web_server": {
+			"skip-github-release": true
+		}
+	},
+	"plugins": ["cargo-workspace"],
+	"release-type": "rust",
+	"extra-files": [
+		{
+			"type": "generic",
+			"path": "documentation/docs/getting_started/index.md"
+		},
+		{
+			"type": "generic",
+			"path": "documentation/docs/index.md"
+		}
+	]
 }

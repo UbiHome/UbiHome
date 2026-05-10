@@ -1,7 +1,7 @@
 import os
-from uuid import uuid4
-import time
 import platform
+import time
+from uuid import uuid4
 
 
 class IOMock:
@@ -43,12 +43,15 @@ class IOMock:
             if platform.system() == "Windows":
                 # On Windows, read with utf-16 encoding
                 try:
-                    state = open(self._full_path, "r", encoding="utf-16").read()
+                    with open(self._full_path, encoding="utf-16") as f:
+                        state = f.read()
                 except UnicodeError:
-                    state = open(self._full_path, "r").read()
+                    with open(self._full_path) as f:
+                        state = f.read()
                 state = state.encode("utf-8").decode("utf-8")
             else:
-                state = open(self._full_path, "r").read()
+                with open(self._full_path) as f:
+                    state = f.read()
             time.sleep(0.1)
 
         return True

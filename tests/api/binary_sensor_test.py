@@ -11,7 +11,6 @@ async def test_run(io_mock: IOMock):
 
     sensor_id = "my_sensor"
     sensor_name = "Test Sensor"
-    sensor_mock = "test_binary_sensor.mock"
     DEVICE_INFO_CONFIG = f"""
 ubihome:
   name: test_device
@@ -38,7 +37,7 @@ binary_sensor:
         assert len(entities) == 1, entities
         entity = entities[0]
 
-        assert type(entity) == aioesphomeapi.BinarySensorInfo
+        assert isinstance(entity, aioesphomeapi.BinarySensorInfo)
         assert entity.object_id == sensor_id
         assert entity.name == sensor_name
 

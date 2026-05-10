@@ -1,10 +1,10 @@
 from asyncio import sleep
 from unittest.mock import Mock
 
+import aioesphomeapi
 import pytest
 from mock_file import IOMock
 from utils import OS_PLATFORM, Platform, UbiHome, fnv1_hash_object_id
-import aioesphomeapi
 
 
 async def test_run(io_mock: IOMock):
@@ -48,7 +48,7 @@ number:
         assert len(entities) == 1, entities
         entity = entities[0]
 
-        assert type(entity) == aioesphomeapi.NumberInfo
+        assert isinstance(entity, aioesphomeapi.NumberInfo)
         assert entity.key == number_key
         assert entity.object_id == number_id
         assert entity.name == number_name
