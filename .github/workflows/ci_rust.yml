@@ -1,0 +1,47 @@
+name: CI
+
+on:
+  pull_request:
+    paths:
+      - 'components/**'
+      - 'src/**'
+      - 'build.rs'
+      - 'Cargo.toml'
+      - 'Cargo.lock'
+      - 'Cross.toml'
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: x86_64-unknown-linux-gnu
+            runs-on: ubuntu-24.04
+            fileending: ''
+
+          - target: arm-unknown-linux-musleabi
+            runs-on: ubuntu-24.04
+            fileending: ''
+
+          - target: x86_64-apple-darwin
+            runs-on: macos-26-intel
+            fileending: ''
+
+          - target: aarch64-apple-darwin
+            runs-on: macos-26
+            fileending: ''
+
+          - target: x86_64-pc-windows-msvc
+            runs-on: windows-latest
+            fileending: '.exe'
+
+          - target: armv7-unknown-linux-musleabi
+            runs-on: ubuntu-24.04
+            fileending: ''
+    uses: ./.github/workflows/build-and-test-template.yml
+    with:
+      runs-on: ${{ matrix.runs-on }}
+      target: ${{ matrix.target }}
+      fileending: ${{ matrix.fileending }}
+    # If you might want to use a secret in the build or test job then you would need to pass secrets, inherit disables secret isolation
+    secrets: inherit

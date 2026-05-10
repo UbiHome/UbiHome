@@ -1,53 +1,14 @@
 name: CI
 
 on:
-  # push:
-  #   branches: [ main ]
-
   pull_request:
 
 jobs:
-  build:
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - target: x86_64-unknown-linux-gnu
-            runs-on: ubuntu-24.04
-            fileending: ''
-
-          - target: arm-unknown-linux-musleabi
-            runs-on: ubuntu-24.04
-            fileending: ''
-
-          - target: x86_64-apple-darwin
-            runs-on: macos-26-intel
-            fileending: ''
-
-          - target: aarch64-apple-darwin
-            runs-on: macos-26
-            fileending: ''
-
-          - target: x86_64-pc-windows-msvc
-            runs-on: windows-latest
-            fileending: '.exe'
-
-          - target: armv7-unknown-linux-musleabi
-            runs-on: ubuntu-24.04
-            fileending: ''
-    uses: ./.github/workflows/build-and-test-template.yml
-    with:
-      runs-on: ${{ matrix.runs-on }}
-      target: ${{ matrix.target }}
-      fileending: ${{ matrix.fileending }}
-    # If you might want to use a secret in the build or test job then you would need to pass secrets, inherit disables secret isolation
-    secrets: inherit
-
   check:
     runs-on: ubuntu-latest
     env:
       ENGINE_TAR: /tmp/dagger-engine.tar
-      ENGINE_CACHE_DIR: /tmp/dagger-engine-cache
+      ENGINE_CACHE_TAR: /tmp/dagger-engine-cache.tar
 
     steps:
       - uses: actions/checkout@v4
@@ -82,17 +43,26 @@ jobs:
         uses: actions/cache/restore@v5
         id: cache-dagger-cache
         with:
-          path: ${{ env.ENGINE_CACHE_DIR }}
+          path: ${{ env.ENGINE_CACHE_TAR }}
           key: dagger-engine-cache-${{ runner.os }}-${{ github.ref }}
           restore-keys: |
             dagger-engine-cache-${{ runner.os }}-
 
+      - name: Populate Dagger engine volume from cache
+        run: |
+          docker volume create dagger-engine-cache
+          if [[ -f "${{ env.ENGINE_CACHE_TAR }}" ]]; then
+            docker run --rm \
+              -v dagger-engine-cache:/var/lib/dagger \
+              -v /tmp:/backup \
+              alpine tar -xf /backup/dagger-engine-cache.tar -C /var/lib/dagger
+          fi
+
       - name: Start Dagger engine
         run: |
-          mkdir -p ${{ env.ENGINE_CACHE_DIR }}
           docker run -d --privileged \
             --name dagger-engine-${{ steps.read-engine-version.outputs.dagger_version }} \
-            -v ${{ env.ENGINE_CACHE_DIR }}:/var/lib/dagger \
+            -v dagger-engine-cache:/var/lib/dagger \
             registry.dagger.io/engine:v${{ steps.read-engine-version.outputs.dagger_version }}
 
       - name: Run checks
@@ -110,14 +80,17 @@ jobs:
           path: ${{ env.ENGINE_TAR }}
           key: ${{ steps.read-engine-version.outputs.dagger_engine_cache_key }}
 
-      - name: Fix Dagger cache permissions
+      - name: Save Dagger engine cache
         if: always()
         run: |
           docker stop dagger-engine-${{ steps.read-engine-version.outputs.dagger_version }} || true
-          sudo chown -R "$USER" ${{ env.ENGINE_CACHE_DIR }}
+          docker run --rm \
+            -v dagger-engine-cache:/var/lib/dagger \
+            -v /tmp:/backup \
+            alpine tar -cf /backup/dagger-engine-cache.tar -C /var/lib/dagger .
 
       - uses: actions/cache/save@v5
         if: always() && steps.cache-dagger-cache.outputs.cache-hit != 'true'
         with:
-          path: ${{ env.ENGINE_CACHE_DIR }}
+          path: ${{ env.ENGINE_CACHE_TAR }}
           key: ${{ steps.read-engine-version.outputs.dagger_engine_cache_key }}
