@@ -339,12 +339,12 @@ impl Module for UbiHomeDefault {
                             Ok(connection) => connection,
                             Err(e) => {
                                 debug!("Failed to start API server connection: {:?}", e);
-                                let connection_count = connected_clients_clone
+                                _ = connected_clients_clone
                                     .fetch_update(Ordering::SeqCst, Ordering::SeqCst, |v| {
                                         Some(v.saturating_sub(1))
-                                    })
-                                    .unwrap_or(0)
-                                    .saturating_sub(1);
+                                    });
+                                let connection_count =
+                                    connected_clients_clone.load(Ordering::SeqCst);
                                 _ = cloned_sender.send(ChangedMessage::NumberValueChange {
                                     key: API_CONNECTED_CLIENTS_NUMBER_ID.to_string(),
                                     value: connection_count as f32,
@@ -720,12 +720,11 @@ impl Module for UbiHomeDefault {
                                 }
                             }
                             debug!("Connection closed or error");
-                            let connection_count = connected_clients_clone
+                            _ = connected_clients_clone
                                 .fetch_update(Ordering::SeqCst, Ordering::SeqCst, |v| {
                                     Some(v.saturating_sub(1))
-                                })
-                                .unwrap_or(0)
-                                .saturating_sub(1);
+                                });
+                            let connection_count = connected_clients_clone.load(Ordering::SeqCst);
                             _ = cloned_sender.send(ChangedMessage::NumberValueChange {
                                 key: API_CONNECTED_CLIENTS_NUMBER_ID.to_string(),
                                 value: connection_count as f32,
