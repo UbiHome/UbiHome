@@ -270,6 +270,9 @@ pub(crate) fn run(
                 InternalComponent::Light(light) => {
                     // println!("Light: {:?}", light);
                 }
+                InternalComponent::Number(_number) => {
+                    // Numbers don't have filters, state changes are forwarded directly
+                }
                 InternalComponent::BinarySensor(binary_sensor) => {
                     let mutable: Mutable<Option<Option<bool>>> = Mutable::new(Option::None);
                     signal_map_binary_sensor
@@ -465,6 +468,12 @@ pub(crate) fn run(
                         ChangedMessage::BluetoothProxyMessage(msg) => {
                             publish_cmd = Some(PublishedMessage::BluetoothProxyMessage(msg));
                         }
+                        ChangedMessage::NumberValueChange { key, value } => {
+                            publish_cmd = Some(PublishedMessage::NumberValueChanged { key, value });
+                        }
+                        ChangedMessage::NumberValueCommand { key, value } => {
+                            publish_cmd = Some(PublishedMessage::NumberValueCommand { key, value });
+                        }
                     }
                     if let Some(pcmd) = publish_cmd {
                         debug!("Publishing command: {:?}", pcmd);
@@ -489,6 +498,9 @@ pub(crate) fn run(
                             Component::BinarySensor(binary_sensor.ha.clone())
                         }
                         InternalComponent::Light(light) => Component::Light(light.ha.clone()),
+                        InternalComponent::Number(number) => {
+                            Component::Number(number.ha.clone())
+                        }
                     })
                     .collect(),
             })
