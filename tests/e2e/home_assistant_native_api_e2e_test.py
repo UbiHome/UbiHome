@@ -106,6 +106,10 @@ class UbiHomeInstance(UbiHome):
         self.number_set_mock = io_mock_factory.create_mock("number_set")
         self.number_name = "Test Number"
 
+        self.text_sensor_mock = io_mock_factory.create_mock("text_sensor")
+        self.text_sensor_mock.set_value("initial state")
+        self.text_sensor_name = "Test Text Sensor"
+
         # Generate random readable device name (simply hexadecimal with 15 digits)
         self.device_name = f"test_device_{urandom(15).hex()}"
         config_dict = {
@@ -162,6 +166,15 @@ class UbiHomeInstance(UbiHome):
                     "command_set": f"echo {{{{ value }}}} > {self.number_set_mock.file}",
                 }
             ],
+            "text_sensor": [
+                {
+                    "platform": "shell",
+                    "id": "my_text_sensor",
+                    "name": self.text_sensor_name,
+                    "update_interval": "1s",
+                    "command": f"cat {self.text_sensor_mock.file}",
+                }
+            ],
         }
         merged_config = merge_dicts(config_dict, config_overrides)
         apply_value_overrides(merged_config, value_overrides)
@@ -181,6 +194,9 @@ async def test_components_are_displayed(ha_page: Page, io_mock_factory: IOMockFa
         ).to_be_visible()
         await expect(ha_page.get_by_text("Test Sensor", exact=True)).to_be_visible()
         await expect(ha_page.get_by_text("Test Number", exact=True)).to_be_visible()
+        await expect(
+            ha_page.get_by_text("Test Text Sensor", exact=True)
+        ).to_be_visible()
 
 
 async def test_button_and_switch_actions_are_executed(
@@ -249,3 +265,29 @@ async def test_accuracy_decimals_are_displayed_in_ui(
             await expect(
                 ha_page.get_by_text(re.compile(forbidden_pattern))
             ).to_have_count(0)
+
+
+async def test_text_sensor_state_is_displayed(
+    ha_page: Page, io_mock_factory: IOMockFactory
+):
+    async with UbiHomeInstance(io_mock_factory) as ubihome:
+        ubihome.text_sensor_mock.set_value("hello world")
+        await add_esphome_integration(ha_page, ubihome.port)
+
+        await expect(
+            ha_page.get_by_text(ubihome.text_sensor_name, exact=True)
+        ).to_be_visible()
+
+        await ha_page.get_by_text(ubihome.text_sensor_name, exact=True).click(
+            force=True
+        )
+
+        await expect(
+            ha_page.get_by_text("hello world", exact=True).first
+        ).to_be_visible(timeout=15000)
+
+        ubihome.text_sensor_mock.set_value("updated state")
+
+        await expect(
+            ha_page.get_by_text("updated state", exact=True).first
+        ).to_be_visible(timeout=15000)
