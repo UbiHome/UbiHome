@@ -78,6 +78,12 @@ pub struct BaseConfig {
 
     #[garde(dive)]
     pub binary_sensor: Option<Vec<BaseEntity>>,
+
+    #[garde(dive)]
+    pub number: Option<Vec<BaseEntity>>,
+
+    #[garde(dive)]
+    pub switch: Option<Vec<BaseEntity>>,
 }
 
 // Load Platforms
@@ -104,6 +110,7 @@ pub fn get_platforms_from_config(config_string: &String) -> Vec<String> {
                 && platform != "button"
                 && platform != "switch"
                 && platform != "light"
+                && platform != "number"
         })
         .collect::<Vec<String>>()
 }

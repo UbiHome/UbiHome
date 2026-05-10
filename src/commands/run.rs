@@ -104,7 +104,7 @@ pub(crate) fn run(
         let report = serde_saphyr::miette::to_miette_report(&errors, &config_string, "config.yml");
         eprintln!("Configuration is invalid:");
         eprintln!("{report:?}");
-        return Ok(());
+        return Err("Invalid configuration".into());
     }
     let config = validation_result.unwrap();
 
