@@ -27,7 +27,7 @@ pub struct BluetoothProxyConfig {
 }
 
 config_template!(
-    mdns,
+    bluetooth_proxy,
     Option<BluetoothProxyConfig>,
     NoConfig,
     NoConfig,
