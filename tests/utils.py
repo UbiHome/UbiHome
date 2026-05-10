@@ -1,16 +1,16 @@
 import asyncio
-from asyncio.subprocess import Process
-from enum import Enum
 import logging
 import os
+import platform
+import random
 import re
 import signal
 import socket
-import platform
-from typing import Optional
-import yaml
-import random
+from asyncio.subprocess import Process
 from dataclasses import dataclass
+from enum import Enum
+
+import yaml
 
 
 def represent_none(self, _):
@@ -54,10 +54,10 @@ ubihome:
 logger:
   level: DEBUG
 
-shell: 
+shell:
   type: bash
 
-button: 
+button:
  - platform: shell
    id: my_button
    name: "Write Hello World"
@@ -90,10 +90,10 @@ api:
 """
 
 
-class UbiHome(object):
+class UbiHome:
     """Context manager to run UbiHome with a given configuration."""
 
-    process: Optional[Process] = None
+    process: Process | None = None
     _stdout_task = None
     _stderr_task = None
     stdout: str | None = None

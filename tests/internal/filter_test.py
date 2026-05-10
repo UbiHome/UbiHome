@@ -1,10 +1,10 @@
 from asyncio import sleep
 from unittest.mock import Mock
 
+import aioesphomeapi
 import pytest
 from mock_file import IOMock
 from utils import OS_PLATFORM, Platform, UbiHome
-import aioesphomeapi
 
 
 async def test_round_filter(io_mock: IOMock):
@@ -38,7 +38,7 @@ sensor:
         assert len(entities) == 1, entities
         entity = entities[0]
 
-        assert type(entity) == aioesphomeapi.SensorInfo
+        assert isinstance(entity, aioesphomeapi.SensorInfo)
         assert entity.object_id == sensor_id
         assert entity.name == sensor_name
 

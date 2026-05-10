@@ -18,7 +18,8 @@
 				"github.vscode-github-actions",
 				"streetsidesoftware.code-spell-checker",
 				"ms-python.python",
-				"biomejs.biome"
+				"biomejs.biome",
+				"charliermarsh.ruff"
 			]
 		},
 		"settings": {

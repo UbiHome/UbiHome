@@ -1,5 +1,5 @@
-from utils import UbiHome
 import aioesphomeapi
+from utils import UbiHome
 
 
 async def test_run():

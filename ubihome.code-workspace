@@ -31,13 +31,19 @@
 		},
 		"[typescript]": {
 			"editor.defaultFormatter": "biomejs.biome",
-		}
+		},
+		"[python]": {
+			"editor.defaultFormatter": "charliermarsh.ruff",
+			"editor.formatOnSave": true
+		},
+		"ruff.configurationPreference": "filesystemFirst"
 	},
 	"extensions": {
 		"recommendations": [
 			"rust-lang.rust-analyzer",
 			"ms-python.python",
-			"biomejs.biome"
+			"biomejs.biome",
+			"charliermarsh.ruff"
 		]
 	}
 }

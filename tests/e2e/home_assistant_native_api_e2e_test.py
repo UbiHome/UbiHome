@@ -1,19 +1,19 @@
 import re
 from collections.abc import Mapping
-from typing import Any
 from os import urandom
+from typing import Any
 
 import pytest
 import yaml
+from mock_file import IOMockFactory
 from playwright.async_api import (
     Page,
-    TimeoutError as PlaywrightTimeoutError,
     expect,
 )
-
-from mock_file import IOMockFactory
+from playwright.async_api import (
+    TimeoutError as PlaywrightTimeoutError,
+)
 from utils import OS_PLATFORM, Platform, UbiHome
-
 
 pytestmark = [pytest.mark.e2e, pytest.mark.timeout(30)]
 

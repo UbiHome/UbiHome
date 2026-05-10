@@ -1,10 +1,10 @@
 from asyncio import sleep
 from unittest.mock import Mock
 
+import aioesphomeapi
 import pytest
 from mock_file import IOMock
 from utils import OS_PLATFORM, Platform, UbiHome
-import aioesphomeapi
 
 
 async def test_run(io_mock: IOMock):
@@ -18,7 +18,7 @@ api:
 
 shell:
   type: {"bash" if OS_PLATFORM is Platform.LINUX else "powershell"}
-  
+
 sensor:
   - platform: shell
     id: {sensor_id}
@@ -36,7 +36,7 @@ sensor:
         assert len(entities) == 1, entities
         entity = entities[0]
 
-        assert type(entity) == aioesphomeapi.SensorInfo
+        assert isinstance(entity, aioesphomeapi.SensorInfo)
         assert entity.object_id == sensor_id
         assert entity.name == sensor_name
         assert entity.accuracy_decimals == 2  # default
@@ -85,5 +85,5 @@ sensor:
         assert len(entities) == 1, entities
         entity = entities[0]
 
-        assert type(entity) == aioesphomeapi.SensorInfo
+        assert isinstance(entity, aioesphomeapi.SensorInfo)
         assert entity.accuracy_decimals == 4
