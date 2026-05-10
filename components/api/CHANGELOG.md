@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.13.0](https://github.com/UbiHome/UbiHome/compare/v0.12.0...ubihome-api-v0.13.0) (2026-05-10)
+
+
+### Features
+
+* add `number` platform support for shell component ([#112](https://github.com/UbiHome/UbiHome/issues/112)) ([1799769](https://github.com/UbiHome/UbiHome/commit/1799769ccddf70cfff0f73e764e659cdef5280cd))
+
 ## [0.12.0](https://github.com/UbiHome/UbiHome/compare/v0.11.1...ubihome-api-v0.12.0) (2026-04-16)
 
 
