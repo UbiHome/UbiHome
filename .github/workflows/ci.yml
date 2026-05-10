@@ -92,4 +92,4 @@ jobs:
         if: always() && steps.cache-dagger-cache.outputs.cache-hit != 'true'
         with:
           path: ${{ env.ENGINE_CACHE_TAR }}
-          key: ${{ steps.read-engine-version.outputs.dagger_engine_cache_key }}-cache
+          key: ${{ steps.read-engine-version.outputs.dagger_engine_cache_key }}
