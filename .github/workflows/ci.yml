@@ -48,7 +48,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Run docs checks
+      - name: Run checks
         uses: dagger/dagger-for-github@v8.4.1
         with:
           version: v0.20.8
