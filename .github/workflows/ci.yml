@@ -52,5 +52,5 @@ jobs:
         uses: dagger/dagger-for-github@v8.4.1
         with:
           version: v0.20.8
-          call: check
+          check: "**"
           cloud-token: ${{ secrets.DAGGER_CLOUD_TOKEN }}
