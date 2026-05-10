@@ -3,7 +3,7 @@
 {
 	"name": "Rust Dev Container",
 	// Or use a Dockerfile or Docker Compose file. More info: https://containers.dev/guide/dockerfile
-	"image": " mcr.microsoft.com/devcontainers/universal:5-noble",
+	"image": "mcr.microsoft.com/devcontainers/universal:5-noble",
 	"remoteEnv": {
 		"RUST_LOG": "debug",
 		"RUST_BACKTRACE": "1"
