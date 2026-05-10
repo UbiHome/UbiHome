@@ -114,6 +114,7 @@ export class UbiHome {
     return dag
       .container()
       .from("rust:latest")
+      .withExec(["rustup", "component", "add", "rustfmt"])
       .withMountedDirectory("/workspace", source)
       .withWorkdir("/workspace")
   }
