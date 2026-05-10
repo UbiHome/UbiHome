@@ -15,9 +15,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-dev = [
-    "ruff>=0.4.0",
-]
+dev = ["ruff>=0.4.0"]
 
 [tool.uv]
 package = false
