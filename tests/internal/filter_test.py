@@ -7,7 +7,7 @@ from utils import OS_PLATFORM, Platform, UbiHome
 import aioesphomeapi
 
 
-async def test_run(io_mock: IOMock):
+async def test_round_filter(io_mock: IOMock):
     sensor_id = "my_sensor"
     sensor_name = "Test Sensor"
     DEVICE_INFO_CONFIG = f"""
@@ -18,15 +18,17 @@ api:
 
 shell:
   type: {"bash" if OS_PLATFORM is Platform.LINUX else "powershell"}
-  
+
 sensor:
   - platform: shell
     id: {sensor_id}
     update_interval: 1s
     name: {sensor_name}
     command: "cat {io_mock.file}"
+    filters:
+      - round: 2
 """
-    io_mock.set_value("0.1")
+    io_mock.set_value("0.1111")
 
     async with UbiHome("run", config=DEVICE_INFO_CONFIG, wait_for_api=True) as ubihome:
         api = aioesphomeapi.APIClient("127.0.0.1", ubihome.port, "")
@@ -39,23 +41,41 @@ sensor:
         assert type(entity) == aioesphomeapi.SensorInfo
         assert entity.object_id == sensor_id
         assert entity.name == sensor_name
-        assert entity.accuracy_decimals == 2  # default
 
         mock = Mock()
-        # Subscribe to the state changes
         api.subscribe_states(mock)
 
-        io_mock.set_value("0.2")
+        # Round down: 1.123345 -> 1.12
+        io_mock.set_value("1.123345")
 
-        # Wait for the state change
         while not mock.called:
             await sleep(0.1)
 
         state = mock.call_args.args[0]
-        assert state.state == pytest.approx(0.2)
+        assert state.state == pytest.approx(1.12)
+
+        # Round up: 1.126 -> 1.13
+        mock.reset_mock()
+        io_mock.set_value("1.126")
+
+        while not mock.called:
+            await sleep(0.1)
+
+        state = mock.call_args.args[0]
+        assert state.state == pytest.approx(1.13)
+
+        # Edge case: 1.125 rounds to 1.12 (round-half-to-even / banker's rounding in f32)
+        mock.reset_mock()
+        io_mock.set_value("1.125")
+
+        while not mock.called:
+            await sleep(0.1)
+
+        state = mock.call_args.args[0]
+        assert state.state == pytest.approx(1.12)
 
 
-async def test_accuracy_decimals(io_mock: IOMock):
+async def test_round_filter_3_decimals(io_mock: IOMock):
     sensor_id = "my_sensor"
     sensor_name = "Test Sensor"
     DEVICE_INFO_CONFIG = f"""
@@ -72,10 +92,11 @@ sensor:
     id: {sensor_id}
     update_interval: 1s
     name: {sensor_name}
-    accuracy_decimals: 4
     command: "cat {io_mock.file}"
+    filters:
+      - round: 3
 """
-    io_mock.set_value("1.2345")
+    io_mock.set_value("0.1111")
 
     async with UbiHome("run", config=DEVICE_INFO_CONFIG, wait_for_api=True) as ubihome:
         api = aioesphomeapi.APIClient("127.0.0.1", ubihome.port, "")
@@ -83,7 +104,25 @@ sensor:
 
         entities, services = await api.list_entities_services()
         assert len(entities) == 1, entities
-        entity = entities[0]
 
-        assert type(entity) == aioesphomeapi.SensorInfo
-        assert entity.accuracy_decimals == 4
+        mock = Mock()
+        api.subscribe_states(mock)
+
+        # Round down: 1.12341 -> 1.123
+        io_mock.set_value("1.12341")
+
+        while not mock.called:
+            await sleep(0.1)
+
+        state = mock.call_args.args[0]
+        assert state.state == pytest.approx(1.123)
+
+        # Round up: 1.12361 -> 1.124
+        mock.reset_mock()
+        io_mock.set_value("1.12361")
+
+        while not mock.called:
+            await sleep(0.1)
+
+        state = mock.call_args.args[0]
+        assert state.state == pytest.approx(1.124)

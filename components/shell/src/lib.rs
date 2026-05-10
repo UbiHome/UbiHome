@@ -146,6 +146,7 @@ impl Module for Default {
                             device_class: any_sensor.default.device_class.clone(),
                             state_class: any_sensor.default.state_class.clone(),
                             unit_of_measurement: any_sensor.default.unit_of_measurement.clone(),
+                            accuracy_decimals: any_sensor.default.accuracy_decimals,
                             name: any_sensor.default.name.clone(),
                             id: id.clone(),
                         },

@@ -232,7 +232,7 @@ pub(crate) fn run(
                                         if let Some(v) = value.clone().and_then(|v| v) {
                                             // let number: f64 = v.parse().unwrap();
                                             let output: f32 = format!("{:.1$}", v, decimals).parse().unwrap();
-                                            warn!("Round: {}", output);
+                                            debug!("Round: {}", output);
                                             return Some(Some(output))
                                         }
                                         return value

@@ -187,7 +187,9 @@ impl Module for UbiHomeDefault {
                                             unit_of_measurement: sensor
                                                 .unit_of_measurement
                                                 .unwrap_or("".to_string()),
-                                            accuracy_decimals: 2, //sensor.accuracy_decimals,
+                                            accuracy_decimals: sensor
+                                                .accuracy_decimals
+                                                .unwrap_or(2),
                                             force_update: false,
                                             device_class: sensor
                                                 .device_class
@@ -333,7 +335,7 @@ impl Module for UbiHomeDefault {
                                     }
                                     PublishedMessage::BinarySensorValueChanged { key, value } => {
                                         let key = api_components_key_id_clone.get(&key).unwrap();
-                                        debug!("SensorValueChanged: {:?}", &value);
+                                        debug!("BinarySensorValueChanged: {:?}", &value);
 
                                         tx_clone
                                             .send(ProtoMessage::BinarySensorStateResponse(
@@ -349,7 +351,7 @@ impl Module for UbiHomeDefault {
                                     }
                                     PublishedMessage::SwitchStateChange { key, state } => {
                                         let key = api_components_key_id_clone.get(&key).unwrap();
-                                        debug!("SensorValueChanged: {:?}", &state);
+                                        debug!("SwitchStateChanged: {:?}", &state);
 
                                         tx_clone
                                             .send(ProtoMessage::SwitchStateResponse(

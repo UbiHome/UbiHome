@@ -86,6 +86,7 @@ impl Module for Default {
                                     .unit_of_measurement
                                     .clone()
                                     .or_else(|| Some("lx".to_string())),
+                                accuracy_decimals: sensor_config.default.accuracy_decimals,
                                 name: sensor_config.default.name.clone(),
                                 id: id.clone(),
                             },
