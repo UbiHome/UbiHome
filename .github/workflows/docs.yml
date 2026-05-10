@@ -1,43 +1,66 @@
 name: docs
 on:
+  pull_request:
+    paths:
+      - documentation/**
+      - .dagger/**
+      - dagger.json
+      - .github/workflows/docs.yml
   push:
     branches:
       - main
     paths:
       - documentation/**
+      - .dagger/**
+      - dagger.json
       - .github/workflows/docs.yml
         
 permissions:
-  contents: write
+  contents: read
+  pages: write
+  id-token: write
 jobs:
-  deploy:
+  check:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
+      - name: Run docs checks
+        uses: dagger/dagger-for-github@v8.4.1
         with:
-          fetch-depth: 0
-      - name: Configure Git Credentials
-        run: |
-          git config user.name github-actions[bot]
-          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
-      - uses: actions/setup-python@v5
+          version: v0.20.8
+          call: docs-check
+
+  deploy:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: check
+    runs-on: ubuntu-latest
+    # Grant GITHUB_TOKEN the permissions required to make a Pages deployment
+    permissions:
+      pages: write      # to deploy to Pages
+      id-token: write   # to verify the deployment originates from an appropriate source
+
+    # Deploy to the github-pages environment
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+
+      - name: Build docs site with Dagger
+        uses: dagger/dagger-for-github@v8.4.1
         with:
-          python-version: 3.x
-      - run: echo "cache_id=$(date --utc '+%V')" >> $GITHUB_ENV 
-      - uses: actions/cache@v4
+          version: v0.20.8
+          call: docs-build-dir | export ./documentation/site
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
         with:
-          key: mkdocs-material-${{ env.cache_id }}
-          path: documentation/.cache 
-          restore-keys: |
-            mkdocs-material-
-      - run: pip install mkdocs-material[imaging] pillow cairosvg mkdocs-awesome-nav mkdocs-macros-plugin mkdocs-git-revision-date-localized-plugin
-      
-      # https://stackoverflow.com/questions/64374179/how-to-push-to-another-repository-in-github-actions
-      - name: Change deploy location
-        run: |- 
-          git config --unset-all http.https://github.com/.extraheader
-          git remote set-url origin https://danielhabenicht:${{ secrets.CUSTOM_GITHUB_PAT }}@github.com/UbiHome/ubihome.github.io
-          git remote -v
-      - run: |-
-          cd documentation
-          mkdocs gh-deploy --force
+          path: ./documentation/site
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
