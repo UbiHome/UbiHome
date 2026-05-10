@@ -1,3 +1,4 @@
+import base64
 import re
 from collections.abc import Mapping
 from os import urandom
@@ -74,6 +75,36 @@ async def add_esphome_integration(page: Page, port: int):
     await page.get_by_role("textbox", name="Host*").fill("host.docker.internal")
     await page.get_by_role("spinbutton", name="Port").fill(str(port))
     await page.get_by_role("button", name="Submit").click()
+    try:
+        await page.get_by_role("button", name="Skip and finish").click(timeout=5000)
+    except PlaywrightTimeoutError:
+        pass
+    await page.wait_for_url("**/config/devices/device/**")
+
+
+async def add_esphome_integration_encrypted(page: Page, port: int, noise_psk: str):
+    await page.get_by_text("Settings").click()
+    await page.get_by_text("Devices & services").click()
+    await page.get_by_role("button", name="Add integration").click()
+    await page.get_by_placeholder("Search for a brand name").fill("ESPHome")
+    await (
+        page.locator("ha-integration-list-item")
+        .get_by_text("ESPHome", exact=True)
+        .first.click()
+    )
+
+    setup_another = page.get_by_text("Set up another instance of")
+    if await setup_another.count() > 0:
+        await setup_another.first.click()
+
+    await page.get_by_role("textbox", name="Host*").fill("host.docker.internal")
+    await page.get_by_role("spinbutton", name="Port").fill(str(port))
+    await page.get_by_role("button", name="Submit").click()
+
+    # Home Assistant prompts for the noise PSK when the device requires encryption
+    await page.get_by_role("textbox", name="Encryption key").fill(noise_psk)
+    await page.get_by_role("button", name="Submit").click()
+
     try:
         await page.get_by_role("button", name="Skip and finish").click(timeout=5000)
     except PlaywrightTimeoutError:
@@ -249,3 +280,23 @@ async def test_accuracy_decimals_are_displayed_in_ui(
             await expect(
                 ha_page.get_by_text(re.compile(forbidden_pattern))
             ).to_have_count(0)
+
+
+async def test_components_are_displayed_with_encryption(
+    ha_page: Page, io_mock_factory: IOMockFactory
+):
+    """Test that Home Assistant can connect to an encryption-key-protected ubihome instance."""
+    noise_psk = base64.b64encode(urandom(32)).decode("utf-8")
+
+    async with UbiHomeInstance(
+        io_mock_factory,
+        config_overrides={"api": {"encryption_key": noise_psk}},
+    ) as ubihome:
+        await add_esphome_integration_encrypted(ha_page, ubihome.port, noise_psk)
+
+        await expect(ha_page.get_by_text("Switch it", exact=True)).to_be_visible()
+        await expect(
+            ha_page.get_by_text("Write Hello World", exact=True)
+        ).to_be_visible()
+        await expect(ha_page.get_by_text("Test Sensor", exact=True)).to_be_visible()
+        await expect(ha_page.get_by_text("Test Number", exact=True)).to_be_visible()
