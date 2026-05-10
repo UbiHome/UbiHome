@@ -31,7 +31,7 @@ number:
   - platform: shell
     id: {number_id}
     name: {number_name}
-    unit_of_measurement: {unit}
+    unit_of_measurement: "{unit}"
     min_value: {min_value}
     max_value: {max_value}
     step: {step}
