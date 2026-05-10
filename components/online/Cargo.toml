@@ -1,5 +1,5 @@
 [package]
-name = "ubihome-internet"
+name = "ubihome-online"
 version = "0.13.0"
 authors = ["Daniel Habenicht <daniel-habenicht@outlook.de>"]
 edition = "2021"

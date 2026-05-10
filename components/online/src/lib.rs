@@ -16,7 +16,7 @@ use ubihome_core::{
 };
 
 #[derive(Clone, Deserialize, Debug)]
-pub struct InternetConfig {
+pub struct OnlineConfig {
     #[serde(default = "default_host")]
     pub host: String,
     #[serde(default = "default_port")]
@@ -46,7 +46,7 @@ fn default_timeout() -> Duration {
 }
 
 #[derive(Clone, Deserialize, Debug)]
-pub struct InternetBinarySensorConfig {
+pub struct OnlineBinarySensorConfig {
     pub host: Option<String>,
     pub port: Option<u16>,
 
@@ -60,10 +60,10 @@ pub struct InternetBinarySensorConfig {
 }
 
 config_template!(
-    internet,
-    InternetConfig,
+    online,
+    OnlineConfig,
     NoConfig,
-    InternetBinarySensorConfig,
+    OnlineBinarySensorConfig,
     NoConfig,
     NoConfig,
     NoConfig,
@@ -86,14 +86,14 @@ pub struct Default {
 impl Module for Default {
     fn new(config_string: &String) -> Result<Self, String> {
         let config = serde_yaml::from_str::<CoreConfig>(config_string)
-            .map_err(|e| format!("Failed to parse internet config: {}", e))?;
+            .map_err(|e| format!("Failed to parse online config: {}", e))?;
 
         let mut components: Vec<InternalComponent> = Vec::new();
         let mut binary_sensors: HashMap<String, RuntimeBinarySensorConfig> = HashMap::new();
 
         for (_, any_sensor) in config.binary_sensor.clone().unwrap_or_default() {
             match any_sensor.extra {
-                BinarySensorKind::internet(binary_sensor) => {
+                BinarySensorKind::online(binary_sensor) => {
                     let id = any_sensor.default.get_object_id();
 
                     components.push(InternalComponent::BinarySensor(InternalBinarySensor {
@@ -120,12 +120,12 @@ impl Module for Default {
                         RuntimeBinarySensorConfig {
                             host: binary_sensor
                                 .host
-                                .unwrap_or_else(|| config.internet.host.clone()),
-                            port: binary_sensor.port.unwrap_or(config.internet.port),
+                                .unwrap_or_else(|| config.online.host.clone()),
+                            port: binary_sensor.port.unwrap_or(config.online.port),
                             update_interval: binary_sensor
                                 .update_interval
-                                .unwrap_or(config.internet.update_interval),
-                            timeout: binary_sensor.timeout.unwrap_or(config.internet.timeout),
+                                .unwrap_or(config.online.update_interval),
+                            timeout: binary_sensor.timeout.unwrap_or(config.online.timeout),
                         },
                     );
                 }
@@ -153,7 +153,7 @@ impl Module for Default {
 
         Box::pin(async move {
             if binary_sensors.is_empty() {
-                debug!("No internet binary sensors configured");
+                debug!("No online binary sensors configured");
             }
 
             for (key, binary_sensor) in binary_sensors {
@@ -190,11 +190,11 @@ async fn check_connection(host: &str, port: u16, timeout: Duration) -> bool {
     match time::timeout(timeout, TcpStream::connect(&address)).await {
         Ok(Ok(_)) => true,
         Ok(Err(e)) => {
-            debug!("Internet check failed for {}: {}", address, e);
+            debug!("Online check failed for {}: {}", address, e);
             false
         }
         Err(_) => {
-            warn!("Internet check timed out for {}", address);
+            warn!("Online check timed out for {}", address);
             false
         }
     }

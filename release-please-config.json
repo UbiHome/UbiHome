@@ -31,6 +31,9 @@
         "components/illuminance": {
             "skip-github-release": true
         },
+        "components/online": {
+            "skip-github-release": true
+        },
         "components/mdns": {
             "skip-github-release": true
         },

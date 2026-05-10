@@ -1,26 +1,26 @@
-# Internet
+# Online
 
-The internet platform provides a binary sensor that reports whether the device can open a TCP connection to a target host (for example a DNS server).
+The online platform provides a binary sensor that reports whether the device can open a TCP connection to a target host (for example a DNS server).
 
 ## Configuration
 
 ```yaml
-internet:
+online:
   host: 8.8.8.8
   port: 53
   update_interval: 30s
   timeout: 3s
 
 binary_sensor:
-  - platform: internet
-    name: "Internet"
+  - platform: online
+    name: "Online"
     icon: mdi:web
     device_class: connectivity
 ```
 
 ## Options
 
-### Global platform options (`internet:`)
+### Global platform options (`online:`)
 
 | Property          | Type     | Default   | Description                         |
 | ----------------- | -------- | --------- | ----------------------------------- |
@@ -33,11 +33,11 @@ binary_sensor:
 
 | Property          | Type     | Default            | Description                                      |
 | ----------------- | -------- | ------------------ | ------------------------------------------------ |
-| `platform`        | string   | **Required**       | Must be `internet`                               |
+| `platform`        | string   | **Required**       | Must be `online`                                 |
 | `name`            | string   | **Required**       | Display name                                     |
-| `host`            | string   | from `internet`    | Override target host                             |
-| `port`            | number   | from `internet`    | Override target port                             |
-| `update_interval` | duration | from `internet`    | Override poll interval                           |
-| `timeout`         | duration | from `internet`    | Override timeout                                 |
+| `host`            | string   | from `online`      | Override target host                             |
+| `port`            | number   | from `online`      | Override target port                             |
+| `update_interval` | duration | from `online`      | Override poll interval                           |
+| `timeout`         | duration | from `online`      | Override timeout                                 |
 | `icon`            | string   | `mdi:web`          | Home Assistant icon                              |
 | `device_class`    | string   | `connectivity`     | Home Assistant device class                      |

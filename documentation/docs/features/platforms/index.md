@@ -60,13 +60,13 @@ Platforms extend the functionality of UbiHome. They implement how [Components](.
 
     [:octicons-arrow-right-24: View Documentation](./illuminance.md)
 
--   :material-wifi:{ .lg .middle } [__Internet__](./internet.md)
+-   :material-wifi:{ .lg .middle } [__Online__](./online.md)
 
     ---
 
-    Report internet connectivity with a binary sensor check.
+    Report online connectivity with a binary sensor check.
 
-    [:octicons-arrow-right-24: View Documentation](./internet.md)
+    [:octicons-arrow-right-24: View Documentation](./online.md)
 
 
 -   :material-unfold-more-vertical:{ .lg .middle } More 
