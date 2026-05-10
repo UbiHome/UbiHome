@@ -8,7 +8,7 @@ use tokio::{
     sync::broadcast::{Receiver, Sender},
     time,
 };
-use ubihome_core::internal::sensors::{UbiComponent, UbiLight, UbiSwitch};
+use ubihome_core::internal::sensors::{UbiComponent, UbiLight, UbiNumber, UbiSwitch};
 use ubihome_core::NoConfig;
 use ubihome_core::{
     config_template,
@@ -173,6 +173,7 @@ impl Module for UbiHomePlatform {
                         device_class: sensor.device_class.clone(),
                         state_class: sensor.state_class.clone(),
                         unit_of_measurement: sensor.unit_of_measurement.clone(),
+                        accuracy_decimals: sensor.accuracy_decimals,
                         name: sensor.name.clone(),
                         id: id.clone(),
                         filters: sensor.filters.clone(),
@@ -259,19 +260,17 @@ impl Module for UbiHomePlatform {
             match any_number.extra {
                 NumberKind::shell(number_config) => {
                     let id = any_number.default.get_object_id();
-                    components.push(InternalComponent::Number(InternalNumber {
-                        ha: UbiNumber {
-                            platform: "number".to_string(),
-                            icon: any_number.default.icon.clone(),
-                            name: any_number.default.name.clone(),
-                            id: id.clone(),
-                            min_value: any_number.default.min_value.unwrap_or(0.0),
-                            max_value: any_number.default.max_value.unwrap_or(100.0),
-                            step: any_number.default.step.unwrap_or(1.0),
-                            unit_of_measurement: any_number.default.unit_of_measurement.clone(),
-                            device_class: any_number.default.device_class.clone(),
-                            mode: 1, // NumberMode::Box
-                        },
+                    components.push(UbiComponent::Number(UbiNumber {
+                        platform: "number".to_string(),
+                        icon: any_number.default.icon.clone(),
+                        name: any_number.default.name.clone(),
+                        id: id.clone(),
+                        min_value: any_number.default.min_value.unwrap_or(0.0),
+                        max_value: any_number.default.max_value.unwrap_or(100.0),
+                        step: any_number.default.step.unwrap_or(1.0),
+                        unit_of_measurement: any_number.default.unit_of_measurement.clone(),
+                        device_class: any_number.default.device_class.clone(),
+                        mode: 1, // NumberMode::Box
                     }));
                     numbers.insert(id.clone(), number_config);
                 }

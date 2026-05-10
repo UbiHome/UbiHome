@@ -117,6 +117,8 @@ macro_rules! template_sensor {
                 pub unit_of_measurement: Option<String>,
                 #[garde(skip)]
                 pub state_class: Option<String>,
+                #[garde(skip)]
+                pub accuracy_decimals: Option<i32>,
 
                 #[garde(skip)]
                 pub filters: Option<Vec<SensorFilter>>,

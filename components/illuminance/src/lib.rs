@@ -88,6 +88,7 @@ impl Module for UbiHomePlatform {
                                 .unit_of_measurement
                                 .clone()
                                 .or_else(|| Some("lx".to_string())),
+                            accuracy_decimals: sensor.accuracy_decimals,
                             name: sensor.name.clone(),
                             id: id.clone(),
                             filters: sensor.filters.clone(),

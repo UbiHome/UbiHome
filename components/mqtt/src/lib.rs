@@ -222,7 +222,7 @@ impl Module for UbiHomePlatform {
                                                 // TODO: Add MQTT light support if needed
                                                 // For now, just skip light components for MQTT
                                             }
-                                            Component::Number(number) => {
+                                            UbiComponent::Number(number) => {
                                                 let state_topic = format!(
                                                     "{}/{}",
                                                     base_topic_clone.clone(),

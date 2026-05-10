@@ -454,9 +454,9 @@ Remove the "{}:" entry from your configuration or install the cargo crate contai
                         UbiComponent::BinarySensor(binary_sensor) => {
                             UbiComponent::BinarySensor(binary_sensor.clone())
                         }
-                        UbiComponent::Light(light) => Component::Light(light.clone()),
+                        UbiComponent::Light(light) => UbiComponent::Light(light.clone()),
                         UbiComponent::Number(number) => {
-                            Component::Number(number.clone())
+                            UbiComponent::Number(number.clone())
                         }
                     })
                     .collect(),

@@ -270,7 +270,7 @@ impl Module for UbiHomePlatform {
                                     api_components_by_key.insert(key, component_light);
                                     api_components_key_id.insert(light.id.clone(), key);
                                 }
-                                Component::Number(number) => {
+                                UbiComponent::Number(number) => {
                                     let key = hash_fnv1(&number.id);
                                     let component_number = ProtoMessage::ListEntitiesNumberResponse(
                                         ListEntitiesNumberResponse {

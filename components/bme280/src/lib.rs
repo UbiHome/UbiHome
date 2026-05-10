@@ -84,7 +84,6 @@ impl Module for UbiHomePlatform {
                         state_class: None,
                         device_class: None,
                         unit_of_measurement: None,
-                        accuracy_decimals: None,
                         filters: None,
                     });
                     let object_id = temperature.get_object_id();
@@ -117,6 +116,7 @@ impl Module for UbiHomePlatform {
                                 .clone()
                                 .unwrap_or("°C".to_string()),
                         ),
+                        accuracy_decimals: None,
                         name: temperature.name.clone(),
                         id: object_id.clone(),
                         filters: temperature.filters.clone(),
@@ -128,7 +128,6 @@ impl Module for UbiHomePlatform {
                         state_class: None,
                         device_class: None,
                         unit_of_measurement: None,
-                        accuracy_decimals: None,
                         filters: None,
                     });
                     let object_id = pressure.get_object_id();
@@ -161,6 +160,7 @@ impl Module for UbiHomePlatform {
                                 .clone()
                                 .unwrap_or("Pa".to_string()),
                         ),
+                        accuracy_decimals: None,
                         name: pressure.name.clone(),
                         id: id.clone(),
                         filters: pressure.filters.clone(),
@@ -172,7 +172,6 @@ impl Module for UbiHomePlatform {
                         state_class: None,
                         device_class: None,
                         unit_of_measurement: None,
-                        accuracy_decimals: None,
                         filters: None,
                     });
                     let object_id = humidity.get_object_id();
@@ -204,6 +203,7 @@ impl Module for UbiHomePlatform {
                                 .clone()
                                 .unwrap_or("%".to_string()),
                         ),
+                        accuracy_decimals: None,
                         name: humidity.name.clone(),
                         id: id.clone(),
                         filters: humidity.filters.clone(),
