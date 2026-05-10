@@ -259,7 +259,7 @@ impl Module for Default {
                             step: any_number.default.step.unwrap_or(1.0),
                             unit_of_measurement: any_number.default.unit_of_measurement.clone(),
                             device_class: any_number.default.device_class.clone(),
-                            mode: 0, // NumberMode::Auto
+                            mode: 1, // NumberMode::Box
                         },
                     }));
                     numbers.insert(id.clone(), number_config);
@@ -504,7 +504,8 @@ impl Module for Default {
                             debug!("NumberValueCommand: {} {}", key, value);
                             if let Some(number) = numbers_clone.get(&key) {
                                 if let Some(command_set) = &number.command_set {
-                                    let command = command_set.replace("{{ value }}", &value.to_string());
+                                    let command =
+                                        command_set.replace("{{ value }}", &value.to_string());
                                     debug!("Executing number set command: {}", command);
 
                                     let output = execute_command(
@@ -752,7 +753,11 @@ impl Module for Default {
                             .unwrap_or_else(|| Duration::from_secs(60));
 
                         let mut interval = time::interval(duration);
-                        debug!("Number {} has update interval: {:?}", key, interval.period());
+                        debug!(
+                            "Number {} has update interval: {:?}",
+                            key,
+                            interval.period()
+                        );
                         loop {
                             let output = execute_command(
                                 &cloned_config,
@@ -773,7 +778,11 @@ impl Module for Default {
                                             );
                                         }
                                         Err(e) => {
-                                            debug!("Invalid number state output '{}': {}", output.trim(), e);
+                                            debug!(
+                                                "Invalid number state output '{}': {}",
+                                                output.trim(),
+                                                e
+                                            );
                                             interval.tick().await;
                                             continue;
                                         }
@@ -851,22 +860,27 @@ number:
 "#;
 
         let module = Default::new(&config.to_string());
-        assert!(module.is_ok(), "Shell module should parse number config successfully");
+        assert!(
+            module.is_ok(),
+            "Shell module should parse number config successfully"
+        );
 
         let module = module.unwrap();
-        assert_eq!(
-            module.numbers.len(),
-            1,
-            "Should have 1 number entity"
-        );
+        assert_eq!(module.numbers.len(), 1, "Should have 1 number entity");
         assert!(
             module.numbers.contains_key("display_brightness"),
             "Should contain 'display_brightness' number"
         );
 
         let number = module.numbers.get("display_brightness").unwrap();
-        assert!(number.command_state.is_some(), "Number should have command_state");
-        assert!(number.command_set.is_some(), "Number should have command_set");
+        assert!(
+            number.command_state.is_some(),
+            "Number should have command_state"
+        );
+        assert!(
+            number.command_set.is_some(),
+            "Number should have command_set"
+        );
         assert_eq!(
             number.command_state.as_deref(),
             Some("echo 50.0"),
@@ -893,15 +907,30 @@ number:
 "#;
 
         let module = Default::new(&config.to_string());
-        assert!(module.is_ok(), "Shell module should parse minimal number config successfully");
+        assert!(
+            module.is_ok(),
+            "Shell module should parse minimal number config successfully"
+        );
 
         let module = module.unwrap();
         assert_eq!(module.numbers.len(), 1, "Should have 1 number entity");
-        assert!(module.numbers.contains_key("volume"), "Should contain 'volume' number");
+        assert!(
+            module.numbers.contains_key("volume"),
+            "Should contain 'volume' number"
+        );
 
         let number = module.numbers.get("volume").unwrap();
-        assert!(number.command_state.is_none(), "Minimal number should have no command_state");
-        assert!(number.command_set.is_none(), "Minimal number should have no command_set");
-        assert!(number.update_interval.is_none(), "Minimal number should have no update_interval");
+        assert!(
+            number.command_state.is_none(),
+            "Minimal number should have no command_state"
+        );
+        assert!(
+            number.command_set.is_none(),
+            "Minimal number should have no command_set"
+        );
+        assert!(
+            number.update_interval.is_none(),
+            "Minimal number should have no update_interval"
+        );
     }
 }
