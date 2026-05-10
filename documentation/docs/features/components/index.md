@@ -38,15 +38,23 @@ All entities share a set of [common attributes](./base.md) that can be used to c
   
     Track on/off states or occupancy.
   
-    [:octicons-arrow-right-24: View Documentation](./button.md)
+    [:octicons-arrow-right-24: View Documentation](./binary_sensor.md)
   
--   :material-toggle-switch-outline:{ .lg .middle } [**Switch**](./binary_sensor.md)
+-   :material-toggle-switch-outline:{ .lg .middle } [**Switch**](./switch.md)
   
     ---
   
     Switch something on or off.
   
     [:octicons-arrow-right-24: View Documentation](./switch.md)
+
+-   :material-tune-vertical:{ .lg .middle } [**Number**](./number.md)
+
+    ---
+
+    Set or read numeric values with min/max/step constraints.
+
+    [:octicons-arrow-right-24: View Documentation](./number.md)
 
 </div>
 
