@@ -50,17 +50,13 @@ pub struct InternetBinarySensorConfig {
     pub host: Option<String>,
     pub port: Option<u16>,
 
-    #[serde(default = "default_timeout_none")]
+    #[serde(default)]
     #[serde(deserialize_with = "deserialize_option_duration")]
     pub update_interval: Option<Duration>,
 
-    #[serde(default = "default_timeout_none")]
+    #[serde(default)]
     #[serde(deserialize_with = "deserialize_option_duration")]
     pub timeout: Option<Duration>,
-}
-
-fn default_timeout_none() -> Option<Duration> {
-    None
 }
 
 config_template!(

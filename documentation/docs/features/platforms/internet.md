@@ -41,4 +41,3 @@ binary_sensor:
 | `timeout`         | duration | from `internet`    | Override timeout                                 |
 | `icon`            | string   | `mdi:web`          | Home Assistant icon                              |
 | `device_class`    | string   | `connectivity`     | Home Assistant device class                      |
-```
