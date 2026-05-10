@@ -102,4 +102,82 @@ export class UbiHome {
       .withExposedPort(port)
       .asService({args: ["mkdocs", "serve", "--dev-addr", `0.0.0.0:${port}`]})
   }
+
+  @func()
+  rustContainer(
+    @argument({
+      defaultPath: ".",
+      ignore: ["**", "!components", "!components/**", "!src", "!src/**", "!build.rs", "!Cargo.toml", "!Cargo.lock"],
+    })
+    source: Directory,
+  ): Container {
+    return dag
+      .container()
+      .from("rust:latest")
+      .withMountedDirectory("/workspace", source)
+      .withWorkdir("/workspace")
+  }
+
+
+  /**
+   * Check Rust code formatting with cargo fmt.
+   */
+  @func()
+  @check()
+  async rustFmtCheck(
+    @argument({
+      defaultPath: ".",
+      ignore: ["**", "!components", "!components/**", "!src", "!src/**", "!build.rs", "!Cargo.toml", "!Cargo.lock"],
+    })
+    source: Directory,
+  ): Promise<string> {
+    return this.rustContainer(source)
+      .withExec(["cargo", "fmt", "--check"])
+      .stdout()
+  }
+
+  /**
+   * Check Python code style with ruff (linter and formatter check).
+   */
+  @func()
+  @check()
+  async ruffCheck(
+    @argument({
+      defaultPath: ".",
+      ignore: ["**", "!tests/**/*.py", "!ruff.toml", "tests/.venv/**"],
+    })
+    source: Directory,
+  ): Promise<string> {
+    return dag
+      .container()
+      .from("python:3.12-slim")
+      .withExec(["pip", "install", "--quiet", "ruff"])
+      .withMountedDirectory("/workspace", source)
+      .withWorkdir("/workspace")
+      .withExec(["ruff", "check", "tests/", "--config", "ruff.toml"])
+      .stdout()
+  }
+
+  /**
+   * Check dagger pipeline configuration with biome (formatter and linter).
+   */
+  @func()
+  @check()
+  async biomeCheck(
+    @argument({
+      defaultPath: ".",
+      
+      ignore: ["**", "!.dagger", "!biome.json", "!.gitignore", ".dagger/sdk",],
+    })
+    source: Directory,
+  ): Promise<string> {
+    return dag
+      .container()
+      .from("node:22-slim")
+      .withExec(["npm", "install", "-g", "@biomejs/biome"])
+      .withMountedDirectory("/workspace", source)
+      .withWorkdir("/workspace")
+      .withExec(["biome", "check", ".dagger/", "--config-path", "biome.json"])
+      .stdout()
+  }
 }
