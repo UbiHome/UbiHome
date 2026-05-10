@@ -30,17 +30,20 @@ use serde::{Deserialize, Deserializer};
 use std::collections::HashMap;
 use std::net::SocketAddr;
 use std::num::ParseIntError;
+use std::sync::{
+    atomic::{AtomicUsize, Ordering},
+    Arc,
+};
 use std::{future::Future, pin::Pin, str};
 use tokio::net::TcpSocket;
 use tokio::sync::broadcast::Receiver;
 use tokio::sync::broadcast::Sender;
 use ubihome_core::features::ip::get_ip_address;
 use ubihome_core::features::ip::get_network_mac_address;
-use ubihome_core::internal::sensors::InternalComponent;
+use ubihome_core::home_assistant::sensors::{Component, UbiNumber};
+use ubihome_core::internal::sensors::{InternalComponent, InternalNumber};
 use ubihome_core::NoConfig;
-use ubihome_core::{
-    config_template, home_assistant::sensors::Component, ChangedMessage, Module, PublishedMessage,
-};
+use ubihome_core::{config_template, ChangedMessage, Module, PublishedMessage};
 
 #[derive(Clone, Deserialize, Debug)]
 pub struct ApiConfig {
@@ -55,6 +58,8 @@ fn mac_to_u64(mac: &str) -> Result<u64, ParseIntError> {
 }
 
 config_template!(api, ApiConfig, NoConfig, NoConfig, NoConfig, NoConfig, NoConfig, NoConfig);
+
+pub const API_CONNECTED_CLIENTS_NUMBER_ID: &str = "api_connected_clients";
 
 #[derive(Clone, Debug)]
 pub struct UbiHomeDefault {
@@ -79,7 +84,20 @@ impl Module for UbiHomeDefault {
     }
 
     fn components(&mut self) -> Vec<InternalComponent> {
-        Vec::new()
+        vec![InternalComponent::Number(InternalNumber {
+            ha: UbiNumber {
+                name: "API Connected Clients".to_string(),
+                platform: "number".to_string(),
+                icon: Some("mdi:connection".to_string()),
+                id: API_CONNECTED_CLIENTS_NUMBER_ID.to_string(),
+                min_value: 0.0,
+                max_value: 1000.0,
+                step: 1.0,
+                unit_of_measurement: None,
+                device_class: None,
+                mode: 1, // NumberMode::Box
+            },
+        })]
     }
 
     fn run(
@@ -132,6 +150,12 @@ impl Module for UbiHomeDefault {
         info!("Starting API with config: {:?}", core_config.api);
 
         Box::pin(async move {
+            let connected_clients = Arc::new(AtomicUsize::new(0));
+            _ = sender.send(ChangedMessage::NumberValueChange {
+                key: API_CONNECTED_CLIENTS_NUMBER_ID.to_string(),
+                value: 0.0,
+            });
+
             while let Ok(cmd) = receiver.recv().await {
                 match cmd {
                     PublishedMessage::Components { components } => {
@@ -297,16 +321,37 @@ impl Module for UbiHomeDefault {
             loop {
                 // Asynchronously wait for an inbound socket.
                 let (socket, _) = listener.accept().await?;
+                let connection_count = connected_clients.fetch_add(1, Ordering::SeqCst) + 1;
+                _ = sender.send(ChangedMessage::NumberValueChange {
+                    key: API_CONNECTED_CLIENTS_NUMBER_ID.to_string(),
+                    value: connection_count as f32,
+                });
                 let mut server = server_base.clone();
                 let mut receiver_clone = receiver.resubscribe();
                 let api_components_key_id_clone = api_components_key_id.clone();
                 let api_components_clone = api_components_by_key.clone();
                 let cloned_sender = sender.clone();
+                let connected_clients_clone = connected_clients.clone();
                 tokio::spawn({
                     async move {
                         debug!("Accepted request from {}", socket.peer_addr().unwrap());
-                        let (tx, mut rx) =
-                            server.start(socket).await.expect("Failed to start server");
+                        let (tx, mut rx) = match server.start(socket).await {
+                            Ok(connection) => connection,
+                            Err(e) => {
+                                debug!("Failed to start API server connection: {:?}", e);
+                                let connection_count = connected_clients_clone
+                                    .fetch_update(Ordering::SeqCst, Ordering::SeqCst, |v| {
+                                        Some(v.saturating_sub(1))
+                                    })
+                                    .unwrap_or(0)
+                                    .saturating_sub(1);
+                                _ = cloned_sender.send(ChangedMessage::NumberValueChange {
+                                    key: API_CONNECTED_CLIENTS_NUMBER_ID.to_string(),
+                                    value: connection_count as f32,
+                                });
+                                return;
+                            }
+                        };
 
                         let tx_clone = tx.clone();
 
@@ -675,6 +720,16 @@ impl Module for UbiHomeDefault {
                                 }
                             }
                             debug!("Connection closed or error");
+                            let connection_count = connected_clients_clone
+                                .fetch_update(Ordering::SeqCst, Ordering::SeqCst, |v| {
+                                    Some(v.saturating_sub(1))
+                                })
+                                .unwrap_or(0)
+                                .saturating_sub(1);
+                            _ = cloned_sender.send(ChangedMessage::NumberValueChange {
+                                key: API_CONNECTED_CLIENTS_NUMBER_ID.to_string(),
+                                value: connection_count as f32,
+                            });
                         });
                     }
                 });

@@ -1,5 +1,5 @@
 use log::{debug, error, info, warn};
-use rumqttc::{AsyncClient, ConnectionError, Event, MqttOptions, QoS, StateError};
+use rumqttc::{AsyncClient, ConnectionError, Event, MqttOptions, Packet, QoS, StateError};
 use serde::{Deserialize, Deserializer};
 use std::{
     collections::HashMap,
@@ -19,8 +19,8 @@ use tokio::{
 use ubihome_core::{
     config_template,
     features::ip::{get_ip_address, get_network_mac_address},
-    home_assistant::sensors::Component,
-    internal::sensors::InternalComponent,
+    home_assistant::sensors::{Component, UbiNumber},
+    internal::sensors::{InternalComponent, InternalNumber},
     ChangedMessage, Module, NoConfig, PublishedMessage,
 };
 
@@ -37,6 +37,8 @@ pub struct MqttConfig {
 }
 
 config_template!(mqtt, MqttConfig, NoConfig, NoConfig, NoConfig, NoConfig, NoConfig, NoConfig);
+
+pub const MQTT_CONNECTED_CLIENTS_NUMBER_ID: &str = "mqtt_connected_clients";
 
 #[derive(Clone, Debug)]
 pub struct Default {
@@ -56,9 +58,20 @@ impl Module for Default {
     }
 
     fn components(&mut self) -> Vec<InternalComponent> {
-        let components: Vec<InternalComponent> = Vec::new();
-
-        components
+        vec![InternalComponent::Number(InternalNumber {
+            ha: UbiNumber {
+                name: "MQTT Connected Clients".to_string(),
+                platform: "number".to_string(),
+                icon: Some("mdi:connection".to_string()),
+                id: MQTT_CONNECTED_CLIENTS_NUMBER_ID.to_string(),
+                min_value: 0.0,
+                max_value: 1.0,
+                step: 1.0,
+                unit_of_measurement: None,
+                device_class: None,
+                mode: 1, // NumberMode::Box
+            },
+        })]
     }
 
     fn run(
@@ -70,6 +83,11 @@ impl Module for Default {
         let config = self.config.clone();
         let core_config = self.core.clone();
         Box::pin(async move {
+            _ = sender.send(ChangedMessage::NumberValueChange {
+                key: MQTT_CONNECTED_CLIENTS_NUMBER_ID.to_string(),
+                value: 0.0,
+            });
+
             let mut mqttoptions = MqttOptions::new(
                 core_config.ubihome.name.clone(),
                 config.mqtt.broker.clone(),
@@ -406,12 +424,22 @@ impl Module for Default {
             // Handle incoming messages
             let base_topic1 = base_topic.clone();
             let all_mqtt_components_clone = all_mqtt_components.clone();
+            let connection_sender = sender.clone();
             tokio::spawn(async move {
+                let mut mqtt_connected = false;
                 loop {
                     let mqtt_components = all_mqtt_components_clone.read().await;
                     match eventloop.poll().await {
                         Ok(Event::Incoming(incoming)) => {
-                            if let rumqttc::Packet::Publish(received_message) = incoming {
+                            if matches!(incoming, Packet::ConnAck(_)) && !mqtt_connected {
+                                mqtt_connected = true;
+                                _ = connection_sender.send(ChangedMessage::NumberValueChange {
+                                    key: MQTT_CONNECTED_CLIENTS_NUMBER_ID.to_string(),
+                                    value: 1.0,
+                                });
+                            }
+
+                            if let Packet::Publish(received_message) = incoming {
                                 let topic = received_message
                                     .topic
                                     .clone()
@@ -470,16 +498,37 @@ impl Module for Default {
                         Err(e) => match e {
                             ConnectionError::Io(e_io) => match e_io.kind() {
                                 std::io::ErrorKind::NetworkUnreachable => {
+                                    if mqtt_connected {
+                                        mqtt_connected = false;
+                                        _ = connection_sender.send(ChangedMessage::NumberValueChange {
+                                            key: MQTT_CONNECTED_CLIENTS_NUMBER_ID.to_string(),
+                                            value: 0.0,
+                                        });
+                                    }
                                     warn!("MQTT encountered an error, but will continue running: {:?}", e_io);
                                     sleep(Duration::from_secs(60)).await;
                                     continue;
                                 }
                                 std::io::ErrorKind::ConnectionAborted => {
+                                    if mqtt_connected {
+                                        mqtt_connected = false;
+                                        _ = connection_sender.send(ChangedMessage::NumberValueChange {
+                                            key: MQTT_CONNECTED_CLIENTS_NUMBER_ID.to_string(),
+                                            value: 0.0,
+                                        });
+                                    }
                                     warn!("MQTT encountered an error, but will continue running: {:?}", e_io);
                                     sleep(Duration::from_secs(60)).await;
                                     continue;
                                 }
                                 _ => {
+                                    if mqtt_connected {
+                                        mqtt_connected = false;
+                                        _ = connection_sender.send(ChangedMessage::NumberValueChange {
+                                            key: MQTT_CONNECTED_CLIENTS_NUMBER_ID.to_string(),
+                                            value: 0.0,
+                                        });
+                                    }
                                     error!("Network error: {:?}", e_io);
                                     break;
                                 }
@@ -487,36 +536,84 @@ impl Module for Default {
                             ConnectionError::MqttState(e_mqtt) => match e_mqtt {
                                 StateError::Io(io_error) => match io_error.kind() {
                                     std::io::ErrorKind::NetworkUnreachable => {
+                                        if mqtt_connected {
+                                            mqtt_connected = false;
+                                            _ = connection_sender.send(ChangedMessage::NumberValueChange {
+                                                key: MQTT_CONNECTED_CLIENTS_NUMBER_ID.to_string(),
+                                                value: 0.0,
+                                            });
+                                        }
                                         warn!("Network unreachable, trying again...");
                                         sleep(Duration::from_secs(60)).await;
                                         continue;
                                     }
                                     std::io::ErrorKind::ConnectionAborted => {
+                                        if mqtt_connected {
+                                            mqtt_connected = false;
+                                            _ = connection_sender.send(ChangedMessage::NumberValueChange {
+                                                key: MQTT_CONNECTED_CLIENTS_NUMBER_ID.to_string(),
+                                                value: 0.0,
+                                            });
+                                        }
                                         warn!("MQTT encountered an error, but will continue running: {:?}", io_error);
                                         sleep(Duration::from_secs(60)).await;
                                         continue;
                                     }
                                     _ => {
+                                        if mqtt_connected {
+                                            mqtt_connected = false;
+                                            _ = connection_sender.send(ChangedMessage::NumberValueChange {
+                                                key: MQTT_CONNECTED_CLIENTS_NUMBER_ID.to_string(),
+                                                value: 0.0,
+                                            });
+                                        }
                                         error!("Network error: {:?}", io_error);
                                         break;
                                     }
                                 },
                                 StateError::AwaitPingResp => {
+                                    if mqtt_connected {
+                                        mqtt_connected = false;
+                                        _ = connection_sender.send(ChangedMessage::NumberValueChange {
+                                            key: MQTT_CONNECTED_CLIENTS_NUMBER_ID.to_string(),
+                                            value: 0.0,
+                                        });
+                                    }
                                     warn!("Ping response not received (maybe network is down?), trying again...");
                                     sleep(Duration::from_secs(60)).await;
                                     continue;
                                 }
                                 _ => {
+                                    if mqtt_connected {
+                                        mqtt_connected = false;
+                                        _ = connection_sender.send(ChangedMessage::NumberValueChange {
+                                            key: MQTT_CONNECTED_CLIENTS_NUMBER_ID.to_string(),
+                                            value: 0.0,
+                                        });
+                                    }
                                     error!("MqttState error: {:?}", e_mqtt);
                                     break;
                                 }
                             },
                             _ => {
+                                if mqtt_connected {
+                                    mqtt_connected = false;
+                                    _ = connection_sender.send(ChangedMessage::NumberValueChange {
+                                        key: MQTT_CONNECTED_CLIENTS_NUMBER_ID.to_string(),
+                                        value: 0.0,
+                                    });
+                                }
                                 error!("Error in MQTT event loop: {:?}", e);
                                 break;
                             }
                         },
                     }
+                }
+                if mqtt_connected {
+                    _ = connection_sender.send(ChangedMessage::NumberValueChange {
+                        key: MQTT_CONNECTED_CLIENTS_NUMBER_ID.to_string(),
+                        value: 0.0,
+                    });
                 }
                 error!("MQTT Receiver terminated");
             });
