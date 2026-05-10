@@ -11,7 +11,7 @@ curl -fsSL https://dl.dagger.io/dagger/install.sh | BIN_DIR="$HOME/.local/bin" s
 Run a local preview:
 
 ```bash
-dagger -c "docs-preview | up"
+dagger call docs-preview up
 ```
 
 Run strict checks:
