@@ -19,14 +19,15 @@ jobs:
           DAGGER_VERSION=$(jq -r '.engineVersion' dagger.json | sed 's/^v//')
           echo "Dagger Engine version: $DAGGER_VERSION"
           echo "dagger_version=$DAGGER_VERSION" >> "$GITHUB_OUTPUT"
-          echo "dagger_engine_cache_key=dagger-engine-$DAGGER_VERSION" >> "$GITHUB_OUTPUT"
+          echo "dagger_engine_key=dagger-engine-$DAGGER_VERSION" >> "$GITHUB_OUTPUT"
+          echo "dagger_engine_cache_key=dagger-engine-$DAGGER_VERSION-cache" >> "$GITHUB_OUTPUT"
 
-      - name: Cache Dagger Engine image
+      - name: Load Dagger Engine image Cache
         id: cache-dagger-engine
         uses: actions/cache/restore@v5
         with:
           path: ${{ env.ENGINE_TAR }}
-          key: ${{ steps.read-engine-version.outputs.dagger_engine_cache_key }}
+          key: ${{ steps.read-engine-version.outputs.dagger_engine_key }}
 
       - name: Load cached Dagger Engine image
         if: steps.cache-dagger-engine.outputs.cache-hit == 'true'
@@ -44,9 +45,7 @@ jobs:
         id: cache-dagger-cache
         with:
           path: ${{ env.ENGINE_CACHE_TAR }}
-          key: dagger-engine-cache-${{ runner.os }}-${{ github.ref }}
-          restore-keys: |
-            dagger-engine-cache-${{ runner.os }}-
+          key: ${{ steps.read-engine-version.outputs.dagger_engine_cache_key }}
 
       - name: Populate Dagger engine volume from cache
         run: |
@@ -78,7 +77,7 @@ jobs:
         if: always() && steps.cache-dagger-engine.outputs.cache-hit != 'true'
         with:
           path: ${{ env.ENGINE_TAR }}
-          key: ${{ steps.read-engine-version.outputs.dagger_engine_cache_key }}
+          key: ${{ steps.read-engine-version.outputs.dagger_engine_key }}
 
       - name: Save Dagger engine cache
         if: always()
@@ -93,4 +92,4 @@ jobs:
         if: always() && steps.cache-dagger-cache.outputs.cache-hit != 'true'
         with:
           path: ${{ env.ENGINE_CACHE_TAR }}
-          key: ${{ steps.read-engine-version.outputs.dagger_engine_cache_key }}
+          key: ${{ steps.read-engine-version.outputs.dagger_engine_cache_key }}-cache
