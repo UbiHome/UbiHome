@@ -32,7 +32,7 @@ Common attributes are documented in [Common Component Properties](./base.md).
 
 | Filter | Description |
 | --- | --- |
-| `round` | Rounds numeric sensor values to the configured decimal precision. |
+| [`round`](./filters.md#round) | Rounds numeric sensor values to the configured decimal precision. |
 
 ## Supported Platforms
 

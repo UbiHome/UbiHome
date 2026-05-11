@@ -26,9 +26,9 @@ Common attributes are documented in [Common Component Properties](./base.md).
 
 | Filter | Description |
 | --- | --- |
-| `invert` | Inverts the boolean value (`true` <-> `false`). |
-| `delayed_on` | Delays propagation of `true` values by the configured duration. |
-| `delayed_off` | Delays propagation of `false` values by the configured duration. |
+| [`invert`](./filters.md#invert) | Inverts the boolean value (`true` <-> `false`). |
+| [`delayed_on`](./filters.md#delayed_on) | Delays propagation of `true` values by the configured duration. |
+| [`delayed_off`](./filters.md#delayed_off) | Delays propagation of `false` values by the configured duration. |
 
 ## Supported Platforms
 
