@@ -12,3 +12,8 @@
     ```yaml
     --8<-- "examples/open_chrome_tab/linux.yml"
     ```
+
+## Related documentation
+
+- Component: [Button](../../features/components/button.md)
+- Platform: [Shell](../../features/platforms/shell.md)

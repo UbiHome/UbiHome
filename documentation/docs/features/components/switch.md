@@ -33,6 +33,11 @@ Common attributes are documented in [Common Component Properties](./base.md).
 
 For platform-specific configuration options, use the linked platform pages.
 
+## Used in Examples
+
+- [Turn Raspberry screen on or off](../../examples/screen_on_off/index.md)
+- [Automatic Screen Power Control](../../examples/automatic_screen_power_control/index.md)
+
 ## Shell Platform Notes
 
 For full shell switch setup, see [Shell platform documentation](../platforms/shell.md#switch).

@@ -16,4 +16,8 @@
 
     > Sample script from: [https://superuser.com/questions/31917/is-there-a-way-to-show-notification-from-bash-script-in-ubuntu](https://superuser.com/questions/31917/is-there-a-way-to-show-notification-from-bash-script-in-ubuntu))
 
+## Related documentation
+
+- Component: [Button](../../features/components/button.md)
+- Platform: [Shell](../../features/platforms/shell.md)
 
