@@ -6,23 +6,41 @@ number:
     name: "Display Brightness"
     id: display_brightness
     icon: mdi:brightness-6
+    device_class: ""
+    state_class: measurement
     unit_of_measurement: "%"
     min_value: 0.0
     max_value: 100.0
     step: 1.0
 ```
 
-1.  Here the [platform](./../platforms/index.md) must be defined.
+1. Here the [platform](../platforms/index.md) must be defined.
 
 ## Attributes
 
-| Property            | Description |
-| ------------------- | ----------- |
-| min_value           | Lower boundary for allowed values. |
-| max_value           | Upper boundary for allowed values. |
-| step                | Increment/decrement step size. |
-| unit_of_measurement | Optional value unit shown in user interfaces. |
+Common attributes are documented in [Common Component Properties](./base.md).
 
-Similar to ESPHome:
+| Property | Description |
+| --- | --- |
+| `device_class` | Home Assistant number classification. |
+| `state_class` | Home Assistant state class for number values. |
+| `unit_of_measurement` | Optional value unit shown in user interfaces. |
+| `min_value` | Lower boundary for allowed values. |
+| `max_value` | Upper boundary for allowed values. |
+| `step` | Increment/decrement step size. |
 
-- https://esphome.io/components/number/
+## Supported Filters
+
+| Filter | Description |
+| --- | --- |
+| _(none)_ | Number does not currently support filters. |
+
+## Supported Platforms
+
+| Platform | Notes |
+| --- | --- |
+| [Shell](../platforms/shell.md) | Uses `command_state` for reads and `command_set` for writes. |
+
+For platform-specific configuration options, use the linked platform pages.
+
+Similar to ESPHome: [Number](https://esphome.io/components/number/)

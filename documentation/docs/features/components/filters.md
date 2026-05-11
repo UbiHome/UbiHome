@@ -1,6 +1,6 @@
 # Filters
 
-On any entity you can add filters to modify the entity's data. 
+Filters can be used on supported components to modify incoming state values.
 
 ```yaml
 sensor:
@@ -10,8 +10,17 @@ sensor:
     filters:
       - round: 2
 
-# Entity will be shown as 1.12
+# Sensor value will be shown as 1.12
 ```
 
-Filters are specific to the entity for now.
-Look at each [entity](./index.md#entities) for the available filters.
+## Filter Support by Component
+
+| Component | Supported Filters |
+| --- | --- |
+| [Sensor](./sensor.md) | `round` |
+| [Binary Sensor](./binary_sensor.md) | `invert`, `delayed_on`, `delayed_off` |
+| [Button](./button.md) | None |
+| [Number](./number.md) | None |
+| [Switch](./switch.md) | None |
+
+See each component page for details and examples.
