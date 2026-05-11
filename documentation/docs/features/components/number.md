@@ -23,14 +23,14 @@ number:
 
 Common attributes are documented in [Common Component Properties](./base.md).
 
-| Property | Description |
-| --- | --- |
-| `device_class` | Home Assistant number classification. |
-| `state_class` | Home Assistant state class for number values. |
-| `unit_of_measurement` | Optional value unit shown in user interfaces. |
-| `min_value` | Lower boundary for allowed values. |
-| `max_value` | Upper boundary for allowed values. |
-| `step` | Increment/decrement step size. |
+| Property | Description | Example |
+| --- | --- | --- |
+| `device_class` | Home Assistant number classification. | `""` |
+| `state_class` | Home Assistant state class for number values. | `measurement` |
+| `unit_of_measurement` | Optional value unit shown in user interfaces. | `%` |
+| `min_value` | Lower boundary for allowed values. | `0.0` |
+| `max_value` | Upper boundary for allowed values. | `100.0` |
+| `step` | Increment/decrement step size. | `1.0` |
 
 ## Supported Filters
 

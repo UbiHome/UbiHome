@@ -16,11 +16,11 @@ binary_sensor:
 
 Common attributes are documented in [Common Component Properties](./base.md).
 
-| Property | Description |
-| --- | --- |
-| `device_class` | Home Assistant binary sensor class (for example `presence`, `motion`, `door`). |
-| `on_press` | Trigger block that runs when state changes to `true`. |
-| `on_release` | Trigger block that runs when state changes to `false`. |
+| Property | Description | Example |
+| --- | --- | --- |
+| `device_class` | Home Assistant binary sensor class (for example `presence`, `motion`, `door`). | `presence` |
+| `on_press` | Trigger block that runs when state changes to `true`. | `then: - switch.turn_on: "screen"` |
+| `on_release` | Trigger block that runs when state changes to `false`. | `then: - switch.turn_off: "screen"` |
 
 ## Supported Filters
 

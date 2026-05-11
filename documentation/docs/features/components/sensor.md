@@ -21,12 +21,12 @@ sensor:
 
 Common attributes are documented in [Common Component Properties](./base.md).
 
-| Property | Description |
-| --- | --- |
-| `device_class` | Home Assistant device classification for the sensor value. |
-| `state_class` | Home Assistant state class (for example `measurement`). |
-| `unit_of_measurement` | Unit shown in user interfaces (for example `%`, `°C`, `Pa`). |
-| `accuracy_decimals` | Number of decimals reported for the sensor value. |
+| Property | Description | Example |
+| --- | --- | --- |
+| `device_class` | Home Assistant device classification for the sensor value. | `data_size` |
+| `state_class` | Home Assistant state class (for example `measurement`). | `measurement` |
+| `unit_of_measurement` | Unit shown in user interfaces (for example `%`, `°C`, `Pa`). | `%` |
+| `accuracy_decimals` | Number of decimals reported for the sensor value. | `2` |
 
 ## Supported Filters
 

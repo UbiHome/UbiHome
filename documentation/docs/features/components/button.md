@@ -15,9 +15,9 @@ button:
 
 Common attributes are documented in [Common Component Properties](./base.md).
 
-| Property | Description |
-| --- | --- |
-| _(none)_ | Button currently has no additional component-specific attributes. |
+| Property | Description | Example |
+| --- | --- | --- |
+| _(none)_ | Button currently has no additional component-specific attributes. | _(n/a)_ |
 
 ## Supported Filters
 

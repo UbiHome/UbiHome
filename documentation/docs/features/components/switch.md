@@ -15,9 +15,9 @@ switch:
 
 Common attributes are documented in [Common Component Properties](./base.md).
 
-| Property | Description |
-| --- | --- |
-| `device_class` | Home Assistant switch classification. |
+| Property | Description | Example |
+| --- | --- | --- |
+| `device_class` | Home Assistant switch classification. | `outlet` |
 
 ## Supported Filters
 
