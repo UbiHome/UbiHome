@@ -8,6 +8,9 @@ switch:
 
 1. Here the [platform](../platforms/index.md) must be defined.
 
+!!! info "Platform-specific properties"
+    Each platform requires additional properties not shown above. Check the [Platforms documentation](../platforms/index.md) and the page for your chosen platform for the full list of required and optional options.
+
 ## Attributes
 
 Common attributes are documented in [Common Component Properties](./base.md).
