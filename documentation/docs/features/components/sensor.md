@@ -48,6 +48,6 @@ For platform-specific configuration options, use the linked platform pages.
 
 - [Monitor system resources](../../examples/system_ressources/index.md)
 - [Measure Temperature, Humidity and Pressure with BME280](../../examples/measure_temperature/index.md)
-- [Report your laptop's ambient light sensor](../../examples/illuminance/index.md)
+- [Report your laptop's ambient light sensor](../../examples/ambient_light_sensor/index.md)
 
 Similar to ESPHome: [Sensor](https://esphome.io/components/sensor/)

@@ -108,4 +108,4 @@ illuminance:
 
 ## Used in Examples
 
-- [Report your laptop's ambient light sensor](../../examples/illuminance/index.md)
+- [Report your laptop's ambient light sensor](../../examples/ambient_light_sensor/index.md)
