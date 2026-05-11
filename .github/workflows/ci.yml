@@ -22,8 +22,6 @@ jobs:
 
       - name: Run checks
         uses: dagger/dagger-for-github@v8.4.1
-        env:
-          _EXPERIMENTAL_DAGGER_RUNNER_HOST: container://dagger-engine-${{ steps.read-engine-version.outputs.dagger_version }}
         with:
           version: ${{ steps.read-engine-version.outputs.dagger_version }}
           check: "**"
