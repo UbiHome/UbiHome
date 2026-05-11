@@ -83,6 +83,7 @@ jobs:
         if: always()
         run: |
           docker stop dagger-engine-${{ steps.read-engine-version.outputs.dagger_version }} || true
+          rm -f ${{ env.ENGINE_CACHE_TAR }}
           docker run --rm \
             -v dagger-engine-cache:/var/lib/dagger \
             -v /tmp:/backup \
