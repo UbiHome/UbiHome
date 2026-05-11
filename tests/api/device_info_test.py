@@ -11,7 +11,8 @@ ubihome:
 api:
 """
 
-    async with UbiHome("run", config=DEVICE_INFO_CONFIG, wait_for_api=True) as ubihome:
+    # TODO: Remove throw_on_error=False once ubihome respects the SubscribeStatesRequest
+    async with UbiHome("run", config=DEVICE_INFO_CONFIG, wait_for_api=True, throw_on_error=False) as ubihome:
         api = aioesphomeapi.APIClient("127.0.0.1", ubihome.port, "")
         await api.connect(login=False)
 
