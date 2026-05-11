@@ -19,50 +19,6 @@ jobs:
           DAGGER_VERSION=$(jq -r '.engineVersion' dagger.json | sed 's/^v//')
           echo "Dagger Engine version: $DAGGER_VERSION"
           echo "dagger_version=$DAGGER_VERSION" >> "$GITHUB_OUTPUT"
-          echo "dagger_engine_key=dagger-engine-$DAGGER_VERSION" >> "$GITHUB_OUTPUT"
-          echo "dagger_engine_cache_key=dagger-engine-$DAGGER_VERSION-cache" >> "$GITHUB_OUTPUT"
-
-      - name: Load Dagger Engine image Cache
-        id: cache-dagger-engine
-        uses: actions/cache/restore@v5
-        with:
-          path: ${{ env.ENGINE_TAR }}
-          key: ${{ steps.read-engine-version.outputs.dagger_engine_key }}
-
-      - name: Load cached Dagger Engine image
-        if: steps.cache-dagger-engine.outputs.cache-hit == 'true'
-        run: docker load -i ${{ env.ENGINE_TAR }}
-
-      - name: Pull and save Dagger Engine image
-        if: steps.cache-dagger-engine.outputs.cache-hit != 'true'
-        run: |
-          docker pull registry.dagger.io/engine:v${{ steps.read-engine-version.outputs.dagger_version }}
-          docker save registry.dagger.io/engine:v${{ steps.read-engine-version.outputs.dagger_version }} \
-            -o ${{ env.ENGINE_TAR }}
-
-      - name: Restore Dagger engine build cache
-        uses: actions/cache/restore@v5
-        id: cache-dagger-cache
-        with:
-          path: ${{ env.ENGINE_CACHE_TAR }}
-          key: ${{ steps.read-engine-version.outputs.dagger_engine_cache_key }}
-
-      - name: Populate Dagger engine volume from cache
-        run: |
-          docker volume create dagger-engine-cache
-          if [[ -f "${{ env.ENGINE_CACHE_TAR }}" ]]; then
-            docker run --rm \
-              -v dagger-engine-cache:/var/lib/dagger \
-              -v /tmp:/backup \
-              alpine tar -xf /backup/dagger-engine-cache.tar -C /var/lib/dagger
-          fi
-
-      - name: Start Dagger engine
-        run: |
-          docker run -d --privileged \
-            --name dagger-engine-${{ steps.read-engine-version.outputs.dagger_version }} \
-            -v dagger-engine-cache:/var/lib/dagger \
-            registry.dagger.io/engine:v${{ steps.read-engine-version.outputs.dagger_version }}
 
       - name: Run checks
         uses: dagger/dagger-for-github@v8.4.1
@@ -72,25 +28,3 @@ jobs:
           version: ${{ steps.read-engine-version.outputs.dagger_version }}
           check: "**"
           cloud-token: ${{ secrets.DAGGER_CLOUD_TOKEN }}
-
-      - uses: actions/cache/save@v5
-        if: always() && steps.cache-dagger-engine.outputs.cache-hit != 'true'
-        with:
-          path: ${{ env.ENGINE_TAR }}
-          key: ${{ steps.read-engine-version.outputs.dagger_engine_key }}
-
-      - name: Save Dagger engine cache
-        if: always()
-        run: |
-          docker stop dagger-engine-${{ steps.read-engine-version.outputs.dagger_version }} || true
-          rm -f ${{ env.ENGINE_CACHE_TAR }}
-          docker run --rm \
-            -v dagger-engine-cache:/var/lib/dagger \
-            -v /tmp:/backup \
-            alpine tar -cf /backup/dagger-engine-cache.tar -C /var/lib/dagger .
-
-      - uses: actions/cache/save@v5
-        if: always() && steps.cache-dagger-cache.outputs.cache-hit != 'true'
-        with:
-          path: ${{ env.ENGINE_CACHE_TAR }}
-          key: ${{ steps.read-engine-version.outputs.dagger_engine_cache_key }}
