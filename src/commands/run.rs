@@ -1,9 +1,11 @@
 use flexi_logger::writers::FileLogWriter;
 use flexi_logger::{detailed_format, Age, Cleanup, Criterion, Duplicate, FileSpec, Logger, Naming};
-use ubihome::CoreConfig;
+use ubihome_api::API_CONNECTED_CLIENTS_NUMBER_ID;
+use ubihome_mqtt::MQTT_CONNECTED_ID;
+use ubihome::{BinarySensorKind, CoreConfig};
 use ubihome_core::binary_sensor::{ActionType, FilterType};
-use ubihome_core::home_assistant::sensors::Component;
-use ubihome_core::internal::sensors::InternalComponent;
+use ubihome_core::home_assistant::sensors::{Component, UbiBinarySensor};
+use ubihome_core::internal::sensors::{InternalBinarySensor, InternalComponent};
 use ubihome_core::sensor::SensorFilterType;
 use ubihome_core::{ChangedMessage, Module, PublishedMessage};
 
@@ -198,7 +200,33 @@ pub(crate) fn run(
         let mut modules = get_all_modules(&config_string);
         log::info!("Loaded {} modules", modules.len());
 
-        let components = initialize_modules(&mut modules).await.unwrap();
+        let mut components = initialize_modules(&mut modules).await.unwrap();
+
+        // Collect status binary sensors from the main config and add them as components
+        let mut status_binary_sensor_ids: Vec<String> = Vec::new();
+        for binary_sensor in config
+            .binary_sensor
+            .as_ref()
+            .map(|m| m.values())
+            .into_iter()
+            .flatten()
+        {
+            if let BinarySensorKind::status(_) = &binary_sensor.extra {
+                let id = binary_sensor.default.get_object_id();
+                debug!("Adding status binary sensor: {}", id);
+                components.push(InternalComponent::BinarySensor(InternalBinarySensor {
+                    ha: UbiBinarySensor {
+                        platform: "binary_sensor".to_string(),
+                        icon: binary_sensor.default.icon.clone(),
+                        device_class: binary_sensor.default.device_class.clone(),
+                        name: binary_sensor.default.name.clone(),
+                        id: id.clone(),
+                    },
+                    base: binary_sensor.default.clone(),
+                }));
+                status_binary_sensor_ids.push(id);
+            }
+        }
 
         let (internal_tx, modules_rx) = broadcast::channel::<PublishedMessage>(16);
         let (modules_tx, mut internal_rx) = broadcast::channel::<ChangedMessage>(16);
@@ -431,8 +459,11 @@ pub(crate) fn run(
         }
 
         let internal_tx_clone = internal_tx.clone();
+        let status_binary_sensor_ids_clone = status_binary_sensor_ids.clone();
         tokio::spawn({
             async move {
+                let mut api_connected_clients = 0.0f32;
+                let mut mqtt_connected = false;
                 while let Ok(cmd) = internal_rx.recv().await {
                     debug!("Received command: {:?}", cmd);
                     let publish_cmd: Option<PublishedMessage>;
@@ -460,6 +491,15 @@ pub(crate) fn run(
                         }
                         ChangedMessage::BinarySensorValueChange { key, value } => {
                             debug!("BinarySensorValueChange: {}", value);
+                            if key == MQTT_CONNECTED_ID {
+                                mqtt_connected = value;
+                                let status = api_connected_clients > 0.0 || mqtt_connected;
+                                for status_id in &status_binary_sensor_ids_clone {
+                                    if let Some(signal) = signal_map_binary_sensor.get(status_id) {
+                                        signal.set(Some(Some(status)));
+                                    }
+                                }
+                            }
                             signal_map_binary_sensor.get(&key).map(|signal| {
                                 signal.set(Some(Some(value)));
                             });
@@ -469,6 +509,15 @@ pub(crate) fn run(
                             publish_cmd = Some(PublishedMessage::BluetoothProxyMessage(msg));
                         }
                         ChangedMessage::NumberValueChange { key, value } => {
+                            if key == API_CONNECTED_CLIENTS_NUMBER_ID {
+                                api_connected_clients = value;
+                                let status = api_connected_clients > 0.0 || mqtt_connected;
+                                for status_id in &status_binary_sensor_ids_clone {
+                                    if let Some(signal) = signal_map_binary_sensor.get(status_id) {
+                                        signal.set(Some(Some(status)));
+                                    }
+                                }
+                            }
                             publish_cmd = Some(PublishedMessage::NumberValueChanged { key, value });
                         }
                         ChangedMessage::NumberValueCommand { key, value } => {

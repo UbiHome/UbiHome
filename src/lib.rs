@@ -3,7 +3,11 @@ use std::collections::HashMap;
 use log::debug;
 use serde::Deserialize;
 use serde::Deserializer;
-use ubihome_core::{binary_sensor::BinarySensorBase, template_mapper, UbiHome};
+use ubihome_core::{
+    binary_sensor::{BinarySensorBase, UnknownBinarySensor},
+    template_mapper,
+    UbiHome,
+};
 
 #[derive(Clone, Deserialize, Debug)]
 pub enum LogLevel {
@@ -76,9 +80,25 @@ impl Logger {
 }
 
 #[derive(Clone, Debug, Deserialize)]
+pub struct StatusBinarySensorConfig {}
+
+#[allow(non_camel_case_types)]
+#[derive(Clone, Deserialize, Debug)]
+#[serde(tag = "platform")]
+#[serde(rename_all = "camelCase")]
+pub enum BinarySensorKind {
+    status(StatusBinarySensorConfig),
+    #[serde(untagged)]
+    Unknown(UnknownBinarySensor),
+}
+
+#[derive(Clone, Debug, Deserialize)]
 pub struct BinarySensor {
     #[serde(flatten)]
     pub default: BinarySensorBase,
+
+    #[serde(flatten)]
+    pub extra: BinarySensorKind,
 }
 
 template_mapper!(map_binary_sensor, BinarySensor);
