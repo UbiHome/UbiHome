@@ -1,10 +1,13 @@
-use serde::Deserialize;
+use log::debug;
+use serde::{Deserialize, Deserializer};
 use std::{collections::HashMap, future::Future, pin::Pin, str, time::Duration};
 use tokio::sync::broadcast::{Receiver, Sender};
 use ubihome_core::{
     config_template,
+    constants::{is_id_string_option, is_readable_string},
     internal::sensors::{UbiComponent, UbiSensor},
-    template_sensor, ChangedMessage, Module, NoConfig, PublishedMessage,
+    template_sensor, with_base_entity_properties, ChangedMessage, Module, NoConfig,
+    PublishedMessage,
 };
 
 #[derive(Clone, Deserialize, Debug, Validate)]
@@ -13,38 +16,37 @@ pub struct BME280InternalConfig {
     pub name: Option<String>,
 }
 
-// #[derive(Clone, Deserialize, Debug)]
-// #[serde(tag = "platform")]
-// #[serde(rename_all = "camelCase")]
-// pub enum SensorKind {
-//     #[serde(alias = "bme280")]
-//     Bme280(BME280SensorConfig),
-//     #[serde(untagged)]
-//     Unknown(UnknownSensor),
-// }
-
 template_sensor! {
     #[derive(Clone, Deserialize, Debug, Validate)]
-    #[serde(deny_unknown_fields)]
     pub struct SpecificSensorConfig {
     }
 }
 
-#[derive(Clone, Deserialize, Debug)]
+#[derive(Clone, Deserialize, Debug, Validate)]
+#[garde(allow_unvalidated)]
 pub struct BME280SensorConfig {
+    platform: String,
+    #[garde(dive)]
     pub temperature: Option<SpecificSensorConfig>,
+    #[garde(dive)]
     pub pressure: Option<SpecificSensorConfig>,
+    #[garde(dive)]
     pub humidity: Option<SpecificSensorConfig>,
     pub address: Option<String>,
     #[serde(deserialize_with = "deserialize_option_duration")]
+    #[garde(skip)]
     pub update_interval: Option<Duration>,
 }
 
-// #[derive(Clone, Deserialize, Debug)]
-// struct CoreConfig {
-//     // pub ubihome: UbiHome,
-//     pub sensor: Vec<SensorConfig>,
-// }
+impl BME280SensorConfig {
+    pub fn get_object_id(&self) -> String {
+        let name = self.address.clone().unwrap_or("".to_string());
+        format!("bme280_{}", name.to_lowercase().replace(" ", "_"))
+    }
+    pub fn is_configured(&self) -> bool {
+        true
+    }
+}
 
 #[derive(PartialEq, Eq, Clone, Debug, Hash)]
 pub enum Measurement {
@@ -80,23 +82,28 @@ config_template!(
 
 impl Module for UbiHomePlatform {
     fn new(config_string: &String) -> Result<Self, String> {
-        let config = serde_saphyr::from_str::<CoreConfig>(config_string).unwrap();
+        let config =
+            serde_saphyr::from_str::<CoreConfig>(config_string).map_err(|e| e.to_string())?;
         // info!("BME280 config: {:?}", config);
         let mut components: Vec<UbiComponent> = Vec::new();
         let mut sensors: Vec<BME280Sensor> = Vec::new();
 
-        for n_sensor in config.sensor.clone() {
+        for (_, n_sensor) in config.sensor.clone().unwrap_or_default() {
             let mut sensor_entries: HashMap<Measurement, String> = HashMap::new();
-            let temperature = n_sensor.temperature.clone().unwrap_or(SensorBase {
-                id: None,
-                name: "Temperature".to_string(),
-                icon: None,
-                state_class: None,
-                device_class: None,
-                unit_of_measurement: None,
-                filters: None,
-                platform: "bme280".to_string(),
-            });
+            let temperature = n_sensor
+                .temperature
+                .clone()
+                .unwrap_or(SpecificSensorConfig {
+                    id: None,
+                    name: "Temperature".to_string(),
+                    icon: None,
+                    state_class: None,
+                    accuracy_decimals: None,
+                    device_class: None,
+                    unit_of_measurement: None,
+                    filters: None,
+                    platform: "bme280".to_string(),
+                });
             let object_id = temperature.get_object_id();
             let id = temperature.id.clone().unwrap_or(object_id.clone());
             sensor_entries.insert(Measurement::Temperature, id.clone());
@@ -132,11 +139,12 @@ impl Module for UbiHomePlatform {
                 id: object_id.clone(),
                 filters: temperature.filters.clone(),
             }));
-            let pressure = n_sensor.pressure.clone().unwrap_or(SensorBase {
+            let pressure = n_sensor.pressure.clone().unwrap_or(SpecificSensorConfig {
                 id: None,
                 name: "Pressure".to_string(),
                 icon: None,
                 state_class: None,
+                accuracy_decimals: None,
                 device_class: None,
                 unit_of_measurement: None,
                 filters: None,
@@ -177,11 +185,12 @@ impl Module for UbiHomePlatform {
                 id: id.clone(),
                 filters: pressure.filters.clone(),
             }));
-            let humidity = n_sensor.humidity.clone().unwrap_or(SensorBase {
+            let humidity = n_sensor.humidity.clone().unwrap_or(SpecificSensorConfig {
                 id: None,
                 name: "Humidity".to_string(),
                 icon: None,
                 state_class: None,
+                accuracy_decimals: None,
                 device_class: None,
                 unit_of_measurement: None,
                 filters: None,

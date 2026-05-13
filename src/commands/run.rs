@@ -4,8 +4,8 @@ use flexi_logger::writers::FileLogWriter;
 use flexi_logger::{detailed_format, Age, Cleanup, Criterion, Duplicate, FileSpec, Logger, Naming};
 
 use ubihome_core::configuration::binary_sensor::{ActionType, FilterType};
+use ubihome_core::configuration::sensor::SensorFilterType;
 use ubihome_core::internal::sensors::UbiComponent;
-use ubihome_core::sensor::SensorFilterType;
 use ubihome_core::{ChangedMessage, PublishedMessage};
 
 use futures_signals::signal::{Mutable, SignalExt};
