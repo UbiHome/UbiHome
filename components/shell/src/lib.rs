@@ -9,12 +9,12 @@ use tokio::{
     time,
 };
 use ubihome_core::internal::sensors::{UbiComponent, UbiLight, UbiNumber, UbiSwitch};
-use ubihome_core::NoConfig;
 use ubihome_core::{
     config_template,
     internal::sensors::{UbiBinarySensor, UbiButton, UbiSensor},
     ChangedMessage, Module, PublishedMessage,
 };
+use ubihome_core::{template_light, NoConfig};
 
 use ubihome_core::constants::is_id_string_option;
 use ubihome_core::constants::is_readable_string;
@@ -104,25 +104,27 @@ template_switch! {
     }
 }
 
-#[derive(Clone, Deserialize, Debug, Validate)]
-pub struct ShellLightConfig {
-    #[garde(length(min = 1))]
-    pub command_on: String,
-    #[garde(length(min = 1))]
-    pub command_off: String,
-    #[garde(skip)]
-    pub command_state: Option<String>,
-    // pub command_brightness: Option<String>,
-    // pub command_rgb: Option<String>,
+template_light! {
+    #[derive(Clone, Deserialize, Debug, Validate)]
+    pub struct ShellLightConfig {
+        #[garde(length(min = 1))]
+        pub command_on: String,
+        #[garde(length(min = 1))]
+        pub command_off: String,
+        #[garde(skip)]
+        pub command_state: Option<String>,
+        // pub command_brightness: Option<String>,
+        // pub command_rgb: Option<String>,
 
-    // pub supports_brightness: Option<bool>,
-    // pub supports_rgb: Option<bool>,
-    // pub supports_white_value: Option<bool>,
-    // pub supports_color_temperature: Option<bool>,
-    #[serde(default = "default_timeout_none")]
-    #[serde(deserialize_with = "deserialize_option_duration")]
-    #[garde(skip)]
-    pub update_interval: Option<Duration>,
+        // pub supports_brightness: Option<bool>,
+        // pub supports_rgb: Option<bool>,
+        // pub supports_white_value: Option<bool>,
+        // pub supports_color_temperature: Option<bool>,
+        #[serde(default = "default_timeout_none")]
+        #[serde(deserialize_with = "deserialize_option_duration")]
+        #[garde(skip)]
+        pub update_interval: Option<Duration>,
+    }
 }
 
 template_number! {
@@ -232,21 +234,16 @@ impl Module for UbiHomePlatform {
         }
 
         let mut lights: HashMap<String, ShellLightConfig> = HashMap::new();
-        for (_, any_light) in config.light.clone().unwrap_or_default() {
-            match any_light.extra {
-                LightKind::shell(light_config) => {
-                    let id = any_light.default.get_object_id();
-                    components.push(UbiComponent::Light(UbiLight {
-                        platform: "light".to_string(),
-                        icon: any_light.default.icon.clone(),
-                        name: any_light.default.name.clone(),
-                        id: id.clone(),
-                        disabled_by_default: any_light.default.disabled_by_default.unwrap_or(true),
-                    }));
-                    lights.insert(id.clone(), light_config);
-                }
-                _ => {}
-            }
+        for (_, light) in config.light.clone().unwrap_or_default() {
+            let id = light.get_object_id();
+            components.push(UbiComponent::Light(UbiLight {
+                platform: "light".to_string(),
+                icon: light.icon.clone(),
+                name: light.name.clone(),
+                id: id.clone(),
+                disabled_by_default: light.disabled_by_default.unwrap_or(true),
+            }));
+            lights.insert(id.clone(), light);
         }
 
         let mut numbers: HashMap<String, ShellNumberConfig> = HashMap::new();

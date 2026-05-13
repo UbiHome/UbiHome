@@ -189,22 +189,9 @@ macro_rules! config_template {
         use duration_str::deserialize_option_duration;
         use garde::Validate;
         use ubihome_core::UbiHome;
-        // use ubihome_core::template_binary_sensor;
-        use ubihome_core::template_light;
-        use ubihome_core::template_mapper;
         use ubihome_core::template_mapper_new;
-        // use ubihome_core::template_number;
-        // use ubihome_core::template_switch;
 
-        // template_button!($component_name, $button_extension);
-        // template_binary_sensor!($component_name, $binary_sensor_extension);
-        // template_switch!($component_name, $switch_extension);
-        // template_mapper!(map_switch, Switch);
-        template_light!($component_name, $light_extension);
-        template_mapper!(map_light, Light);
-        // template_number!($component_name, $number_extension);
-        // template_mapper!(map_number, Number);
-
+        template_mapper_new!(map_light, $component_name, $light_extension);
         template_mapper_new!(map_switch, $component_name, $switch_extension);
         template_mapper_new!(map_number, $component_name, $number_extension);
 
@@ -239,7 +226,7 @@ macro_rules! config_template {
 
             #[serde(default, deserialize_with = "map_light")]
             #[garde(dive)]
-            pub light: Option<HashMap<String, Light>>,
+            pub light: Option<HashMap<String, $light_extension>>,
 
             #[serde(default, deserialize_with = "map_number")]
             pub number: Option<HashMap<String, $number_extension>>,
