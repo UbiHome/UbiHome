@@ -11,12 +11,10 @@ tokio = { version = "1", features = ["full"] }
 ubihome-core = { path = "../core", features = ["ip"] }
 serde_yaml = "0.9.34"
 duration-str = "0.16.1"
-# sendspin = { path = "../../../../DanielHabenicht/fork.sendspin-rs" }
-sendspin = { git = "https://github.com/DanielHabenicht/fork.sendspin-rs", rev = "084d7e50ad72bf640d2a51763837be6cb7294942" }
-# sendspin = { git = "https://github.com/Sendspin/sendspin-rs", branch = "main" }
 uuid = "1.19.0"
 tokio-tungstenite = "0.24.0"
 # tokio-tungstenite = { version = "0.24.0", features = ["rustls-tls-native-roots"] }
 parking_lot = "0.12"
 mdns-sd = "0.17.2"
-cpal = "0.15.3"
+sendspin = { git = "https://github.com/DanielHabenicht/fork.sendspin-rs", rev = "098ec3503dc1958579df4b59c46ea117ac179ad1" } #branch = "pi-zero-w-cpal-errors"
+cpal = { git = "https://github.com/rustaudio/cpal", branch = "master" }
