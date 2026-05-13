@@ -78,6 +78,21 @@ number:
     command_state: "cat number_state_2 || echo 0"
     command_set: "echo {} > number_state_2"
     update_interval: 30s
+
+light:
+  - platform: shell
+    id: my_light_1
+    name: "Light 1"
+    command_on: "echo true > light_state_1"
+    command_off: "echo false > light_state_1"
+    command_state: "cat light_state_1 || echo false"
+
+  - platform: shell
+    id: my_light_2
+    name: "Light 2"
+    command_on: "echo true > light_state_2"
+    command_off: "echo false > light_state_2"
+    command_state: "cat light_state_2 || echo false"
 """
 
 
@@ -97,4 +112,4 @@ Config: config"""
         in output
     )
 
-    assert "Configuration is valid." in output
+    assert "Configuration is invalid." in output
