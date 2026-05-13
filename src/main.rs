@@ -183,9 +183,10 @@ fn main() {
                     let location = sub_matches.try_get_one::<String>("location").unwrap();
                     uninstall(location.cloned());
                 }
-                Some(("validate", _)) => {
-                    run::run(config_file, true, None).unwrap();
-                }
+                Some(("validate", _)) => match run::run(config_file, true, None) {
+                    Ok(_) => println!("Configuration is valid."),
+                    Err(e) => println!("Configuration is invalid: {}", e),
+                },
                 #[allow(unused_variables)]
                 Some(("run", sub_matches)) => {
                     println!("UbiHome - {}", VERSION);

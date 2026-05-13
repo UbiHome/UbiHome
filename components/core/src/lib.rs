@@ -194,7 +194,6 @@ macro_rules! config_template {
         template_mapper_new!(map_light, $component_name, $light_extension);
         template_mapper_new!(map_switch, $component_name, $switch_extension);
         template_mapper_new!(map_number, $component_name, $number_extension);
-
         template_mapper_new!(map_sensor, $component_name, $sensor_extension);
         template_mapper_new!(map_button, $component_name, $button_extension);
         template_mapper_new!(map_binary_sensor, $component_name, $binary_sensor_extension);

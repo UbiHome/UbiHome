@@ -111,4 +111,4 @@ Config: config"""
         in output
     )
 
-    assert "Configuration is invalid." in output
+    assert "Configuration is valid." in output

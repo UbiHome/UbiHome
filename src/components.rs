@@ -47,6 +47,7 @@ macro_rules! generate_component_methods {
 
             let mut modules: Vec<Box<dyn Module>> = Vec::new();
             for module in platforms.iter() {
+                log::debug!("Configuring platform: {:?}", module);
                 match module {
                     $(
                         Platform::$variant => {

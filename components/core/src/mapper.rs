@@ -54,7 +54,7 @@ macro_rules! template_mapper_new {
                 }
             }
 
-            de.deserialize_seq(ItemsVisitor)
+            Ok(de.deserialize_seq(ItemsVisitor).unwrap_or_default())
         }
     };
 }

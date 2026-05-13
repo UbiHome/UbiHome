@@ -10,11 +10,14 @@ shell:
   type: bash
 
 button:
- - platform: shell
-   id: my_button
-   name: "Write Hello World"
-   command: "echo 'Hello World!' >> test.log"
+  - platform: shell
+    id: my_button
+    name: "Write Hello World"
+    command: "echo 'Hello World!' >> test.log"
 
+  - platform: power_utils
+    name: "Hibernate"
+    action: hibernate
 sensor:
   - platform: shell
     name: "RAM Usage"
@@ -40,7 +43,7 @@ power_utils:
 
 @pytest.mark.asyncio
 async def test_validate_config():
-    output, error = await run_ubihome("validate", config=CONFIG, extra_logging=False)
+    output, error = await run_ubihome("validate", config=CONFIG, extra_logging=True)
     log_dir = user_data_dir()
 
     assert not error
