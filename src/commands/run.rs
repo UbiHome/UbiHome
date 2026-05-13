@@ -102,9 +102,7 @@ pub(crate) fn run(
 
     if let Err(errors) = validation_result {
         let report = serde_saphyr::miette::to_miette_report(&errors, &config_string, "config.yml");
-        eprintln!("Configuration is invalid:");
-        eprintln!("{report:?}");
-        return Err("Invalid configuration".into());
+        return Err(format!("Configuration is invalid:\n{report:?}").into());
     }
     let config = validation_result.unwrap();
 
@@ -133,20 +131,17 @@ pub(crate) fn run(
         if let Ok(platform_enum) = Platform::from_str(&platform) {
             platforms_to_load.insert(platform_enum);
         } else {
-            eprintln!("Configuration is invalid:");
-            eprintln!(
-                r#"Unknown platform specified: {}
+            return Err(format!(
+                r#"Configuration is invalid:
+Unknown platform specified: {}
 Remove the "{}:" entry from your configuration or install the cargo crate containing the platform."#,
                 platform, platform
-            );
-            return Ok(());
+            ).into());
         }
     }
     let configuration_result = configure_platforms(&config_string, &platforms_to_load);
     if let Err(e) = configuration_result {
-        println!("Configuration is invalid:");
-        eprintln!("{}", e);
-        return Ok(());
+        return Err(format!("Configuration is invalid:\n{}", e).into());
     }
     let mut configured_platforms = configuration_result.unwrap();
     log::info!("Loaded {} modules", configured_platforms.len());

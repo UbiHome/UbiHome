@@ -80,7 +80,7 @@ pub struct UbiHomePlatform {
 
 impl Module for UbiHomePlatform {
     fn new(config_string: &String) -> Result<Self, String> {
-        match serde_yaml::from_str::<CoreConfig>(config_string) {
+        match serde_saphyr::from_str::<CoreConfig>(config_string) {
             Ok(config) => {
                 let config_clone = config.clone();
                 Ok(UbiHomePlatform {
