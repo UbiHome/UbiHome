@@ -1,16 +1,15 @@
 import pytest
-
-from utils import run_ubihome
 from platformdirs import user_data_dir
+from utils import run_ubihome
 
 CONFIG = """
 ubihome:
   name: new_awesome
 
-shell: 
+shell:
   type: bash
 
-button: 
+button:
  - platform: shell
    id: my_button
    name: "Write Hello World"
@@ -87,7 +86,7 @@ ubihome:
 
 unknown_platform:
 """,
-            'Unknown platform specified: unknown_platform\nRemove the "unknown_platform:" entry from your configuration or install the cargo crate containing the platform',
+            'Unknown platform specified: unknown_platform\nRemove the "unknown_platform:" entry from your configuration or install the cargo crate containing the platform',  # noqa: E501
         ),
         (
             # No base platform config

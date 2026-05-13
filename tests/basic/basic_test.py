@@ -1,5 +1,4 @@
 import pytest
-
 from utils import OS_PLATFORM, Platform, run_ubihome
 
 
@@ -38,7 +37,7 @@ Options:
           Print help
   -V, --version
           Print version
-"""
+"""  # noqa: E501
     )
 
 
@@ -77,5 +76,5 @@ Options:
           Print help
   -V, --version
           Print version
-"""
+"""  # noqa: E501
     )
