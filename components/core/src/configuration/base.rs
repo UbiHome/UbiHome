@@ -30,9 +30,9 @@ macro_rules! with_base_entity_properties {
             #[garde(custom(is_readable_string), length(min = 3, max = 100))]
             pub name: String,
 
-            // // custom(only_allow_configured_platforms)
-            // #[garde(length(min = 3, max = 100))]
-            // pub platform: String,
+
+            #[garde(length(min = 3, max = 100))]
+            pub platform: String,
 
             // #[garde(custom(is_id_string_option), length(min = 3, max = 100))]
             #[garde(ascii)]
@@ -83,9 +83,6 @@ macro_rules! template_binary_sensor {
                 #[garde(dive)]
                 pub on_release: Option<Trigger>,
 
-                #[garde(length(min = 3, max = 100))]
-                pub platform: String,
-
                 $(
                     $(#[$field_meta])*
                     $field_vis $field_name : $field_type,
@@ -106,7 +103,7 @@ macro_rules! template_sensor {
             ),* $(,)?
         }
     ) => {
-        use ubihome_core::sensor::SensorFilter;
+        use ubihome_core::configuration::sensor::SensorFilter;
 
         with_base_entity_properties! {
             $(#[$meta])*
@@ -143,17 +140,14 @@ macro_rules! template_button {
             ),* $(,)?
         }
     ) => {
-        $crate::paste::paste! {
             with_base_entity_properties! {
                 $(#[$meta])*
                 // TODO: Add? #[serde(deny_unknown_fields)]
 
-                $vis struct [<$name Base>] {
+                $vis struct $name {
                     // #[garde(dive)]
                     // pub filters: Option<Vec<BinarySensorFilter>>,
 
-                    #[garde(length(min = 3, max = 100))]
-                    pub platform: String,
 
                     $(
                         $(#[$field_meta])*
@@ -162,19 +156,73 @@ macro_rules! template_button {
                 }
             }
 
-            #[derive(Clone, Deserialize, Debug, Validate)]
-            #[serde(untagged)]
-            pub enum [<$name Kind>] {
-                parsed(#[garde(dive)] [<$name Base>]),
-                nothing(#[garde(skip)] NoConfig),
+    };
+}
+
+#[macro_export]
+macro_rules! template_number {
+    (
+        $(#[$meta:meta])*
+        $vis:vis struct $name:ident {
+            $(
+                $(#[$field_meta:meta])*
+                $field_vis:vis $field_name:ident : $field_type:ty
+            ),* $(,)?
+        }
+    ) => {
+            with_base_entity_properties! {
+                $(#[$meta])*
+                // TODO: Add? #[serde(deny_unknown_fields)]
+
+                $vis struct $name {
+                    // #[garde(dive)]
+                    // pub filters: Option<Vec<BinarySensorFilter>>,
+                    pub unit_of_measurement: Option<String>,
+                    pub state_class: Option<String>,
+                    pub min_value: Option<f32>,
+                    pub max_value: Option<f32>,
+                    pub step: Option<f32>,
+
+                    $(
+                        $(#[$field_meta])*
+                        $field_vis $field_name : $field_type,
+                    )*
+                }
             }
 
-            #[derive(Clone, Deserialize, Debug, Validate)]
-            pub struct $name {
-                #[serde(flatten)]
-                #[garde(dive)]
-                kind: [<$name Kind>],
-            }
+    };
+}
+
+#[macro_export]
+macro_rules! template_switch {
+    (
+        $(#[$meta:meta])*
+        $vis:vis struct $name:ident {
+            $(
+                $(#[$field_meta:meta])*
+                $field_vis:vis $field_name:ident : $field_type:ty
+            ),* $(,)?
         }
+    ) => {
+            with_base_entity_properties! {
+                $(#[$meta])*
+                // TODO: Add? #[serde(deny_unknown_fields)]
+
+                $vis struct $name {
+                    // #[garde(dive)]
+                    // pub filters: Option<Vec<BinarySensorFilter>>,
+                    pub unit_of_measurement: Option<String>,
+                    pub state_class: Option<String>,
+                    pub min_value: Option<f32>,
+                    pub max_value: Option<f32>,
+                    pub step: Option<f32>,
+
+                    $(
+                        $(#[$field_meta])*
+                        $field_vis $field_name : $field_type,
+                    )*
+                }
+            }
+
     };
 }

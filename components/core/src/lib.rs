@@ -4,9 +4,6 @@ pub mod features;
 pub mod internal;
 pub mod light;
 pub mod mapper;
-pub mod number;
-pub mod sensor;
-pub mod switch;
 pub mod utils;
 pub extern crate paste;
 
@@ -193,29 +190,27 @@ macro_rules! config_template {
         use garde::Validate;
         use ubihome_core::UbiHome;
         // use ubihome_core::template_binary_sensor;
-        use ubihome_core::template_entity;
         use ubihome_core::template_light;
         use ubihome_core::template_mapper;
-        use ubihome_core::template_mapper_kind;
         use ubihome_core::template_mapper_new;
-        use ubihome_core::template_mapper3;
-        use ubihome_core::template_number;
-        use ubihome_core::template_switch;
+        // use ubihome_core::template_number;
+        // use ubihome_core::template_switch;
 
         // template_button!($component_name, $button_extension);
         // template_binary_sensor!($component_name, $binary_sensor_extension);
-        template_entity!($component_name, $sensor_extension);
-        template_switch!($component_name, $switch_extension);
+        // template_switch!($component_name, $switch_extension);
+        // template_mapper!(map_switch, Switch);
         template_light!($component_name, $light_extension);
-        template_number!($component_name, $number_extension);
-
-        // template_mapper!(map_sensor, Sensor);
-        template_mapper_kind!(map_sensor, $component_name, Sensor);
-        template_mapper3!(map_button, $component_name, $button_extension);
-        template_mapper_new!(map_binary_sensor, $component_name, $binary_sensor_extension);
-        template_mapper!(map_switch, Switch);
         template_mapper!(map_light, Light);
-        template_mapper!(map_number, Number);
+        // template_number!($component_name, $number_extension);
+        // template_mapper!(map_number, Number);
+
+        template_mapper_new!(map_switch, $component_name, $switch_extension);
+        template_mapper_new!(map_number, $component_name, $number_extension);
+
+        template_mapper_new!(map_sensor, $component_name, $sensor_extension);
+        template_mapper_new!(map_button, $component_name, $button_extension);
+        template_mapper_new!(map_binary_sensor, $component_name, $binary_sensor_extension);
 
         #[derive(Clone, Deserialize, Debug, Validate)]
         #[garde(allow_unvalidated)]
@@ -232,7 +227,7 @@ macro_rules! config_template {
 
             #[serde(default, deserialize_with = "map_sensor")]
             #[garde(dive)]
-            pub sensor: Option<HashMap<String, Sensor>>,
+            pub sensor: Option<HashMap<String, $sensor_extension>>,
 
             #[serde(default, deserialize_with = "map_binary_sensor")]
             #[garde(dive)]
@@ -240,14 +235,14 @@ macro_rules! config_template {
 
             #[serde(default, deserialize_with = "map_switch")]
             #[garde(dive)]
-            pub switch: Option<HashMap<String, Switch>>,
+            pub switch: Option<HashMap<String, $switch_extension>>,
 
             #[serde(default, deserialize_with = "map_light")]
             #[garde(dive)]
             pub light: Option<HashMap<String, Light>>,
 
             #[serde(default, deserialize_with = "map_number")]
-            pub number: Option<HashMap<String, Number>>,
+            pub number: Option<HashMap<String, $number_extension>>,
         }
     };
 }

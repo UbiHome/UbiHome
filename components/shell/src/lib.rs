@@ -20,7 +20,9 @@ use ubihome_core::constants::is_id_string_option;
 use ubihome_core::constants::is_readable_string;
 use ubihome_core::template_binary_sensor;
 use ubihome_core::template_button;
+use ubihome_core::template_number;
 use ubihome_core::template_sensor;
+use ubihome_core::template_switch;
 use ubihome_core::with_base_entity_properties;
 
 #[derive(Debug, Copy, Clone, Deserialize, Validate)]
@@ -76,26 +78,30 @@ template_sensor! {
 }
 
 template_button! {
-#[derive(Clone, Deserialize, Debug, Validate)]
-pub struct ShellButtonConfig {
-    #[garde(length(min = 1))]
-    pub command: String,
-}
+    #[derive(Clone, Deserialize, Debug, Validate)]
+    pub struct ShellButtonConfig {
+        #[garde(length(min = 1))]
+        pub command: String,
+    }
 }
 
-#[derive(Clone, Deserialize, Debug, Validate)]
-pub struct ShellSwitchConfig {
-    #[garde(length(min = 1))]
-    pub command_on: String,
-    #[garde(length(min = 1))]
-    pub command_off: String,
-    #[garde(skip)]
-    pub command_state: Option<String>,
+template_switch! {
 
-    #[serde(default = "default_timeout_none")]
-    #[serde(deserialize_with = "deserialize_option_duration")]
-    #[garde(skip)]
-    pub update_interval: Option<Duration>,
+    #[derive(Clone, Deserialize, Debug, Validate)]
+    #[garde(allow_unvalidated)]
+    pub struct ShellSwitchConfig {
+        #[garde(length(min = 1))]
+        pub command_on: String,
+        #[garde(length(min = 1))]
+        pub command_off: String,
+        #[garde(skip)]
+        pub command_state: Option<String>,
+
+        #[serde(default = "default_timeout_none")]
+        #[serde(deserialize_with = "deserialize_option_duration")]
+        #[garde(skip)]
+        pub update_interval: Option<Duration>,
+    }
 }
 
 #[derive(Clone, Deserialize, Debug, Validate)]
@@ -119,14 +125,17 @@ pub struct ShellLightConfig {
     pub update_interval: Option<Duration>,
 }
 
-#[derive(Clone, Deserialize, Debug)]
-pub struct ShellNumberConfig {
-    pub command_state: Option<String>,
-    pub command_set: Option<String>,
+template_number! {
+    #[derive(Clone, Deserialize, Debug, Validate)]
+    #[garde(allow_unvalidated)]
+    pub struct ShellNumberConfig {
+        pub command_state: Option<String>,
+        pub command_set: Option<String>,
 
-    #[serde(default = "default_timeout_none")]
-    #[serde(deserialize_with = "deserialize_option_duration")]
-    pub update_interval: Option<Duration>,
+        #[serde(default = "default_timeout_none")]
+        #[serde(deserialize_with = "deserialize_option_duration")]
+        pub update_interval: Option<Duration>,
+    }
 }
 
 fn default_timeout_none() -> Option<Duration> {
@@ -148,7 +157,7 @@ pub struct UbiHomePlatform {
     config: ShellConfig,
     components: Vec<UbiComponent>,
     binary_sensors: HashMap<String, ShellBinarySensorConfig>,
-    buttons: HashMap<String, ShellButtonConfigBase>,
+    buttons: HashMap<String, ShellButtonConfig>,
     sensors: HashMap<String, ShellSensorConfig>,
     switches: HashMap<String, ShellSwitchConfig>,
     lights: HashMap<String, ShellLightConfig>,
@@ -163,25 +172,20 @@ impl Module for UbiHomePlatform {
         let mut components: Vec<UbiComponent> = Vec::new();
 
         let mut sensors: HashMap<String, ShellSensorConfig> = HashMap::new();
-        for (_, any_sensor) in config.sensor.clone().unwrap_or_default() {
-            match any_sensor.parsed {
-                SensorKind::shell(sensor) => {
-                    let id = sensor.get_object_id();
-                    components.push(UbiComponent::Sensor(UbiSensor {
-                        platform: "sensor".to_string(),
-                        icon: sensor.icon.clone(),
-                        device_class: sensor.device_class.clone(),
-                        state_class: sensor.state_class.clone(),
-                        unit_of_measurement: sensor.unit_of_measurement.clone(),
-                        accuracy_decimals: sensor.accuracy_decimals,
-                        name: sensor.name.clone(),
-                        id: id.clone(),
-                        filters: sensor.filters.clone(),
-                    }));
-                    sensors.insert(id.clone(), sensor);
-                }
-                _ => {}
-            }
+        for (_, sensor) in config.sensor.clone().unwrap_or_default() {
+            let id = sensor.get_object_id();
+            components.push(UbiComponent::Sensor(UbiSensor {
+                platform: "sensor".to_string(),
+                icon: sensor.icon.clone(),
+                device_class: sensor.device_class.clone(),
+                state_class: sensor.state_class.clone(),
+                unit_of_measurement: sensor.unit_of_measurement.clone(),
+                accuracy_decimals: sensor.accuracy_decimals,
+                name: sensor.name.clone(),
+                id: id.clone(),
+                filters: sensor.filters.clone(),
+            }));
+            sensors.insert(id.clone(), sensor);
         }
 
         let mut binary_sensors: HashMap<String, ShellBinarySensorConfig> = HashMap::new();
@@ -200,41 +204,31 @@ impl Module for UbiHomePlatform {
             binary_sensors.insert(id.clone(), binary_sensor);
         }
 
-        let mut buttons: HashMap<String, ShellButtonConfigBase> = HashMap::new();
+        let mut buttons: HashMap<String, ShellButtonConfig> = HashMap::new();
         for (_, button) in config.button.clone().unwrap_or_default() {
-            match button.kind {
-                ShellButtonConfigKind::parsed(button) => {
-                    let id = button.get_object_id();
-                    components.push(UbiComponent::Button(UbiButton {
-                        platform: "sensor".to_string(),
-                        icon: button.icon.clone(),
-                        name: button.name.clone(),
-                        id: id.clone(),
-                    }));
-                    buttons.insert(id.clone(), button);
-                }
-                _ => {}
-            }
+            let id = button.get_object_id();
+            components.push(UbiComponent::Button(UbiButton {
+                platform: "sensor".to_string(),
+                icon: button.icon.clone(),
+                name: button.name.clone(),
+                id: id.clone(),
+            }));
+            buttons.insert(id.clone(), button);
         }
 
         let mut switches: HashMap<String, ShellSwitchConfig> = HashMap::new();
-        for (_, any_sensor) in config.switch.clone().unwrap_or_default() {
-            match any_sensor.extra {
-                SwitchKind::shell(switch) => {
-                    let id = any_sensor.default.get_object_id();
-                    components.push(UbiComponent::Switch(UbiSwitch {
-                        // TODO
-                        platform: "sensor".to_string(),
-                        icon: any_sensor.default.icon.clone(),
-                        name: any_sensor.default.name.clone(),
-                        id: id.clone(),
-                        device_class: None,
-                        assumed_state: !switch.command_state.is_some(),
-                    }));
-                    switches.insert(id.clone(), switch);
-                }
-                _ => {}
-            }
+        for (_, switch) in config.switch.clone().unwrap_or_default() {
+            let id = switch.get_object_id();
+            components.push(UbiComponent::Switch(UbiSwitch {
+                // TODO
+                platform: "sensor".to_string(),
+                icon: switch.icon.clone(),
+                name: switch.name.clone(),
+                id: id.clone(),
+                device_class: None,
+                assumed_state: !switch.command_state.is_some(),
+            }));
+            switches.insert(id.clone(), switch);
         }
 
         let mut lights: HashMap<String, ShellLightConfig> = HashMap::new();
@@ -256,26 +250,21 @@ impl Module for UbiHomePlatform {
         }
 
         let mut numbers: HashMap<String, ShellNumberConfig> = HashMap::new();
-        for (_, any_number) in config.number.clone().unwrap_or_default() {
-            match any_number.extra {
-                NumberKind::shell(number_config) => {
-                    let id = any_number.default.get_object_id();
-                    components.push(UbiComponent::Number(UbiNumber {
-                        platform: "number".to_string(),
-                        icon: any_number.default.icon.clone(),
-                        name: any_number.default.name.clone(),
-                        id: id.clone(),
-                        min_value: any_number.default.min_value.unwrap_or(0.0),
-                        max_value: any_number.default.max_value.unwrap_or(100.0),
-                        step: any_number.default.step.unwrap_or(1.0),
-                        unit_of_measurement: any_number.default.unit_of_measurement.clone(),
-                        device_class: any_number.default.device_class.clone(),
-                        mode: 1, // NumberMode::Box
-                    }));
-                    numbers.insert(id.clone(), number_config);
-                }
-                _ => {}
-            }
+        for (_, number) in config.number.clone().unwrap_or_default() {
+            let id = number.get_object_id();
+            components.push(UbiComponent::Number(UbiNumber {
+                platform: "number".to_string(),
+                icon: number.icon.clone(),
+                name: number.name.clone(),
+                id: id.clone(),
+                min_value: number.min_value.unwrap_or(0.0),
+                max_value: number.max_value.unwrap_or(100.0),
+                step: number.step.unwrap_or(1.0),
+                unit_of_measurement: number.unit_of_measurement.clone(),
+                device_class: number.device_class.clone(),
+                mode: 1, // NumberMode::Box
+            }));
+            numbers.insert(id.clone(), number);
         }
 
         Ok(UbiHomePlatform {

@@ -12,7 +12,6 @@ with_base_entity_properties! {
         pub disabled_by_default: Option<bool>,
     }
 }
-
 #[derive(Clone, Deserialize, Debug, Validate)]
 pub struct UnknownLight {}
 

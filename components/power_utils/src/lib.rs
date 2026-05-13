@@ -39,34 +39,12 @@ pub enum PowerAction {
 }
 
 template_button! {
-#[derive(Clone, Deserialize, Debug, Validate)]
-pub struct PowerUtilsButtonConfig {
-    #[garde(dive)]
-    pub action: PowerAction,
+    #[derive(Clone, Deserialize, Debug, Validate)]
+    pub struct PowerUtilsButtonConfig {
+        #[garde(dive)]
+        pub action: PowerAction,
+    }
 }
-}
-
-// #[derive(Clone, Deserialize, Debug, Validate)]
-// pub enum ButtonKind {
-//     power_utils(#[garde(dive)] PowerUtilsButtonConfig),
-//     nothing(#[garde(skip)] NoConfig),
-// }
-
-// #[derive(Clone, Deserialize, Debug, Validate)]
-// pub struct TestButton {
-//     #[serde(flatten)]
-//     #[garde(dive)]
-//     kind: ButtonKind,
-// }
-
-// impl TestButton {
-//     pub fn is_configured(&self) -> bool {
-//         true
-//     }
-//     pub fn get_object_id(&self) -> String {
-//         unimplemented!();
-//     }
-// }
 
 config_template!(
     power_utils,
@@ -94,61 +72,54 @@ impl Module for UbiHomePlatform {
 
         let mut buttons: HashMap<String, PowerAction> = HashMap::new();
         for (_, button) in config.button.clone().unwrap_or_default() {
-            match button.kind {
-                PowerUtilsButtonConfigKind::nothing(_) => {
-                    continue;
+            let id = button.get_object_id();
+            let button_component;
+            match button.action {
+                PowerAction::Reboot => {
+                    button_component = UbiButton {
+                        platform: "sensor".to_string(),
+                        icon: Some(button.icon.unwrap_or("mdi:restart".to_string())),
+                        name: button.name.clone(),
+                        id: id.clone(),
+                    };
                 }
-                PowerUtilsButtonConfigKind::parsed(button) => {
-                    let id = button.get_object_id();
-                    let button_component;
-                    match button.action {
-                        PowerAction::Reboot => {
-                            button_component = UbiButton {
-                                platform: "sensor".to_string(),
-                                icon: Some(button.icon.unwrap_or("mdi:restart".to_string())),
-                                name: button.name.clone(),
-                                id: id.clone(),
-                            };
-                        }
-                        PowerAction::Shutdown => {
-                            button_component = UbiButton {
-                                platform: "sensor".to_string(),
-                                icon: Some(button.icon.unwrap_or("mdi:power".to_string())),
-                                name: button.name.clone(),
-                                id: id.clone(),
-                            };
-                        }
-                        PowerAction::Hibernate => {
-                            button_component = UbiButton {
-                                platform: "sensor".to_string(),
-                                icon: Some(button.icon.unwrap_or("mdi:snowflake".to_string())),
-                                name: button.name.clone(),
-                                id: id.clone(),
-                            };
-                        }
-                        PowerAction::Logout => {
-                            button_component = UbiButton {
-                                platform: "sensor".to_string(),
-                                icon: Some(button.icon.unwrap_or("mdi:logout".to_string())),
-                                name: button.name.clone(),
-                                id: id.clone(),
-                            };
-                        }
-                        PowerAction::Sleep => {
-                            button_component = UbiButton {
-                                platform: "sensor".to_string(),
-                                icon: Some(button.icon.unwrap_or("mdi:sleep".to_string())),
-                                name: button.name.clone(),
-                                id: id.clone(),
-                            };
-                        }
-                    }
-
-                    components.push(UbiComponent::Button(button_component));
-                    buttons.insert(id.clone(), button.action);
-                    // continue;
+                PowerAction::Shutdown => {
+                    button_component = UbiButton {
+                        platform: "sensor".to_string(),
+                        icon: Some(button.icon.unwrap_or("mdi:power".to_string())),
+                        name: button.name.clone(),
+                        id: id.clone(),
+                    };
+                }
+                PowerAction::Hibernate => {
+                    button_component = UbiButton {
+                        platform: "sensor".to_string(),
+                        icon: Some(button.icon.unwrap_or("mdi:snowflake".to_string())),
+                        name: button.name.clone(),
+                        id: id.clone(),
+                    };
+                }
+                PowerAction::Logout => {
+                    button_component = UbiButton {
+                        platform: "sensor".to_string(),
+                        icon: Some(button.icon.unwrap_or("mdi:logout".to_string())),
+                        name: button.name.clone(),
+                        id: id.clone(),
+                    };
+                }
+                PowerAction::Sleep => {
+                    button_component = UbiButton {
+                        platform: "sensor".to_string(),
+                        icon: Some(button.icon.unwrap_or("mdi:sleep".to_string())),
+                        name: button.name.clone(),
+                        id: id.clone(),
+                    };
                 }
             }
+
+            components.push(UbiComponent::Button(button_component));
+            buttons.insert(id.clone(), button.action);
+            // continue;
         }
         Ok(UbiHomePlatform {
             // config: config.power_utils,

@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     configuration::binary_sensor::{BinarySensorFilter, Trigger},
-    sensor::SensorFilter,
+    configuration::sensor::SensorFilter,
 };
 
 #[derive(Clone, Deserialize, Debug)]

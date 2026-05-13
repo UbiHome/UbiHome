@@ -66,37 +66,32 @@ impl Module for UbiHomePlatform {
         let mut sensors: HashMap<String, AmbientLightSensorConfig> = HashMap::new();
 
         if let Some(sensor_configs) = config.sensor {
-            for (_, sensor_config) in sensor_configs {
-                match sensor_config.parsed {
-                    SensorKind::illuminance(sensor) => {
-                        let id = sensor.get_object_id();
-                        components.push(UbiComponent::Sensor(UbiSensor {
-                            platform: "sensor".to_string(),
-                            icon: sensor
-                                .icon
-                                .clone()
-                                .or_else(|| Some("mdi:brightness-6".to_string())),
-                            device_class: sensor
-                                .device_class
-                                .clone()
-                                .or_else(|| Some("illuminance".to_string())),
-                            state_class: sensor
-                                .state_class
-                                .clone()
-                                .or_else(|| Some("measurement".to_string())),
-                            unit_of_measurement: sensor
-                                .unit_of_measurement
-                                .clone()
-                                .or_else(|| Some("lx".to_string())),
-                            accuracy_decimals: sensor.accuracy_decimals,
-                            name: sensor.name.clone(),
-                            id: id.clone(),
-                            filters: sensor.filters.clone(),
-                        }));
-                        sensors.insert(id.clone(), sensor);
-                    }
-                    _ => {}
-                }
+            for (_, sensor) in sensor_configs {
+                let id = sensor.get_object_id();
+                components.push(UbiComponent::Sensor(UbiSensor {
+                    platform: "sensor".to_string(),
+                    icon: sensor
+                        .icon
+                        .clone()
+                        .or_else(|| Some("mdi:brightness-6".to_string())),
+                    device_class: sensor
+                        .device_class
+                        .clone()
+                        .or_else(|| Some("illuminance".to_string())),
+                    state_class: sensor
+                        .state_class
+                        .clone()
+                        .or_else(|| Some("measurement".to_string())),
+                    unit_of_measurement: sensor
+                        .unit_of_measurement
+                        .clone()
+                        .or_else(|| Some("lx".to_string())),
+                    accuracy_decimals: sensor.accuracy_decimals,
+                    name: sensor.name.clone(),
+                    id: id.clone(),
+                    filters: sensor.filters.clone(),
+                }));
+                sensors.insert(id.clone(), sensor);
             }
         }
 
