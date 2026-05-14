@@ -1,6 +1,6 @@
 [package]
 name = "ubihome-bluetooth_proxy"
-version = "0.12.0"
+version = "0.13.0"
 authors = ["Daniel Habenicht <daniel-habenicht@outlook.de>"]
 edition = "2018"
 
@@ -9,7 +9,8 @@ log = "0.4"
 serde = { version = "1.0", features = ["derive"] }
 tokio = { version = "1", features = ["full"] }
 ubihome-core = { path = "../core" }
-serde_yaml = "0.9.34"
+serde-saphyr = { version = "0.0.15", features = ["garde", "miette"] }
+garde = { version = "0.22.1", features = ["serde"] }
 # Use as long as https://github.com/deviceplug/btleplug/issues/432 is not resolved
 btleplug = { git = "https://github.com/DanielHabenicht/fork.btleplug", rev = "7e2df6f" }
 duration-str = "0.16.1"

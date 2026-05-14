@@ -1,11 +1,13 @@
-from asyncio import sleep
 import json
-import pytest
-import os
+from asyncio import sleep
 from unittest.mock import Mock
+
+import pytest
+from paho.mqtt.client import Client
+
 from mock_file import IOMock
 from utils import UbiHome
-from paho.mqtt.client import Client
+
 
 @pytest.mark.timeout(60)
 async def test_button_triggered(mqtt_client: Client, mqtt_connection, io_mock: IOMock):
@@ -17,12 +19,12 @@ ubihome:
   name: {name}
 
 mqtt:
-  broker: {mqtt_connection['host']}
-  port: {mqtt_connection['port']}
+  broker: {mqtt_connection["host"]}
+  port: {mqtt_connection["port"]}
 
 shell:
-  
-button: 
+
+button:
  - platform: shell
    id: {button_id}
    name: {button_name}
@@ -33,7 +35,7 @@ button:
     mqtt_client.subscribe("#")
     mock = Mock()
     mqtt_client._on_message = mock
-    async with UbiHome("run", config=DEVICE_INFO_CONFIG) as ubihome:
+    async with UbiHome("run", config=DEVICE_INFO_CONFIG):
         await sleep(1)
         mock.assert_called_once()
         message = mock.call_args.args[2]

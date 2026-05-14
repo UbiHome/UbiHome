@@ -1,6 +1,5 @@
 use esphome_native_api::esphomeapi::EspHomeApi;
 use esphome_native_api::hash::hash_fnv1;
-use esphome_native_api::parser;
 use esphome_native_api::parser::ProtoMessage;
 use esphome_native_api::proto::version_2025_12_1::BinarySensorStateResponse;
 use esphome_native_api::proto::version_2025_12_1::BluetoothLeAdvertisementResponse;
@@ -15,19 +14,15 @@ use esphome_native_api::proto::version_2025_12_1::ListEntitiesNumberResponse;
 use esphome_native_api::proto::version_2025_12_1::ListEntitiesSensorResponse;
 use esphome_native_api::proto::version_2025_12_1::ListEntitiesSwitchResponse;
 use esphome_native_api::proto::version_2025_12_1::ListEntitiesTextSensorResponse;
-use esphome_native_api::proto::version_2025_12_1::NumberCommandRequest;
 use esphome_native_api::proto::version_2025_12_1::NumberStateResponse;
 use esphome_native_api::proto::version_2025_12_1::SensorLastResetType;
 use esphome_native_api::proto::version_2025_12_1::SensorStateClass;
 use esphome_native_api::proto::version_2025_12_1::SensorStateResponse;
-use esphome_native_api::proto::version_2025_12_1::SubscribeHomeAssistantStateResponse;
 use esphome_native_api::proto::version_2025_12_1::SubscribeLogsResponse;
 use esphome_native_api::proto::version_2025_12_1::SwitchStateResponse;
 use esphome_native_api::proto::version_2025_12_1::TextSensorStateResponse;
 use log::debug;
 use log::info;
-use log::trace;
-use log::warn;
 use serde::{Deserialize, Deserializer};
 use std::collections::HashMap;
 use std::net::SocketAddr;
@@ -38,16 +33,28 @@ use tokio::sync::broadcast::Receiver;
 use tokio::sync::broadcast::Sender;
 use ubihome_core::features::ip::get_ip_address;
 use ubihome_core::features::ip::get_network_mac_address;
-use ubihome_core::internal::sensors::InternalComponent;
 use ubihome_core::NoConfig;
 use ubihome_core::{
-    config_template, home_assistant::sensors::Component, ChangedMessage, Module, PublishedMessage,
+    config_template, internal::sensors::UbiComponent, ChangedMessage, Module, PublishedMessage,
 };
 
-#[derive(Clone, Deserialize, Debug)]
+use ubihome_core::constants::is_readable_string_option;
+
+#[derive(Clone, Deserialize, Debug, Validate)]
+#[serde(deny_unknown_fields)]
+pub struct ApiEncryptionConfig {
+    #[garde(ascii, length(min = 44, max = 44))]
+    pub key: Option<String>,
+}
+
+#[derive(Clone, Deserialize, Debug, Validate)]
+#[serde(deny_unknown_fields)]
 pub struct ApiConfig {
+    #[garde(range(min = 1, max = 65535))]
     pub port: Option<u16>,
-    pub encryption_key: Option<String>,
+    #[garde(dive)]
+    pub encryption: Option<ApiEncryptionConfig>,
+    #[garde(custom(is_readable_string_option), length(min = 3, max = 64))]
     pub suggested_area: Option<String>,
 }
 
@@ -59,28 +66,19 @@ fn mac_to_u64(mac: &str) -> Result<u64, ParseIntError> {
 config_template!(api, ApiConfig, NoConfig, NoConfig, NoConfig, NoConfig, NoConfig, NoConfig, NoConfig);
 
 #[derive(Clone, Debug)]
-pub struct UbiHomeDefault {
+pub struct UbiHomePlatform {
     config: CoreConfig,
-    pub api_config: ApiConfig,
 }
 
-impl Module for UbiHomeDefault {
-    fn new(config_string: &String) -> Result<Self, String> {
-        match serde_yaml::from_str::<CoreConfig>(config_string) {
-            Ok(config) => {
-                let config_clone = config.clone();
-                Ok(UbiHomeDefault {
-                    config: config,
-                    api_config: config_clone.api,
-                })
-            }
-            Err(e) => {
-                return Err(format!("Failed to parse API config: {:?}", e));
-            }
-        }
+impl Module for UbiHomePlatform {
+    fn new(config_string: &str) -> Result<Self, String> {
+        let config =
+            serde_saphyr::from_str::<CoreConfig>(config_string).map_err(|e| e.to_string())?;
+
+        Ok(UbiHomePlatform { config })
     }
 
-    fn components(&mut self) -> Vec<InternalComponent> {
+    fn components(&mut self) -> Vec<UbiComponent> {
         Vec::new()
     }
 
@@ -96,7 +94,13 @@ impl Module for UbiHomeDefault {
         let server_base = EspHomeApi::builder()
             .api_version_major(1)
             .api_version_minor(42)
-            .encryption_key_opt(self.config.api.encryption_key.clone())
+            .encryption_key_opt(
+                self.config
+                    .api
+                    .encryption
+                    .as_ref()
+                    .and_then(|e| e.key.clone()),
+            )
             .server_info("UbiHome".to_string())
             .name(self.config.ubihome.name.clone())
             .friendly_name(
@@ -126,185 +130,172 @@ impl Module for UbiHomeDefault {
             )
             .build();
 
-        let core_config = self.config.clone();
-        let api_config = self.api_config.clone();
+        let config = self.config.clone();
         // let mut api_components = self.components.();
         let mut api_components_by_key: HashMap<u32, ProtoMessage> = HashMap::new();
         let mut api_components_key_id: HashMap<String, u32> = HashMap::new();
-        info!("Starting API with config: {:?}", core_config.api);
+        info!("Starting API with config: {:?}", config.api);
 
         Box::pin(async move {
-            while let Ok(cmd) = receiver.recv().await {
-                match cmd {
-                    PublishedMessage::Components { components } => {
-                        for component in components {
-                            match component.clone() {
-                                Component::Switch(switch_entity) => {
-                                    let key = hash_fnv1(&switch_entity.id);
-                                    let component_switch_entity =
-                                        ProtoMessage::ListEntitiesSwitchResponse(
-                                            ListEntitiesSwitchResponse {
-                                                object_id: switch_entity.id.clone(),
-                                                key: key,
-                                                name: switch_entity.name,
-                                                device_id: 0,
-                                                icon: switch_entity.icon.unwrap_or_default(),
-                                                device_class: switch_entity
-                                                    .device_class
-                                                    .unwrap_or_default(),
-                                                disabled_by_default: false,
-                                                entity_category: EntityCategory::None as i32,
-                                                assumed_state: switch_entity.assumed_state,
-                                            },
-                                        );
-                                    api_components_by_key.insert(key, component_switch_entity);
-                                    api_components_key_id.insert(switch_entity.id.clone(), key);
-                                }
-                                Component::Button(button) => {
-                                    let key = hash_fnv1(&button.id);
-                                    let component_button = ProtoMessage::ListEntitiesButtonResponse(
-                                        ListEntitiesButtonResponse {
-                                            object_id: button.id.clone(),
-                                            key: key,
-                                            name: button.name,
-                                            device_id: 0,
-                                            icon: button.icon.unwrap_or_default(),
-                                            device_class: "".to_string(),
-                                            disabled_by_default: false,
-                                            entity_category: EntityCategory::None as i32,
-                                        },
-                                    );
-                                    api_components_by_key.insert(key, component_button);
-                                    api_components_key_id.insert(button.id.clone(), key);
-                                }
-                                Component::Sensor(sensor) => {
-                                    let key = hash_fnv1(&sensor.id);
-                                    let component_sensor = ProtoMessage::ListEntitiesSensorResponse(
-                                        ListEntitiesSensorResponse {
-                                            object_id: sensor.id.clone(),
-                                            key: key,
-                                            name: sensor.name,
-                                            device_id: 0,
-                                            icon: "".to_string(),
-                                            unit_of_measurement: sensor
-                                                .unit_of_measurement
-                                                .unwrap_or("".to_string()),
-                                            accuracy_decimals: sensor
-                                                .accuracy_decimals
-                                                .unwrap_or(2),
-                                            force_update: false,
-                                            device_class: sensor
-                                                .device_class
-                                                .unwrap_or("".to_string()), //sensor.device_class,
-                                            state_class: SensorStateClass::StateClassMeasurement
-                                                as i32,
-                                            legacy_last_reset_type:
-                                                SensorLastResetType::LastResetNone as i32,
-                                            disabled_by_default: false,
-                                            entity_category: EntityCategory::None as i32,
-                                        },
-                                    );
-                                    api_components_by_key.insert(key, component_sensor);
-                                    api_components_key_id.insert(sensor.id.clone(), key);
-                                }
-                                Component::BinarySensor(binary_sensor) => {
-                                    let key = hash_fnv1(&binary_sensor.id);
-                                    let component_binary_sensor =
-                                        ProtoMessage::ListEntitiesBinarySensorResponse(
-                                            ListEntitiesBinarySensorResponse {
-                                                object_id: binary_sensor.id.clone(),
-                                                key: key,
-                                                name: binary_sensor.name,
-                                                device_id: 0,
-                                                icon: "".to_string(),
-                                                device_class: binary_sensor
-                                                    .device_class
-                                                    .unwrap_or("".to_string()), //binary_sensor.device_class,
-                                                is_status_binary_sensor: false,
-                                                disabled_by_default: false,
-                                                entity_category: EntityCategory::None as i32,
-                                            },
-                                        );
-                                    api_components_by_key.insert(key, component_binary_sensor);
-                                    api_components_key_id.insert(binary_sensor.id.clone(), key);
-                                }
-                                Component::Light(light) => {
-                                    let key = hash_fnv1(&light.id);
-                                    let component_light = ProtoMessage::ListEntitiesLightResponse(
-                                        ListEntitiesLightResponse {
-                                            object_id: light.id.clone(),
-                                            key: key,
-                                            name: light.name,
-                                            device_id: 0,
-                                            icon: light.icon.unwrap_or_default(),
-                                            disabled_by_default: false,
-                                            entity_category: EntityCategory::None as i32,
-                                            supported_color_modes: vec![], // Can be populated based on capabilities
-                                            min_mireds: 153.0,
-                                            max_mireds: 500.0,
-                                            effects: vec![], // Light effects can be added later
-                                            legacy_supports_brightness: false,
-                                            legacy_supports_rgb: false,
-                                            legacy_supports_white_value: false,
-                                            legacy_supports_color_temperature: false,
-                                        },
-                                    );
-                                    api_components_by_key.insert(key, component_light);
-                                    api_components_key_id.insert(light.id.clone(), key);
-                                }
-                                Component::Number(number) => {
-                                    let key = hash_fnv1(&number.id);
-                                    let component_number = ProtoMessage::ListEntitiesNumberResponse(
-                                        ListEntitiesNumberResponse {
-                                            object_id: number.id.clone(),
-                                            key: key,
-                                            name: number.name,
-                                            device_id: 0,
-                                            icon: number.icon.unwrap_or_default(),
-                                            min_value: number.min_value,
-                                            max_value: number.max_value,
-                                            step: number.step,
-                                            disabled_by_default: false,
-                                            entity_category: EntityCategory::None as i32,
-                                            unit_of_measurement: number
-                                                .unit_of_measurement
-                                                .unwrap_or_default(),
-                                            mode: number.mode,
-                                            device_class: number.device_class.unwrap_or_default(),
-                                        },
-                                    );
-                                    api_components_by_key.insert(key, component_number);
-                                    api_components_key_id.insert(number.id.clone(), key);
-                                }
-                                Component::TextSensor(text_sensor) => {
-                                    let key = hash_fnv1(&text_sensor.id);
-                                    let component_text_sensor =
-                                        ProtoMessage::ListEntitiesTextSensorResponse(
-                                            ListEntitiesTextSensorResponse {
-                                                object_id: text_sensor.id.clone(),
-                                                key: key,
-                                                name: text_sensor.name,
-                                                device_id: 0,
-                                                icon: text_sensor.icon.unwrap_or_default(),
-                                                disabled_by_default: false,
-                                                entity_category: EntityCategory::None as i32,
-                                                device_class: text_sensor
-                                                    .device_class
-                                                    .unwrap_or_default(),
-                                            },
-                                        );
-                                    api_components_by_key.insert(key, component_text_sensor);
-                                    api_components_key_id.insert(text_sensor.id.clone(), key);
-                                }
-                            }
+            if let Ok(PublishedMessage::Components { components }) = receiver.recv().await {
+                for component in components {
+                    match component {
+                        UbiComponent::Switch(switch_entity) => {
+                            let key = hash_fnv1(&switch_entity.id);
+                            let component_switch_entity = ProtoMessage::ListEntitiesSwitchResponse(
+                                ListEntitiesSwitchResponse {
+                                    object_id: switch_entity.id.clone(),
+                                    key,
+                                    name: switch_entity.name,
+                                    device_id: 0,
+                                    icon: switch_entity.icon.unwrap_or_default(),
+                                    device_class: switch_entity.device_class.unwrap_or_default(),
+                                    disabled_by_default: false,
+                                    entity_category: EntityCategory::None as i32,
+                                    assumed_state: switch_entity.assumed_state,
+                                },
+                            );
+                            api_components_by_key.insert(key, component_switch_entity);
+                            api_components_key_id.insert(switch_entity.id.clone(), key);
+                        }
+                        UbiComponent::Button(button) => {
+                            let key = hash_fnv1(&button.id);
+                            let component_button = ProtoMessage::ListEntitiesButtonResponse(
+                                ListEntitiesButtonResponse {
+                                    object_id: button.id.clone(),
+                                    key,
+                                    name: button.name,
+                                    device_id: 0,
+                                    icon: button.icon.unwrap_or_default(),
+                                    device_class: "".to_string(),
+                                    disabled_by_default: false,
+                                    entity_category: EntityCategory::None as i32,
+                                },
+                            );
+                            api_components_by_key.insert(key, component_button);
+                            api_components_key_id.insert(button.id.clone(), key);
+                        }
+                        UbiComponent::Sensor(sensor) => {
+                            let key = hash_fnv1(&sensor.id);
+                            #[allow(deprecated)]
+                            let component_sensor = ProtoMessage::ListEntitiesSensorResponse(
+                                ListEntitiesSensorResponse {
+                                    object_id: sensor.id.clone(),
+                                    key,
+                                    name: sensor.name,
+                                    device_id: 0,
+                                    icon: "".to_string(),
+                                    unit_of_measurement: sensor
+                                        .unit_of_measurement
+                                        .unwrap_or("".to_string()),
+                                    accuracy_decimals: sensor.accuracy_decimals.unwrap_or(2),
+                                    force_update: false,
+                                    device_class: sensor.device_class.unwrap_or("".to_string()),
+                                    state_class: SensorStateClass::StateClassMeasurement as i32,
+                                    legacy_last_reset_type: SensorLastResetType::LastResetNone
+                                        as i32,
+                                    disabled_by_default: false,
+                                    entity_category: EntityCategory::None as i32,
+                                },
+                            );
+                            api_components_by_key.insert(key, component_sensor);
+                            api_components_key_id.insert(sensor.id.clone(), key);
+                        }
+                        UbiComponent::BinarySensor(binary_sensor) => {
+                            let key = hash_fnv1(&binary_sensor.id);
+                            let component_binary_sensor =
+                                ProtoMessage::ListEntitiesBinarySensorResponse(
+                                    ListEntitiesBinarySensorResponse {
+                                        object_id: binary_sensor.id.clone(),
+                                        key,
+                                        name: binary_sensor.name,
+                                        device_id: 0,
+                                        icon: "".to_string(),
+                                        device_class: binary_sensor
+                                            .device_class
+                                            .unwrap_or("".to_string()),
+                                        is_status_binary_sensor: false,
+                                        disabled_by_default: false,
+                                        entity_category: EntityCategory::None as i32,
+                                    },
+                                );
+                            api_components_by_key.insert(key, component_binary_sensor);
+                            api_components_key_id.insert(binary_sensor.id.clone(), key);
+                        }
+                        UbiComponent::Light(light) => {
+                            let key = hash_fnv1(&light.id);
+                            #[allow(deprecated)]
+                            let component_light = ProtoMessage::ListEntitiesLightResponse(
+                                ListEntitiesLightResponse {
+                                    object_id: light.id.clone(),
+                                    key,
+                                    name: light.name,
+                                    device_id: 0,
+                                    icon: light.icon.unwrap_or_default(),
+                                    disabled_by_default: false,
+                                    entity_category: EntityCategory::None as i32,
+                                    supported_color_modes: vec![],
+                                    min_mireds: 153.0,
+                                    max_mireds: 500.0,
+                                    effects: vec![],
+                                    legacy_supports_brightness: false,
+                                    legacy_supports_rgb: false,
+                                    legacy_supports_white_value: false,
+                                    legacy_supports_color_temperature: false,
+                                },
+                            );
+                            api_components_by_key.insert(key, component_light);
+                            api_components_key_id.insert(light.id.clone(), key);
+                        }
+                        UbiComponent::Number(number) => {
+                            let key = hash_fnv1(&number.id);
+                            let component_number = ProtoMessage::ListEntitiesNumberResponse(
+                                ListEntitiesNumberResponse {
+                                    object_id: number.id.clone(),
+                                    key,
+                                    name: number.name,
+                                    device_id: 0,
+                                    icon: number.icon.unwrap_or_default(),
+                                    min_value: number.min_value,
+                                    max_value: number.max_value,
+                                    step: number.step,
+                                    disabled_by_default: false,
+                                    entity_category: EntityCategory::None as i32,
+                                    unit_of_measurement: number
+                                        .unit_of_measurement
+                                        .unwrap_or_default(),
+                                    mode: number.mode,
+                                    device_class: number.device_class.unwrap_or_default(),
+                                },
+                            );
+                            api_components_by_key.insert(key, component_number);
+                            api_components_key_id.insert(number.id.clone(), key);
+                        }
+                        UbiComponent::TextSensor(text_sensor) => {
+                            let key = hash_fnv1(&text_sensor.id);
+                            let component_text_sensor =
+                                ProtoMessage::ListEntitiesTextSensorResponse(
+                                    ListEntitiesTextSensorResponse {
+                                        object_id: text_sensor.id.clone(),
+                                        key,
+                                        name: text_sensor.name,
+                                        device_id: 0,
+                                        icon: text_sensor.icon.unwrap_or_default(),
+                                        disabled_by_default: false,
+                                        entity_category: EntityCategory::None as i32,
+                                        device_class: text_sensor
+                                            .device_class
+                                            .unwrap_or_default(),
+                                    },
+                                );
+                            api_components_by_key.insert(key, component_text_sensor);
+                            api_components_key_id.insert(text_sensor.id.clone(), key);
                         }
                     }
-                    _ => {}
                 }
-                break;
             }
 
-            let port = api_config.port.unwrap_or(6053);
+            let port = config.api.port.unwrap_or(6053);
             let addr: SocketAddr = format!("0.0.0.0:{}", port).parse().unwrap();
             let socket = TcpSocket::new_v4().unwrap();
             socket.set_reuseaddr(true).unwrap();
@@ -343,7 +334,7 @@ impl Module for UbiHomeDefault {
                                         tx_clone
                                             .send(ProtoMessage::SensorStateResponse(
                                                 SensorStateResponse {
-                                                    key: key.clone(),
+                                                    key: *key,
                                                     device_id: 0,
                                                     state: value,
                                                     missing_state: false,
@@ -359,7 +350,7 @@ impl Module for UbiHomeDefault {
                                         tx_clone
                                             .send(ProtoMessage::BinarySensorStateResponse(
                                                 BinarySensorStateResponse {
-                                                    key: key.clone(),
+                                                    key: *key,
                                                     device_id: 0,
                                                     state: value,
                                                     missing_state: false,
@@ -375,9 +366,9 @@ impl Module for UbiHomeDefault {
                                         tx_clone
                                             .send(ProtoMessage::SwitchStateResponse(
                                                 SwitchStateResponse {
-                                                    key: key.clone(),
+                                                    key: *key,
                                                     device_id: 0,
-                                                    state: state,
+                                                    state,
                                                 },
                                             ))
                                             .await
@@ -397,9 +388,9 @@ impl Module for UbiHomeDefault {
                                         tx_clone
                                             .send(ProtoMessage::LightStateResponse(
                                                 LightStateResponse {
-                                                    key: key.clone(),
+                                                    key: *key,
                                                     device_id: 0,
-                                                    state: state,
+                                                    state,
                                                     brightness: brightness.unwrap_or(0.0),
                                                     color_mode: 1, // RGB mode, could be made configurable
                                                     color_brightness: brightness.unwrap_or(0.0),
@@ -423,7 +414,7 @@ impl Module for UbiHomeDefault {
                                             tx_clone
                                                 .send(ProtoMessage::NumberStateResponse(
                                                     NumberStateResponse {
-                                                        key: key.clone(),
+                                                        key: *key,
                                                         device_id: 0,
                                                         state: value,
                                                         missing_state: false,
@@ -452,6 +443,7 @@ impl Module for UbiHomeDefault {
                                     }
                                     PublishedMessage::BluetoothProxyMessage(msg) => {
                                         debug!("BluetoothProxyMessage: {:?}", &msg);
+                                        #[allow(deprecated)]
                                         let service_data: Vec<BluetoothServiceData> = msg
                                             .service_data
                                             .iter()
@@ -461,6 +453,7 @@ impl Module for UbiHomeDefault {
                                                 legacy_data: Vec::new(),
                                             })
                                             .collect();
+                                        #[allow(deprecated)]
                                         let manufacturer_data = msg
                                             .manufacturer_data
                                             .iter()
@@ -472,12 +465,12 @@ impl Module for UbiHomeDefault {
                                             .collect();
                                         let test = BluetoothLeAdvertisementResponse {
                                             address: mac_to_u64(&msg.mac).unwrap(),
-                                            rssi: msg.rssi.try_into().unwrap(),
+                                            rssi: msg.rssi.into(),
                                             address_type: 1,
                                             name: msg.name.as_bytes().to_vec(),
                                             service_uuids: msg.service_uuids,
-                                            service_data: service_data,
-                                            manufacturer_data: manufacturer_data,
+                                            service_data,
+                                            manufacturer_data,
                                         };
 
                                         tx_clone
@@ -502,7 +495,7 @@ impl Module for UbiHomeDefault {
                                     ProtoMessage::ListEntitiesRequest(list_entities_request) => {
                                         debug!("ListEntitiesRequest: {:?}", list_entities_request);
 
-                                        for (key, sensor) in &api_components_clone {
+                                        for sensor in api_components_clone.values() {
                                             tx.send(sensor.clone()).await.unwrap();
                                         }
                                         tx.send(ProtoMessage::ListEntitiesDoneResponse(
@@ -590,12 +583,12 @@ impl Module for UbiHomeDefault {
                                             "SubscribeHomeAssistantStatesRequest: {:?}",
                                             subscribe_homeassistant_services_request
                                         );
-                                        let response_message =
-                                            SubscribeHomeAssistantStateResponse {
-                                                entity_id: "test".to_string(),
-                                                attribute: "test".to_string(),
-                                                once: true,
-                                            };
+                                        // let response_message =
+                                        //     SubscribeHomeAssistantStateResponse {
+                                        //         entity_id: "test".to_string(),
+                                        //         attribute: "test".to_string(),
+                                        //         once: true,
+                                        //     };
                                     }
                                     ProtoMessage::ButtonCommandRequest(button_command_request) => {
                                         debug!(
@@ -605,16 +598,15 @@ impl Module for UbiHomeDefault {
                                         let button = api_components_clone
                                             .get(&button_command_request.key)
                                             .unwrap();
-                                        match button {
-                                            ProtoMessage::ListEntitiesButtonResponse(button) => {
-                                                debug!("ButtonCommandRequest: {:?}", button);
-                                                let msg = ChangedMessage::ButtonPress {
-                                                    key: button.object_id.clone(),
-                                                };
+                                        if let ProtoMessage::ListEntitiesButtonResponse(button) =
+                                            button
+                                        {
+                                            debug!("ButtonCommandRequest: {:?}", button);
+                                            let msg = ChangedMessage::ButtonPress {
+                                                key: button.object_id.clone(),
+                                            };
 
-                                                cloned_sender.send(msg).unwrap();
-                                            }
-                                            _ => {}
+                                            cloned_sender.send(msg).unwrap();
                                         }
                                     }
                                     ProtoMessage::SwitchCommandRequest(switch_command_request) => {
@@ -625,22 +617,20 @@ impl Module for UbiHomeDefault {
                                         let switch_entity = api_components_clone
                                             .get(&switch_command_request.key)
                                             .unwrap();
-                                        match switch_entity {
-                                            ProtoMessage::ListEntitiesSwitchResponse(
-                                                switch_entity,
-                                            ) => {
-                                                debug!(
-                                                    "switch_entityCommandRequest: {:?}",
-                                                    switch_entity
-                                                );
-                                                let msg = ChangedMessage::SwitchStateCommand {
-                                                    key: switch_entity.object_id.clone(),
-                                                    state: switch_command_request.state,
-                                                };
+                                        if let ProtoMessage::ListEntitiesSwitchResponse(
+                                            switch_entity,
+                                        ) = switch_entity
+                                        {
+                                            debug!(
+                                                "switch_entityCommandRequest: {:?}",
+                                                switch_entity
+                                            );
+                                            let msg = ChangedMessage::SwitchStateCommand {
+                                                key: switch_entity.object_id.clone(),
+                                                state: switch_command_request.state,
+                                            };
 
-                                                cloned_sender.send(msg).unwrap();
-                                            }
-                                            _ => {}
+                                            cloned_sender.send(msg).unwrap();
                                         }
                                     }
                                     ProtoMessage::LightCommandRequest(light_command_request) => {
@@ -648,41 +638,38 @@ impl Module for UbiHomeDefault {
                                         let light_entity = api_components_clone
                                             .get(&light_command_request.key)
                                             .unwrap();
-                                        match light_entity {
-                                            ProtoMessage::ListEntitiesLightResponse(
-                                                light_entity,
-                                            ) => {
-                                                debug!("LightCommandRequest: {:?}", light_entity);
-                                                let msg = ChangedMessage::LightStateCommand {
-                                                    key: light_entity.object_id.clone(),
-                                                    state: light_command_request.state,
-                                                    brightness: if light_command_request
-                                                        .has_brightness
-                                                    {
-                                                        Some(light_command_request.brightness)
-                                                    } else {
-                                                        None
-                                                    },
-                                                    red: if light_command_request.has_rgb {
-                                                        Some(light_command_request.red)
-                                                    } else {
-                                                        None
-                                                    },
-                                                    green: if light_command_request.has_rgb {
-                                                        Some(light_command_request.green)
-                                                    } else {
-                                                        None
-                                                    },
-                                                    blue: if light_command_request.has_rgb {
-                                                        Some(light_command_request.blue)
-                                                    } else {
-                                                        None
-                                                    },
-                                                };
+                                        if let ProtoMessage::ListEntitiesLightResponse(
+                                            light_entity,
+                                        ) = light_entity
+                                        {
+                                            debug!("LightCommandRequest: {:?}", light_entity);
+                                            let msg = ChangedMessage::LightStateCommand {
+                                                key: light_entity.object_id.clone(),
+                                                state: light_command_request.state,
+                                                brightness: if light_command_request.has_brightness
+                                                {
+                                                    Some(light_command_request.brightness)
+                                                } else {
+                                                    None
+                                                },
+                                                red: if light_command_request.has_rgb {
+                                                    Some(light_command_request.red)
+                                                } else {
+                                                    None
+                                                },
+                                                green: if light_command_request.has_rgb {
+                                                    Some(light_command_request.green)
+                                                } else {
+                                                    None
+                                                },
+                                                blue: if light_command_request.has_rgb {
+                                                    Some(light_command_request.blue)
+                                                } else {
+                                                    None
+                                                },
+                                            };
 
-                                                cloned_sender.send(msg).unwrap();
-                                            }
-                                            _ => {}
+                                            cloned_sender.send(msg).unwrap();
                                         }
                                     }
                                     ProtoMessage::NumberCommandRequest(number_command_request) => {
@@ -693,19 +680,17 @@ impl Module for UbiHomeDefault {
                                         let number_entity = api_components_clone
                                             .get(&number_command_request.key)
                                             .unwrap();
-                                        match number_entity {
-                                            ProtoMessage::ListEntitiesNumberResponse(
-                                                number_entity,
-                                            ) => {
-                                                debug!("NumberCommandRequest: {:?}", number_entity);
-                                                let msg = ChangedMessage::NumberValueCommand {
-                                                    key: number_entity.object_id.clone(),
-                                                    value: number_command_request.state,
-                                                };
+                                        if let ProtoMessage::ListEntitiesNumberResponse(
+                                            number_entity,
+                                        ) = number_entity
+                                        {
+                                            debug!("NumberCommandRequest: {:?}", number_entity);
+                                            let msg = ChangedMessage::NumberValueCommand {
+                                                key: number_entity.object_id.clone(),
+                                                value: number_command_request.state,
+                                            };
 
-                                                cloned_sender.send(msg).unwrap();
-                                            }
-                                            _ => {}
+                                            cloned_sender.send(msg).unwrap();
                                         }
                                     }
                                     _ => {
@@ -736,19 +721,20 @@ ubihome:
 
 api:
   port: 8053
-  encryption_key: 'xiahAckHBW7BcKEQ6mRfasIW20Md9uMh/5PjrjbAhXQ='
+  encryption:
+    key: 'xiahAckHBW7BcKEQ6mRfasIW20Md9uMh/5PjrjbAhXQ='
 
 "#;
 
-        let api_module = UbiHomeDefault::new(&config.to_string());
+        let api_module = UbiHomePlatform::new(&config.to_string());
         assert!(api_module.is_ok(), "API module should parse successfully");
 
         let module = api_module.unwrap();
 
         // Check that the API config is parsed correctly
-        assert_eq!(module.api_config.port, Some(8053), "Port should be 8053");
+        assert_eq!(module.config.api.port, Some(8053), "Port should be 8053");
         assert_eq!(
-            module.api_config.encryption_key,
+            module.config.api.encryption.unwrap().key,
             Some("xiahAckHBW7BcKEQ6mRfasIW20Md9uMh/5PjrjbAhXQ=".to_string()),
             "Encryption key should be xiahAckHBW7BcKEQ6mRfasIW20Md9uMh/5PjrjbAhXQ="
         );
@@ -763,14 +749,14 @@ ubihome:
 api: {}
 "#;
 
-        let api_module = UbiHomeDefault::new(&config.to_string());
+        let api_module = UbiHomePlatform::new(&config.to_string());
         assert!(api_module.is_ok(), "API module should parse successfully");
 
         let module = api_module.unwrap();
 
         // Check that the API config uses defaults when empty object
         assert_eq!(
-            module.api_config.port, None,
+            module.config.api.port, None,
             "Port should be None (default)"
         );
     }

@@ -1,51 +1,28 @@
 name: CI
 
 on:
-  # push:
-  #   branches: [ main ]
-
   pull_request:
 
 jobs:
-  build:
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - target: x86_64-unknown-linux-gnu
-            runs-on: ubuntu-24.04
-            fileending: ''
+  check:
+    runs-on: depot-ubuntu-24.04
+    env:
+      ENGINE_TAR: /tmp/dagger-engine.tar
+      ENGINE_CACHE_TAR: /tmp/dagger-engine-cache.tar
 
-          - target: arm-unknown-linux-musleabi
-            runs-on: ubuntu-24.04
-            fileending: ''
-
-          - target: x86_64-apple-darwin
-            runs-on: macos-26-intel
-            fileending: ''
-
-          - target: aarch64-apple-darwin
-            runs-on: macos-26
-            fileending: ''
-
-          - target: x86_64-pc-windows-msvc
-            runs-on: windows-latest
-            fileending: '.exe'
-
-          - target: armv7-unknown-linux-musleabi
-            runs-on: ubuntu-24.04
-            fileending: ''
-    uses: ./.github/workflows/build-and-test-template.yml
-    with:
-      runs-on: ${{ matrix.runs-on }}
-      target: ${{ matrix.target }}
-      fileending: ${{ matrix.fileending }}
-    # If you might want to use a secret in the build or test job then you would need to pass secrets, inherit disables secret isolation
-    secrets: inherit
-
-  format:
-    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
-      - name: Check formatting
-        run: cargo fmt --check
+
+      - name: Read engine version from dagger.json
+        id: read-engine-version
+        run: |
+          DAGGER_VERSION=$(jq -r '.engineVersion' dagger.json | sed 's/^v//')
+          echo "Dagger Engine version: $DAGGER_VERSION"
+          echo "dagger_version=$DAGGER_VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Run checks
+        uses: dagger/dagger-for-github@v8.4.1
+        with:
+          version: ${{ steps.read-engine-version.outputs.dagger_version }}
+          check: "**"
+          cloud-token: ${{ secrets.DAGGER_CLOUD_TOKEN }}

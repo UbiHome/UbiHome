@@ -1,11 +1,10 @@
-import asyncio
+import base64
 import os
 
-from pytest import mark
-import pytest
-from utils import UbiHome
 import aioesphomeapi
-import base64
+import pytest
+
+from utils import UbiHome
 
 
 async def test_right_key():
@@ -17,7 +16,8 @@ async def test_right_key():
 ubihome:
   name: test_device
 api:
-  encryption_key: "{encryption_key}"
+  encryption:
+    key: "{encryption_key}"
 
 """
 
@@ -43,7 +43,8 @@ async def test_wrong_key():
 ubihome:
   name: test_device
 api:
-  encryption_key: "{encryption_key}"
+  encryption:
+    key: "{encryption_key}"
 
 """
 

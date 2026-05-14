@@ -1,30 +1,46 @@
 use log::{debug, warn};
 use serde::{Deserialize, Deserializer};
-use std::{collections::HashMap, future};
+use std::collections::HashMap;
 use std::{future::Future, pin::Pin, str};
 use tokio::sync::broadcast::{Receiver, Sender};
+use ubihome_core::constants::is_id_string_option;
+use ubihome_core::constants::is_readable_string;
+use ubihome_core::internal::sensors::UbiComponent;
+use ubihome_core::template_binary_sensor;
+use ubihome_core::with_base_entity_properties;
 use ubihome_core::{
-    config_template,
-    home_assistant::sensors::UbiBinarySensor,
-    internal::sensors::{InternalBinarySensor, InternalComponent},
-    ChangedMessage, Module, NoConfig, PublishedMessage,
+    config_template, internal::sensors::UbiBinarySensor, ChangedMessage, Module, NoConfig,
+    PublishedMessage,
 };
 
-#[derive(Debug, Copy, Clone, Deserialize)]
+#[derive(Debug, Copy, Clone, Deserialize, Validate)]
 #[serde(rename_all = "camelCase")]
 pub enum GpioDevice {
     RaspberryPi,
 }
 
-#[derive(Clone, Deserialize, Debug)]
+#[derive(Clone, Deserialize, Debug, Validate)]
+#[garde(allow_unvalidated)]
 pub struct GpioConfig {
     pub device: GpioDevice,
 }
 
-#[derive(Clone, Deserialize, Debug)]
-pub struct GpioBinarySensorConfig {
+#[derive(Clone, Deserialize, Debug, Validate)]
+#[garde(allow_unvalidated)]
+pub struct GpioSensorConfig {
     pub pin: u8, // TODO: Use GPIO types or library
     pub pull_up: Option<bool>,
+}
+
+template_binary_sensor! {
+
+#[derive(Clone, Deserialize, Debug, Validate)]
+#[garde(allow_unvalidated)]
+pub struct GpioBinarySensorConfig {
+    #[serde(flatten)]
+    #[garde(dive)]
+    pub base: GpioSensorConfig,
+}
 }
 
 config_template!(
@@ -40,66 +56,62 @@ config_template!(
 );
 
 #[derive(Clone, Debug)]
-pub struct Default {
-    components: Vec<InternalComponent>,
-    binary_sensors: HashMap<String, GpioBinarySensorConfig>,
+pub struct UbiHomePlatform {
+    components: Vec<UbiComponent>,
+    binary_sensors: HashMap<String, GpioSensorConfig>,
 }
 
-impl Module for Default {
-    fn new(config_string: &String) -> Result<Self, String> {
-        let config = serde_yaml::from_str::<CoreConfig>(config_string).unwrap();
+impl Module for UbiHomePlatform {
+    fn new(config_string: &str) -> Result<Self, String> {
+        let config =
+            serde_saphyr::from_str::<CoreConfig>(config_string).map_err(|e| e.to_string())?;
         // info!("GPIO config: {:?}", config);
-        let mut components: Vec<InternalComponent> = Vec::new();
-        let mut binary_sensors: HashMap<String, GpioBinarySensorConfig> = HashMap::new();
+        let mut components: Vec<UbiComponent> = Vec::new();
+        let mut binary_sensors: HashMap<String, GpioSensorConfig> = HashMap::new();
 
-        for (_, any_sensor) in config.binary_sensor.clone().unwrap_or_default() {
-            match any_sensor.extra {
-                BinarySensorKind::gpio(binary_sensor) => {
-                    let id = any_sensor.default.get_object_id();
-                    components.push(InternalComponent::BinarySensor(InternalBinarySensor {
-                        ha: UbiBinarySensor {
-                            platform: "sensor".to_string(),
-                            icon: any_sensor.default.icon.clone(),
-                            device_class: any_sensor.default.device_class.clone(),
-                            name: any_sensor.default.name.clone(),
-                            id: id.clone(),
-                        },
-                        base: any_sensor.default.clone(),
-                    }));
-                    binary_sensors.insert(
-                        id,
-                        GpioBinarySensorConfig {
-                            pin: binary_sensor.pin,
-                            pull_up: binary_sensor.pull_up,
-                        },
-                    );
-                }
-                _ => {}
-            }
+        for (_, binary_sensor) in config.binary_sensor.clone().unwrap_or_default() {
+            let id = binary_sensor.get_object_id();
+            components.push(UbiComponent::BinarySensor(UbiBinarySensor {
+                platform: "sensor".to_string(),
+                icon: binary_sensor.icon.clone(),
+                device_class: binary_sensor.device_class.clone(),
+                name: binary_sensor.name.clone(),
+                id: id.clone(),
+                on_press: binary_sensor.on_press.clone(),
+                on_release: binary_sensor.on_release.clone(),
+                filters: binary_sensor.filters.clone(),
+            }));
+            binary_sensors.insert(
+                id,
+                GpioSensorConfig {
+                    pin: binary_sensor.base.pin,
+                    pull_up: binary_sensor.base.pull_up,
+                },
+            );
         }
 
-        Ok(Default {
+        Ok(UbiHomePlatform {
             components,
             binary_sensors,
         })
     }
 
-    fn components(&mut self) -> Vec<InternalComponent> {
+    fn components(&mut self) -> Vec<UbiComponent> {
         self.components.clone()
     }
 
     fn run(
         &self,
-        sender: Sender<ChangedMessage>,
+        #[allow(unused_variables)] sender: Sender<ChangedMessage>,
         _: Receiver<PublishedMessage>,
     ) -> Pin<Box<dyn Future<Output = Result<(), Box<dyn std::error::Error>>> + Send + 'static>>
     {
+        #[allow(unused_variables)]
         let binary_sensors = self.binary_sensors.clone();
         Box::pin(async move {
             #[cfg(any(target_os = "macos", target_os = "windows"))]
             {
                 warn!("GPIO is not supported on this platform.");
-                return Ok(());
             }
             #[cfg(target_os = "linux")]
             {
@@ -191,7 +203,7 @@ impl Module for Default {
                             debug!("Waiting for interrupts.");
 
                             // Wait indefinitely for the interrupts
-                            let future = future::pending();
+                            let future = std::future::pending();
                             let () = future.await;
                             debug!("Interrupts stopped.");
                         }

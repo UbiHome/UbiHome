@@ -61,7 +61,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Add extra packages (MacOS)
-        if: matrix.runs-on == 'macOS-latest'
+        if: startsWith(matrix.runs-on, 'macos-')
         run: brew install libmodbus
 
       - name: Add extra packages (Linux)
@@ -82,11 +82,11 @@ jobs:
         run: cp documentation/docs/getting_started/linux.yml config.yaml
 
       - name: Copy example config (Windows)
-        if: matrix.runs-on == 'windows-latest'
+        if: startsWith(matrix.runs-on, 'windows-')
         run: cp documentation/docs/getting_started/windows.yml config.yaml
 
       - name: Copy example config (macOS)
-        if: matrix.runs-on == 'macOS-latest'
+        if: startsWith(matrix.runs-on, 'macos-')
         run: cp documentation/docs/getting_started/macos.yml config.yaml
 
       - name: Publish artifacts and release

@@ -10,7 +10,7 @@ sendspin:
   # name:
   # Optional: Unique ID of this client in Sendspin (default: ubihome device name)
   # client_id:
-  # output_name: Optional name of the output device (defaults to first device found)
+  # output_id: Optional name of the output device (defaults to first device found)
 ```
 
 On Linux you may need to specify the output device name manually, as UbiHome may detect the default device incorrectly.

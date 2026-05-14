@@ -1,16 +1,17 @@
 from asyncio import sleep
 from unittest.mock import Mock
 
-import pytest
+import aioesphomeapi
+
 from mock_file import IOMock
 from utils import OS_PLATFORM, Platform, UbiHome
-import aioesphomeapi
 
 
 async def test_run(io_mock: IOMock):
-    light_id = "my_light"
-    light_name = "Test Light"
-    io_mock.set_value("false")
+    """Test binary sensor component."""
+
+    sensor_id = "my_sensor"
+    sensor_name = "Test Sensor"
     DEVICE_INFO_CONFIG = f"""
 ubihome:
   name: test_device
@@ -19,17 +20,15 @@ api:
 
 shell:
   type: {"bash" if OS_PLATFORM is Platform.LINUX else "powershell"}
-  
-light:
-  - platform: shell
-    id: {light_id}
-    update_interval: 1s
-    name: {light_name}
-    command_on: "echo true > {io_mock.file}"
-    command_off: "echo false > {io_mock.file}"
-    command_state: "cat {io_mock.file}"
 
+binary_sensor:
+  - platform: "shell"
+    id: {sensor_id}
+    update_interval: 1s
+    name: {sensor_name}
+    command: "cat {io_mock.file}"
 """
+    io_mock.set_value("false")
 
     async with UbiHome("run", config=DEVICE_INFO_CONFIG, wait_for_api=True) as ubihome:
         api = aioesphomeapi.APIClient("127.0.0.1", ubihome.port, "")
@@ -39,9 +38,9 @@ light:
         assert len(entities) == 1, entities
         entity = entities[0]
 
-        assert type(entity) == aioesphomeapi.LightInfo
-        assert entity.object_id == light_id
-        assert entity.name == light_name
+        assert isinstance(entity, aioesphomeapi.BinarySensorInfo)
+        assert entity.object_id == sensor_id
+        assert entity.name == sensor_name
 
         mock = Mock()
         # Subscribe to the state changes
@@ -55,3 +54,13 @@ light:
 
         state = mock.call_args.args[0]
         assert state.state is True
+
+        io_mock.set_value("false")
+
+        mock.reset_mock()
+        # Wait for the state change
+        while not mock.called:
+            await sleep(0.1)
+
+        state = mock.call_args.args[0]
+        assert state.state is False

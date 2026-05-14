@@ -46,3 +46,7 @@ Test it out:
 ```
 
 Have a look at the [examples](https://ubihome.github.io/examples/index.html) to get started.
+
+### AI Disclaimer
+
+This project of course uses AI and encourages its usage. But the same conditions apply as with any contributions: Whoever contributes the code is responsible for it. Everything is reviewed and tested before being merged. 

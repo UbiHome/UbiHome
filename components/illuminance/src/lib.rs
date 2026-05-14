@@ -7,14 +7,19 @@ use tokio::{
     sync::broadcast::{Receiver, Sender},
     time,
 };
+use ubihome_core::constants::is_id_string_option;
+use ubihome_core::constants::is_readable_string;
+use ubihome_core::internal::sensors::UbiComponent;
+use ubihome_core::template_sensor;
+use ubihome_core::with_base_entity_properties;
 use ubihome_core::{
-    config_template,
-    home_assistant::sensors::UbiSensor,
-    internal::sensors::{InternalComponent, InternalSensor},
-    ChangedMessage, Module, NoConfig, PublishedMessage,
+    config_template, internal::sensors::UbiSensor, ChangedMessage, Module, NoConfig,
+    PublishedMessage,
 };
 
-#[derive(Clone, Deserialize, Debug)]
+template_sensor! {
+#[derive(Clone, Deserialize, Debug, Validate)]
+#[garde(allow_unvalidated)]
 pub struct AmbientLightSensorConfig {
     /// Update interval for reading light sensor values
     #[serde(default = "default_update_interval")]
@@ -23,12 +28,14 @@ pub struct AmbientLightSensorConfig {
     /// Device path (Linux only) - auto-detected if not specified
     pub device_path: Option<String>,
 }
+}
 
 fn default_update_interval() -> Duration {
     Duration::from_secs(30)
 }
 
-#[derive(Clone, Deserialize, Debug)]
+#[derive(Clone, Deserialize, Debug, Validate)]
+#[garde(allow_unvalidated)]
 struct AmbientLightConfig {}
 
 config_template!(
@@ -43,71 +50,59 @@ config_template!(
     NoConfig
 );
 
-pub struct Default {
-    config: AmbientLightConfig,
-    components: Vec<InternalComponent>,
+pub struct UbiHomePlatform {
+    components: Vec<UbiComponent>,
     sensors: HashMap<String, AmbientLightSensorConfig>,
 }
 
-impl Module for Default {
-    fn new(config_string: &String) -> Result<Self, String> {
-        let config = serde_yaml::from_str::<CoreConfig>(config_string)
-            .map_err(|e| format!("Failed to parse light sensor config: {}", e))?;
+impl Module for UbiHomePlatform {
+    fn new(config_string: &str) -> Result<Self, String> {
+        let config =
+            serde_saphyr::from_str::<CoreConfig>(config_string).map_err(|e| e.to_string())?;
 
         debug!("AmbientLight sensor config: {:?}", config);
 
-        let mut components: Vec<InternalComponent> = Vec::new();
+        let mut components: Vec<UbiComponent> = Vec::new();
         let mut sensors: HashMap<String, AmbientLightSensorConfig> = HashMap::new();
 
         if let Some(sensor_configs) = config.sensor {
-            for (_, sensor_config) in sensor_configs {
-                match sensor_config.extra {
-                    SensorKind::illuminance(sensor) => {
-                        let id = sensor_config.default.get_object_id();
-                        components.push(InternalComponent::Sensor(InternalSensor {
-                            ha: UbiSensor {
-                                platform: "sensor".to_string(),
-                                icon: sensor_config
-                                    .default
-                                    .icon
-                                    .clone()
-                                    .or_else(|| Some("mdi:brightness-6".to_string())),
-                                device_class: sensor_config
-                                    .default
-                                    .device_class
-                                    .clone()
-                                    .or_else(|| Some("illuminance".to_string())),
-                                state_class: sensor_config
-                                    .default
-                                    .state_class
-                                    .clone()
-                                    .or_else(|| Some("measurement".to_string())),
-                                unit_of_measurement: sensor_config
-                                    .default
-                                    .unit_of_measurement
-                                    .clone()
-                                    .or_else(|| Some("lx".to_string())),
-                                accuracy_decimals: sensor_config.default.accuracy_decimals,
-                                name: sensor_config.default.name.clone(),
-                                id: id.clone(),
-                            },
-                            base: sensor_config.default.clone(),
-                        }));
-                        sensors.insert(id.clone(), sensor);
-                    }
-                    _ => {}
-                }
+            for (_, sensor) in sensor_configs {
+                let id = sensor.get_object_id();
+                components.push(UbiComponent::Sensor(UbiSensor {
+                    platform: "sensor".to_string(),
+                    icon: sensor
+                        .icon
+                        .clone()
+                        .or_else(|| Some("mdi:brightness-6".to_string())),
+                    device_class: sensor
+                        .device_class
+                        .clone()
+                        .or_else(|| Some("illuminance".to_string())),
+                    state_class: sensor
+                        .state_class
+                        .clone()
+                        .or_else(|| Some("measurement".to_string())),
+                    unit_of_measurement: sensor
+                        .unit_of_measurement
+                        .clone()
+                        .or_else(|| Some("lx".to_string())),
+                    accuracy_decimals: sensor.accuracy_decimals,
+                    name: sensor.name.clone(),
+                    id: id.clone(),
+                    filters: sensor.filters.clone(),
+                }));
+                sensors.insert(id.clone(), sensor);
             }
         }
 
-        Ok(Default {
-            config: config.illuminance,
+        Ok(UbiHomePlatform {
+            // config: config.illuminance,
             components,
             sensors,
         })
     }
 
-    fn components(&mut self) -> Vec<InternalComponent> {
+    fn components(&mut self) -> Vec<UbiComponent> {
         self.components.clone()
     }
 
@@ -118,8 +113,6 @@ impl Module for Default {
     ) -> Pin<Box<dyn Future<Output = Result<(), Box<dyn std::error::Error>>> + Send + 'static>>
     {
         let sensors = self.sensors.clone();
-        let global_config = self.config.clone();
-
         Box::pin(async move {
             if sensors.is_empty() {
                 debug!("No light sensors configured");
@@ -128,11 +121,9 @@ impl Module for Default {
 
             for (sensor_id, sensor_config) in sensors {
                 let cloned_sender = sender.clone();
-                let cloned_global_config = global_config.clone();
 
                 tokio::spawn(async move {
                     let update_interval = sensor_config.update_interval;
-                    // .unwrap_or(cloned_global_config.update_interval);
 
                     let mut interval = time::interval(update_interval);
 
@@ -186,31 +177,29 @@ async fn read_illuminance(device_path: Option<&String>) -> Result<f64, String> {
         let entries = fs::read_dir(iio_base)
             .map_err(|e| format!("Failed to read IIO devices directory: {}", e))?;
 
-        for entry in entries {
-            if let Ok(entry) = entry {
-                let device_path = entry.path();
-                if let Some(device_name) = device_path.file_name() {
-                    if device_name.to_string_lossy().starts_with("iio:device") {
-                        // Check if this device has illuminance capabilities
-                        let illuminance_raw_path = device_path.join("in_illuminance_raw");
-                        let illuminance_input_path = device_path.join("in_illuminance_input");
+        for entry in entries.flatten() {
+            let device_path = entry.path();
+            if let Some(device_name) = device_path.file_name() {
+                if device_name.to_string_lossy().starts_with("iio:device") {
+                    // Check if this device has illuminance capabilities
+                    let illuminance_raw_path = device_path.join("in_illuminance_raw");
+                    let illuminance_input_path = device_path.join("in_illuminance_input");
 
-                        if illuminance_raw_path.exists() {
-                            if let Ok(value) = read_linux_illuminance_from_path(
-                                &illuminance_raw_path.to_string_lossy().to_string(),
-                            )
-                            .await
-                            {
-                                return Ok(value);
-                            }
-                        } else if illuminance_input_path.exists() {
-                            if let Ok(value) = read_linux_illuminance_from_path(
-                                &illuminance_input_path.to_string_lossy().to_string(),
-                            )
-                            .await
-                            {
-                                return Ok(value);
-                            }
+                    if illuminance_raw_path.exists() {
+                        if let Ok(value) = read_linux_illuminance_from_path(
+                            illuminance_raw_path.to_string_lossy().as_ref(),
+                        )
+                        .await
+                        {
+                            return Ok(value);
+                        }
+                    } else if illuminance_input_path.exists() {
+                        if let Ok(value) = read_linux_illuminance_from_path(
+                            illuminance_input_path.to_string_lossy().as_ref(),
+                        )
+                        .await
+                        {
+                            return Ok(value);
                         }
                     }
                 }
@@ -227,7 +216,7 @@ async fn read_illuminance(device_path: Option<&String>) -> Result<f64, String> {
 
     for path in &hwmon_paths {
         if Path::new(path).exists() {
-            if let Ok(value) = read_linux_illuminance_from_path(&path.to_string()).await {
+            if let Ok(value) = read_linux_illuminance_from_path(path).await {
                 return Ok(value);
             }
         }
@@ -261,7 +250,7 @@ async fn read_illuminance(_device_path: Option<&String>) -> Result<f64, String> 
             ISensorDataReport, ISensorManager, SENSOR_DATA_TYPE_LIGHT_LEVEL_LUX,
             SENSOR_TYPE_AMBIENT_LIGHT,
         },
-        Win32::System::Com::StructuredStorage::{PropVariantToDouble, PROPVARIANT},
+        Win32::System::Com::StructuredStorage::PropVariantToDouble,
         Win32::System::Com::{
             CoCreateInstance, CoInitializeEx, CoUninitialize, CLSCTX_INPROC_SERVER,
         },
@@ -270,10 +259,7 @@ async fn read_illuminance(_device_path: Option<&String>) -> Result<f64, String> 
     unsafe {
         // Initialize COM
 
-        use windows::Win32::{
-            Devices::Sensors::{SensorManager, SENSOR_DATA_TYPE_LIGHT_GUID},
-            System::Com::COINIT_MULTITHREADED,
-        };
+        use windows::Win32::{Devices::Sensors::SensorManager, System::Com::COINIT_MULTITHREADED};
         let hr = CoInitializeEx(None, COINIT_MULTITHREADED);
         if hr.is_err() {
             return Err("Failed to initialize COM".to_string());

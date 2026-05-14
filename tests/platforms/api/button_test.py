@@ -1,3 +1,5 @@
+import aioesphomeapi
+
 from mock_file import IOMock
 from utils import (
     OS_PLATFORM,
@@ -5,7 +7,6 @@ from utils import (
     UbiHome,
     fnv1_hash_object_id,
 )
-import aioesphomeapi
 
 
 async def test_run(io_mock: IOMock):
@@ -20,8 +21,8 @@ api:
 
 shell:
   type: {"bash" if OS_PLATFORM is Platform.LINUX else "powershell"}
-  
-button: 
+
+button:
  - platform: shell
    id: {button_id}
    name: {button_name}
@@ -37,7 +38,7 @@ button:
         print("buttons", entities)
         entity = entities[0]
 
-        assert type(entity) == aioesphomeapi.ButtonInfo
+        assert isinstance(entity, aioesphomeapi.ButtonInfo)
         assert entity.object_id == button_id
         assert entity.name == button_name
 

@@ -1,26 +1,25 @@
 import re
 from collections.abc import Mapping
-from typing import Any
 from os import urandom
+from typing import Any
 
 import pytest
 import yaml
 from playwright.async_api import (
     Page,
-    TimeoutError as PlaywrightTimeoutError,
     expect,
+)
+from playwright.async_api import (
+    TimeoutError as PlaywrightTimeoutError,
 )
 
 from mock_file import IOMockFactory
 from utils import OS_PLATFORM, Platform, UbiHome
 
-
 pytestmark = [pytest.mark.e2e, pytest.mark.timeout(30)]
 
 
-def merge_dicts(
-    base: dict[str, Any], overrides: Mapping[str, Any] | None
-) -> dict[str, Any]:
+def merge_dicts(base: dict[str, Any], overrides: Mapping[str, Any] | None) -> dict[str, Any]:
     if overrides is None:
         return base
 
@@ -34,9 +33,7 @@ def merge_dicts(
     return base
 
 
-def apply_value_overrides(
-    base: dict[str, Any], overrides: Mapping[str, Any] | None
-) -> None:
+def apply_value_overrides(base: dict[str, Any], overrides: Mapping[str, Any] | None) -> None:
     if overrides is None:
         return
 
@@ -61,11 +58,7 @@ async def add_esphome_integration(page: Page, port: int):
     await page.get_by_text("Devices & services").click()
     await page.get_by_role("button", name="Add integration").click()
     await page.get_by_placeholder("Search for a brand name").fill("ESPHome")
-    await (
-        page.locator("ha-integration-list-item")
-        .get_by_text("ESPHome", exact=True)
-        .first.click()
-    )
+    await page.locator("ha-integration-list-item").get_by_text("ESPHome", exact=True).first.click()
 
     setup_another = page.get_by_text("Set up another instance of")
     if await setup_another.count() > 0:
@@ -189,28 +182,23 @@ async def test_components_are_displayed(ha_page: Page, io_mock_factory: IOMockFa
         await add_esphome_integration(ha_page, ubihome.port)
 
         await expect(ha_page.get_by_text("Switch it", exact=True)).to_be_visible()
-        await expect(
-            ha_page.get_by_text("Write Hello World", exact=True)
-        ).to_be_visible()
+        await expect(ha_page.get_by_text("Write Hello World", exact=True)).to_be_visible()
         await expect(ha_page.get_by_text("Test Sensor", exact=True)).to_be_visible()
+        await expect(ha_page.get_by_text("Test Binary Sensor", exact=True)).to_be_visible()
         await expect(ha_page.get_by_text("Test Number", exact=True)).to_be_visible()
         await expect(
             ha_page.get_by_text("Test Text Sensor", exact=True)
         ).to_be_visible()
 
 
-async def test_button_and_switch_actions_are_executed(
-    ha_page: Page, io_mock_factory: IOMockFactory
-):
+async def test_button_and_switch_actions_are_executed(ha_page: Page, io_mock_factory: IOMockFactory):
     async with UbiHomeInstance(io_mock_factory) as ubihome:
         await add_esphome_integration(ha_page, ubihome.port)
 
         await ha_page.get_by_role("button", name="Press").click()
         ubihome.button_sensor_mock.wait_for_mock_state("button")
 
-        await ha_page.get_by_role(
-            "button", name=f"Turn {ubihome.device_name} Switch it on"
-        ).click()
+        await ha_page.get_by_role("button", name=f"Turn {ubihome.device_name} Switch it on").click()
         ubihome.switch_mock.wait_for_mock_state("true")
 
 
@@ -234,7 +222,6 @@ async def test_number_action_is_executed(ha_page: Page, io_mock_factory: IOMockF
         (1, "0.8", r"0\.8", r"0\.80"),
     ],
 )
-@pytest.mark.timeout(90)
 async def test_accuracy_decimals_are_displayed_in_ui(
     ha_page: Page,
     io_mock_factory: IOMockFactory,
@@ -251,9 +238,7 @@ async def test_accuracy_decimals_are_displayed_in_ui(
         await add_esphome_integration(ha_page, ubihome.port)
 
         await expect(ha_page.get_by_text("Switch it", exact=True)).to_be_visible()
-        await expect(
-            ha_page.get_by_text("Write Hello World", exact=True)
-        ).to_be_visible()
+        await expect(ha_page.get_by_text("Write Hello World", exact=True)).to_be_visible()
         await expect(ha_page.get_by_text("Test Sensor", exact=True)).to_be_visible()
 
         await ha_page.get_by_text(ubihome.sensor_name, exact=True).click(force=True)
@@ -262,9 +247,7 @@ async def test_accuracy_decimals_are_displayed_in_ui(
         await expect(expected_value).to_be_visible(timeout=15000)
 
         if forbidden_pattern:
-            await expect(
-                ha_page.get_by_text(re.compile(forbidden_pattern))
-            ).to_have_count(0)
+            await expect(ha_page.get_by_text(re.compile(forbidden_pattern))).to_have_count(0)
 
 
 async def test_text_sensor_state_is_displayed(

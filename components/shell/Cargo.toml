@@ -1,6 +1,6 @@
 [package]
 name = "ubihome-shell"
-version = "0.13.0"
+version = "0.14.0"
 authors = ["Daniel Habenicht <daniel-habenicht@outlook.de>"]
 edition = "2021"
 
@@ -11,4 +11,5 @@ shell_exec = "0.2.0"
 ubihome-core = { path = "../core" }
 tokio = { version = "1", features = ["full"] }
 duration-str = "0.16.1"
-serde_yaml = "0.9.34"
+serde-saphyr = { version = "0.0.15", features = ["garde", "miette"] }
+garde = { version = "0.22.1", features = ["serde"] }

@@ -1,5 +1,5 @@
-from testcontainers.mqtt import MosquittoContainer
 import pytest
+from testcontainers.mqtt import MosquittoContainer
 
 
 @pytest.fixture(scope="session")

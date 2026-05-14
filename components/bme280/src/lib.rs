@@ -1,53 +1,51 @@
-use duration_str::deserialize_option_duration;
-use log::{debug, warn};
-use serde::Deserialize;
+use log::debug;
+use serde::{Deserialize, Deserializer};
 use std::{collections::HashMap, future::Future, pin::Pin, str, time::Duration};
-use tokio::{
-    sync::broadcast::{Receiver, Sender},
-    time,
-};
+use tokio::sync::broadcast::{Receiver, Sender};
 use ubihome_core::{
-    home_assistant::sensors::{Component, UbiSensor},
-    internal::sensors::{InternalComponent, InternalSensor},
-    sensor::{SensorBase, UnknownSensor},
-    ChangedMessage, Module, PublishedMessage, UbiHome,
+    config_template,
+    constants::{is_id_string_option, is_readable_string},
+    internal::sensors::{UbiComponent, UbiSensor},
+    template_sensor, with_base_entity_properties, ChangedMessage, Module, NoConfig,
+    PublishedMessage,
 };
 
-#[derive(Clone, Deserialize, Debug)]
+#[derive(Clone, Deserialize, Debug, Validate)]
+#[garde(allow_unvalidated)]
 pub struct BME280InternalConfig {
     pub name: Option<String>,
 }
 
-#[derive(Clone, Deserialize, Debug)]
-#[serde(tag = "platform")]
-#[serde(rename_all = "camelCase")]
-pub enum SensorKind {
-    #[serde(alias = "bme280")]
-    Bme280(BME280SensorConfig),
-    #[serde(untagged)]
-    Unknown(UnknownSensor),
+template_sensor! {
+    #[derive(Clone, Deserialize, Debug, Validate)]
+    pub struct SpecificSensorConfig {
+    }
 }
 
-#[derive(Clone, Deserialize, Debug)]
-pub struct SensorConfig {
-    #[serde(flatten)]
-    pub extra: SensorKind,
-}
-
-#[derive(Clone, Deserialize, Debug)]
+#[derive(Clone, Deserialize, Debug, Validate)]
+#[garde(allow_unvalidated)]
 pub struct BME280SensorConfig {
-    pub temperature: Option<SensorBase>,
-    pub pressure: Option<SensorBase>,
-    pub humidity: Option<SensorBase>,
+    platform: String,
+    #[garde(dive)]
+    pub temperature: Option<SpecificSensorConfig>,
+    #[garde(dive)]
+    pub pressure: Option<SpecificSensorConfig>,
+    #[garde(dive)]
+    pub humidity: Option<SpecificSensorConfig>,
     pub address: Option<String>,
     #[serde(deserialize_with = "deserialize_option_duration")]
+    #[garde(skip)]
     pub update_interval: Option<Duration>,
 }
 
-#[derive(Clone, Deserialize, Debug)]
-struct CoreConfig {
-    pub ubihome: UbiHome,
-    pub sensor: Vec<SensorConfig>,
+impl BME280SensorConfig {
+    pub fn get_object_id(&self) -> String {
+        let name = self.address.clone().unwrap_or("".to_string());
+        format!("bme280_{}", name.to_lowercase().replace(" ", "_"))
+    }
+    pub fn is_configured(&self) -> bool {
+        true
+    }
 }
 
 #[derive(PartialEq, Eq, Clone, Debug, Hash)]
@@ -65,182 +63,189 @@ pub struct BME280Sensor {
 }
 
 #[derive(Clone, Debug)]
-pub struct Default {
+pub struct UbiHomePlatform {
     // config: CoreConfig,
-    components: Vec<InternalComponent>,
+    components: Vec<UbiComponent>,
     sensors: Vec<BME280Sensor>,
 }
 
-impl Module for Default {
-    fn new(config_string: &String) -> Result<Self, String> {
-        let config = serde_yaml::from_str::<CoreConfig>(config_string).unwrap();
+config_template!(
+    bme280,
+    BME280InternalConfig,
+    NoConfig,
+    NoConfig,
+    BME280SensorConfig,
+    NoConfig,
+    NoConfig,
+    NoConfig,
+    NoConfig
+);
+
+impl Module for UbiHomePlatform {
+    fn new(config_string: &str) -> Result<Self, String> {
+        let config =
+            serde_saphyr::from_str::<CoreConfig>(config_string).map_err(|e| e.to_string())?;
         // info!("BME280 config: {:?}", config);
-        let mut components: Vec<InternalComponent> = Vec::new();
+        let mut components: Vec<UbiComponent> = Vec::new();
         let mut sensors: Vec<BME280Sensor> = Vec::new();
 
-        for n_sensor in config.sensor.clone() {
-            match n_sensor.extra {
-                SensorKind::Bme280(sensor) => {
-                    let mut sensor_entries: HashMap<Measurement, String> = HashMap::new();
-                    let temperature = sensor.temperature.clone().unwrap_or(SensorBase {
-                        id: None,
-                        name: "Temperature".to_string(),
-                        icon: None,
-                        state_class: None,
-                        device_class: None,
-                        unit_of_measurement: None,
-                        accuracy_decimals: None,
-                        filters: None,
-                    });
-                    let object_id = temperature.get_object_id();
-                    let id = temperature.id.clone().unwrap_or(object_id.clone());
-                    sensor_entries.insert(Measurement::Temperature, id.clone());
-                    components.push(InternalComponent::Sensor(InternalSensor {
-                        ha: UbiSensor {
-                            platform: "sensor".to_string(),
-                            icon: Some(
-                                temperature
-                                    .icon
-                                    .clone()
-                                    .unwrap_or("mdi:thermometer".to_string())
-                                    .clone(),
-                            ),
-                            state_class: Some(
-                                temperature
-                                    .state_class
-                                    .clone()
-                                    .unwrap_or("measurement".to_string()),
-                            ),
-                            device_class: Some(
-                                temperature
-                                    .device_class
-                                    .clone()
-                                    .unwrap_or("temperature".to_string()),
-                            ),
-                            unit_of_measurement: Some(
-                                temperature
-                                    .unit_of_measurement
-                                    .clone()
-                                    .unwrap_or("°C".to_string()),
-                            ),
-                            accuracy_decimals: temperature.accuracy_decimals,
-                            name: temperature.name.clone(),
-                            id: object_id.clone(),
-                        },
-                        base: temperature,
-                    }));
-                    let pressure = sensor.pressure.clone().unwrap_or(SensorBase {
-                        id: None,
-                        name: "Pressure".to_string(),
-                        icon: None,
-                        state_class: None,
-                        device_class: None,
-                        unit_of_measurement: None,
-                        accuracy_decimals: None,
-                        filters: None,
-                    });
-                    let object_id = pressure.get_object_id();
-                    let id = pressure.id.clone().unwrap_or(object_id.clone());
-                    sensor_entries.insert(Measurement::Pressure, id.clone());
-                    components.push(InternalComponent::Sensor(InternalSensor {
-                        ha: UbiSensor {
-                            platform: "sensor".to_string(),
-                            icon: Some(
-                                pressure
-                                    .icon
-                                    .clone()
-                                    .unwrap_or("mdi:umbrella".to_string())
-                                    .clone(),
-                            ),
-                            state_class: Some(
-                                pressure
-                                    .state_class
-                                    .clone()
-                                    .unwrap_or("measurement".to_string()),
-                            ),
-                            device_class: Some(
-                                pressure
-                                    .device_class
-                                    .clone()
-                                    .unwrap_or("pressure".to_string()),
-                            ),
-                            unit_of_measurement: Some(
-                                pressure
-                                    .unit_of_measurement
-                                    .clone()
-                                    .unwrap_or("Pa".to_string()),
-                            ),
-
-                            accuracy_decimals: pressure.accuracy_decimals,
-                            name: pressure.name.clone(),
-                            id: id.clone(),
-                        },
-                        base: pressure,
-                    }));
-                    let humidity = sensor.humidity.clone().unwrap_or(SensorBase {
-                        id: None,
-                        name: "Humidity".to_string(),
-                        icon: None,
-                        state_class: None,
-                        device_class: None,
-                        unit_of_measurement: None,
-                        accuracy_decimals: None,
-                        filters: None,
-                    });
-                    let object_id = humidity.get_object_id();
-                    let id = humidity.id.clone().unwrap_or(object_id.clone());
-                    sensor_entries.insert(Measurement::Humidity, id.clone());
-                    components.push(InternalComponent::Sensor(InternalSensor {
-                        ha: UbiSensor {
-                            platform: "sensor".to_string(),
-                            icon: Some(
-                                humidity
-                                    .icon
-                                    .clone()
-                                    .unwrap_or("mdi:water-percent".to_string()),
-                            ),
-                            state_class: Some(
-                                humidity
-                                    .state_class
-                                    .clone()
-                                    .unwrap_or("measurement".to_string()),
-                            ),
-                            device_class: Some(
-                                humidity
-                                    .device_class
-                                    .clone()
-                                    .unwrap_or("humidity".to_string()),
-                            ),
-                            unit_of_measurement: Some(
-                                humidity
-                                    .unit_of_measurement
-                                    .clone()
-                                    .unwrap_or("%".to_string()),
-                            ),
-                            accuracy_decimals: humidity.accuracy_decimals,
-                            name: humidity.name.clone(),
-                            id: id.clone(),
-                        },
-                        base: humidity,
-                    }));
-                    let sensor_entry = BME280Sensor {
-                        address: sensor.address.clone(),
-                        update_interval: sensor.update_interval.clone(),
-                        entries: sensor_entries,
-                    };
-                    sensors.push(sensor_entry);
-                }
-                _ => {}
-            }
+        for (_, n_sensor) in config.sensor.clone().unwrap_or_default() {
+            let mut sensor_entries: HashMap<Measurement, String> = HashMap::new();
+            let temperature = n_sensor
+                .temperature
+                .clone()
+                .unwrap_or(SpecificSensorConfig {
+                    id: None,
+                    name: "Temperature".to_string(),
+                    icon: None,
+                    state_class: None,
+                    accuracy_decimals: None,
+                    device_class: None,
+                    unit_of_measurement: None,
+                    filters: None,
+                    platform: "bme280".to_string(),
+                });
+            let object_id = temperature.get_object_id();
+            let id = temperature.id.clone().unwrap_or(object_id.clone());
+            sensor_entries.insert(Measurement::Temperature, id.clone());
+            components.push(UbiComponent::Sensor(UbiSensor {
+                platform: "sensor".to_string(),
+                icon: Some(
+                    temperature
+                        .icon
+                        .clone()
+                        .unwrap_or("mdi:thermometer".to_string())
+                        .clone(),
+                ),
+                state_class: Some(
+                    temperature
+                        .state_class
+                        .clone()
+                        .unwrap_or("measurement".to_string()),
+                ),
+                device_class: Some(
+                    temperature
+                        .device_class
+                        .clone()
+                        .unwrap_or("temperature".to_string()),
+                ),
+                unit_of_measurement: Some(
+                    temperature
+                        .unit_of_measurement
+                        .clone()
+                        .unwrap_or("°C".to_string()),
+                ),
+                accuracy_decimals: None,
+                name: temperature.name.clone(),
+                id: object_id.clone(),
+                filters: temperature.filters.clone(),
+            }));
+            let pressure = n_sensor.pressure.clone().unwrap_or(SpecificSensorConfig {
+                id: None,
+                name: "Pressure".to_string(),
+                icon: None,
+                state_class: None,
+                accuracy_decimals: None,
+                device_class: None,
+                unit_of_measurement: None,
+                filters: None,
+                platform: "bme280".to_string(),
+            });
+            let object_id = pressure.get_object_id();
+            let id = pressure.id.clone().unwrap_or(object_id.clone());
+            sensor_entries.insert(Measurement::Pressure, id.clone());
+            components.push(UbiComponent::Sensor(UbiSensor {
+                platform: "sensor".to_string(),
+                icon: Some(
+                    pressure
+                        .icon
+                        .clone()
+                        .unwrap_or("mdi:umbrella".to_string())
+                        .clone(),
+                ),
+                state_class: Some(
+                    pressure
+                        .state_class
+                        .clone()
+                        .unwrap_or("measurement".to_string()),
+                ),
+                device_class: Some(
+                    pressure
+                        .device_class
+                        .clone()
+                        .unwrap_or("pressure".to_string()),
+                ),
+                unit_of_measurement: Some(
+                    pressure
+                        .unit_of_measurement
+                        .clone()
+                        .unwrap_or("Pa".to_string()),
+                ),
+                accuracy_decimals: None,
+                name: pressure.name.clone(),
+                id: id.clone(),
+                filters: pressure.filters.clone(),
+            }));
+            let humidity = n_sensor.humidity.clone().unwrap_or(SpecificSensorConfig {
+                id: None,
+                name: "Humidity".to_string(),
+                icon: None,
+                state_class: None,
+                accuracy_decimals: None,
+                device_class: None,
+                unit_of_measurement: None,
+                filters: None,
+                platform: "bme280".to_string(),
+            });
+            let object_id = humidity.get_object_id();
+            let id = humidity.id.clone().unwrap_or(object_id.clone());
+            sensor_entries.insert(Measurement::Humidity, id.clone());
+            components.push(UbiComponent::Sensor(UbiSensor {
+                platform: "sensor".to_string(),
+                icon: Some(
+                    humidity
+                        .icon
+                        .clone()
+                        .unwrap_or("mdi:water-percent".to_string()),
+                ),
+                state_class: Some(
+                    humidity
+                        .state_class
+                        .clone()
+                        .unwrap_or("measurement".to_string()),
+                ),
+                device_class: Some(
+                    humidity
+                        .device_class
+                        .clone()
+                        .unwrap_or("humidity".to_string()),
+                ),
+                unit_of_measurement: Some(
+                    humidity
+                        .unit_of_measurement
+                        .clone()
+                        .unwrap_or("%".to_string()),
+                ),
+                accuracy_decimals: None,
+                name: humidity.name.clone(),
+                id: id.clone(),
+                filters: humidity.filters.clone(),
+            }));
+            let sensor_entry = BME280Sensor {
+                address: n_sensor.address.clone(),
+                update_interval: n_sensor.update_interval,
+                entries: sensor_entries,
+            };
+            sensors.push(sensor_entry);
         }
-        Ok(Default {
+        Ok(UbiHomePlatform {
             // config,
             components,
             sensors,
         })
     }
 
-    fn components(&mut self) -> Vec<InternalComponent> {
+    fn components(&mut self) -> Vec<UbiComponent> {
         self.components.clone()
     }
 
@@ -252,26 +257,26 @@ impl Module for Default {
     {
         // let mqtt_config = self.mqtt_config.clone();
         // let config = self.config.clone();
+
+        #[allow(unused_variables)]
         let sensors = self.sensors.clone();
+        #[allow(unused_variables)]
         let c_sender = sender.clone();
         Box::pin(async move {
             #[cfg(any(target_os = "macos", target_os = "windows"))]
             {
-                warn!("BME280 is not supported on this platform.");
-                return Ok(());
+                log::warn!("BME280 is not supported on this platform.");
             }
             #[cfg(target_os = "linux")]
             {
                 use bme280::i2c::BME280;
                 use linux_embedded_hal::{Delay, I2cdev};
+                use tokio::time;
 
                 let result = I2cdev::new("/dev/i2c-1");
-                match result {
-                    Err(e) => {
-                        warn!("Error initializing I2C: {}", e);
-                        return Ok(());
-                    }
-                    _ => {}
+                if let Err(e) = result {
+                    log::warn!("Error initializing I2C: {}", e);
+                    return Ok(());
                 }
 
                 for sensor in sensors {
@@ -299,9 +304,10 @@ impl Module for Default {
                             .update_interval
                             .unwrap_or(Duration::from_secs(30));
                         let mut interval = time::interval(duration);
-                        debug!(
+                        log::debug!(
                             "Address {:?} has update interval: {:?}",
-                            cloned_sensor.address, interval
+                            cloned_sensor.address,
+                            interval
                         );
                         loop {
                             // measure temperature, pressure, and humidity
@@ -310,7 +316,7 @@ impl Module for Default {
                             for (sensor_type, id) in cloned_sensor.entries.clone() {
                                 match sensor_type {
                                     Measurement::Temperature => {
-                                        debug!("Temperature: {}", measurements.temperature);
+                                        log::debug!("Temperature: {}", measurements.temperature);
                                         let msg = ChangedMessage::SensorValueChange {
                                             key: id.clone(),
                                             value: measurements.temperature,
@@ -318,7 +324,7 @@ impl Module for Default {
                                         cloned_sender.send(msg).unwrap();
                                     }
                                     Measurement::Pressure => {
-                                        debug!("Pressure: {}", measurements.pressure);
+                                        log::debug!("Pressure: {}", measurements.pressure);
                                         let msg = ChangedMessage::SensorValueChange {
                                             key: id.clone(),
                                             value: measurements.pressure,
@@ -326,7 +332,7 @@ impl Module for Default {
                                         cloned_sender.send(msg).unwrap();
                                     }
                                     Measurement::Humidity => {
-                                        debug!("Humidity: {}", measurements.humidity);
+                                        log::debug!("Humidity: {}", measurements.humidity);
                                         let msg = ChangedMessage::SensorValueChange {
                                             key: id.clone(),
                                             value: measurements.humidity,

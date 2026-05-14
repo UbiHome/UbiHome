@@ -1,4 +1,6 @@
-from typing import Any, Generator
+from collections.abc import Generator
+from typing import Any
+
 import pytest
 
 from mock_file import IOMock, IOMockFactory

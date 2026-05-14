@@ -28,7 +28,7 @@ pub async fn install(location: &str) {
     let systemd_file_path = Path::new(SYSTEMD_FILE_PATH).join(&service_file);
     println!(
         " - Creating Systemd Service file {}",
-        systemd_file_path.to_string_lossy().to_string()
+        systemd_file_path.to_string_lossy()
     );
     let systemd_file: String = format!(
         "[Unit]

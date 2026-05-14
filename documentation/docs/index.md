@@ -21,7 +21,7 @@ Explore the [examples](examples/index.md) to see how to use UbiHome.
 
 ```bash
 pi@raspberrypi:~/ $ ubihome
-UbiHome - 0.13.0
+UbiHome - 0.14.0
 
 UbiHome is a system which allows you to integrate any device running an OS into your smart home.
 https://github.com/UbiHome/UbiHome
@@ -49,10 +49,6 @@ Options:
 
 - Monitor connected bluetooth devices and maybe even proxy them to home assistant.
 - [ ] Auto installation
-  - [x] Windows (https://github.com/mullvad/windows-service-rs) https://medium.com/@aleksej.gudkov/rust-windows-service-example-building-a-windows-service-in-rust-907be67d2287
-  - [x] Linux Service
-    - debian (https://github.com/kornelski/cargo-deb/blob/fc34c45fafc3904cadf652473ff7e9e0344c605c/systemd.md)
-  - [ ] MacOS?
 - [ ] Templates and Services
 - [ ] Additional Components:
   - [ ] HTTP and Web Enpoint
@@ -60,20 +56,13 @@ Options:
   - [ ] Bluetooth Proxy (https://esphome.io/components/bluetooth_proxy.html) https://docs.rs/bluer/latest/bluer/
 - [ ] Online Sensor
 - [ ] Custom compilation for modular builds and custom extensions.
-- [ ] Homeassistant Native API
 - [ ] CLI for automatic generation of executables
 - [ ] Builder Component similar to ESP Home
-- [ ] Self update (https://github.com/jaemk/self_update)
-- [x] GPIO https://github.com/golemparts/rppal
 - [ ] Kernel events (e.g. Keyboard press) https://docs.rs/evdev/latest/evdev/
-- [ ] Music Assistant Media Player integration for Windows / Linux (https://docs.rs/souvlaki/latest/souvlaki/)
-- [ ] Read Lightsensor from a laptop
 - [ ] Windows Current User https://docs.rs/wmi/latest/wmi/
 
 ... Control USB Devices?
 
-Rust clippy:
-https://github.com/rust-lang/rust-clippy
 
 Add Badges?
 https://github.com/squidfunk/mkdocs-material/discussions/7137
