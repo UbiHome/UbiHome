@@ -50,4 +50,4 @@ jobs:
           external_repository: UbiHome/ubihome.github.io
           publish_dir: ./documentation/site
           publish_branch: gh-pages
-          github_token: ${{ secrets.CUSTOM_GITHUB_PAT }}
+          personal_token: ${{ secrets.CUSTOM_GITHUB_PAT }}
