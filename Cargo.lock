@@ -4822,7 +4822,7 @@ checksum = "40ce102ab67701b8526c123c1bab5cbe42d7040ccfd0f64af1a385808d2f43de"
 
 [[package]]
 name = "ubihome"
-version = "0.14.0"
+version = "0.14.1"
 dependencies = [
  "cargo_toml",
  "clap",
@@ -4863,7 +4863,7 @@ dependencies = [
 
 [[package]]
 name = "ubihome-api"
-version = "0.14.0"
+version = "0.14.1"
 dependencies = [
  "duration-str",
  "esphome-native-api",
@@ -4878,7 +4878,7 @@ dependencies = [
 
 [[package]]
 name = "ubihome-bluetooth_proxy"
-version = "0.13.0"
+version = "0.14.0"
 dependencies = [
  "anyhow",
  "btleplug",
@@ -4895,7 +4895,7 @@ dependencies = [
 
 [[package]]
 name = "ubihome-bme280"
-version = "0.13.0"
+version = "0.14.0"
 dependencies = [
  "bme280",
  "duration-str",
@@ -4910,7 +4910,7 @@ dependencies = [
 
 [[package]]
 name = "ubihome-core"
-version = "0.12.0"
+version = "0.13.0"
 dependencies = [
  "convert_case",
  "duration-str",
@@ -4925,7 +4925,7 @@ dependencies = [
 
 [[package]]
 name = "ubihome-evdev"
-version = "0.13.0"
+version = "0.14.0"
 dependencies = [
  "async-trait",
  "duration-str",
@@ -4940,7 +4940,7 @@ dependencies = [
 
 [[package]]
 name = "ubihome-gpio"
-version = "0.13.0"
+version = "0.14.0"
 dependencies = [
  "async-trait",
  "duration-str",
@@ -4955,7 +4955,7 @@ dependencies = [
 
 [[package]]
 name = "ubihome-illuminance"
-version = "0.14.0"
+version = "0.14.1"
 dependencies = [
  "duration-str",
  "garde",
@@ -4970,7 +4970,7 @@ dependencies = [
 
 [[package]]
 name = "ubihome-mdns"
-version = "0.13.0"
+version = "0.14.0"
 dependencies = [
  "duration-str",
  "garde",
@@ -4985,7 +4985,7 @@ dependencies = [
 
 [[package]]
 name = "ubihome-mqtt"
-version = "0.13.0"
+version = "0.14.0"
 dependencies = [
  "duration-str",
  "garde",
@@ -5002,7 +5002,7 @@ dependencies = [
 
 [[package]]
 name = "ubihome-power_utils"
-version = "0.13.0"
+version = "0.14.0"
 dependencies = [
  "duration-str",
  "garde",
@@ -5016,7 +5016,7 @@ dependencies = [
 
 [[package]]
 name = "ubihome-sendspin"
-version = "0.13.0"
+version = "0.14.0"
 dependencies = [
  "cpal",
  "duration-str",
@@ -5035,7 +5035,7 @@ dependencies = [
 
 [[package]]
 name = "ubihome-shell"
-version = "0.14.0"
+version = "0.14.1"
 dependencies = [
  "duration-str",
  "garde",
@@ -5049,7 +5049,7 @@ dependencies = [
 
 [[package]]
 name = "ubihome-web_server"
-version = "0.13.0"
+version = "0.14.0"
 dependencies = [
  "async-stream",
  "axum",
