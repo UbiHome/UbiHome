@@ -12,9 +12,9 @@ use std::{env, fs};
 
 mod commands;
 
-const VERSION: &str = concat!(env!("CARGO_PKG_VERSION"), " (", env!("GIT_HASH"), ")");
-const DESCRIPTION: &str = env!("CARGO_PKG_DESCRIPTION");
-const CARGO_PKG_HOMEPAGE: &str = env!("CARGO_PKG_HOMEPAGE");
+const VERSION: &str = concat!(env!("GIT_TAG"), " (", env!("GIT_HASH"), ")");
+const DESCRIPTION: &str = "UbiHome is a system which allows you to integrate any device running an OS into your smart home.";
+const HOMEPAGE: &str = "https://github.com/UbiHome/UbiHome";
 const DEFAULT_CONFIG_FILE_YML: &str = "config.yml";
 const DEFAULT_CONFIG_FILE_YAML: &str = "config.yaml";
 
@@ -99,7 +99,7 @@ fn cli() -> Command {
     ];
 
     Command::new("UbiHome")
-        .about(format!("UbiHome {}\n\n{}\nDocumentation: https://ubihome.github.io/\nHomepage: {}" ,VERSION, DESCRIPTION, CARGO_PKG_HOMEPAGE))
+        .about(format!("UbiHome {}\n\n{}\nDocumentation: https://ubihome.github.io/\nHomepage: {}" ,VERSION, DESCRIPTION, HOMEPAGE))
         .version(VERSION)
         .subcommand_required(true)
         .arg_required_else_help(true)

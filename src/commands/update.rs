@@ -11,7 +11,7 @@ use futures_util::StreamExt;
 use indicatif::{ProgressBar, ProgressStyle};
 use serde::Deserialize;
 
-const VERSION: &str = env!("CARGO_PKG_VERSION");
+const VERSION: &str = env!("GIT_TAG");
 
 #[derive(Clone, Deserialize, Debug)]
 struct Release {

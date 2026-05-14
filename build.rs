@@ -14,6 +14,18 @@ fn main() {
         .output()
         .unwrap();
     let git_hash = String::from_utf8(output.stdout).unwrap();
+
+    let git_tag = Command::new("git")
+        .args(["describe", "--tags", "--exact-match", "HEAD"])
+        .output()
+        .ok()
+        .filter(|o| o.status.success())
+        .and_then(|o| String::from_utf8(o.stdout).ok())
+        .map(|s| s.trim().to_string())
+        .filter(|s| !s.is_empty())
+        .unwrap_or_else(|| "development".to_string());
+
+    println!("cargo:rustc-env=GIT_TAG={}", git_tag);
     println!("cargo:rustc-env=GIT_HASH={}", git_hash);
 
     // let mut config_path: Option<String> = None;
@@ -35,6 +47,8 @@ fn main() {
 
     println!("cargo::rerun-if-changed=build.rs");
     println!("cargo::rerun-if-changed=Cargo.toml");
+    println!("cargo::rerun-if-changed=.git/HEAD");
+    println!("cargo::rerun-if-changed=.git/refs/tags");
     // let yaml_path =  Path::join(Path::new(&env::var_os("CARGO_MANIFEST_DIR").unwrap()), "config.yaml");
     // if let Ok(content) = fs::read_to_string(yaml_path) {
     // let config = Yaml::load_from_str(&content).unwrap();
