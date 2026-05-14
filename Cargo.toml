@@ -1,7 +1,10 @@
 [package]
 name = "ubihome"
+version = "0.14.1"
 authors = ["Daniel Habenicht <daniel-habenicht@outlook.de>"]
 edition = "2021"
+description = "UbiHome is a system which allows you to integrate any device running an OS into your smart home."
+homepage = "https://github.com/UbiHome/UbiHome"
 
 [dependencies]
 tokio = { version = "1", features = ["full"] }
@@ -73,3 +76,6 @@ members = [
     "components/shell",
     "components/web_server",
 ]
+
+[lints.clippy]
+redundant_field_names = "deny"

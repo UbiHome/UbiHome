@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.14.1](https://github.com/UbiHome/UbiHome/compare/v0.14.0...v0.14.1) (2026-05-14)
+
+
+### Bug Fixes
+
+* release built for macos ([3ad36e2](https://github.com/UbiHome/UbiHome/commit/3ad36e237fff12337e57e5e64bf1d6cdced506df))
+
 ## [0.14.0](https://github.com/UbiHome/UbiHome/compare/v0.13.0...v0.14.0) (2026-05-14)
 
 

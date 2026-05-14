@@ -1,5 +1,7 @@
 # Changelog
 
+## [0.14.1](https://github.com/UbiHome/UbiHome/compare/v0.14.0...ubihome-shell-v0.14.1) (2026-05-14)
+
 ## [0.14.0](https://github.com/UbiHome/UbiHome/compare/v0.13.0...ubihome-shell-v0.14.0) (2026-05-14)
 
 

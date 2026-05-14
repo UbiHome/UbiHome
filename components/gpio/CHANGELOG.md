@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.14.0](https://github.com/UbiHome/UbiHome/compare/v0.13.0...ubihome-gpio-v0.14.0) (2026-05-14)
+
+
+### Features
+
+* better validation ([#101](https://github.com/UbiHome/UbiHome/issues/101)) ([c3099f1](https://github.com/UbiHome/UbiHome/commit/c3099f1a2ebec34c2f621e149a5ad839d2780b8b))
+
 ## [0.13.0](https://github.com/UbiHome/UbiHome/compare/v0.12.0...ubihome-gpio-v0.13.0) (2026-05-14)
 
 
