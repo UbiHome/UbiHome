@@ -1,0 +1,59 @@
+name: Create Release PR
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  release-pr:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Fetch release branch
+        run: git fetch origin release:release
+
+      - name: Check for differences
+        id: diff
+        run: |
+          if git diff --quiet release..main; then
+            echo "No changes to release branch."
+            echo "skip=true" >> $GITHUB_OUTPUT
+          else
+            echo "skip=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Generate next changelog (dry run)
+        if: steps.diff.outputs.skip == 'false'
+        run: |
+          npx semantic-release --dry-run --no-ci > sr.log || true
+          awk '/^\s*---\s*$/ {p=1; next} /^\s*$/ {p=0} p' sr.log > NEXT_CHANGELOG.md || true
+
+      - name: Read changelog for PR
+        if: steps.diff.outputs.skip == 'false'
+        id: changelog
+        run: |
+          if [ -s NEXT_CHANGELOG.md ]; then
+            echo 'body<<EOF' >> $GITHUB_OUTPUT
+            cat NEXT_CHANGELOG.md >> $GITHUB_OUTPUT
+            echo 'EOF' >> $GITHUB_OUTPUT
+          else
+            echo 'body=No changelog generated.' >> $GITHUB_OUTPUT
+          fi
+
+      - name: Create PR from main to release
+        if: steps.diff.outputs.skip == 'false'
+        uses: peter-evans/create-pull-request@v6
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          title: 'Release: Merge main into release'
+          body: ${{ steps.changelog.outputs.body }}
+          base: release
+          head: main
+          draft: false
