@@ -63,7 +63,7 @@ pub struct UbiHomePlatform {
 }
 
 impl Module for UbiHomePlatform {
-    fn new(config_string: &String) -> Result<Self, String> {
+    fn new(config_string: &str) -> Result<Self, String> {
         let config =
             serde_saphyr::from_str::<CoreConfig>(config_string).map_err(|e| e.to_string())?;
         info!("PowerUtils config: {:?}", config);
@@ -72,49 +72,38 @@ impl Module for UbiHomePlatform {
         let mut buttons: HashMap<String, PowerAction> = HashMap::new();
         for (_, button) in config.button.clone().unwrap_or_default() {
             let id = button.get_object_id();
-            let button_component;
-            match button.action {
-                PowerAction::Reboot => {
-                    button_component = UbiButton {
-                        platform: "sensor".to_string(),
-                        icon: Some(button.icon.unwrap_or("mdi:restart".to_string())),
-                        name: button.name.clone(),
-                        id: id.clone(),
-                    };
-                }
-                PowerAction::Shutdown => {
-                    button_component = UbiButton {
-                        platform: "sensor".to_string(),
-                        icon: Some(button.icon.unwrap_or("mdi:power".to_string())),
-                        name: button.name.clone(),
-                        id: id.clone(),
-                    };
-                }
-                PowerAction::Hibernate => {
-                    button_component = UbiButton {
-                        platform: "sensor".to_string(),
-                        icon: Some(button.icon.unwrap_or("mdi:snowflake".to_string())),
-                        name: button.name.clone(),
-                        id: id.clone(),
-                    };
-                }
-                PowerAction::Logout => {
-                    button_component = UbiButton {
-                        platform: "sensor".to_string(),
-                        icon: Some(button.icon.unwrap_or("mdi:logout".to_string())),
-                        name: button.name.clone(),
-                        id: id.clone(),
-                    };
-                }
-                PowerAction::Sleep => {
-                    button_component = UbiButton {
-                        platform: "sensor".to_string(),
-                        icon: Some(button.icon.unwrap_or("mdi:sleep".to_string())),
-                        name: button.name.clone(),
-                        id: id.clone(),
-                    };
-                }
-            }
+            let button_component = match button.action {
+                PowerAction::Reboot => UbiButton {
+                    platform: "sensor".to_string(),
+                    icon: Some(button.icon.unwrap_or("mdi:restart".to_string())),
+                    name: button.name.clone(),
+                    id: id.clone(),
+                },
+                PowerAction::Shutdown => UbiButton {
+                    platform: "sensor".to_string(),
+                    icon: Some(button.icon.unwrap_or("mdi:power".to_string())),
+                    name: button.name.clone(),
+                    id: id.clone(),
+                },
+                PowerAction::Hibernate => UbiButton {
+                    platform: "sensor".to_string(),
+                    icon: Some(button.icon.unwrap_or("mdi:snowflake".to_string())),
+                    name: button.name.clone(),
+                    id: id.clone(),
+                },
+                PowerAction::Logout => UbiButton {
+                    platform: "sensor".to_string(),
+                    icon: Some(button.icon.unwrap_or("mdi:logout".to_string())),
+                    name: button.name.clone(),
+                    id: id.clone(),
+                },
+                PowerAction::Sleep => UbiButton {
+                    platform: "sensor".to_string(),
+                    icon: Some(button.icon.unwrap_or("mdi:sleep".to_string())),
+                    name: button.name.clone(),
+                    id: id.clone(),
+                },
+            };
 
             components.push(UbiComponent::Button(button_component));
             buttons.insert(id.clone(), button.action);

@@ -79,12 +79,12 @@ pub struct UbiHomePlatform {
 }
 
 impl Module for UbiHomePlatform {
-    fn new(config_string: &String) -> Result<Self, String> {
+    fn new(config_string: &str) -> Result<Self, String> {
         let config =
             serde_saphyr::from_str::<CoreConfig>(config_string).map_err(|e| e.to_string())?;
         let config_clone = config.clone();
         Ok(UbiHomePlatform {
-            config: config,
+            config,
             sendspin_config: config_clone.sendspin,
         })
     }
@@ -95,8 +95,8 @@ impl Module for UbiHomePlatform {
 
     fn run(
         &self,
-        sender: Sender<ChangedMessage>,
-        mut receiver: Receiver<PublishedMessage>,
+        _sender: Sender<ChangedMessage>,
+        mut _receiver: Receiver<PublishedMessage>,
     ) -> Pin<Box<dyn Future<Output = Result<(), Box<dyn std::error::Error>>> + Send + 'static>>
     {
         let name = self
@@ -113,7 +113,7 @@ impl Module for UbiHomePlatform {
         for host_id in available_hosts {
             let host = cpal::host_from_id(host_id).unwrap();
 
-            let default_out = host
+            let _default_out = host
                 .default_output_device()
                 .map(|dev| dev.name().unwrap())
                 .map(|name| name.to_string());
@@ -159,27 +159,24 @@ impl Module for UbiHomePlatform {
             // Browse for sendspin servers
             let receiver = mdns.browse(service_type).expect("Failed to browse");
             while let Ok(event) = receiver.recv() {
-                match event {
-                    ServiceEvent::ServiceResolved(resolved) => {
-                        info!("Resolved a new service: {:?}", resolved);
-                        let path = resolved
-                            .txt_properties
-                            .get_property_val("path")
-                            .and_then(|opt_v| opt_v.and_then(|v| str::from_utf8(v).ok()))
-                            .unwrap_or("");
-                        let address = resolved.get_addresses().iter().next();
+                if let ServiceEvent::ServiceResolved(resolved) = event {
+                    info!("Resolved a new service: {:?}", resolved);
+                    let path = resolved
+                        .txt_properties
+                        .get_property_val("path")
+                        .and_then(|opt_v| opt_v.and_then(|v| str::from_utf8(v).ok()))
+                        .unwrap_or("");
+                    let address = resolved.get_addresses().iter().next();
 
-                        if let Some(addr) = address {
-                            let server = format!("ws://{}:{}{}", addr, resolved.get_port(), path);
-                            info!("Using Sendspin server at {}", server);
-                            mdns_found_server = Some(server);
-                            break;
-                        } else {
-                            info!("No address found for resolved service.");
-                            continue;
-                        }
+                    if let Some(addr) = address {
+                        let server = format!("ws://{}:{}{}", addr, resolved.get_port(), path);
+                        info!("Using Sendspin server at {}", server);
+                        mdns_found_server = Some(server);
+                        break;
+                    } else {
+                        info!("No address found for resolved service.");
+                        continue;
                     }
-                    _ => {}
                 }
             }
             if let Some(mdns_servier) = mdns_found_server {
@@ -215,7 +212,7 @@ impl Module for UbiHomePlatform {
             };
 
             info!("Connecting to {}...", server);
-            let mut request = server.into_client_request().unwrap();
+            let request = server.into_client_request().unwrap();
             let client = ProtocolClient::connect(request, hello).await.unwrap();
             info!("Connected!");
 

@@ -9,12 +9,12 @@ use tokio::{
     time,
 };
 use ubihome_core::internal::sensors::{UbiComponent, UbiLight, UbiNumber, UbiSwitch};
+use ubihome_core::template_light;
 use ubihome_core::{
     config_template,
     internal::sensors::{UbiBinarySensor, UbiButton, UbiSensor},
     ChangedMessage, Module, PublishedMessage,
 };
-use ubihome_core::{template_light, NoConfig};
 
 use ubihome_core::constants::is_id_string_option;
 use ubihome_core::constants::is_readable_string;
@@ -167,7 +167,7 @@ pub struct UbiHomePlatform {
 }
 
 impl Module for UbiHomePlatform {
-    fn new(config_string: &String) -> Result<Self, String> {
+    fn new(config_string: &str) -> Result<Self, String> {
         let config =
             serde_saphyr::from_str::<CoreConfig>(config_string).map_err(|e| e.to_string())?;
         debug!("Shell config: {:?}", config);
@@ -222,13 +222,12 @@ impl Module for UbiHomePlatform {
         for (_, switch) in config.switch.clone().unwrap_or_default() {
             let id = switch.get_object_id();
             components.push(UbiComponent::Switch(UbiSwitch {
-                // TODO
                 platform: "sensor".to_string(),
                 icon: switch.icon.clone(),
                 name: switch.name.clone(),
                 id: id.clone(),
                 device_class: None,
-                assumed_state: !switch.command_state.is_some(),
+                assumed_state: switch.command_state.is_none(),
             }));
             switches.insert(id.clone(), switch);
         }
@@ -310,14 +309,13 @@ impl Module for UbiHomePlatform {
                             debug!("SwitchStateChanged: {} {}", key, state);
                             if let Some(switch) = switches_clone.get(&key) {
                                 // ButtonKind::shell(shell_button) => {
-                                let command: String;
-                                if state {
+                                let command: String = if state {
                                     debug!("Turning on switch: {}", key);
-                                    command = switch.command_on.clone();
+                                    switch.command_on.clone()
                                 } else {
                                     debug!("Turning off switch: {}", key);
-                                    command = switch.command_off.clone();
-                                }
+                                    switch.command_off.clone()
+                                };
                                 debug!("Executing command: {}", command);
 
                                 let output = execute_command(
@@ -337,7 +335,7 @@ impl Module for UbiHomePlatform {
                                 if let Some(command_state) = &switch.command_state {
                                     let output = execute_command(
                                         &cloned_config,
-                                        &command_state,
+                                        command_state,
                                         &cloned_config.timeout,
                                     )
                                     .await;
@@ -404,14 +402,13 @@ impl Module for UbiHomePlatform {
                                 key, state, brightness, red, green, blue
                             );
                             if let Some(light) = lights_clone.get(&key) {
-                                let command: String;
-                                if state {
+                                let command: String = if state {
                                     debug!("Turning on light: {}", key);
-                                    command = light.command_on.clone();
+                                    light.command_on.clone()
                                 } else {
                                     debug!("Turning off light: {}", key);
-                                    command = light.command_off.clone();
-                                }
+                                    light.command_off.clone()
+                                };
                                 debug!("Executing command: {}", command);
 
                                 let output = execute_command(
@@ -461,7 +458,7 @@ impl Module for UbiHomePlatform {
                                 if let Some(command_state) = &light.command_state {
                                     let output = execute_command(
                                         &cloned_config,
-                                        &command_state,
+                                        command_state,
                                         &cloned_config.timeout,
                                     )
                                     .await;
@@ -662,7 +659,7 @@ impl Module for UbiHomePlatform {
                                     _ = cloned_sender.send(
                                         ChangedMessage::BinarySensorValueChange {
                                             key: key.clone(),
-                                            value: value.clone(),
+                                            value,
                                         },
                                     );
                                 }

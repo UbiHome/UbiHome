@@ -14,7 +14,7 @@ pub struct BaseConfigContext {
 
 fn only_allow_configured_platforms(value: &String, context: &BaseConfigContext) -> garde::Result {
     if let Some(allowed_platforms) = &context.allowed_platforms {
-        if !allowed_platforms.contains(&value) {
+        if !allowed_platforms.contains(value) {
             return Err(garde::Error::new(format!(
                 "Platform '{}' is not configured in the configuration file. Allowed platforms are: {}",
                 &value,
@@ -87,11 +87,10 @@ pub struct BaseConfig {
 }
 
 // Load Platforms
-pub fn get_platforms_from_config(config_string: &String) -> Vec<String> {
+pub fn get_platforms_from_config(config_string: &str) -> Vec<String> {
     config_string
         .lines()
         .filter_map(|line| {
-            let line = line;
             if line.starts_with(' ')
                 || line.is_empty()
                 || line.starts_with('#')
@@ -167,7 +166,7 @@ ubihome:
 "#
     })]
     fn test_get_platforms_from_config(config: &str) {
-        let platforms = get_platforms_from_config(&config.to_string());
+        let platforms = get_platforms_from_config(config);
         // Check that the API config is parsed correctly
         assert_eq!(platforms, vec!["api"], "Platform should be api");
     }

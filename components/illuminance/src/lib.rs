@@ -55,7 +55,7 @@ pub struct UbiHomePlatform {
 }
 
 impl Module for UbiHomePlatform {
-    fn new(config_string: &String) -> Result<Self, String> {
+    fn new(config_string: &str) -> Result<Self, String> {
         let config =
             serde_saphyr::from_str::<CoreConfig>(config_string).map_err(|e| e.to_string())?;
 
@@ -176,31 +176,29 @@ async fn read_illuminance(device_path: Option<&String>) -> Result<f64, String> {
         let entries = fs::read_dir(iio_base)
             .map_err(|e| format!("Failed to read IIO devices directory: {}", e))?;
 
-        for entry in entries {
-            if let Ok(entry) = entry {
-                let device_path = entry.path();
-                if let Some(device_name) = device_path.file_name() {
-                    if device_name.to_string_lossy().starts_with("iio:device") {
-                        // Check if this device has illuminance capabilities
-                        let illuminance_raw_path = device_path.join("in_illuminance_raw");
-                        let illuminance_input_path = device_path.join("in_illuminance_input");
+        for entry in entries.flatten() {
+            let device_path = entry.path();
+            if let Some(device_name) = device_path.file_name() {
+                if device_name.to_string_lossy().starts_with("iio:device") {
+                    // Check if this device has illuminance capabilities
+                    let illuminance_raw_path = device_path.join("in_illuminance_raw");
+                    let illuminance_input_path = device_path.join("in_illuminance_input");
 
-                        if illuminance_raw_path.exists() {
-                            if let Ok(value) = read_linux_illuminance_from_path(
-                                &illuminance_raw_path.to_string_lossy().to_string(),
-                            )
-                            .await
-                            {
-                                return Ok(value);
-                            }
-                        } else if illuminance_input_path.exists() {
-                            if let Ok(value) = read_linux_illuminance_from_path(
-                                &illuminance_input_path.to_string_lossy().to_string(),
-                            )
-                            .await
-                            {
-                                return Ok(value);
-                            }
+                    if illuminance_raw_path.exists() {
+                        if let Ok(value) = read_linux_illuminance_from_path(
+                            illuminance_raw_path.to_string_lossy().as_ref(),
+                        )
+                        .await
+                        {
+                            return Ok(value);
+                        }
+                    } else if illuminance_input_path.exists() {
+                        if let Ok(value) = read_linux_illuminance_from_path(
+                            illuminance_input_path.to_string_lossy().as_ref(),
+                        )
+                        .await
+                        {
+                            return Ok(value);
                         }
                     }
                 }
@@ -217,7 +215,7 @@ async fn read_illuminance(device_path: Option<&String>) -> Result<f64, String> {
 
     for path in &hwmon_paths {
         if Path::new(path).exists() {
-            if let Ok(value) = read_linux_illuminance_from_path(&path.to_string()).await {
+            if let Ok(value) = read_linux_illuminance_from_path(path).await {
                 return Ok(value);
             }
         }

@@ -13,7 +13,7 @@ use ubihome_core::{BluetoothProxyMessage, NoConfig};
 
 async fn get_central(manager: &Manager) -> Adapter {
     let adapters = manager.adapters().await.unwrap();
-    adapters.into_iter().nth(0).unwrap()
+    adapters.into_iter().next().unwrap()
 }
 
 #[derive(Clone, Deserialize, Debug, Validate)]
@@ -39,11 +39,11 @@ pub struct UbiHomePlatform {
 }
 
 impl Module for UbiHomePlatform {
-    fn new(config_string: &String) -> Result<Self, String> {
+    fn new(config_string: &str) -> Result<Self, String> {
         let config =
             serde_saphyr::from_str::<CoreConfig>(config_string).map_err(|e| e.to_string())?;
 
-        Ok(UbiHomePlatform { config: config })
+        Ok(UbiHomePlatform { config })
     }
 
     fn components(&mut self) -> Vec<UbiComponent> {
@@ -87,64 +87,55 @@ impl Module for UbiHomePlatform {
             central.start_scan(ScanFilter::default()).await?;
 
             while let Some(event) = events.next().await {
-                match event {
-                    CentralEvent::DeviceUpdated(id) => {
-                        let peripheral = central.peripheral(&id).await?;
-                        let properties = peripheral.properties().await?;
+                if let CentralEvent::DeviceUpdated(id) = event {
+                    let peripheral = central.peripheral(&id).await?;
+                    let properties = peripheral.properties().await?;
 
-                        let rssi = properties
-                            .as_ref()
-                            .and_then(|p| p.rssi.clone())
-                            .unwrap_or_default();
-                        let name = properties
-                            .as_ref()
-                            .and_then(|p| p.local_name.clone())
-                            .unwrap_or_default();
-                        let services = properties
-                            .as_ref()
-                            .and_then(|p| Some(p.services.clone()))
-                            .unwrap_or_default();
-                        let service_data = properties
-                            .as_ref()
-                            .and_then(|p| Some(p.service_data.clone()))
-                            .unwrap_or_default();
-                        let manufacturer_data = properties
-                            .as_ref()
-                            .and_then(|p| Some(p.manufacturer_data.clone()))
-                            .unwrap_or_default();
-                        let mac_address = properties
-                            .as_ref()
-                            .and_then(|p| Some(p.address.clone()))
-                            .unwrap_or_default();
+                    let rssi = properties.as_ref().and_then(|p| p.rssi).unwrap_or_default();
+                    let name = properties
+                        .as_ref()
+                        .and_then(|p| p.local_name.clone())
+                        .unwrap_or_default();
+                    let services = properties
+                        .as_ref()
+                        .map(|p| p.services.clone())
+                        .unwrap_or_default();
+                    let service_data = properties
+                        .as_ref()
+                        .map(|p| p.service_data.clone())
+                        .unwrap_or_default();
+                    let manufacturer_data = properties
+                        .as_ref()
+                        .map(|p| p.manufacturer_data.clone())
+                        .unwrap_or_default();
+                    let mac_address = properties.as_ref().map(|p| p.address).unwrap_or_default();
 
-                        trace!(
-                            "DeviceUpdated: {:?}, {:?}, {:?}",
-                            mac_address,
-                            rssi,
-                            properties
-                        );
+                    trace!(
+                        "DeviceUpdated: {:?}, {:?}, {:?}",
+                        mac_address,
+                        rssi,
+                        properties
+                    );
 
-                        sender
-                            .send(ChangedMessage::BluetoothProxyMessage(
-                                BluetoothProxyMessage {
-                                    reason: "DeviceUpdated".to_string(),
-                                    name: name,
-                                    mac: mac_address.to_string(),
-                                    rssi: rssi,
-                                    service_data: service_data
-                                        .iter()
-                                        .map(|(k, v)| (k.to_string(), v.clone()))
-                                        .collect(),
-                                    service_uuids: services.iter().map(|s| s.to_string()).collect(),
-                                    manufacturer_data: manufacturer_data
-                                        .iter()
-                                        .map(|(k, v)| (k.to_string(), v.clone()))
-                                        .collect(),
-                                },
-                            ))
-                            .unwrap();
-                    }
-                    _ => {}
+                    sender
+                        .send(ChangedMessage::BluetoothProxyMessage(
+                            BluetoothProxyMessage {
+                                reason: "DeviceUpdated".to_string(),
+                                name,
+                                mac: mac_address.to_string(),
+                                rssi,
+                                service_data: service_data
+                                    .iter()
+                                    .map(|(k, v)| (k.to_string(), v.clone()))
+                                    .collect(),
+                                service_uuids: services.iter().map(|s| s.to_string()).collect(),
+                                manufacturer_data: manufacturer_data
+                                    .iter()
+                                    .map(|(k, v)| (k.to_string(), v.clone()))
+                                    .collect(),
+                            },
+                        ))
+                        .unwrap();
                 }
             }
             Ok(())

@@ -138,27 +138,21 @@ async fn events_stream(
         .filter_map(|m| match m {
             Ok(msg) => match msg {
                 // {"id":"sensor-plant_moisture_2","value":147.7358551,"state":"148 %"}
-                PublishedMessage::ButtonPressed { key } => {
-                    return Some(
-                        Event::default()
-                            .event("state")
-                            .data(format!("{{\"id\": \"{}\"}}", key)),
-                    )
-                }
-                PublishedMessage::SensorValueChanged { key, value } => {
-                    return Some(
-                        Event::default()
-                            .event("state")
-                            .data(format!("{{\"id\": \"{}\", \"value\": {}}}", key, value)),
-                    )
-                }
-                PublishedMessage::BinarySensorValueChanged { key, value } => {
-                    return Some(
-                        Event::default()
-                            .event("state")
-                            .data(format!("{{\"id\": \"{}\", \"value\": {}}}", key, value)),
-                    )
-                }
+                PublishedMessage::ButtonPressed { key } => Some(
+                    Event::default()
+                        .event("state")
+                        .data(format!("{{\"id\": \"{}\"}}", key)),
+                ),
+                PublishedMessage::SensorValueChanged { key, value } => Some(
+                    Event::default()
+                        .event("state")
+                        .data(format!("{{\"id\": \"{}\", \"value\": {}}}", key, value)),
+                ),
+                PublishedMessage::BinarySensorValueChanged { key, value } => Some(
+                    Event::default()
+                        .event("state")
+                        .data(format!("{{\"id\": \"{}\", \"value\": {}}}", key, value)),
+                ),
                 _ => {
                     debug!("Not handled message: {:?}", msg);
                     None
@@ -166,7 +160,7 @@ async fn events_stream(
             },
             Err(_) => None,
         })
-        .map(|v| Ok::<_, Infallible>(v));
+        .map(Ok::<_, Infallible>);
 
     Sse::new(ping_stream.merge(events).merge(entities_stream)).keep_alive(
         axum::response::sse::KeepAlive::new()
@@ -177,11 +171,11 @@ async fn events_stream(
 }
 
 impl Module for UbiHomePlatform {
-    fn new(config_string: &String) -> Result<Self, String> {
+    fn new(config_string: &str) -> Result<Self, String> {
         let config =
             serde_saphyr::from_str::<CoreConfig>(config_string).map_err(|e| e.to_string())?;
 
-        Ok(UbiHomePlatform { config: config })
+        Ok(UbiHomePlatform { config })
     }
 
     fn components(&mut self) -> Vec<UbiComponent> {
@@ -201,7 +195,7 @@ impl Module for UbiHomePlatform {
         Box::pin(async move {
             let bind_address = "0.0.0.0:8080";
             let app_state = Arc::new(AppState {
-                receiver: receiver,
+                receiver,
                 config: config.clone(),
             });
 

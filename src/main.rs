@@ -144,23 +144,21 @@ fn main() {
                 .try_get_one::<String>("configuration_file")
                 .unwrap_or_default()
                 .cloned();
-            if config_file.is_none() {
-                if DEFAULT_CONFIG.is_none() {
-                    // Check if the default config file exists
-                    let default_config_file = format!(
+            if config_file.is_none() && DEFAULT_CONFIG.is_none() {
+                // Check if the default config file exists
+                let default_config_file = format!(
+                    "{}/{}",
+                    env::current_dir().unwrap().display(),
+                    DEFAULT_CONFIG_FILE_YML
+                );
+                if fs::metadata(&default_config_file).is_ok() {
+                    config_file = Some(default_config_file);
+                } else {
+                    config_file = Some(format!(
                         "{}/{}",
                         env::current_dir().unwrap().display(),
-                        DEFAULT_CONFIG_FILE_YML
-                    );
-                    if fs::metadata(&default_config_file).is_ok() {
-                        config_file = Some(default_config_file);
-                    } else {
-                        config_file = Some(format!(
-                            "{}/{}",
-                            env::current_dir().unwrap().display(),
-                            DEFAULT_CONFIG_FILE_YAML
-                        ));
-                    }
+                        DEFAULT_CONFIG_FILE_YAML
+                    ));
                 }
             }
 

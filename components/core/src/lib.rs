@@ -9,12 +9,13 @@ pub extern crate serde_value;
 use garde::Validate;
 use internal::sensors::UbiComponent;
 use serde::Deserialize;
-use std::{collections::HashMap, pin::Pin};
+use std::{collections::HashMap, future::Future, pin::Pin};
 use tokio::sync::broadcast::{Receiver, Sender};
 
 use crate::constants::{is_readable_string, is_readable_string_option};
 
 pub type BoxFuture<'a, T> = Pin<Box<dyn Future<Output = T> + Send + 'a>>;
+pub type ModuleRunFuture = BoxFuture<'static, Result<(), Box<dyn std::error::Error>>>;
 
 pub trait Module
 where
@@ -35,7 +36,7 @@ where
         &self,
         sender: Sender<ChangedMessage>,
         receiver: Receiver<PublishedMessage>,
-    ) -> Pin<Box<dyn Future<Output = Result<(), Box<dyn std::error::Error>>> + Send + 'static>>;
+    ) -> ModuleRunFuture;
 }
 
 #[derive(Debug, Clone)]

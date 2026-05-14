@@ -76,3 +76,6 @@ members = [
     "components/shell",
     "components/web_server",
 ]
+
+[lints.clippy]
+redundant_field_names = "deny"

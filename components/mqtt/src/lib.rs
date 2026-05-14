@@ -44,11 +44,11 @@ pub struct UbiHomePlatform {
 }
 
 impl Module for UbiHomePlatform {
-    fn new(config_string: &String) -> Result<Self, String> {
+    fn new(config_string: &str) -> Result<Self, String> {
         let config =
             serde_saphyr::from_str::<CoreConfig>(config_string).map_err(|e| e.to_string())?;
 
-        Ok(UbiHomePlatform { config: config })
+        Ok(UbiHomePlatform { config })
     }
 
     fn components(&mut self) -> Vec<UbiComponent> {

@@ -64,7 +64,7 @@ pub(crate) fn run(
 
     logger_builder = logger_builder
         .format_for_files(detailed_format)
-        .log_to_file(FileSpec::default().directory(&log_directory)) // write logs to file
+        .log_to_file(FileSpec::default().directory(log_directory)) // write logs to file
         // .write_mode(WriteMode::BufferAndFlush)
         .append()
         .rotate(
@@ -128,7 +128,7 @@ pub(crate) fn run(
     let mut platforms_to_load: BTreeSet<Platform> = BTreeSet::new();
     println!("Platforms to load: {:?}", platforms);
     for platform in platforms.iter() {
-        if let Ok(platform_enum) = Platform::from_str(&platform) {
+        if let Ok(platform_enum) = Platform::from_str(platform) {
             platforms_to_load.insert(platform_enum);
         } else {
             return Err(format!(
@@ -184,13 +184,14 @@ Remove the "{}:" entry from your configuration or install the cargo crate contai
                                     trace!("round");
                                     signal = signal
                                     .map(move |value| {
-                                        if let Some(v) = value.clone().and_then(|v| v) {
+                                        if let Some(v) = value.and_then(|v| v) {
                                             // let number: f64 = v.parse().unwrap();
                                             let output: f32 = format!("{:.1$}", v, decimals).parse().unwrap();
                                             debug!("Round: {}", output);
-                                            return Some(Some(output))
+                                            Some(Some(output))
+                                        } else {
+                                            value
                                         }
-                                        return value
                                     })
                                     .boxed();
                                 }
@@ -205,8 +206,8 @@ Remove the "{}:" entry from your configuration or install the cargo crate contai
                                 let key = sensor.id.clone();
                                 if let Some(value) = value.and_then(|v| v) {
                                     let pcmd = PublishedMessage::SensorValueChanged {
-                                        key: key,
-                                        value: value,
+                                        key,
+                                        value,
                                     };
                                     debug!("Publishing command from signal: {:?}", pcmd);
 
@@ -243,41 +244,42 @@ Remove the "{}:" entry from your configuration or install the cargo crate contai
                             match filter.filter {
                                 FilterType::DelayedOn(time) => {
                                     trace!("delayed_on");
-                                    let time_clone = time.clone();
                                     signal = signal
                                         .map_future(move |value| {
-                                            let time_clone = time_clone.clone();
                                             Box::pin(async move {
                                                 let value = value.and_then(|v| v);
                                                 if let Some(v) = value {
                                                     // Delay on (true) values
                                                     if v {
-                                                        tokio::time::sleep(time_clone).await;
-                                                        return value;
+                                                        tokio::time::sleep(time).await;
+                                                        value
+                                                    } else {
+                                                        value
                                                     }
+                                                } else {
+                                                    value
                                                 }
-                                                return value;
                                             })
                                         })
                                         .boxed();
                                 }
                                 FilterType::DelayedOff(time) => {
                                     trace!("delayed_off");
-                                    let time_clone = time.clone();
                                     signal = signal
                                         .map_future(move |value| {
-                                            let time_clone = time_clone.clone();
-
                                             Box::pin(async move {
                                                 let value = value.and_then(|v| v);
                                                 if let Some(v) = value {
                                                     // Delay off (false) values
                                                     if !v {
-                                                        tokio::time::sleep(time_clone).await;
-                                                        return value;
+                                                        tokio::time::sleep(time).await;
+                                                        value
+                                                    } else {
+                                                        value
                                                     }
+                                                } else {
+                                                    value
                                                 }
-                                                return value;
                                             })
                                         })
                                         .boxed();
@@ -287,9 +289,10 @@ Remove the "{}:" entry from your configuration or install the cargo crate contai
                                         .map(|value| {
                                             trace!("invert");
                                             if value.is_some() {
-                                                return Some(Some(!value.and_then(|v| v).unwrap()));
+                                                Some(Some(!value.and_then(|v| v).unwrap()))
+                                            } else {
+                                                value
                                             }
-                                            return value;
                                         })
                                         .boxed();
                                 }
@@ -303,7 +306,7 @@ Remove the "{}:" entry from your configuration or install the cargo crate contai
 
                                 let key = binary_sensor.id.clone();
                                 if let Some(value) = value.and_then(|v| v) {
-                                    if value == true {
+                                    if value {
                                         if let Some(on_press) = binary_sensor.on_press.clone() {
                                             for action in on_press.then {
                                                 match &action.action {
@@ -353,8 +356,8 @@ Remove the "{}:" entry from your configuration or install the cargo crate contai
 
 
                                     let pcmd = PublishedMessage::BinarySensorValueChanged {
-                                        key: key,
-                                        value: value,
+                                        key,
+                                        value,
                                     };
                                     debug!("Publishing command from signal: {:?}", pcmd);
 
@@ -385,46 +388,45 @@ Remove the "{}:" entry from your configuration or install the cargo crate contai
             async move {
                 while let Ok(cmd) = internal_rx.recv().await {
                     debug!("Received command: {:?}", cmd);
-                    let publish_cmd: Option<PublishedMessage>;
-                    match cmd {
+                    let publish_cmd: Option<PublishedMessage> = match cmd {
                         ChangedMessage::SwitchStateChange { key, state } => {
-                            publish_cmd = Some(PublishedMessage::SwitchStateChange { key, state });
+                            Some(PublishedMessage::SwitchStateChange { key, state })
                         }
                         ChangedMessage::SwitchStateCommand { key, state } => {
-                            publish_cmd = Some(PublishedMessage::SwitchStateCommand { key, state });
+                            Some(PublishedMessage::SwitchStateCommand { key, state })
                         }
                         ChangedMessage::LightStateChange { key, state, brightness, red, green, blue } => {
-                            publish_cmd = Some(PublishedMessage::LightStateChange { key, state, brightness, red, green, blue });
+                            Some(PublishedMessage::LightStateChange { key, state, brightness, red, green, blue })
                         }
                         ChangedMessage::LightStateCommand { key, state, brightness, red, green, blue } => {
-                            publish_cmd = Some(PublishedMessage::LightStateCommand { key, state, brightness, red, green, blue });
+                            Some(PublishedMessage::LightStateCommand { key, state, brightness, red, green, blue })
                         }
                         ChangedMessage::ButtonPress { key } => {
-                            publish_cmd = Some(PublishedMessage::ButtonPressed { key });
+                            Some(PublishedMessage::ButtonPressed { key })
                         }
                         ChangedMessage::SensorValueChange { key, value } => {
-                            signal_map_sensor.get(&key).map(|signal| {
+                            if let Some(signal) = signal_map_sensor.get(&key) {
                                 signal.set(Some(Some(value)));
-                            });
-                            publish_cmd = None;
+                            }
+                            None
                         }
                         ChangedMessage::BinarySensorValueChange { key, value } => {
                             debug!("BinarySensorValueChange: {}", value);
-                            signal_map_binary_sensor.get(&key).map(|signal| {
+                            if let Some(signal) = signal_map_binary_sensor.get(&key) {
                                 signal.set(Some(Some(value)));
-                            });
-                            publish_cmd = None;
+                            }
+                            None
                         }
                         ChangedMessage::BluetoothProxyMessage(msg) => {
-                            publish_cmd = Some(PublishedMessage::BluetoothProxyMessage(msg));
+                            Some(PublishedMessage::BluetoothProxyMessage(msg))
                         }
                         ChangedMessage::NumberValueChange { key, value } => {
-                            publish_cmd = Some(PublishedMessage::NumberValueChanged { key, value });
+                            Some(PublishedMessage::NumberValueChanged { key, value })
                         }
                         ChangedMessage::NumberValueCommand { key, value } => {
-                            publish_cmd = Some(PublishedMessage::NumberValueCommand { key, value });
+                            Some(PublishedMessage::NumberValueCommand { key, value })
                         }
-                    }
+                    };
                     if let Some(pcmd) = publish_cmd {
                         debug!("Publishing command: {:?}", pcmd);
                         internal_tx_clone.send(pcmd).unwrap();

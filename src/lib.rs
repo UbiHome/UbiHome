@@ -56,7 +56,7 @@ impl Logger {
             } => spec.push_str("trace"),
         }
 
-        let mut logs = self.logs.clone().unwrap_or(HashMap::new());
+        let mut logs = self.logs.clone().unwrap_or_default();
         if !logs.contains_key("libmdns") {
             logs.insert("libmdns".to_string(), LogLevel::Info);
         }
@@ -74,7 +74,7 @@ impl Logger {
             }
         }
 
-        return spec;
+        spec
     }
 }
 

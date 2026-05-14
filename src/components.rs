@@ -33,7 +33,7 @@ macro_rules! generate_component_methods {
 
         // Generate the configure_platforms function
         pub(crate) fn configure_platforms(
-            config_string: &String,
+            config_string: &str,
             platforms: &BTreeSet::<Platform>,
         ) -> Result<Vec<Box<dyn Module>>, String> {
 

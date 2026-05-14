@@ -132,7 +132,17 @@ export class UbiHome {
 		return dag
 			.container()
 			.from("rust:latest")
+			.withExec(["apt-get", "update"])
+			.withExec([
+				"apt-get",
+				"install",
+				"-y",
+				"libdbus-1-dev",
+				"pkg-config",
+				"libasound2-dev",
+			])
 			.withExec(["rustup", "component", "add", "rustfmt"])
+			.withExec(["rustup", "component", "add", "clippy"])
 			.withMountedDirectory("/workspace", source)
 			.withWorkdir("/workspace");
 	}

@@ -38,11 +38,11 @@ pub struct UbiHomePlatform {
 }
 
 impl Module for UbiHomePlatform {
-    fn new(config_string: &String) -> Result<Self, String> {
+    fn new(config_string: &str) -> Result<Self, String> {
         let config =
             serde_saphyr::from_str::<CoreConfig>(config_string).map_err(|e| e.to_string())?;
 
-        Ok(UbiHomePlatform { config: config })
+        Ok(UbiHomePlatform { config })
     }
     fn components(&mut self) -> Vec<UbiComponent> {
         let components: Vec<UbiComponent> = Vec::new();
@@ -73,9 +73,9 @@ impl Module for UbiHomePlatform {
                 .unwrap_or(default_mac);
             debug!("Advertising Mac: {:?}", mac);
 
-            let responder: libmdns::Responder;
             // let (responder, _) = libmdns::Responder::with_default_handle_and_ip_list_and_hostname(vec, "".to_string()).unwrap();
-            responder = libmdns::Responder::new_with_ip_list(vec![ip]).unwrap();
+            let responder: libmdns::Responder =
+                libmdns::Responder::new_with_ip_list(vec![ip]).unwrap();
 
             let svc_name = config.ubihome.name;
             let friendly_name = config.ubihome.friendly_name.unwrap_or(svc_name.clone());

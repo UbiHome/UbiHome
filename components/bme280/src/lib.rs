@@ -81,7 +81,7 @@ config_template!(
 );
 
 impl Module for UbiHomePlatform {
-    fn new(config_string: &String) -> Result<Self, String> {
+    fn new(config_string: &str) -> Result<Self, String> {
         let config =
             serde_saphyr::from_str::<CoreConfig>(config_string).map_err(|e| e.to_string())?;
         // info!("BME280 config: {:?}", config);
@@ -232,7 +232,7 @@ impl Module for UbiHomePlatform {
             }));
             let sensor_entry = BME280Sensor {
                 address: n_sensor.address.clone(),
-                update_interval: n_sensor.update_interval.clone(),
+                update_interval: n_sensor.update_interval,
                 entries: sensor_entries,
             };
             sensors.push(sensor_entry);
@@ -273,12 +273,9 @@ impl Module for UbiHomePlatform {
                 use tokio::time;
 
                 let result = I2cdev::new("/dev/i2c-1");
-                match result {
-                    Err(e) => {
-                        log::warn!("Error initializing I2C: {}", e);
-                        return Ok(());
-                    }
-                    _ => {}
+                if let Err(e) = result {
+                    log::warn!("Error initializing I2C: {}", e);
+                    return Ok(());
                 }
 
                 for sensor in sensors {
