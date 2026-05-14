@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.12.0](https://github.com/UbiHome/UbiHome/compare/v0.11.0...ubihome-core-v0.12.0) (2026-05-14)
+
+
+### Features
+
+* add `number` platform support for shell component ([#112](https://github.com/UbiHome/UbiHome/issues/112)) ([1799769](https://github.com/UbiHome/UbiHome/commit/1799769ccddf70cfff0f73e764e659cdef5280cd))
+* better validation ([#101](https://github.com/UbiHome/UbiHome/issues/101)) ([c3099f1](https://github.com/UbiHome/UbiHome/commit/c3099f1a2ebec34c2f621e149a5ad839d2780b8b))
+* support `accuracy_decimals` in sensor entity configuration ([#113](https://github.com/UbiHome/UbiHome/issues/113)) ([9ccbcd4](https://github.com/UbiHome/UbiHome/commit/9ccbcd4efd39304b4a1960d548eb33b6e282ff41))
+
 ## [0.11.0](https://github.com/UbiHome/UbiHome/compare/v0.10.0...ubihome-core-v0.11.0) (2026-05-10)
 
 
