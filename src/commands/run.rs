@@ -229,6 +229,9 @@ Remove the "{}:" entry from your configuration or install the cargo crate contai
                 UbiComponent::Number(_number) => {
                     // Numbers don't have filters, state changes are forwarded directly
                 }
+                UbiComponent::TextSensor(_text_sensor) => {
+                    // Text sensors are read-only, state changes are forwarded directly
+                }
                 UbiComponent::BinarySensor(binary_sensor) => {
                     let mutable: Mutable<Option<Option<bool>>> = Mutable::new(Option::None);
                     signal_map_binary_sensor
