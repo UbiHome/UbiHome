@@ -80,18 +80,13 @@ pub struct UbiHomePlatform {
 
 impl Module for UbiHomePlatform {
     fn new(config_string: &String) -> Result<Self, String> {
-        match serde_saphyr::from_str::<CoreConfig>(config_string) {
-            Ok(config) => {
-                let config_clone = config.clone();
-                Ok(UbiHomePlatform {
-                    config: config,
-                    sendspin_config: config_clone.sendspin,
-                })
-            }
-            Err(e) => {
-                return Err(format!("Failed to parse API config: {:?}", e));
-            }
-        }
+        let config =
+            serde_saphyr::from_str::<CoreConfig>(config_string).map_err(|e| e.to_string())?;
+        let config_clone = config.clone();
+        Ok(UbiHomePlatform {
+            config: config,
+            sendspin_config: config_clone.sendspin,
+        })
     }
 
     fn components(&mut self) -> Vec<UbiComponent> {

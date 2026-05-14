@@ -6,7 +6,7 @@ use serde::Deserialize;
 use serde::Serialize;
 
 #[derive(Clone, Serialize, Deserialize, Debug, Validate)]
-#[serde(rename_all = "lowercase")]
+#[serde(rename_all = "snake_case")]
 pub enum FilterType {
     Invert(#[garde(required)] Option<String>),
 

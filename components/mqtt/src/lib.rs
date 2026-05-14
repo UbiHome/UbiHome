@@ -41,18 +41,14 @@ config_template!(mqtt, MqttConfig, NoConfig, NoConfig, NoConfig, NoConfig, NoCon
 #[derive(Clone, Debug)]
 pub struct UbiHomePlatform {
     config: CoreConfig,
-    core: CoreConfig,
 }
 
 impl Module for UbiHomePlatform {
     fn new(config_string: &String) -> Result<Self, String> {
-        let config = serde_saphyr::from_str::<CoreConfig>(config_string).unwrap();
-        let core_config = serde_saphyr::from_str::<CoreConfig>(config_string).unwrap();
+        let config =
+            serde_saphyr::from_str::<CoreConfig>(config_string).map_err(|e| e.to_string())?;
 
-        Ok(UbiHomePlatform {
-            config: config,
-            core: core_config,
-        })
+        Ok(UbiHomePlatform { config: config })
     }
 
     fn components(&mut self) -> Vec<UbiComponent> {

@@ -34,7 +34,8 @@ pub struct UbiHomePlatform {
 
 impl Module for UbiHomePlatform {
     fn new(config_string: &String) -> Result<Self, String> {
-        let config = serde_saphyr::from_str::<CoreConfig>(config_string).unwrap();
+        let config =
+            serde_saphyr::from_str::<CoreConfig>(config_string).map_err(|e| e.to_string())?;
         info!("Evdev config: {:?}", config);
         Ok(UbiHomePlatform { config: config })
     }
