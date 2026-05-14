@@ -15,7 +15,7 @@ use std::net::SocketAddr;
 use std::time::Duration;
 use tokio_stream::StreamExt;
 use tower_http::trace::TraceLayer;
-use ubihome_core::internal::sensors::InternalComponent;
+use ubihome_core::internal::sensors::UbiComponent;
 
 use log::{debug, info};
 use std::sync::Arc;
@@ -29,7 +29,8 @@ use tokio::sync::broadcast::{Receiver, Sender};
 use ubihome_core::NoConfig;
 use ubihome_core::{config_template, ChangedMessage, Module, PublishedMessage};
 
-#[derive(Clone, Deserialize, Debug)]
+#[derive(Clone, Deserialize, Debug, Validate)]
+#[garde(allow_unvalidated)]
 pub struct WebServerConfig {
     pub port: u16,
 }
@@ -52,7 +53,7 @@ config_template!(
 );
 
 #[derive(Clone, Debug)]
-pub struct Default {
+pub struct UbiHomePlatform {
     config: CoreConfig,
 }
 
@@ -78,7 +79,7 @@ async fn handle_request(
     State(_): State<Arc<AppState>>,
 ) -> impl IntoResponse {
     debug!("Handling request {} {}", domain, id);
-    (StatusCode::OK, Json("state.current_directory".clone()))
+    (StatusCode::OK, Json("state.current_directory"))
 }
 
 async fn handle_action(
@@ -86,7 +87,7 @@ async fn handle_action(
     State(_): State<Arc<AppState>>,
 ) -> impl IntoResponse {
     debug!("Handling request {} {} {}", domain, id, action);
-    (StatusCode::OK, Json("state.current_directory".clone()))
+    (StatusCode::OK, Json("state.current_directory"))
 }
 
 async fn events_stream(
@@ -107,18 +108,18 @@ async fn events_stream(
         .map(Ok)
         .take(1);
 
-    let mut entities: Vec<String> = Vec::new();
-    for (key, binary_sensor) in config.binary_sensor.unwrap() {
-        let object_id = binary_sensor.default.get_object_id();
-        let id = binary_sensor.default.id.unwrap_or(object_id.clone());
-        entities.push(format!(
-            "{{\"id\": \"{}\", \"name\": \"{}\", \"icon\": \"{}\", \"entity_category\": {}, \"state\": \"ON\"}}",
-            id,
-            binary_sensor.default.name,
-            binary_sensor.default.icon.unwrap_or_default(),
-            0
-        ));
-    }
+    let entities: Vec<String> = Vec::new();
+    // for (key, binary_sensor) in config.binary_sensor.unwrap() {
+    //     let object_id = binary_sensor.get_object_id();
+    //     let id = binary_sensor.id.unwrap_or(object_id.clone());
+    //     entities.push(format!(
+    //         "{{\"id\": \"{}\", \"name\": \"{}\", \"icon\": \"{}\", \"entity_category\": {}, \"state\": \"ON\"}}",
+    //         id,
+    //         binary_sensor.name,
+    //         binary_sensor.icon.unwrap_or_default(),
+    //         0
+    //     ));
+    // }
 
     let entities_stream = stream::iter(entities)
         .map(|entity| Event::default().event("state").data(entity))
@@ -137,27 +138,21 @@ async fn events_stream(
         .filter_map(|m| match m {
             Ok(msg) => match msg {
                 // {"id":"sensor-plant_moisture_2","value":147.7358551,"state":"148 %"}
-                PublishedMessage::ButtonPressed { key } => {
-                    return Some(
-                        Event::default()
-                            .event("state")
-                            .data(format!("{{\"id\": \"{}\"}}", key)),
-                    )
-                }
-                PublishedMessage::SensorValueChanged { key, value } => {
-                    return Some(
-                        Event::default()
-                            .event("state")
-                            .data(format!("{{\"id\": \"{}\", \"value\": {}}}", key, value)),
-                    )
-                }
-                PublishedMessage::BinarySensorValueChanged { key, value } => {
-                    return Some(
-                        Event::default()
-                            .event("state")
-                            .data(format!("{{\"id\": \"{}\", \"value\": {}}}", key, value)),
-                    )
-                }
+                PublishedMessage::ButtonPressed { key } => Some(
+                    Event::default()
+                        .event("state")
+                        .data(format!("{{\"id\": \"{}\"}}", key)),
+                ),
+                PublishedMessage::SensorValueChanged { key, value } => Some(
+                    Event::default()
+                        .event("state")
+                        .data(format!("{{\"id\": \"{}\", \"value\": {}}}", key, value)),
+                ),
+                PublishedMessage::BinarySensorValueChanged { key, value } => Some(
+                    Event::default()
+                        .event("state")
+                        .data(format!("{{\"id\": \"{}\", \"value\": {}}}", key, value)),
+                ),
                 _ => {
                     debug!("Not handled message: {:?}", msg);
                     None
@@ -165,7 +160,7 @@ async fn events_stream(
             },
             Err(_) => None,
         })
-        .map(|v| Ok::<_, Infallible>(v));
+        .map(Ok::<_, Infallible>);
 
     Sse::new(ping_stream.merge(events).merge(entities_stream)).keep_alive(
         axum::response::sse::KeepAlive::new()
@@ -175,15 +170,16 @@ async fn events_stream(
     )
 }
 
-impl Module for Default {
-    fn new(config_string: &String) -> Result<Self, String> {
-        let config = serde_yaml::from_str::<CoreConfig>(config_string).unwrap();
+impl Module for UbiHomePlatform {
+    fn new(config_string: &str) -> Result<Self, String> {
+        let config =
+            serde_saphyr::from_str::<CoreConfig>(config_string).map_err(|e| e.to_string())?;
 
-        Ok(Default { config: config })
+        Ok(UbiHomePlatform { config })
     }
 
-    fn components(&mut self) -> Vec<InternalComponent> {
-        let components: Vec<InternalComponent> = Vec::new();
+    fn components(&mut self) -> Vec<UbiComponent> {
+        let components: Vec<UbiComponent> = Vec::new();
 
         components
     }
@@ -199,7 +195,7 @@ impl Module for Default {
         Box::pin(async move {
             let bind_address = "0.0.0.0:8080";
             let app_state = Arc::new(AppState {
-                receiver: receiver,
+                receiver,
                 config: config.clone(),
             });
 
@@ -216,7 +212,10 @@ impl Module for Default {
                     TraceLayer::new_for_http(),
                     // Graceful shutdown will wait for outstanding requests to complete. Add a timeout so
                     // requests don't hang forever.
-                    TimeoutLayer::new(Duration::from_secs(1)),
+                    TimeoutLayer::with_status_code(
+                        axum::http::StatusCode::SERVICE_UNAVAILABLE,
+                        Duration::from_secs(1),
+                    ),
                 ))
                 .with_state(app_state.clone());
 

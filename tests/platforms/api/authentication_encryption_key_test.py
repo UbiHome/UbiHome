@@ -3,6 +3,7 @@ import os
 
 import aioesphomeapi
 import pytest
+
 from utils import UbiHome
 
 
@@ -15,7 +16,8 @@ async def test_right_key():
 ubihome:
   name: test_device
 api:
-  encryption_key: "{encryption_key}"
+  encryption:
+    key: "{encryption_key}"
 
 """
 
@@ -41,7 +43,8 @@ async def test_wrong_key():
 ubihome:
   name: test_device
 api:
-  encryption_key: "{encryption_key}"
+  encryption:
+    key: "{encryption_key}"
 
 """
 

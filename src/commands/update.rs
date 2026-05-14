@@ -119,10 +119,10 @@ pub(crate) fn update() -> Result<(), String> {
                 }
                 Err(e) => println!("failed to get current exe path: {e}"),
             };
-            return Ok(());
+            Ok(())
         } else{
             println!("Update cancelled.");
-            return Ok(());
+            Ok(())
         }
 
     }).unwrap();

@@ -4,6 +4,7 @@ from unittest.mock import Mock
 
 import pytest
 from paho.mqtt.client import Client
+
 from utils import UbiHome
 
 

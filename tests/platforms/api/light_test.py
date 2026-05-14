@@ -2,6 +2,7 @@ from asyncio import sleep
 from unittest.mock import Mock
 
 import aioesphomeapi
+
 from mock_file import IOMock
 from utils import OS_PLATFORM, Platform, UbiHome
 

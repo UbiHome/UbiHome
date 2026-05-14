@@ -2,7 +2,8 @@ ubihome:
   name: New Awesome UbiHome Device
 
 api:
-  encryption_key: # Generate here: https://ubihome.github.io/features/connectivity/native_api.html
+  # encryption:
+  #   key:  # Generate here: https://ubihome.github.io/features/connectivity/native_api.html
 
 shell:
 

@@ -14,7 +14,8 @@ api:
   # Optional: Default Port is 6053
   port: 6053
   # Secure your API:
-  encryption_key: 'copy_your_generated_key_here'
+  encryption:
+    key: 'copy_your_generated_key_here'
 ```
 
 {{ encryption_key_generator() }}

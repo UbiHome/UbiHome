@@ -132,7 +132,17 @@ export class UbiHome {
 		return dag
 			.container()
 			.from("rust:latest")
+			.withExec(["apt-get", "update"])
+			.withExec([
+				"apt-get",
+				"install",
+				"-y",
+				"libdbus-1-dev",
+				"pkg-config",
+				"libasound2-dev",
+			])
 			.withExec(["rustup", "component", "add", "rustfmt"])
+			.withExec(["rustup", "component", "add", "clippy"])
 			.withMountedDirectory("/workspace", source)
 			.withWorkdir("/workspace");
 	}
@@ -159,7 +169,16 @@ export class UbiHome {
 		source: Directory,
 	): Promise<string> {
 		return this.rustContainer(source)
-			.withExec(["cargo", "fmt", "--check"])
+			.withExec(["cargo", "fmt", "--all", "--", "--check"])
+			.withExec([
+				"cargo",
+				"clippy",
+				"--all-targets",
+				"--all-features",
+				"--",
+				"-D",
+				"warnings",
+			])
 			.stdout();
 	}
 
@@ -171,17 +190,29 @@ export class UbiHome {
 	async ruffCheck(
 		@argument({
 			defaultPath: ".",
-			ignore: ["**", "!tests/**/*.py", "!ruff.toml", "tests/.venv/**"],
+			ignore: [
+				"**",
+				"!tests/**/*.py",
+				"!tests/ruff.toml",
+				"!tests/pyproject.toml",
+				"!tests/uv.lock",
+				"tests/.venv/**",
+			],
 		})
 		source: Directory,
 	): Promise<string> {
 		return dag
 			.container()
-			.from("python:3.12-slim")
-			.withExec(["pip", "install", "--quiet", "ruff"])
+			.from("ghcr.io/astral-sh/uv:python3.14-alpine")
+			.withWorkdir("/workspace/tests")
+			.withFile(
+				"/workspace/tests/pyproject.toml",
+				source.file("tests/pyproject.toml"),
+			)
+			.withFile("/workspace/tests/uv.lock", source.file("tests/uv.lock"))
+			.withExec(["uv", "sync", "--no-group", "e2e"])
 			.withMountedDirectory("/workspace", source)
-			.withWorkdir("/workspace")
-			.withExec(["ruff", "check", "tests/", "--config", "ruff.toml"])
+			.withExec(["uv", "run", "--no-group", "e2e", "ruff", "check"])
 			.stdout();
 	}
 
