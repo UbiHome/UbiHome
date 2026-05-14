@@ -1,5 +1,5 @@
 use serde::Deserialize;
-use std::collections::HashSet;
+use std::collections::BTreeSet;
 use tokio::sync::broadcast::{Receiver, Sender};
 use ubihome_core::internal::sensors::UbiComponent;
 use ubihome_core::Module;
@@ -10,8 +10,9 @@ macro_rules! generate_component_methods {
         $(($variant:ident, $platform_name:literal, $module_path:ident, $type_name:ident)),* $(,)?
     ) => {
         // Generate the Platform enum
-        #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Deserialize)]
+        #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Deserialize, Ord)]
         #[serde(rename_all = "lowercase")]
+        #[derive(PartialOrd)]
         pub enum Platform {
             $(
                 $variant,
@@ -42,7 +43,7 @@ macro_rules! generate_component_methods {
         // Generate the configure_platforms function
         pub(crate) fn configure_platforms(
             config_string: &String,
-            platforms: &HashSet::<Platform>,
+            platforms: &BTreeSet::<Platform>,
         ) -> Result<Vec<Box<dyn Module>>, String> {
 
             let mut modules: Vec<Box<dyn Module>> = Vec::new();
@@ -57,7 +58,7 @@ macro_rules! generate_component_methods {
                                     modules.push(Box::new(component));
                                 }
                                 Err(e) => {
-                                    return Err(format!("Module {}: {}", stringify!($module_path), e));
+                                    return Err(format!("Module {}: {}", stringify!($platform_name), e));
                                 }
                             }
                         }

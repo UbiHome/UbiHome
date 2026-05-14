@@ -10,7 +10,7 @@ use ubihome_core::{ChangedMessage, PublishedMessage};
 
 use futures_signals::signal::{Mutable, SignalExt};
 use log::{debug, trace, warn};
-use std::collections::{HashMap, HashSet};
+use std::collections::{BTreeSet, HashMap};
 use std::fs;
 use std::path::Path;
 use std::sync::mpsc;
@@ -125,7 +125,7 @@ pub(crate) fn run(
 
     debug!("BaseConfiguration: {:?}", config);
 
-    let mut platforms_to_load: HashSet<Platform> = HashSet::new();
+    let mut platforms_to_load: BTreeSet<Platform> = BTreeSet::new();
     println!("Platforms to load: {:?}", platforms);
     for platform in platforms.iter() {
         if let Ok(platform_enum) = Platform::from_str(&platform) {
