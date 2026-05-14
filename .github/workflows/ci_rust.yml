@@ -9,6 +9,8 @@ on:
       - 'Cargo.toml'
       - 'Cargo.lock'
       - 'Cross.toml'
+    branches-ignore:
+      - release
 jobs:
   build:
     strategy:
