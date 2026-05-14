@@ -10,26 +10,26 @@ use std::process::Command;
 
 fn main() {
     let output = Command::new("git")
-        .args(&["rev-parse", "--short", "HEAD"])
+        .args(["rev-parse", "--short", "HEAD"])
         .output()
         .unwrap();
     let git_hash = String::from_utf8(output.stdout).unwrap();
     println!("cargo:rustc-env=GIT_HASH={}", git_hash);
 
-    let mut config_path: Option<String> = None;
-    let config_yaml_path = "config.yaml";
-    if Path::new(config_yaml_path).exists() {
-        config_path = Some(config_yaml_path.to_string())
-    }
-    let config_yml_path = "config.yml";
-    if Path::new(config_yml_path).exists() {
-        config_path = Some(config_yml_path.to_string())
-    }
-    if let Some(path) = &config_path {
-        let config_yaml_content = fs::read_to_string(path).unwrap();
-        #[cfg(not(debug_assertions))]
-        println!("cargo:rustc-env=CONFIG_YAML={}", config_yaml_content);
-    }
+    // let mut config_path: Option<String> = None;
+    // let config_yaml_path = "config.yaml";
+    // if Path::new(config_yaml_path).exists() {
+    //     config_path = Some(config_yaml_path.to_string())
+    // }
+    // let config_yml_path = "config.yml";
+    // if Path::new(config_yml_path).exists() {
+    //     config_path = Some(config_yml_path.to_string())
+    // }
+    // if let Some(path) = &config_path {
+    //     let config_yaml_content = fs::read_to_string(path).unwrap();
+    //     #[cfg(not(debug_assertions))]
+    //     println!("cargo:rustc-env=CONFIG_YAML={}", config_yaml_content);
+    // }
     // let
     // println!("cargo:rerun-if-changed=NULL");
 
@@ -77,36 +77,6 @@ fn main() {
     let out_dir = env::var_os("OUT_DIR").unwrap();
     let dest_path = Path::new(&out_dir).join("components.rs");
     fs::write(&dest_path, components_content).unwrap();
-    //     let dest_path = Path::new(&out_dir).join("config.rs");
-    //     fs::write(
-    //         &dest_path,
-    //         format!(
-    //             "#[derive(Clone, Deserialize, Debug)]
-    // pub struct Config {{
-    //     pub ubihome: UbiHome,
-    //     pub logger: Option<Logger>,
-
-    //     pub button: Option<Vec<ButtonConfig>>,
-    //     pub binary_sensor: Option<Vec<BinarySensor>>,
-
-    // {}
-    //     // pub mqtt: Option<MqttConfig>,
-    //     // pub shell: Option<ShellConfig>,
-    //     // pub web_server: Option<WebServerConfig>,
-    //     // pub gpio: Option<GpioConfig>,
-    // }}",
-    //             &import_packages
-    //                 .iter()
-    //                 .map(|p| format!(
-    //                     "    pub {}: Option<{}Config>",
-    //                     p.replace("ubihome-", ""),
-    //                     package_name_to_camel_case(p.replace("ubihome-", ""))
-    //                 ))
-    //                 .collect::<Vec<_>>()
-    //                 .join(",\n")
-    //         ),
-    //     )
-    //     .unwrap();
 }
 
 fn package_name_to_camel_case(package_name: String) -> String {

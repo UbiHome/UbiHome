@@ -50,7 +50,6 @@ config_template!(
 );
 
 pub struct UbiHomePlatform {
-    // config: AmbientLightConfig,
     components: Vec<UbiComponent>,
     sensors: HashMap<String, AmbientLightSensorConfig>,
 }
@@ -113,8 +112,6 @@ impl Module for UbiHomePlatform {
     ) -> Pin<Box<dyn Future<Output = Result<(), Box<dyn std::error::Error>>> + Send + 'static>>
     {
         let sensors = self.sensors.clone();
-        // let global_config = self.config.clone();
-
         Box::pin(async move {
             if sensors.is_empty() {
                 debug!("No light sensors configured");
@@ -123,11 +120,9 @@ impl Module for UbiHomePlatform {
 
             for (sensor_id, sensor_config) in sensors {
                 let cloned_sender = sender.clone();
-                // let cloned_global_config = global_config.clone();
 
                 tokio::spawn(async move {
                     let update_interval = sensor_config.update_interval;
-                    // .unwrap_or(cloned_global_config.update_interval);
 
                     let mut interval = time::interval(update_interval);
 

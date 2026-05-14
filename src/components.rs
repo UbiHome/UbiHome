@@ -29,15 +29,6 @@ macro_rules! generate_component_methods {
                     _ => Err(format!("Unknown platform: {}", s)),
                 }
             }
-
-            // /// Get the string representation of the platform
-            // pub fn as_str(&self) -> &'static str {
-            //     match self {
-            //         $(
-            //             Platform::$variant => $platform_name,
-            //         )*
-            //     }
-            // }
         }
 
         // Generate the configure_platforms function
@@ -79,7 +70,6 @@ pub(crate) fn initialize_platforms(
     let mut all_components: Vec<UbiComponent> = Vec::new();
     for module in modules.iter_mut() {
         let mut components = module.components();
-        // println!("Module: {:?}", &components);
         all_components.append(&mut components);
     }
     Ok(all_components)

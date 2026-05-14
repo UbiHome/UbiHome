@@ -1,8 +1,8 @@
 use convert_case::Case;
 use convert_case::Casing;
 
-pub fn format_id(id: &Option<String>, name: &String) -> String {
-    id.clone().unwrap_or(name.clone().to_case(Case::Snake))
+pub fn format_id(id: &Option<String>, name: &str) -> String {
+    id.clone().unwrap_or(name.to_case(Case::Snake))
 }
 
 #[cfg(test)]

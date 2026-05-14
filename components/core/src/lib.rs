@@ -2,10 +2,8 @@ pub mod configuration;
 pub mod constants;
 pub mod features;
 pub mod internal;
-pub mod light;
 pub mod mapper;
 pub mod utils;
-pub extern crate paste;
 pub extern crate serde_value;
 
 use garde::Validate;
@@ -23,7 +21,7 @@ where
     Self: Send,
 {
     /// This is the main entry point for the module.
-    fn new(config_string: &String) -> Result<Self, String>
+    fn new(config_string: &str) -> Result<Self, String>
     where
         Self: Sized;
 
@@ -190,14 +188,14 @@ macro_rules! config_template {
         use duration_str::deserialize_option_duration;
         use garde::Validate;
         use ubihome_core::UbiHome;
-        use ubihome_core::template_mapper_new;
+        use ubihome_core::template_mapper;
 
-        template_mapper_new!(map_light, $component_name, $light_extension);
-        template_mapper_new!(map_switch, $component_name, $switch_extension);
-        template_mapper_new!(map_number, $component_name, $number_extension);
-        template_mapper_new!(map_sensor, $component_name, $sensor_extension);
-        template_mapper_new!(map_button, $component_name, $button_extension);
-        template_mapper_new!(map_binary_sensor, $component_name, $binary_sensor_extension);
+        template_mapper!(map_light, $component_name, $light_extension);
+        template_mapper!(map_switch, $component_name, $switch_extension);
+        template_mapper!(map_number, $component_name, $number_extension);
+        template_mapper!(map_sensor, $component_name, $sensor_extension);
+        template_mapper!(map_button, $component_name, $button_extension);
+        template_mapper!(map_binary_sensor, $component_name, $binary_sensor_extension);
 
         #[derive(Clone, Deserialize, Debug, Validate)]
         #[garde(allow_unvalidated)]

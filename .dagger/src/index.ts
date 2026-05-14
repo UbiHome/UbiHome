@@ -159,7 +159,16 @@ export class UbiHome {
 		source: Directory,
 	): Promise<string> {
 		return this.rustContainer(source)
-			.withExec(["cargo", "fmt", "--check"])
+			.withExec(["cargo", "fmt", "--all", "--", "--check"])
+			.withExec([
+				"cargo",
+				"clippy",
+				"--all-targets",
+				"--all-features",
+				"--",
+				"-D",
+				"warnings",
+			])
 			.stdout();
 	}
 

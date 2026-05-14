@@ -109,15 +109,14 @@ async fn events_stream(
         .take(1);
 
     let entities: Vec<String> = Vec::new();
-    // TODO: Add back
     // for (key, binary_sensor) in config.binary_sensor.unwrap() {
-    //     let object_id = binary_sensor.default.get_object_id();
-    //     let id = binary_sensor.default.id.unwrap_or(object_id.clone());
+    //     let object_id = binary_sensor.get_object_id();
+    //     let id = binary_sensor.id.unwrap_or(object_id.clone());
     //     entities.push(format!(
     //         "{{\"id\": \"{}\", \"name\": \"{}\", \"icon\": \"{}\", \"entity_category\": {}, \"state\": \"ON\"}}",
     //         id,
-    //         binary_sensor.default.name,
-    //         binary_sensor.default.icon.unwrap_or_default(),
+    //         binary_sensor.name,
+    //         binary_sensor.icon.unwrap_or_default(),
     //         0
     //     ));
     // }

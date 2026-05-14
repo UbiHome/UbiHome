@@ -36,7 +36,6 @@ pub enum ActionType {
 
 #[derive(Clone, Serialize, Deserialize, Debug, Validate)]
 #[serde(deny_unknown_fields)]
-
 pub struct Action {
     #[serde(flatten)]
     #[garde(skip)]
@@ -45,7 +44,6 @@ pub struct Action {
 
 #[derive(Clone, Serialize, Deserialize, Debug, Validate)]
 #[serde(deny_unknown_fields)]
-
 pub struct Trigger {
     #[garde(dive)]
     pub then: Vec<Action>,

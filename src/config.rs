@@ -171,25 +171,4 @@ ubihome:
         // Check that the API config is parsed correctly
         assert_eq!(platforms, vec!["api"], "Platform should be api");
     }
-
-    //     #[test]
-    //     fn test_api_config_defaults() {
-    //         let config = r#"
-    // ubihome:
-    //   name: "Test API Config"
-
-    // api: {}
-    // "#;
-
-    //         let api_module = UbiHomePlatform::new(&config.to_string());
-    //         assert!(api_module.is_ok(), "API module should parse successfully");
-
-    //         let module = api_module.unwrap();
-
-    //         // Check that the API config uses defaults when empty object
-    //         assert_eq!(
-    //             module.api_config.port, None,
-    //             "Port should be None (default)"
-    //         );
-    //     }
 }

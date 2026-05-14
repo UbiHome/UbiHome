@@ -8,7 +8,6 @@ pub enum SensorFilterType {
 
 #[derive(Clone, Deserialize, Debug)]
 #[serde(deny_unknown_fields)]
-
 pub struct SensorFilter {
     #[serde(flatten)]
     pub filter: SensorFilterType,

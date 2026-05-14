@@ -1,5 +1,5 @@
 #[macro_export]
-macro_rules! template_mapper_new {
+macro_rules! template_mapper {
     ($mapper_name:ident, $component_name:ident, $component_type:ident) => {
         fn $mapper_name<'de, D>(de: D) -> Result<Option<HashMap<String, $component_type>>, D::Error>
         where

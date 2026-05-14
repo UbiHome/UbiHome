@@ -18,7 +18,7 @@ use esphome_native_api::proto::version_2025_12_1::NumberStateResponse;
 use esphome_native_api::proto::version_2025_12_1::SensorLastResetType;
 use esphome_native_api::proto::version_2025_12_1::SensorStateClass;
 use esphome_native_api::proto::version_2025_12_1::SensorStateResponse;
-// use esphome_native_api::proto::version_2025_12_1::SubscribeHomeAssistantStateResponse;
+use esphome_native_api::proto::version_2025_12_1::SubscribeHomeAssistantStateResponse;
 use esphome_native_api::proto::version_2025_12_1::SubscribeLogsResponse;
 use esphome_native_api::proto::version_2025_12_1::SwitchStateResponse;
 use log::debug;
@@ -573,12 +573,12 @@ impl Module for UbiHomePlatform {
                                             "SubscribeHomeAssistantStatesRequest: {:?}",
                                             subscribe_homeassistant_services_request
                                         );
-                                        // let response_message =
-                                        //     SubscribeHomeAssistantStateResponse {
-                                        //         entity_id: "test".to_string(),
-                                        //         attribute: "test".to_string(),
-                                        //         once: true,
-                                        //     };
+                                        let response_message =
+                                            SubscribeHomeAssistantStateResponse {
+                                                entity_id: "test".to_string(),
+                                                attribute: "test".to_string(),
+                                                once: true,
+                                            };
                                     }
                                     ProtoMessage::ButtonCommandRequest(button_command_request) => {
                                         debug!(

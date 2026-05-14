@@ -25,14 +25,14 @@ fn test_id_re_matches() {
 }
 
 pub fn is_id_string_option(value: &Option<String>, _: &()) -> garde::Result {
-    if let Some(inner_value) = value {
-        if !ID_RE.is_match(inner_value) {
-            let invalid_values = ID_RE_REMOVER.replace_all(inner_value, "");
-            return Err(garde::Error::new(format!(
-                "ID must only contain letters, numbers, hyphens, and underscores, but found: {}",
-                invalid_values
-            )));
-        }
+    if let Some(inner_value) = value
+        && !ID_RE.is_match(inner_value)
+    {
+        let invalid_values = ID_RE_REMOVER.replace_all(inner_value, "");
+        return Err(garde::Error::new(format!(
+            "ID must only contain letters, numbers, hyphens, and underscores, but found: {}",
+            invalid_values
+        )));
     }
     Ok(())
 }
@@ -73,10 +73,10 @@ pub fn is_readable_string(value: &str, _: &()) -> garde::Result {
 }
 
 pub fn is_readable_string_option(value: &Option<String>, _: &()) -> garde::Result {
-    if let Some(inner_value) = value {
-        if !READABLE_RE.is_match(inner_value) {
-            return Err(readable_string_error(inner_value));
-        }
+    if let Some(inner_value) = value
+        && !READABLE_RE.is_match(inner_value)
+    {
+        return Err(readable_string_error(inner_value));
     }
     Ok(())
 }

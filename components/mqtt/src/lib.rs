@@ -64,10 +64,9 @@ impl Module for UbiHomePlatform {
     ) -> Pin<Box<dyn Future<Output = Result<(), Box<dyn std::error::Error>>> + Send + 'static>>
     {
         let config = self.config.clone();
-        let core_config = self.core.clone();
         Box::pin(async move {
             let mut mqttoptions = MqttOptions::new(
-                core_config.ubihome.name.clone(),
+                config.ubihome.name.clone(),
                 config.mqtt.broker.clone(),
                 config.mqtt.port.unwrap_or(1883),
             );
@@ -94,10 +93,9 @@ impl Module for UbiHomePlatform {
                     .discovery_prefix
                     .clone()
                     .unwrap_or("ubihome".to_string()),
-                core_config.ubihome.name
+                config.ubihome.name
             );
-            let discovery_topic =
-                format!("homeassistant/device/{}/config", core_config.ubihome.name);
+            let discovery_topic = format!("homeassistant/device/{}/config", config.ubihome.name);
 
             // Handle Sensor Updates
             let base_topic_clone = base_topic.clone();
@@ -263,14 +261,14 @@ impl Module for UbiHomePlatform {
                                     let ip = get_ip_address().unwrap();
                                     let mac = get_network_mac_address(ip).unwrap();
                                     let device = HAMqttDevice {
-                                        identifiers: vec![core_config.ubihome.name.clone()],
+                                        identifiers: vec![config.ubihome.name.clone()],
                                         manufacturer: format!(
                                             "{} {} {}",
                                             whoami::platform(),
                                             whoami::distro(),
                                             whoami::arch()
                                         ),
-                                        name: core_config.ubihome.name.clone(),
+                                        name: config.ubihome.name.clone(),
                                         model: whoami::devicename(),
                                         connections: vec![HAMqttConnection {
                                             r#type: "mac".to_string(),

@@ -58,7 +58,6 @@ config_template!(
 );
 
 pub struct UbiHomePlatform {
-    // config: PowerUtilsConfig,
     components: Vec<UbiComponent>,
     buttons: HashMap<String, PowerAction>,
 }
@@ -119,10 +118,8 @@ impl Module for UbiHomePlatform {
 
             components.push(UbiComponent::Button(button_component));
             buttons.insert(id.clone(), button.action);
-            // continue;
         }
         Ok(UbiHomePlatform {
-            // config: config.power_utils,
             components,
             buttons,
         })
