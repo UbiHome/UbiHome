@@ -9,6 +9,7 @@ import pytest_asyncio
 from playwright.async_api import Page
 from pytest_playwright_asyncio.pytest_playwright import CreateContextCallback
 from testcontainers.core.container import DockerContainer
+
 from utils import HomeAssistantRuntime
 
 
@@ -42,7 +43,7 @@ def _wait_for_http_ok(url: str, timeout_seconds: float) -> None:
 
 
 @pytest.fixture(scope="function")
-def home_assistant_runtime() -> Generator[HomeAssistantRuntime, None, None]:
+def home_assistant_runtime() -> Generator[HomeAssistantRuntime]:
 
     container = DockerContainer("ghcr.io/home-assistant/home-assistant:2026.4.3")
     container.with_bind_ports(8123, None)
@@ -127,7 +128,7 @@ def home_assistant_runtime() -> Generator[HomeAssistantRuntime, None, None]:
 async def ha_page(
     new_context: CreateContextCallback,
     home_assistant_runtime: HomeAssistantRuntime,
-) -> AsyncGenerator[Page, None]:
+) -> AsyncGenerator[Page]:
     context = await new_context()
     page = await context.new_page()
 

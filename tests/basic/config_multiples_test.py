@@ -1,5 +1,6 @@
 import pytest
 from platformdirs import user_data_dir
+
 from utils import run_ubihome
 
 CONFIG = """

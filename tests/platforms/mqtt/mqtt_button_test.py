@@ -3,8 +3,9 @@ from asyncio import sleep
 from unittest.mock import Mock
 
 import pytest
-from mock_file import IOMock
 from paho.mqtt.client import Client
+
+from mock_file import IOMock
 from utils import UbiHome
 
 

@@ -1,4 +1,5 @@
 import aioesphomeapi
+
 from mock_file import IOMock
 from utils import (
     OS_PLATFORM,

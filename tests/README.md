@@ -18,6 +18,8 @@ make prepare-test-linux
 make test
 cd tests
 uv run pytest
+
+uv run ruff check
 ```
 
 ## If something is not working

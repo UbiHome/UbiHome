@@ -11,15 +11,16 @@ dependencies = [
     "pytest-timeout==2.4",
     "pyyaml>=6.0.3",
     "platformdirs>=4.9.6",
-    "pytest-playwright-asyncio>=0.7.2",
     "allure-pytest>=2.15.3",
 ]
 
-[project.optional-dependencies]
+[dependency-groups]
+e2e = ["pytest-playwright-asyncio>=0.7.2"]
 dev = ["ruff>=0.4.0"]
 
 [tool.uv]
 package = false
+default-groups = ["e2e", "dev"]
 
 [build-system]
 requires = ["hatchling"]

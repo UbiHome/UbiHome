@@ -1,5 +1,6 @@
 import pytest
 from platformdirs import user_data_dir
+
 from utils import run_ubihome
 
 CONFIG = """
@@ -120,7 +121,7 @@ async def test_validate_config_error(config, expected_error: str | list[str]):
         expected_error = [expected_error]
 
     for expected in expected_error:
-        assert expected in error, f"Expected error '{expected}' not found in output: {full_output}"
+        assert expected in error, f"Expected error '{expected}' not found in output: {error}"
 
 
 @pytest.mark.asyncio

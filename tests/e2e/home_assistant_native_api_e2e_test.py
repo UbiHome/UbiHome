@@ -5,7 +5,6 @@ from typing import Any
 
 import pytest
 import yaml
-from mock_file import IOMockFactory
 from playwright.async_api import (
     Page,
     expect,
@@ -13,6 +12,8 @@ from playwright.async_api import (
 from playwright.async_api import (
     TimeoutError as PlaywrightTimeoutError,
 )
+
+from mock_file import IOMockFactory
 from utils import OS_PLATFORM, Platform, UbiHome
 
 pytestmark = [pytest.mark.e2e, pytest.mark.timeout(30)]

@@ -1,4 +1,5 @@
 import pytest
+
 from utils import OS_PLATFORM, Platform, run_ubihome
 
 
