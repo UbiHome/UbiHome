@@ -9,6 +9,8 @@ on:
 jobs:
   release-pr:
     runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
     steps:
       - name: Checkout main
         uses: actions/checkout@v4
