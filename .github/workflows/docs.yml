@@ -6,6 +6,8 @@ on:
       - .dagger/**
       - dagger.json
       - .github/workflows/docs.yml
+    branches-ignore:
+      - release
   push:
     branches:
       - main
