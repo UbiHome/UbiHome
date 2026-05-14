@@ -12,9 +12,9 @@ use std::{env, fs};
 
 mod commands;
 
-const VERSION: &str = concat!(env!("CARGO_PKG_VERSION"), " (", env!("GIT_HASH"), ")");
-const DESCRIPTION: &str = env!("CARGO_PKG_DESCRIPTION");
-const CARGO_PKG_HOMEPAGE: &str = env!("CARGO_PKG_HOMEPAGE");
+const VERSION: &str = concat!(env!("GIT_TAG"), " (", env!("GIT_HASH"), ")");
+const DESCRIPTION: &str = "UbiHome is a system which allows you to integrate any device running an OS into your smart home.";
+const HOMEPAGE: &str = "https://github.com/UbiHome/UbiHome";
 const DEFAULT_CONFIG_FILE_YML: &str = "config.yml";
 const DEFAULT_CONFIG_FILE_YAML: &str = "config.yaml";
 
@@ -99,7 +99,7 @@ fn cli() -> Command {
     ];
 
     Command::new("UbiHome")
-        .about(format!("UbiHome {}\n\n{}\nDocumentation: https://ubihome.github.io/\nHomepage: {}" ,VERSION, DESCRIPTION, CARGO_PKG_HOMEPAGE))
+        .about(format!("UbiHome {}\n\n{}\nDocumentation: https://ubihome.github.io/\nHomepage: {}" ,VERSION, DESCRIPTION, HOMEPAGE))
         .version(VERSION)
         .subcommand_required(true)
         .arg_required_else_help(true)
@@ -125,7 +125,15 @@ fn cli() -> Command {
                 .arg(Arg::new("location").help("The location to install UbiHome.")),
         )
         .subcommand(
-            Command::new("update").about("Update the current UbiHome executable (from GitHub)."),
+            Command::new("update")
+                .about("Update the current UbiHome executable (from GitHub).")
+                .arg(
+                    Arg::new("include_pre_release")
+                        .long("include-pre-release")
+                        .help("Include pre-release tags (unstable versions).")
+                        .action(clap::ArgAction::SetTrue)
+                        .num_args(0),
+                ),
         )
         .subcommand(
             Command::new("uninstall")
@@ -169,13 +177,17 @@ fn main() {
                     let location = sub_matches.try_get_one::<String>("location").unwrap();
                     install(location.cloned());
                 }
-                Some(("update", _)) => {
+                Some(("update", sub_matches)) => {
                     if let Some(log_level) = log_level {
                         let mut logger_builder = Logger::try_with_env_or_str(log_level).unwrap();
                         logger_builder = logger_builder.duplicate_to_stdout(Duplicate::Trace);
                         logger_builder.start().unwrap();
                     }
-                    update().unwrap();
+                    let include_pre_release = sub_matches
+                        .get_one::<bool>("include_pre_release")
+                        .copied()
+                        .unwrap_or(false);
+                    update(include_pre_release).unwrap();
                 }
                 Some(("uninstall", sub_matches)) => {
                     let location = sub_matches.try_get_one::<String>("location").unwrap();
