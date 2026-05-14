@@ -185,7 +185,10 @@ fn main() {
                 }
                 Some(("validate", _)) => match run::run(config_file, true, None) {
                     Ok(_) => println!("Configuration is valid."),
-                    Err(e) => println!("Configuration is invalid: {}", e),
+                    Err(e) => {
+                        eprintln!("Configuration is invalid: {}", e);
+                        std::process::exit(1);
+                    }
                 },
                 #[allow(unused_variables)]
                 Some(("run", sub_matches)) => {

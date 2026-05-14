@@ -6,6 +6,7 @@ pub mod light;
 pub mod mapper;
 pub mod utils;
 pub extern crate paste;
+pub extern crate serde_value;
 
 use garde::Validate;
 use internal::sensors::UbiComponent;
