@@ -1,10 +1,10 @@
 from asyncio import sleep
 from unittest.mock import Mock
 
-import pytest
+import aioesphomeapi
+
 from mock_file import IOMock
 from utils import OS_PLATFORM, Platform, UbiHome, fnv1_hash_object_id
-import aioesphomeapi
 
 
 async def test_run(io_mock: IOMock):
@@ -38,7 +38,7 @@ text_sensor:
         assert len(entities) == 1, entities
         entity = entities[0]
 
-        assert type(entity) == aioesphomeapi.TextSensorInfo
+        assert isinstance(entity, aioesphomeapi.TextSensorInfo)
         assert entity.key == fnv1_hash_object_id(text_sensor_id)
         assert entity.object_id == text_sensor_id
         assert entity.name == text_sensor_name

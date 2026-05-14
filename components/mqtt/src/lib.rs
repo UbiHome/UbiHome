@@ -36,7 +36,9 @@ pub struct MqttConfig {
     pub password: Option<String>,
 }
 
-config_template!(mqtt, MqttConfig, NoConfig, NoConfig, NoConfig, NoConfig, NoConfig, NoConfig, NoConfig);
+config_template!(
+    mqtt, MqttConfig, NoConfig, NoConfig, NoConfig, NoConfig, NoConfig, NoConfig, NoConfig
+);
 
 #[derive(Clone, Debug)]
 pub struct UbiHomePlatform {

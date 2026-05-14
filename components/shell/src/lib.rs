@@ -8,7 +8,9 @@ use tokio::{
     sync::broadcast::{Receiver, Sender},
     time,
 };
-use ubihome_core::internal::sensors::{UbiComponent, UbiLight, UbiNumber, UbiSwitch, UbiTextSensor};
+use ubihome_core::internal::sensors::{
+    UbiComponent, UbiLight, UbiNumber, UbiSwitch, UbiTextSensor,
+};
 use ubihome_core::template_light;
 use ubihome_core::template_text_sensor;
 use ubihome_core::{
@@ -849,12 +851,10 @@ impl Module for UbiHomePlatform {
                             match output {
                                 Ok(output) => {
                                     debug!("Text Sensor {} state: {}", key, &output);
-                                    _ = cloned_sender.send(
-                                        ChangedMessage::TextSensorValueChange {
-                                            key: key.clone(),
-                                            value: output.trim().to_string(),
-                                        },
-                                    );
+                                    _ = cloned_sender.send(ChangedMessage::TextSensorValueChange {
+                                        key: key.clone(),
+                                        value: output.trim().to_string(),
+                                    });
                                 }
                                 Err(e) => {
                                     debug!("Error executing text sensor command: {}", e);
@@ -1037,10 +1037,7 @@ text_sensor:
         );
 
         let text_sensor = module.text_sensors.get("current_user").unwrap();
-        assert_eq!(
-            text_sensor.command, "whoami",
-            "command should match"
-        );
+        assert_eq!(text_sensor.command, "whoami", "command should match");
         assert!(
             text_sensor.update_interval.is_some(),
             "Text sensor should have update_interval"
