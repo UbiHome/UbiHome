@@ -18,7 +18,54 @@ struct Release {
     tag_name: String,
 }
 
-pub(crate) fn update() -> Result<(), String> {
+fn is_normal_release_tag(tag: &str) -> bool {
+    if !tag.starts_with('v') {
+        return false;
+    }
+
+    let mut parts = tag[1..].split('.');
+    let Some(major) = parts.next() else {
+        return false;
+    };
+    let Some(minor) = parts.next() else {
+        return false;
+    };
+    let Some(patch) = parts.next() else {
+        return false;
+    };
+
+    parts.next().is_none()
+        && !major.is_empty()
+        && !minor.is_empty()
+        && !patch.is_empty()
+        && major.chars().all(|c| c.is_ascii_digit())
+        && minor.chars().all(|c| c.is_ascii_digit())
+        && patch.chars().all(|c| c.is_ascii_digit())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::is_normal_release_tag;
+
+    #[test]
+    fn accepts_normal_release_tag() {
+        assert!(is_normal_release_tag("v1.2.3"));
+        assert!(is_normal_release_tag("v0.0.1"));
+        assert!(is_normal_release_tag("v12.34.56"));
+    }
+
+    #[test]
+    fn rejects_pre_release_and_invalid_tags() {
+        assert!(!is_normal_release_tag("v0.14.1-next.2"));
+        assert!(!is_normal_release_tag("v1.2.3-beta"));
+        assert!(!is_normal_release_tag("1.2.3"));
+        assert!(!is_normal_release_tag("v1.2"));
+        assert!(!is_normal_release_tag("v1.2.3.4"));
+        assert!(!is_normal_release_tag("v1.2.x"));
+    }
+}
+
+pub(crate) fn update(include_pre_release: bool) -> Result<(), String> {
     let rt = Runtime::new().unwrap();
     rt.block_on(async {
         let client = reqwest::Client::new();
@@ -30,8 +77,14 @@ pub(crate) fn update() -> Result<(), String> {
             .await
             .unwrap();
 
-        let json = resp.json::<Vec<Release>>().await.unwrap();
-        let new_version = json[0].tag_name.clone();
+        let releases = resp.json::<Vec<Release>>().await.unwrap();
+        let Some(new_version) = releases
+            .into_iter()
+            .find(|release| include_pre_release || is_normal_release_tag(&release.tag_name))
+            .map(|release| release.tag_name)
+        else {
+            return Err("No matching release found.".to_string());
+        };
 
         if new_version == format!("v{}", VERSION) {
             println!("Already on the latest version: {}", VERSION);
