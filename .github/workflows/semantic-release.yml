@@ -7,11 +7,6 @@ on:
       - release
   workflow_dispatch:
 
-permissions:
-  contents: write
-  issues: write
-  pull-requests: write
-
 jobs:
   semantic-release:
     runs-on: ubuntu-latest
@@ -33,11 +28,3 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.CUSTOM_GITHUB_PAT  }}
         run: npm run semantic-release
-
-      - name: Trigger build workflow
-        run: |
-          curl -X POST \
-            -H "Accept: application/vnd.github+json" \
-            -H "Authorization: Bearer ${{ secrets.PAT_WITH_WORKFLOW_ACCESS}}" \
-            https://api.github.com/repos/${{ github.repository }}/actions/workflows/docker.yml/dispatches \
-            -d '{"ref": "${{ github.ref_name }}"}' # or whatever branch name you want the dispatch to run on

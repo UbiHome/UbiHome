@@ -9,8 +9,6 @@ on:
 jobs:
   release-pr:
     runs-on: ubuntu-latest
-    permissions:
-      pull-requests: write
     steps:
       - name: Checkout main
         uses: actions/checkout@v4
@@ -45,17 +43,19 @@ jobs:
             echo 'body<<EOF' >> $GITHUB_OUTPUT
             cat NEXT_CHANGELOG.md >> $GITHUB_OUTPUT
             echo 'EOF' >> $GITHUB_OUTPUT
+            rm NEXT_CHANGELOG.md
           else
             echo 'body=No changelog generated.' >> $GITHUB_OUTPUT
           fi
+          git status
 
       - name: Create PR from main to release
         if: steps.diff.outputs.skip == 'false'
         uses: peter-evans/create-pull-request@v6
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          title: 'Release: Merge main into release'
+          token: ${{ secrets.CUSTOM_GITHUB_PAT }}
+          title: 'release: stable release'
           body: ${{ steps.changelog.outputs.body }}
           base: release
-          head: main
+          branch: main
           draft: false
