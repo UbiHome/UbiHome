@@ -6,6 +6,8 @@ on:
       - .dagger/**
       - dagger.json
       - .github/workflows/docs.yml
+    branches-ignore:
+      - release
   push:
     branches:
       - main
@@ -32,21 +34,8 @@ jobs:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     needs: check
     runs-on: ubuntu-latest
-    # Grant GITHUB_TOKEN the permissions required to make a Pages deployment
-    permissions:
-      contents: read    # to read the repository contents
-      pages: write      # to deploy to Pages
-      id-token: write   # to verify the deployment originates from an appropriate source
-
-    # Deploy to the github-pages environment
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
     steps:
-      - uses: actions/checkout@v4
-
-      - name: Setup Pages
-        uses: actions/configure-pages@v5
+      - uses: actions/checkout@v6
 
       - name: Build docs site with Dagger
         uses: dagger/dagger-for-github@v8.4.1
@@ -55,11 +44,10 @@ jobs:
           call: docs-build-dir export --path=./documentation/site
           cloud-token: ${{ secrets.DAGGER_CLOUD_TOKEN }}
 
-      - name: Upload Pages artifact
-        uses: actions/upload-pages-artifact@v3
+      - name: Deploy to ubihome.github.io repository
+        uses: peaceiris/actions-gh-pages@v4
         with:
-          path: ./documentation/site
-
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
+          external_repository: UbiHome/ubihome.github.io
+          publish_dir: ./documentation/site
+          publish_branch: gh-pages
+          personal_token: ${{ secrets.CUSTOM_GITHUB_PAT }}
