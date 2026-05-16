@@ -16,7 +16,7 @@ tools:
   github:
     toolsets: [repos, pull_requests]
     lockdown: false
-    min-integrity: none
+    min-integrity: approved
 
 safe-outputs:
   mentions: false
