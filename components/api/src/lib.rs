@@ -50,8 +50,9 @@ pub struct ApiEncryptionConfig {
 #[derive(Clone, Deserialize, Debug, Validate)]
 #[serde(deny_unknown_fields)]
 pub struct ApiConfig {
+    #[serde(default = "default_port")]
     #[garde(range(min = 1, max = 65535))]
-    pub port: Option<u16>,
+    pub port: u16,
     #[garde(dive)]
     pub encryption: Option<ApiEncryptionConfig>,
     #[garde(custom(is_readable_string_option), length(min = 3, max = 64))]
@@ -61,6 +62,10 @@ pub struct ApiConfig {
 fn mac_to_u64(mac: &str) -> Result<u64, ParseIntError> {
     let mac = mac.replace(":", "");
     u64::from_str_radix(&mac, 16)
+}
+
+const fn default_port() -> u16 {
+    6053
 }
 
 config_template!(
@@ -295,8 +300,7 @@ impl Module for UbiHomePlatform {
                 }
             }
 
-            let port = config.api.port.unwrap_or(6053);
-            let addr: SocketAddr = format!("0.0.0.0:{}", port).parse().unwrap();
+            let addr: SocketAddr = format!("0.0.0.0:{}", config.api.port).parse().unwrap();
             let socket = TcpSocket::new_v4().unwrap();
             socket.set_reuseaddr(true).unwrap();
 
@@ -732,7 +736,7 @@ api:
         let module = api_module.unwrap();
 
         // Check that the API config is parsed correctly
-        assert_eq!(module.config.api.port, Some(8053), "Port should be 8053");
+        assert_eq!(module.config.api.port, 8053, "Port should be 8053");
         assert_eq!(
             module.config.api.encryption.unwrap().key,
             Some("xiahAckHBW7BcKEQ6mRfasIW20Md9uMh/5PjrjbAhXQ=".to_string()),
@@ -755,9 +759,6 @@ api: {}
         let module = api_module.unwrap();
 
         // Check that the API config uses defaults when empty object
-        assert_eq!(
-            module.config.api.port, None,
-            "Port should be None (default)"
-        );
+        assert_eq!(module.config.api.port, 6053, "Port should default to 6053");
     }
 }
