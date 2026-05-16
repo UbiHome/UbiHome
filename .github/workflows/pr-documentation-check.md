@@ -15,7 +15,6 @@ permissions:
 tools:
   github:
     toolsets: [repos, pull_requests]
-    lockdown: false
     min-integrity: approved
 
 safe-outputs:
