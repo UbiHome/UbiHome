@@ -25,7 +25,7 @@ where
     Self: Send,
 {
     /// This is the main entry point for the module.
-    fn new(config_string: &str, config_file_name: &str) -> Result<Self, String>
+    fn new(config_string: &str, config_path: &str) -> Result<Self, String>
     where
         Self: Sized;
 

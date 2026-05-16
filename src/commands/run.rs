@@ -19,8 +19,8 @@ use tokio::sync::broadcast;
 use tokio::{runtime::Runtime, signal};
 
 fn read_base_config(path: &str) -> Result<String, String> {
-    println!("Config: {}", &path);
     if !path.is_empty() {
+        println!("Config: {}", &path);
         let config_file_path = fs::canonicalize(&path).unwrap();
         if let Ok(content) = fs::read_to_string(config_file_path) {
             return Ok(content);

@@ -15,12 +15,12 @@ where
 
     match validation_result {
         Ok(config) => Ok(config),
-        Err(errors) => {
+        Err(error) => {
             let formatter: &dyn MessageFormatter = &UserMessageFormatter;
 
             let report = serde_saphyr::miette::to_miette_report_with_formatter(
-                &errors,
-                &config_string,
+                &error,
+                config_string,
                 config_path,
                 formatter,
             );
