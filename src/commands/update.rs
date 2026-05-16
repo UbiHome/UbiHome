@@ -43,28 +43,6 @@ fn is_normal_release_tag(tag: &str) -> bool {
         && patch.chars().all(|c| c.is_ascii_digit())
 }
 
-#[cfg(test)]
-mod tests {
-    use super::is_normal_release_tag;
-
-    #[test]
-    fn accepts_normal_release_tag() {
-        assert!(is_normal_release_tag("v1.2.3"));
-        assert!(is_normal_release_tag("v0.0.1"));
-        assert!(is_normal_release_tag("v12.34.56"));
-    }
-
-    #[test]
-    fn rejects_pre_release_and_invalid_tags() {
-        assert!(!is_normal_release_tag("v0.14.1-next.2"));
-        assert!(!is_normal_release_tag("v1.2.3-beta"));
-        assert!(!is_normal_release_tag("1.2.3"));
-        assert!(!is_normal_release_tag("v1.2"));
-        assert!(!is_normal_release_tag("v1.2.3.4"));
-        assert!(!is_normal_release_tag("v1.2.x"));
-    }
-}
-
 pub(crate) fn update(include_pre_release: bool) -> Result<(), String> {
     let rt = Runtime::new().unwrap();
     rt.block_on(async {
@@ -180,4 +158,26 @@ pub(crate) fn update(include_pre_release: bool) -> Result<(), String> {
 
     }).unwrap();
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::is_normal_release_tag;
+
+    #[test]
+    fn accepts_normal_release_tag() {
+        assert!(is_normal_release_tag("v1.2.3"));
+        assert!(is_normal_release_tag("v0.0.1"));
+        assert!(is_normal_release_tag("v12.34.56"));
+    }
+
+    #[test]
+    fn rejects_pre_release_and_invalid_tags() {
+        assert!(!is_normal_release_tag("v0.14.1-next.2"));
+        assert!(!is_normal_release_tag("v1.2.3-beta"));
+        assert!(!is_normal_release_tag("1.2.3"));
+        assert!(!is_normal_release_tag("v1.2"));
+        assert!(!is_normal_release_tag("v1.2.3.4"));
+        assert!(!is_normal_release_tag("v1.2.x"));
+    }
 }
