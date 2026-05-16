@@ -18,9 +18,9 @@ use std::time::Duration;
 use tokio::sync::broadcast;
 use tokio::{runtime::Runtime, signal};
 
-fn read_base_config(path: Option<String>) -> Result<String, String> {
-    if let Some(path) = path {
-        println!("Config: {}", &path);
+fn read_base_config(path: &str) -> Result<String, String> {
+    println!("Config: {}", &path);
+    if !path.is_empty() {
         let config_file_path = fs::canonicalize(&path).unwrap();
         if let Ok(content) = fs::read_to_string(config_file_path) {
             return Ok(content);
@@ -40,7 +40,7 @@ fn read_base_config(path: Option<String>) -> Result<String, String> {
 }
 
 pub(crate) fn run(
-    config_path: Option<String>,
+    mut config_path: &str,
     validate_only: bool,
     shutdown_signal: Option<mpsc::Receiver<()>>,
 ) -> Result<(), Box<dyn std::error::Error>> {
@@ -83,6 +83,9 @@ pub(crate) fn run(
 
     let config_string: String =
         read_base_config(config_path).expect("Failed to load base configuration");
+    if config_path.is_empty() {
+        config_path = "BUILTIN";
+    }
 
     let platforms = get_platforms_from_config(&config_string);
     debug!("Configured modules: {:?}", &platforms);
@@ -101,7 +104,7 @@ pub(crate) fn run(
     );
 
     if let Err(errors) = validation_result {
-        let report = serde_saphyr::miette::to_miette_report(&errors, &config_string, "config.yml");
+        let report = serde_saphyr::miette::to_miette_report(&errors, &config_string, config_path);
         return Err(format!("{:?}", report).into());
     }
     let config = validation_result.unwrap();
@@ -138,7 +141,8 @@ Remove the "{}:" entry from your configuration or install the cargo crate contai
             ).into());
         }
     }
-    let configuration_result = configure_platforms(&config_string, &platforms_to_load);
+    let configuration_result =
+        configure_platforms(&config_string, &config_path, &platforms_to_load);
     if let Err(e) = configuration_result {
         return Err(e.into());
     }
