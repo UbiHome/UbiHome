@@ -3,7 +3,7 @@
 ```yaml title="Base Example"
 text_sensor:
   - platform: ... #(1)!
-    name: "Host Name"
+    name: 'Host Name'
     id: host_name
     icon: mdi:identifier
     # device_class: "timestamp"

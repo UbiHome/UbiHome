@@ -57,8 +57,8 @@ number:
     max_value: 100.0
     step: 1.0
     update_interval: 5s
-    command_state: "cat /tmp/display_brightness"
-    command_set: "echo {{ value }} > /tmp/display_brightness"
+    command_state: 'cat /tmp/display_brightness'
+    command_set: 'echo {{ value }} > /tmp/display_brightness'
 ```
 
 ### Text Sensor
