@@ -160,10 +160,10 @@ r#"
 api:
   port: 56441
 text_sensor:
-    - command: "hostname"
-        id: host_name
-        name: Host Name
-        platform: shell
+- command: "hostname"
+  id: host_name
+  name: Host Name
+  platform: shell
 button:
 - command: echo 'Hello World!' > b2dc877d-a7b3-4342-8bc5-b31e5cb9269c.mock
   id: my_button
