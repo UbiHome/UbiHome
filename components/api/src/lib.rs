@@ -13,12 +13,14 @@ use esphome_native_api::proto::version_2025_12_1::ListEntitiesLightResponse;
 use esphome_native_api::proto::version_2025_12_1::ListEntitiesNumberResponse;
 use esphome_native_api::proto::version_2025_12_1::ListEntitiesSensorResponse;
 use esphome_native_api::proto::version_2025_12_1::ListEntitiesSwitchResponse;
+use esphome_native_api::proto::version_2025_12_1::ListEntitiesTextSensorResponse;
 use esphome_native_api::proto::version_2025_12_1::NumberStateResponse;
 use esphome_native_api::proto::version_2025_12_1::SensorLastResetType;
 use esphome_native_api::proto::version_2025_12_1::SensorStateClass;
 use esphome_native_api::proto::version_2025_12_1::SensorStateResponse;
 use esphome_native_api::proto::version_2025_12_1::SubscribeLogsResponse;
 use esphome_native_api::proto::version_2025_12_1::SwitchStateResponse;
+use esphome_native_api::proto::version_2025_12_1::TextSensorStateResponse;
 use log::debug;
 use log::info;
 use serde::{Deserialize, Deserializer};
@@ -48,8 +50,9 @@ pub struct ApiEncryptionConfig {
 #[derive(Clone, Deserialize, Debug, Validate)]
 #[serde(deny_unknown_fields)]
 pub struct ApiConfig {
+    #[serde(default = "default_port")]
     #[garde(range(min = 1, max = 65535))]
-    pub port: Option<u16>,
+    pub port: u16,
     #[garde(dive)]
     pub encryption: Option<ApiEncryptionConfig>,
     #[garde(custom(is_readable_string_option), length(min = 3, max = 64))]
@@ -61,7 +64,13 @@ fn mac_to_u64(mac: &str) -> Result<u64, ParseIntError> {
     u64::from_str_radix(&mac, 16)
 }
 
-config_template!(api, ApiConfig, NoConfig, NoConfig, NoConfig, NoConfig, NoConfig, NoConfig);
+const fn default_port() -> u16 {
+    6053
+}
+
+config_template!(
+    api, ApiConfig, NoConfig, NoConfig, NoConfig, NoConfig, NoConfig, NoConfig, NoConfig
+);
 
 #[derive(Clone, Debug)]
 pub struct UbiHomePlatform {
@@ -269,12 +278,29 @@ impl Module for UbiHomePlatform {
                             api_components_by_key.insert(key, component_number);
                             api_components_key_id.insert(number.id.clone(), key);
                         }
+                        UbiComponent::TextSensor(text_sensor) => {
+                            let key = hash_fnv1(&text_sensor.id);
+                            let component_text_sensor =
+                                ProtoMessage::ListEntitiesTextSensorResponse(
+                                    ListEntitiesTextSensorResponse {
+                                        object_id: text_sensor.id.clone(),
+                                        key,
+                                        name: text_sensor.name,
+                                        device_id: 0,
+                                        icon: text_sensor.icon.unwrap_or_default(),
+                                        disabled_by_default: false,
+                                        entity_category: EntityCategory::None as i32,
+                                        device_class: text_sensor.device_class.unwrap_or_default(),
+                                    },
+                                );
+                            api_components_by_key.insert(key, component_text_sensor);
+                            api_components_key_id.insert(text_sensor.id.clone(), key);
+                        }
                     }
                 }
             }
 
-            let port = config.api.port.unwrap_or(6053);
-            let addr: SocketAddr = format!("0.0.0.0:{}", port).parse().unwrap();
+            let addr: SocketAddr = format!("0.0.0.0:{}", config.api.port).parse().unwrap();
             let socket = TcpSocket::new_v4().unwrap();
             socket.set_reuseaddr(true).unwrap();
 
@@ -392,6 +418,23 @@ impl Module for UbiHomePlatform {
                                             tx_clone
                                                 .send(ProtoMessage::NumberStateResponse(
                                                     NumberStateResponse {
+                                                        key: *key,
+                                                        device_id: 0,
+                                                        state: value,
+                                                        missing_state: false,
+                                                    },
+                                                ))
+                                                .await
+                                                .unwrap();
+                                        }
+                                    }
+                                    PublishedMessage::TextSensorValueChanged { key, value } => {
+                                        if let Some(key) = api_components_key_id_clone.get(&key) {
+                                            debug!("TextSensorValueChanged: {:?}", &value);
+
+                                            tx_clone
+                                                .send(ProtoMessage::TextSensorStateResponse(
+                                                    TextSensorStateResponse {
                                                         key: *key,
                                                         device_id: 0,
                                                         state: value,
@@ -693,7 +736,7 @@ api:
         let module = api_module.unwrap();
 
         // Check that the API config is parsed correctly
-        assert_eq!(module.config.api.port, Some(8053), "Port should be 8053");
+        assert_eq!(module.config.api.port, 8053, "Port should be 8053");
         assert_eq!(
             module.config.api.encryption.unwrap().key,
             Some("xiahAckHBW7BcKEQ6mRfasIW20Md9uMh/5PjrjbAhXQ=".to_string()),
@@ -716,9 +759,6 @@ api: {}
         let module = api_module.unwrap();
 
         // Check that the API config uses defaults when empty object
-        assert_eq!(
-            module.config.api.port, None,
-            "Port should be None (default)"
-        );
+        assert_eq!(module.config.api.port, 6053, "Port should default to 6053");
     }
 }

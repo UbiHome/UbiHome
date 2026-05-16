@@ -77,6 +77,7 @@ config_template!(
     BME280SensorConfig,
     NoConfig,
     NoConfig,
+    NoConfig,
     NoConfig
 );
 
