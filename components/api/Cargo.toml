@@ -11,7 +11,7 @@ tokio = { version = "1", features = ["full"] }
 ubihome-core = { path = "../core", features = ["ip"] }
 serde-saphyr = { version = "0.0.15", features = ["garde", "miette"] }
 duration-str = "0.16.1"
-esphome-native-api = "2.0.7"
-# esphome-native-api = {path = "../../../esphome-native-api/"}
+esphome-native-api = "2.0.8"
+# esphome-native-api = { path = "../../../esphome-native-api/" }
 whoami = "1.6.0"
 garde = { version = "0.22.1", features = ["serde"] }
