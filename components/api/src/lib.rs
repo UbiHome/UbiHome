@@ -314,7 +314,7 @@ impl Module for UbiHomePlatform {
             loop {
                 // Asynchronously wait for an inbound socket.
                 let (socket, _) = listener.accept().await?;
-                let mut server = server_base.clone();
+                let server = server_base.clone();
                 let mut receiver_clone = receiver.resubscribe();
                 let api_components_key_id_clone = api_components_key_id.clone();
                 let api_components_clone = api_components_by_key.clone();
