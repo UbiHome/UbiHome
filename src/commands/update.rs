@@ -16,6 +16,8 @@ const VERSION: &str = env!("GIT_TAG");
 #[derive(Clone, Deserialize, Debug)]
 struct Release {
     tag_name: String,
+    #[serde(default)]
+    body: String,
 }
 
 fn is_normal_release_tag(tag: &str) -> bool {
@@ -43,9 +45,25 @@ fn is_normal_release_tag(tag: &str) -> bool {
         && patch.chars().all(|c| c.is_ascii_digit())
 }
 
+fn build_update_changelog(
+    releases: &[Release],
+    include_pre_release: bool,
+    current_version: &str,
+) -> String {
+    let current_tag = format!("v{}", current_version);
+
+    releases
+        .iter()
+        .filter(|release| include_pre_release || is_normal_release_tag(&release.tag_name))
+        .take_while(|release| release.tag_name != current_tag)
+        .map(|release| format!("## {}\n\n{}", release.tag_name, release.body.trim()))
+        .collect::<Vec<_>>()
+        .join("\n\n")
+}
+
 #[cfg(test)]
 mod tests {
-    use super::is_normal_release_tag;
+    use super::{build_update_changelog, is_normal_release_tag, Release};
 
     #[test]
     fn accepts_normal_release_tag() {
@@ -63,6 +81,57 @@ mod tests {
         assert!(!is_normal_release_tag("v1.2.3.4"));
         assert!(!is_normal_release_tag("v1.2.x"));
     }
+
+    #[test]
+    fn builds_changelog_for_all_skipped_releases() {
+        let releases = vec![
+            Release {
+                tag_name: "v1.3.0".to_string(),
+                body: "latest".to_string(),
+            },
+            Release {
+                tag_name: "v1.2.0".to_string(),
+                body: "middle".to_string(),
+            },
+            Release {
+                tag_name: "v1.1.0".to_string(),
+                body: "older".to_string(),
+            },
+            Release {
+                tag_name: "v1.0.0".to_string(),
+                body: "current".to_string(),
+            },
+        ];
+
+        let changelog = build_update_changelog(&releases, false, "1.0.0");
+
+        assert_eq!(
+            changelog,
+            "## v1.3.0\n\nlatest\n\n## v1.2.0\n\nmiddle\n\n## v1.1.0\n\nolder"
+        );
+    }
+
+    #[test]
+    fn ignores_pre_releases_when_disabled() {
+        let releases = vec![
+            Release {
+                tag_name: "v1.2.0-next.1".to_string(),
+                body: "pre".to_string(),
+            },
+            Release {
+                tag_name: "v1.1.0".to_string(),
+                body: "stable".to_string(),
+            },
+            Release {
+                tag_name: "v1.0.0".to_string(),
+                body: "current".to_string(),
+            },
+        ];
+
+        let changelog = build_update_changelog(&releases, false, "1.0.0");
+
+        assert_eq!(changelog, "## v1.1.0\n\nstable");
+    }
 }
 
 pub(crate) fn update(include_pre_release: bool) -> Result<(), String> {
@@ -79,9 +148,9 @@ pub(crate) fn update(include_pre_release: bool) -> Result<(), String> {
 
         let releases = resp.json::<Vec<Release>>().await.unwrap();
         let Some(new_version) = releases
-            .into_iter()
+            .iter()
             .find(|release| include_pre_release || is_normal_release_tag(&release.tag_name))
-            .map(|release| release.tag_name)
+            .map(|release| release.tag_name.clone())
         else {
             return Err("No matching release found.".to_string());
         };
@@ -92,12 +161,16 @@ pub(crate) fn update(include_pre_release: bool) -> Result<(), String> {
         }
 
 
+        let update_changelog = build_update_changelog(&releases, include_pre_release, VERSION);
+        let mut help_message = format!("This will overwrite the current ({}) executable.", VERSION);
+        if !update_changelog.is_empty() {
+            help_message.push_str("\n\n");
+            help_message.push_str(&update_changelog);
+        }
+
         let ans = Confirm::new(&format!("Update to version {}?", new_version))
             .with_default(true)
-            .with_help_message(format!(
-                "This will overwrite the current ({}) executable.",
-                VERSION
-            ).as_str())
+            .with_help_message(help_message)
             .prompt();
 
         if ans.unwrap() {
