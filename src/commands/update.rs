@@ -54,6 +54,7 @@ fn build_update_changelog(
 
     releases
         .iter()
+        .rev()
         .filter(|release| include_pre_release || is_normal_release_tag(&release.tag_name))
         .take_while(|release| release.tag_name != current_tag)
         .map(|release| format!("## {}\n\n{}", release.tag_name, release.body.trim()))
@@ -137,6 +138,8 @@ mod tests {
 pub(crate) fn update(include_pre_release: bool) -> Result<(), String> {
     let rt = Runtime::new().unwrap();
     rt.block_on(async {
+        println!("Current version: {}\n", VERSION);
+
         let client = reqwest::Client::new();
 
         let resp = client
@@ -156,104 +159,109 @@ pub(crate) fn update(include_pre_release: bool) -> Result<(), String> {
         };
 
         if new_version == format!("v{}", VERSION) {
-            println!("Already on the latest version: {}", VERSION);
+            println!("Already on the latest version.");
             return Ok(());
         }
 
 
         let update_changelog = build_update_changelog(&releases, include_pre_release, VERSION);
-        let help_message = if update_changelog.is_empty() {
-            format!("This will overwrite the current ({}) executable.", VERSION)
-        } else {
-            format!(
-                "This will overwrite the current ({}) executable.\n\n{}",
-                VERSION, update_changelog
-            )
-        };
+        println!("{}\n", update_changelog);
 
         let ans = Confirm::new(&format!("Update to version {}?", new_version))
             .with_default(true)
-            .with_help_message(help_message.as_str())
+            .with_help_message(format!("This will overwrite the current ({}) executable.", VERSION).as_str())
             .prompt();
 
-        if ans.unwrap() {
-            // e.g. x86_64-unknown-linux-gnu
-            let target_tuple = CURRENT_PLATFORM.split("-").collect::<Vec<_>>(); 
-            let target_arch = target_tuple[0];
-            let target_os = target_tuple[2];
-            #[cfg(not(target_os = "windows"))]
-            let file_ending = "";
-            #[cfg(target_os = "windows")]
-            let file_ending = ".exe";
-
-            let download_file_name = format!("ubihome-{}-{}{}", target_os, target_arch, file_ending);
-
-            let download_url = format!("https://github.com/UbiHome/UbiHome/releases/download/{}/{}", new_version, download_file_name);
-            debug!("Download URL: {}", download_url);
-
-            println!("Downloading...");
-            let resp = client.get(download_url).send().await.expect("request failed");
-            if resp.status() != reqwest::StatusCode::OK {
-                return Err(format!("Failed to download file: {}", resp.status()));
+        match ans {
+            Ok(true) => println!("Updating..."),
+            Ok(false) => {
+                println!("Update cancelled.");
+                return Ok(());
             }
-
-            let total_size = resp.content_length().unwrap_or(0);
-
-            // Setup progress bar
-            let pb = if total_size > 0 {
-                let pb = ProgressBar::new(total_size);
-                pb.set_style(ProgressStyle::default_bar()
-                    .template("{msg}\n{spinner:.green} [{elapsed_precise}] [{wide_bar:.cyan/blue}] {bytes}/{total_bytes} ({bytes_per_sec}, {eta})")
-                    .unwrap()
-                    .progress_chars("#>-"));
-                pb.set_message(format!("Downloading {}", download_file_name));
-                pb
-            } else {
-                let pb = ProgressBar::new_spinner();
-                pb.set_style(ProgressStyle::default_spinner()
-                    .template("{msg}\n{spinner:.green} [{elapsed_precise}] {bytes} ({bytes_per_sec})")
-                    .unwrap());
-                pb.set_message(format!("Downloading {}", download_file_name));
-                pb
-            };
-
-            // Download chunks with progress bar
-            let mut downloaded: u64 = 0;
-            let mut stream = resp.bytes_stream();
-            let mut body_data = Vec::new();
-
-            while let Some(item) = stream.next().await {
-                let chunk = item.map_err(|e| format!("Error while downloading file: {}", e))?;
-                body_data.extend_from_slice(&chunk);
-                let new = if total_size > 0 {
-                    min(downloaded + (chunk.len() as u64), total_size)
-                } else {
-                    downloaded + (chunk.len() as u64)
-                };
-                downloaded = new;
-                pb.set_position(new);
-            }
-
-            pb.finish_with_message(format!("Downloaded {}", download_file_name));
-            match env::current_exe() {
-                Ok(exe_path) => {
-                    let mut new_exe_path = exe_path.clone();
-                    new_exe_path.set_file_name(format!("new_{}", new_exe_path.file_name().unwrap_or_default().to_string_lossy()));
-                    std::fs::write(&new_exe_path, body_data).expect("Failed to create temporary file");
-
-                    print!("Updating {}. ", exe_path.display());
-                    self_replace::self_replace(&new_exe_path).unwrap();
-                    std::fs::remove_file(&new_exe_path).unwrap();
-                    println!("Updated!");
+            Err(e) => {
+                match e {
+                    inquire::error::InquireError::OperationCanceled | inquire::error::InquireError::OperationInterrupted => {
+                        println!("Update cancelled.");
+                        return Ok(());
+                    }
+                    _ => (),
                 }
-                Err(e) => println!("failed to get current exe path: {e}"),
-            };
-            Ok(())
-        } else{
-            println!("Update cancelled.");
-            Ok(())
+                println!("Failed to read user input: {}", e);
+                return Err("Failed to read user input.".to_string());
+            }
+        }
+        // e.g. x86_64-unknown-linux-gnu
+        let target_tuple = CURRENT_PLATFORM.split("-").collect::<Vec<_>>(); 
+        let target_arch = target_tuple[0];
+        let target_os = target_tuple[2];
+        #[cfg(not(target_os = "windows"))]
+        let file_ending = "";
+        #[cfg(target_os = "windows")]
+        let file_ending = ".exe";
+
+        let download_file_name = format!("ubihome-{}-{}{}", target_os, target_arch, file_ending);
+
+        let download_url = format!("https://github.com/UbiHome/UbiHome/releases/download/{}/{}", new_version, download_file_name);
+        debug!("Download URL: {}", download_url);
+
+        println!("Downloading...");
+        let resp = client.get(download_url).send().await.expect("request failed");
+        if resp.status() != reqwest::StatusCode::OK {
+            return Err(format!("Failed to download file: {}", resp.status()));
         }
 
-    }).unwrap();
-    Ok(())
+        let total_size = resp.content_length().unwrap_or(0);
+
+        // Setup progress bar
+        let pb = if total_size > 0 {
+            let pb = ProgressBar::new(total_size);
+            pb.set_style(ProgressStyle::default_bar()
+                .template("{msg}\n{spinner:.green} [{elapsed_precise}] [{wide_bar:.cyan/blue}] {bytes}/{total_bytes} ({bytes_per_sec}, {eta})")
+                .unwrap()
+                .progress_chars("#>-"));
+            pb.set_message(format!("Downloading {}", download_file_name));
+            pb
+        } else {
+            let pb = ProgressBar::new_spinner();
+            pb.set_style(ProgressStyle::default_spinner()
+                .template("{msg}\n{spinner:.green} [{elapsed_precise}] {bytes} ({bytes_per_sec})")
+                .unwrap());
+            pb.set_message(format!("Downloading {}", download_file_name));
+            pb
+        };
+
+        // Download chunks with progress bar
+        let mut downloaded: u64 = 0;
+        let mut stream = resp.bytes_stream();
+        let mut body_data = Vec::new();
+
+        while let Some(item) = stream.next().await {
+            let chunk = item.map_err(|e| format!("Error while downloading file: {}", e))?;
+            body_data.extend_from_slice(&chunk);
+            let new = if total_size > 0 {
+                min(downloaded + (chunk.len() as u64), total_size)
+            } else {
+                downloaded + (chunk.len() as u64)
+            };
+            downloaded = new;
+            pb.set_position(new);
+        }
+
+        pb.finish_with_message(format!("Downloaded {}", download_file_name));
+        match env::current_exe() {
+            Ok(exe_path) => {
+                let mut new_exe_path = exe_path.clone();
+                new_exe_path.set_file_name(format!("new_{}", new_exe_path.file_name().unwrap_or_default().to_string_lossy()));
+                std::fs::write(&new_exe_path, body_data).expect("Failed to create temporary file");
+
+                print!("Updating {}. ", exe_path.display());
+                self_replace::self_replace(&new_exe_path).unwrap();
+                std::fs::remove_file(&new_exe_path).unwrap();
+                println!("Updated!");
+            }
+            Err(e) => println!("failed to get current exe path: {e}"),
+        };
+        Ok(())
+
+    })
 }
