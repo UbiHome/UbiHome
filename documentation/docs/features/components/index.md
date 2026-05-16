@@ -24,6 +24,14 @@ All entities share a set of [common attributes](./base.md) that can be used to c
 
     [:octicons-arrow-right-24: View Documentation](./sensor.md)
 
+-   :material-form-textbox:{ .lg .middle } [**Text Sensor**](./text_sensor.md)
+
+    ---
+
+    Make text values available as a sensor.
+
+    [:octicons-arrow-right-24: View Documentation](./text_sensor.md)
+
 -   :material-button-pointer:{ .lg .middle } [**Button**](./button.md)
   
     ---

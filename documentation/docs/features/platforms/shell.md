@@ -60,3 +60,14 @@ number:
     command_state: "cat /tmp/display_brightness"
     command_set: "echo {{ value }} > /tmp/display_brightness"
 ```
+
+### Text Sensor
+
+```yaml
+text_sensor:
+  - platform: shell
+    name: 'Host Name'
+    id: host_name
+    update_interval: 30s
+    command: 'hostname'
+```
