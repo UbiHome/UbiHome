@@ -23,3 +23,7 @@ api:
 Similar to ESPHome:
 
 - [ESPHome API](https://esphome.io/components/api.html)
+
+## Supported Entities
+
+The native API exposes all configured entities.

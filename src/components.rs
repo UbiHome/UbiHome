@@ -22,6 +22,13 @@ macro_rules! generate_component_methods {
         impl Platform {
             /// Parse a platform from its string representation
             pub fn from_str(s: &str) -> Result<Self, String> {
+                if crate::config::is_base_entity_property(s) {
+                    return Err(format!(
+                        "Reserved platform name: \nThe component '{}' is trying to use a reserved name. Please contact the developer of the component to change the platform name.",
+                        s
+                    ));
+                }
+
                 match s {
                     $(
                         $platform_name => Ok(Platform::$variant),
@@ -88,5 +95,17 @@ pub(crate) async fn run_platforms(
                 module.run(tx, rx).await.unwrap();
             }
         });
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::Platform;
+
+    #[test]
+    fn test_reserved_platform_names_are_rejected() {
+        let result = Platform::from_str("button");
+        assert!(result.is_err());
+        assert!(result.unwrap_err().contains("Reserved platform name"));
     }
 }
