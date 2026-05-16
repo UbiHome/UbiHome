@@ -63,7 +63,8 @@ pub struct UbiHomePlatform {
 
 impl Module for UbiHomePlatform {
     fn new(config_string: &str, config_path: &str) -> Result<Self, String> {
-        let config = ubihome_core::validation::validate_config::<CoreConfig>(config_string, config_path)?;
+        let config =
+            ubihome_core::validation::validate_config::<CoreConfig>(config_string, config_path)?;
 
         // info!("GPIO config: {:?}", config);
         let mut components: Vec<UbiComponent> = Vec::new();
