@@ -162,15 +162,18 @@ pub(crate) fn update(include_pre_release: bool) -> Result<(), String> {
 
 
         let update_changelog = build_update_changelog(&releases, include_pre_release, VERSION);
-        let mut help_message = format!("This will overwrite the current ({}) executable.", VERSION);
-        if !update_changelog.is_empty() {
-            help_message.push_str("\n\n");
-            help_message.push_str(&update_changelog);
-        }
+        let help_message = if update_changelog.is_empty() {
+            format!("This will overwrite the current ({}) executable.", VERSION)
+        } else {
+            format!(
+                "This will overwrite the current ({}) executable.\n\n{}",
+                VERSION, update_changelog
+            )
+        };
 
         let ans = Confirm::new(&format!("Update to version {}?", new_version))
             .with_default(true)
-            .with_help_message(help_message)
+            .with_help_message(help_message.as_str())
             .prompt();
 
         if ans.unwrap() {
