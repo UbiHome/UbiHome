@@ -20,14 +20,14 @@ use tokio::{runtime::Runtime, signal};
 
 fn read_base_config(path: &str) -> Result<String, String> {
     if !path.is_empty() {
-        println!("Config: {}", &path);
-        let config_file_path = fs::canonicalize(&path).unwrap();
+        println!("Config: {}", path);
+        let config_file_path = fs::canonicalize(path).unwrap();
         if let Ok(content) = fs::read_to_string(config_file_path) {
             return Ok(content);
         } else {
             warn!(
                 "Failed to read the configuration file at '{}'.", //, falling back to default.",
-                &path
+                path
             );
         }
     }
@@ -141,8 +141,7 @@ Remove the "{}:" entry from your configuration or install the cargo crate contai
             ).into());
         }
     }
-    let configuration_result =
-        configure_platforms(&config_string, &config_path, &platforms_to_load);
+    let configuration_result = configure_platforms(&config_string, config_path, &platforms_to_load);
     if let Err(e) = configuration_result {
         return Err(e.into());
     }
