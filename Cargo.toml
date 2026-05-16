@@ -40,6 +40,7 @@ serde-saphyr = { version = "0.0.23", features = ["garde", "miette"] }
 garde = { version = "0.22.1", features = ["serde", "regex"] }
 paste = "1.0.15"
 parameterized = "2.1.0"
+get_fields = "0.1.0"
 
 
 [build-dependencies]

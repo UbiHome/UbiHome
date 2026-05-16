@@ -218,10 +218,16 @@ fn main() {
                         panic!("Running as a Windows service is not supported on Linux.");
                     } else {
                         // Run normally
-                        run::run(config_file, false, None).unwrap();
+                        if let Err(e) = run::run(config_file, false, None) {
+                            eprintln!("Configuration is invalid: {}", e);
+                            std::process::exit(1);
+                        }
                     }
                     #[cfg(not(target_os = "windows"))]
-                    run::run(config_file, false, None).unwrap();
+                    if let Err(e) = run::run(config_file, false, None) {
+                        eprintln!("Configuration is invalid: {}", e);
+                        std::process::exit(1);
+                    }
                 }
                 _ => {
                     println!("No subcommand was used");

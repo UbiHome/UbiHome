@@ -3,6 +3,7 @@ pub mod constants;
 pub mod features;
 pub mod internal;
 pub mod mapper;
+pub mod text_sensor;
 pub mod utils;
 pub extern crate serde_value;
 
@@ -95,6 +96,10 @@ pub enum ChangedMessage {
         key: String,
         value: f32,
     },
+    TextSensorValueChange {
+        key: String,
+        value: String,
+    },
     BluetoothProxyMessage(BluetoothProxyMessage),
 }
 
@@ -146,6 +151,10 @@ pub enum PublishedMessage {
         key: String,
         value: f32,
     },
+    TextSensorValueChanged {
+        key: String,
+        value: String,
+    },
     BluetoothProxyMessage(BluetoothProxyMessage),
 }
 
@@ -185,7 +194,8 @@ macro_rules! config_template {
         $sensor_extension:ident,
         $switch_extension:ident,
         $light_extension:ident,
-        $number_extension:ident) => {
+        $number_extension:ident,
+        $text_sensor_extension:ident) => {
         use duration_str::deserialize_option_duration;
         use garde::Validate;
         use ubihome_core::UbiHome;
@@ -197,6 +207,7 @@ macro_rules! config_template {
         template_mapper!(map_sensor, $component_name, $sensor_extension);
         template_mapper!(map_button, $component_name, $button_extension);
         template_mapper!(map_binary_sensor, $component_name, $binary_sensor_extension);
+        template_mapper!(map_text_sensor, $component_name, $text_sensor_extension);
 
         #[derive(Clone, Deserialize, Debug, Validate)]
         #[garde(allow_unvalidated)]
@@ -229,6 +240,9 @@ macro_rules! config_template {
 
             #[serde(default, deserialize_with = "map_number")]
             pub number: Option<HashMap<String, $number_extension>>,
+
+            #[serde(default, deserialize_with = "map_text_sensor")]
+            pub text_sensor: Option<HashMap<String, $text_sensor_extension>>,
         }
     };
 }

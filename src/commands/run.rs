@@ -229,6 +229,9 @@ Remove the "{}:" entry from your configuration or install the cargo crate contai
                 UbiComponent::Number(_number) => {
                     // Numbers don't have filters, state changes are forwarded directly
                 }
+                UbiComponent::TextSensor(_text_sensor) => {
+                    // Text sensors are read-only, state changes are forwarded directly
+                }
                 UbiComponent::BinarySensor(binary_sensor) => {
                     let mutable: Mutable<Option<Option<bool>>> = Mutable::new(Option::None);
                     signal_map_binary_sensor
@@ -426,6 +429,9 @@ Remove the "{}:" entry from your configuration or install the cargo crate contai
                         ChangedMessage::NumberValueCommand { key, value } => {
                             Some(PublishedMessage::NumberValueCommand { key, value })
                         }
+                        ChangedMessage::TextSensorValueChange { key, value } => {
+                            Some(PublishedMessage::TextSensorValueChanged { key, value })
+                        }
                     };
                     if let Some(pcmd) = publish_cmd {
                         debug!("Publishing command: {:?}", pcmd);
@@ -452,6 +458,9 @@ Remove the "{}:" entry from your configuration or install the cargo crate contai
                         UbiComponent::Light(light) => UbiComponent::Light(light.clone()),
                         UbiComponent::Number(number) => {
                             UbiComponent::Number(number.clone())
+                        }
+                        UbiComponent::TextSensor(text_sensor) => {
+                            UbiComponent::TextSensor(text_sensor.clone())
                         }
                     })
                     .collect(),
