@@ -1,4 +1,5 @@
 use garde::Validate;
+use get_fields::GetFields;
 use serde::Deserialize;
 use ubihome::Logger;
 use ubihome_core::constants::readable_string_error;
@@ -61,8 +62,12 @@ pub struct BaseEntity {
     pub platform: String,
 }
 
+pub(crate) fn is_base_entity_property(property: &str) -> bool {
+    BaseConfig::get_fields.contains(&property)
+}
+
 // Base configuration structure
-#[derive(Clone, Deserialize, Debug, Validate)]
+#[derive(Clone, Deserialize, Debug, Validate, GetFields)]
 #[garde(context(BaseConfigContext as ctx))]
 pub struct BaseConfig {
     #[garde(dive(&()))]
@@ -73,6 +78,7 @@ pub struct BaseConfig {
 
     #[garde(dive)]
     pub button: Option<Vec<BaseEntity>>,
+
     #[garde(dive)]
     pub sensor: Option<Vec<BaseEntity>>,
 
@@ -84,6 +90,12 @@ pub struct BaseConfig {
 
     #[garde(dive)]
     pub switch: Option<Vec<BaseEntity>>,
+
+    #[garde(dive)]
+    pub light: Option<Vec<BaseEntity>>,
+
+    #[garde(dive)]
+    pub text_sensor: Option<Vec<BaseEntity>>,
 }
 
 // Load Platforms
@@ -101,16 +113,7 @@ pub fn get_platforms_from_config(config_string: &str) -> Vec<String> {
                 line.split(':').next().map(|property| property.to_string())
             }
         })
-        .filter(|platform| {
-            platform != "logger"
-                && platform != "ubihome"
-                && platform != "sensor"
-                && platform != "binary_sensor"
-                && platform != "button"
-                && platform != "switch"
-                && platform != "light"
-                && platform != "number"
-        })
+        .filter(|platform| !is_base_entity_property(platform))
         .collect::<Vec<String>>()
 }
 
@@ -156,6 +159,11 @@ button:
 r#"
 api:
   port: 56441
+text_sensor:
+    - command: "hostname"
+        id: host_name
+        name: Host Name
+        platform: shell
 button:
 - command: echo 'Hello World!' > b2dc877d-a7b3-4342-8bc5-b31e5cb9269c.mock
   id: my_button
