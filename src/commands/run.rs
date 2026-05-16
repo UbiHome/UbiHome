@@ -74,7 +74,7 @@ pub(crate) fn run(
         );
 
     // if cfg!(debug_assertions) {
-    logger_builder = logger_builder.duplicate_to_stdout(Duplicate::Debug);
+    logger_builder = logger_builder.duplicate_to_stdout(Duplicate::Trace);
     // }
 
     let mut logger = logger_builder.start().unwrap();
