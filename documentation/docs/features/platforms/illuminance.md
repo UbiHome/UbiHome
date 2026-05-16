@@ -100,8 +100,12 @@ illuminance:
    Specify the exact path:
 
    ```yaml
-   sensor:
-     - platform: illuminance
-       name: 'Light Sensor'
-       device_path: '/sys/bus/iio/devices/iio:device0/in_illuminance_raw'
-   ```
+    sensor:
+      - platform: illuminance
+        name: 'Light Sensor'
+        device_path: '/sys/bus/iio/devices/iio:device0/in_illuminance_raw'
+    ```
+
+## Used in Examples
+
+- [Report your laptop's ambient light sensor](../../examples/ambient_light_sensor/index.md)

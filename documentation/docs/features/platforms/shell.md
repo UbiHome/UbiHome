@@ -60,3 +60,12 @@ number:
     command_state: "cat /tmp/display_brightness"
     command_set: "echo {{ value }} > /tmp/display_brightness"
 ```
+
+## Used in Examples
+
+- [Open a new tab in chrome](../../examples/open_chrome_tab/index.md)
+- [Display a Notification](../../examples/display_notification/index.md)
+- [Monitor system resources](../../examples/system_ressources/index.md)
+- [Turn Raspberry screen on or off](../../examples/screen_on_off/index.md)
+- [Automatic Screen Power Control](../../examples/automatic_screen_power_control/index.md)
+- [Monitor and control Bluetooth devices](../../examples/bluetooth_monitor_control/index.md)
