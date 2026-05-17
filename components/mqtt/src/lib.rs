@@ -36,7 +36,9 @@ pub struct MqttConfig {
     pub password: Option<String>,
 }
 
-config_template!(mqtt, MqttConfig, NoConfig, NoConfig, NoConfig, NoConfig, NoConfig, NoConfig);
+config_template!(
+    mqtt, MqttConfig, NoConfig, NoConfig, NoConfig, NoConfig, NoConfig, NoConfig, NoConfig
+);
 
 #[derive(Clone, Debug)]
 pub struct UbiHomePlatform {
@@ -249,6 +251,9 @@ impl Module for UbiHomePlatform {
                                                     }),
                                                 );
                                             }
+                                            UbiComponent::TextSensor(_text_sensor) => {
+                                                // TODO: Add MQTT text sensor support if needed
+                                            }
                                         }
                                     }
                                     {
@@ -373,6 +378,20 @@ impl Module for UbiHomePlatform {
                                             QoS::AtMostOnce,
                                             false,
                                             value.to_string(),
+                                        )
+                                        .await
+                                    {
+                                        error!("{}", e)
+                                    }
+                                }
+                                PublishedMessage::TextSensorValueChanged { key, value } => {
+                                    debug!("Text sensor value published: {} = {}", key, value);
+                                    if let Err(e) = client
+                                        .publish(
+                                            format!("{}/{}", base_topic_clone, key),
+                                            QoS::AtMostOnce,
+                                            false,
+                                            value,
                                         )
                                         .await
                                     {

@@ -1326,9 +1326,9 @@ dependencies = [
 
 [[package]]
 name = "esphome-native-api"
-version = "2.0.7"
+version = "2.0.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3dd8e6111666089fdec09c3c4f9e61535a5eff1594ff5156908f8a39a6ad6f84"
+checksum = "9292def3b9497be5fcba171d778e7c03372bf29886a9ef11f30d748f12657f29"
 dependencies = [
  "base64",
  "byteorder",
@@ -1628,6 +1628,17 @@ dependencies = [
  "quote",
  "syn 2.0.117",
  "uuid",
+]
+
+[[package]]
+name = "get_fields"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0fe8f7d930180be23f1fb00ad4cb9f3715f6fee2c077b33ee4da4969e1c60202"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 1.0.109",
 ]
 
 [[package]]
@@ -4832,6 +4843,7 @@ dependencies = [
  "futures-signals",
  "futures-util",
  "garde",
+ "get_fields",
  "indicatif",
  "inquire",
  "log",

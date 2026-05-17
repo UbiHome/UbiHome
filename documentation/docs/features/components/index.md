@@ -16,7 +16,7 @@ All components share a set of [common attributes](./base.md) that can be used to
 
 -   :material-motion-sensor:{ .lg .middle } [**Binary Sensor**](./binary_sensor.md)
 
-    ---
+  ***
 
     Track on/off states or occupancy.
 
@@ -30,13 +30,41 @@ All components share a set of [common attributes](./base.md) that can be used to
 
     [:octicons-arrow-right-24: View Documentation](./button.md)
 
--   :material-tune-vertical:{ .lg .middle } [**Number**](./number.md)
+  Make text values available as a sensor.
 
-    ---
+  [:octicons-arrow-right-24: View Documentation](./text_sensor.md)
 
-    Set or read numeric values with min/max/step constraints.
+- :material-button-pointer:{ .lg .middle } [**Button**](./button.md)
 
-    [:octicons-arrow-right-24: View Documentation](./number.md)
+  ***
+
+  Trigger an action on the device.
+
+  [:octicons-arrow-right-24: View Documentation](./button.md)
+
+- :material-motion-sensor:{ .lg .middle } [**Binary Sensor**](./binary_sensor.md)
+
+  ***
+
+  Track on/off states or occupancy.
+
+  [:octicons-arrow-right-24: View Documentation](./binary_sensor.md)
+
+- :material-toggle-switch-outline:{ .lg .middle } [**Switch**](./switch.md)
+
+  ***
+
+  Switch something on or off.
+
+  [:octicons-arrow-right-24: View Documentation](./switch.md)
+
+- :material-tune-vertical:{ .lg .middle } [**Number**](./number.md)
+
+  ***
+
+  Set or read numeric values with min/max/step constraints.
+
+  [:octicons-arrow-right-24: View Documentation](./number.md)
 
 -   :material-thermometer:{ .lg .middle } [**Sensor**](./sensor.md)
 
