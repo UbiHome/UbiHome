@@ -62,78 +62,6 @@ fn build_update_changelog(
         .join("\n\n")
 }
 
-#[cfg(test)]
-mod tests {
-    use super::{build_update_changelog, is_normal_release_tag, Release};
-
-    #[test]
-    fn accepts_normal_release_tag() {
-        assert!(is_normal_release_tag("v1.2.3"));
-        assert!(is_normal_release_tag("v0.0.1"));
-        assert!(is_normal_release_tag("v12.34.56"));
-    }
-
-    #[test]
-    fn rejects_pre_release_and_invalid_tags() {
-        assert!(!is_normal_release_tag("v0.14.1-next.2"));
-        assert!(!is_normal_release_tag("v1.2.3-beta"));
-        assert!(!is_normal_release_tag("1.2.3"));
-        assert!(!is_normal_release_tag("v1.2"));
-        assert!(!is_normal_release_tag("v1.2.3.4"));
-        assert!(!is_normal_release_tag("v1.2.x"));
-    }
-
-    #[test]
-    fn builds_changelog_for_all_skipped_releases() {
-        let releases = vec![
-            Release {
-                tag_name: "v1.3.0".to_string(),
-                body: "latest".to_string(),
-            },
-            Release {
-                tag_name: "v1.2.0".to_string(),
-                body: "middle".to_string(),
-            },
-            Release {
-                tag_name: "v1.1.0".to_string(),
-                body: "older".to_string(),
-            },
-            Release {
-                tag_name: "v1.0.0".to_string(),
-                body: "current".to_string(),
-            },
-        ];
-
-        let changelog = build_update_changelog(&releases, false, "1.0.0");
-
-        assert_eq!(
-            changelog,
-            "## v1.3.0\n\nlatest\n\n## v1.2.0\n\nmiddle\n\n## v1.1.0\n\nolder"
-        );
-    }
-
-    #[test]
-    fn ignores_pre_releases_when_disabled() {
-        let releases = vec![
-            Release {
-                tag_name: "v1.2.0-next.1".to_string(),
-                body: "pre".to_string(),
-            },
-            Release {
-                tag_name: "v1.1.0".to_string(),
-                body: "stable".to_string(),
-            },
-            Release {
-                tag_name: "v1.0.0".to_string(),
-                body: "current".to_string(),
-            },
-        ];
-
-        let changelog = build_update_changelog(&releases, false, "1.0.0");
-
-        assert_eq!(changelog, "## v1.1.0\n\nstable");
-    }
-}
 
 pub(crate) fn update(include_pre_release: bool) -> Result<(), String> {
     let rt = Runtime::new().unwrap();
@@ -264,4 +192,77 @@ pub(crate) fn update(include_pre_release: bool) -> Result<(), String> {
         Ok(())
 
     })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::is_normal_release_tag;
+
+    #[test]
+    fn accepts_normal_release_tag() {
+        assert!(is_normal_release_tag("v1.2.3"));
+        assert!(is_normal_release_tag("v0.0.1"));
+        assert!(is_normal_release_tag("v12.34.56"));
+    }
+
+    #[test]
+    fn rejects_pre_release_and_invalid_tags() {
+        assert!(!is_normal_release_tag("v0.14.1-next.2"));
+        assert!(!is_normal_release_tag("v1.2.3-beta"));
+        assert!(!is_normal_release_tag("1.2.3"));
+        assert!(!is_normal_release_tag("v1.2"));
+        assert!(!is_normal_release_tag("v1.2.3.4"));
+        assert!(!is_normal_release_tag("v1.2.x"));
+    }
+
+    #[test]
+    fn builds_changelog_for_all_skipped_releases() {
+        let releases = vec![
+            Release {
+                tag_name: "v1.3.0".to_string(),
+                body: "latest".to_string(),
+            },
+            Release {
+                tag_name: "v1.2.0".to_string(),
+                body: "middle".to_string(),
+            },
+            Release {
+                tag_name: "v1.1.0".to_string(),
+                body: "older".to_string(),
+            },
+            Release {
+                tag_name: "v1.0.0".to_string(),
+                body: "current".to_string(),
+            },
+        ];
+
+        let changelog = build_update_changelog(&releases, false, "1.0.0");
+
+        assert_eq!(
+            changelog,
+            "## v1.3.0\n\nlatest\n\n## v1.2.0\n\nmiddle\n\n## v1.1.0\n\nolder"
+        );
+    }
+
+    #[test]
+    fn ignores_pre_releases_when_disabled() {
+        let releases = vec![
+            Release {
+                tag_name: "v1.2.0-next.1".to_string(),
+                body: "pre".to_string(),
+            },
+            Release {
+                tag_name: "v1.1.0".to_string(),
+                body: "stable".to_string(),
+            },
+            Release {
+                tag_name: "v1.0.0".to_string(),
+                body: "current".to_string(),
+            },
+        ];
+
+        let changelog = build_update_changelog(&releases, false, "1.0.0");
+
+        assert_eq!(changelog, "## v1.1.0\n\nstable");
+    }
 }
