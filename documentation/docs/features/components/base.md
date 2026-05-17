@@ -10,5 +10,3 @@ These properties are available on all components.
 
 Additional attributes such as `device_class` or `entity_category` are component-specific and documented on each component page.
 
-- Home Assistant device class reference: [Sensor device class](https://www.home-assistant.io/integrations/sensor/#device-class)
-- Home Assistant generic properties reference: [Generic properties](https://developers.home-assistant.io/docs/core/entity/#generic-properties)
