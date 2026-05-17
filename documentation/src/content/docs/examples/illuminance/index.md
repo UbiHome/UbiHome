@@ -1,3 +1,7 @@
+---
+title: "Report your laptop's ambient light sensor"
+---
+
 # Report your laptop's ambient light sensor
 
 Expose your laptop's built-in ambient light sensor as an illuminance value in UbiHome.

@@ -1,3 +1,7 @@
+---
+title: "Connectivity"
+---
+
 # Connectivity
 
 <div class="grid cards" markdown>

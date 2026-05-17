@@ -1,3 +1,7 @@
+---
+title: "Shell"
+---
+
 # Shell
 
 Enable the platform:

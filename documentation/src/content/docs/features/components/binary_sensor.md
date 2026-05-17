@@ -1,13 +1,16 @@
+---
+title: "Binary Sensor"
+---
+
 # Binary Sensor
 
 ```yaml title="Base Example"
 binary_sensor:
-  - platform: ... 
+  - platform: ... # [!code highlight]
     name: "My Binary Sensor"
     device_class: presence
 ```
 
-1. Here the [platform](../platforms/index) must be defined.
 
 :::note[Platform-specific properties]
 Each platform requires additional properties not shown above. Check the [Platforms documentation](../platforms/index) and the page for your chosen platform for the full list of required and optional options.

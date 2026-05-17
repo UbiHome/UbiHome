@@ -1,3 +1,7 @@
+---
+title: "Power Utilities"
+---
+
 # Power Utilities
 
 ```yaml

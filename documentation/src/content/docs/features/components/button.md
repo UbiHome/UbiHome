@@ -1,12 +1,15 @@
+---
+title: "Button"
+---
+
 # Button
 
 ```yaml title="Base Example"
 button:
-  - platform: ... 
+  - platform: ... # [!code highlight]
     name: "Write Hello World"
 ```
 
-1. Here the [platform](../platforms/index) must be defined.
 
 :::note[Platform-specific properties]
 Each platform requires additional properties not shown above. Check the [Platforms documentation](../platforms/index) and the page for your chosen platform for the full list of required and optional options.

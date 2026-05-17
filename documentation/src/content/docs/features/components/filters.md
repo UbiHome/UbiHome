@@ -1,3 +1,7 @@
+---
+title: "Filters"
+---
+
 # Filters
 
 Filters can be used on supported components to modify incoming state values.

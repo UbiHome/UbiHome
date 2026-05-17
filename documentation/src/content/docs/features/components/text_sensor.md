@@ -1,15 +1,18 @@
+---
+title: "Text Sensor"
+---
+
 # Text Sensor
 
 ```yaml title="Base Example"
 text_sensor:
-  - platform: ... 
+  - platform: ... # [!code highlight]
     name: 'Host Name'
     id: host_name
     icon: mdi:identifier
     # device_class: "timestamp"
 ```
 
-1.  Here the [platform](./../platforms/index) must be defined.
 
 Text sensors publish string values instead of numeric values.
 

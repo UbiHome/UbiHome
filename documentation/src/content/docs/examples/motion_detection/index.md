@@ -1,3 +1,7 @@
+---
+title: "Motion Detection"
+---
+
 # Motion Detection
 
 Detect motion using a simple PIR Sensor. 

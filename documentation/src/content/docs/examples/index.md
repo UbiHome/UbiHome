@@ -1,3 +1,7 @@
+---
+title: "Examples"
+---
+
 # Examples
 
 Here you can find practical UbiHome configuration examples.

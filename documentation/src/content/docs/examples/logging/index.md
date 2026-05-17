@@ -1,3 +1,7 @@
+---
+title: "Logging"
+---
+
 # Logging
 
 If you need more information from the program you can enable logging. 

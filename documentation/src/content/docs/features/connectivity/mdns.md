@@ -1,3 +1,7 @@
+---
+title: "MDNS"
+---
+
 # MDNS
 
 ```yaml

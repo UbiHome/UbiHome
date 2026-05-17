@@ -1,3 +1,7 @@
+---
+title: "Bluetooth"
+---
+
 # Bluetooth
 
 Scans for Bluetooth devices and reports them to HomeAssistant via its native API.

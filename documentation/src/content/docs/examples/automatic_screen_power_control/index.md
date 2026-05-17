@@ -1,3 +1,7 @@
+---
+title: "Automatic Screen Power Control"
+---
+
 # Automatic Screen Power Control
 
 Control the screen power state based of a PIR sensor. The screen will turn on when motion is detected and off after a timeout.
@@ -15,7 +19,7 @@ switch:
   - platform: shell
     name: "Screen"
     id: screen
-    command_on: "vcgencmd display_power 1"
+    command_on: "vcgencmd display_power 1" # [!code highlight]
     command_off: "vcgencmd display_power 0"
     command_state: "vcgencmd display_power"
 

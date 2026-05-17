@@ -1,3 +1,7 @@
+---
+title: "Platforms"
+---
+
 # Platforms
 
 Platforms extend the functionality of UbiHome. They implement how [Components](../components/index) interact with the system. Or allow for completely new features with built in components.

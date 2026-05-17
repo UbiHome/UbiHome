@@ -1,3 +1,7 @@
+---
+title: "Measure Temperature, Humidity and Pressure with BME280"
+---
+
 # Measure Temperature, Humidity and Pressure with BME280
 
 Get the BME280 readings and make them available via the native API:

@@ -1,6 +1,7 @@
 import { defineConfig } from 'astro/config';
 import mdx from '@astrojs/mdx';
 import starlight from '@astrojs/starlight';
+import starlightTagsPlugin from 'starlight-tags';
 
 export default defineConfig({
   site: 'https://ubihome.github.io',
@@ -43,6 +44,19 @@ export default defineConfig({
           autogenerate: { directory: 'examples' }
         },
         { label: 'Help', link: '/help/' }
+      ],
+      plugins: [
+        starlightTagsPlugin({
+          configPath: 'tags.yml',
+          tagsPagesPrefix: 'tags',
+          tagsIndexSlug: 'tags',
+          sidebar: {
+            enabled: true,
+            position: 'bottom',
+            showCount: true,
+            showViewAllLink: true
+          }
+        })
       ]
     }),
     mdx()

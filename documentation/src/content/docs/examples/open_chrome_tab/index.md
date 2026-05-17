@@ -1,3 +1,7 @@
+---
+title: "Open a new tab in chrome"
+---
+
 # Open a new tab in chrome
 
 

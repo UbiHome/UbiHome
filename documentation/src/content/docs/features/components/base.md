@@ -1,3 +1,7 @@
+---
+title: "Common Component Properties"
+---
+
 # Common Component Properties
 
 These properties are available on all components.

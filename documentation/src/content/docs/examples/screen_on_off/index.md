@@ -1,3 +1,7 @@
+---
+title: "Turn Raspberry screen on or off"
+---
+
 # Turn Raspberry screen on or off
 
 Control the screen power state of a Raspberry Pi using the `vcgencmd` command or `wlr-randr` for Wayland.

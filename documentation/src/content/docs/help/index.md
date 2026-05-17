@@ -1,3 +1,7 @@
+---
+title: "Help"
+---
+
 # Help
 
 ## Documentation migration notes

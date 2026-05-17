@@ -11,7 +11,8 @@
   "dependencies": {
     "@astrojs/mdx": "^4.3.14",
     "@astrojs/starlight": "^0.37.7",
-    "astro": "^5.15.8"
+    "astro": "^5.15.8",
+    "starlight-tags": "^0.4.0"
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.4",

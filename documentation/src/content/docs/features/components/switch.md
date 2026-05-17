@@ -1,12 +1,15 @@
+---
+title: "Switch"
+---
+
 # Switch
 
 ```yaml title="Base Example"
 switch:
-  - platform: ... 
+  - platform: ... # [!code highlight]
     name: "My Switch"
 ```
 
-1. Here the [platform](../platforms/index) must be defined.
 
 :::note[Platform-specific properties]
 Each platform requires additional properties not shown above. Check the [Platforms documentation](../platforms/index) and the page for your chosen platform for the full list of required and optional options.

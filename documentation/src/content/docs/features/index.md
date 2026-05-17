@@ -1,3 +1,7 @@
+---
+title: "Features"
+---
+
 # Features
 
 UbiHome is built in a modular way. The modules can be split into the following categories:

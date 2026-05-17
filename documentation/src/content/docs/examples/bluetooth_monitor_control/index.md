@@ -1,3 +1,7 @@
+---
+title: "Monitor and control Bluetooth devices"
+---
+
 # Monitor and control Bluetooth devices
 
 ## Linux

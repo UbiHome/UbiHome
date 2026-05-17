@@ -1,8 +1,12 @@
+---
+title: "Number"
+---
+
 # Number
 
 ```yaml title="Base Example"
 number:
-  - platform: ... 
+  - platform: ... # [!code highlight]
     name: "Display Brightness"
     id: display_brightness
     icon: mdi:brightness-6
@@ -14,7 +18,6 @@ number:
     step: 1.0
 ```
 
-1. Here the [platform](../platforms/index) must be defined.
 
 :::note[Platform-specific properties]
 Each platform requires additional properties not shown above. Check the [Platforms documentation](../platforms/index) and the page for your chosen platform for the full list of required and optional options.

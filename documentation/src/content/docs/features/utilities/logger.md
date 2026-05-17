@@ -1,3 +1,7 @@
+---
+title: "Logger"
+---
+
 # Logger
 
 ```yaml title="Example configuration entry"

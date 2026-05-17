@@ -1,8 +1,12 @@
+---
+title: "Sensor"
+---
+
 # Sensor
 
 ```yaml title="Base Example"
 sensor:
-  - platform: ... 
+  - platform: ... # [!code highlight]
     name: "My Sensor"
     id: ram_usage
     icon: mdi:memory
@@ -12,7 +16,6 @@ sensor:
     accuracy_decimals: 2
 ```
 
-1. Here the [platform](../platforms/index) must be defined.
 
 :::note[Platform-specific properties]
 Each platform requires additional properties not shown above. Check the [Platforms documentation](../platforms/index) and the page for your chosen platform for the full list of required and optional options.

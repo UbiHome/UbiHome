@@ -1,8 +1,9 @@
 ---
+title: "Illuminance Sensor"
 tags:
-  - Illuminance
-  - Linux
-  - Windows
+  - illuminance
+  - linux
+  - windows
 ---
 
 # Illuminance Sensor

@@ -1,0 +1,29 @@
+tags:
+  illuminance:
+    label: Illuminance
+    description: Ambient light sensing and related features.
+    color: '#f59e0b'
+  linux:
+    label: Linux
+    description: Features and examples targeting Linux devices.
+    color: '#2563eb'
+  windows:
+    label: Windows
+    description: Features and examples targeting Windows devices.
+    color: '#0ea5e9'
+  temperature:
+    label: Temperature
+    description: Temperature sensors and examples.
+    color: '#ef4444'
+  humidity:
+    label: Humidity
+    description: Humidity sensors and examples.
+    color: '#14b8a6'
+  pressure:
+    label: Pressure
+    description: Pressure sensors and examples.
+    color: '#8b5cf6'
+  i2c:
+    label: I2C
+    description: Hardware integrations based on I2C devices.
+    color: '#64748b'

@@ -1,3 +1,7 @@
+---
+title: "Components"
+---
+
 # Components
 
 Components make data or functionality available for external systems via [Connectivity Features](../connectivity/index), or for reuse in other components.

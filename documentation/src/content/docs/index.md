@@ -1,3 +1,7 @@
+---
+title: "Welcome to UbiHome!"
+---
+
 # Welcome to UbiHome!
 
 UbiHome is a single executable that allows you to integrate any device running an OS into your smart home.

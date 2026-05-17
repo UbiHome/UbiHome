@@ -1,3 +1,7 @@
+---
+title: "Triggers and Actions"
+---
+
 # Triggers and Actions
 
 Different components can expose different triggers.
