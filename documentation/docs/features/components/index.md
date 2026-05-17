@@ -16,7 +16,7 @@ All components share a set of [common attributes](./base.md) that can be used to
 
 -   :material-motion-sensor:{ .lg .middle } [**Binary Sensor**](./binary_sensor.md)
 
-  ***
+    ---
 
     Track on/off states or occupancy.
 
@@ -30,41 +30,21 @@ All components share a set of [common attributes](./base.md) that can be used to
 
     [:octicons-arrow-right-24: View Documentation](./button.md)
 
-  Make text values available as a sensor.
+-   :material-toggle-switch-outline:{ .lg .middle } [**Switch**](./switch.md)
 
-  [:octicons-arrow-right-24: View Documentation](./text_sensor.md)
+    ---
 
-- :material-button-pointer:{ .lg .middle } [**Button**](./button.md)
+    Switch something on or off.
 
-  ***
+    [:octicons-arrow-right-24: View Documentation](./switch.md)
 
-  Trigger an action on the device.
+-   :material-tune-vertical:{ .lg .middle } [**Number**](./number.md)
 
-  [:octicons-arrow-right-24: View Documentation](./button.md)
+    ---
 
-- :material-motion-sensor:{ .lg .middle } [**Binary Sensor**](./binary_sensor.md)
+    Set or read numeric values with min/max/step constraints.
 
-  ***
-
-  Track on/off states or occupancy.
-
-  [:octicons-arrow-right-24: View Documentation](./binary_sensor.md)
-
-- :material-toggle-switch-outline:{ .lg .middle } [**Switch**](./switch.md)
-
-  ***
-
-  Switch something on or off.
-
-  [:octicons-arrow-right-24: View Documentation](./switch.md)
-
-- :material-tune-vertical:{ .lg .middle } [**Number**](./number.md)
-
-  ***
-
-  Set or read numeric values with min/max/step constraints.
-
-  [:octicons-arrow-right-24: View Documentation](./number.md)
+    [:octicons-arrow-right-24: View Documentation](./number.md)
 
 -   :material-thermometer:{ .lg .middle } [**Sensor**](./sensor.md)
 
@@ -73,6 +53,14 @@ All components share a set of [common attributes](./base.md) that can be used to
     Make data available as a sensor.
 
     [:octicons-arrow-right-24: View Documentation](./sensor.md)
+
+-   :material-form-textbox:{ .lg .middle } [**Text Sensor**](./text_sensor.md)
+
+    ---
+
+    Make text values available as a sensor.
+
+    [:octicons-arrow-right-24: View Documentation](./text_sensor.md)
 
 -   :material-toggle-switch-outline:{ .lg .middle } [**Switch**](./switch.md)
 
@@ -99,7 +87,7 @@ All components share a set of [common attributes](./base.md) that can be used to
 -   :material-function:{ .lg .middle } [**Filters**](./filters.md)
 
     ---
-
+    
     Modify component values (for example `round`, `delayed_on`).
 
     [:octicons-arrow-right-24: View Documentation](./filters.md)
