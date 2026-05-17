@@ -31,28 +31,15 @@ export class UbiHome {
 
 		return dag
 			.container()
-			.from("squidfunk/mkdocs-material:latest")
-			.withExec([
-				"pip",
-				"install",
-				"--upgrade",
-				"mkdocs-material[imaging]==9.7.6",
-				"pillow==12.1.1",
-				"cairosvg==2.9.0",
-				"mkdocs-awesome-nav==3.3.0",
-				"mkdocs-macros-plugin==1.5.0",
-				"mkdocs-git-revision-date-localized-plugin==1.5.1",
-			])
+			.from("node:22-slim")
 			.withMountedDirectory("/docs", docsDir)
-			.withMountedCache(
-				"/docs/.cache",
-				dag.cacheVolume("mkdocs-material-cache"),
-			)
-			.withWorkdir("/docs");
+			.withMountedCache("/docs/node_modules", dag.cacheVolume("docs-node-modules"))
+			.withWorkdir("/docs")
+			.withExec(["npm", "install"]);
 	}
 
 	/**
-	 * Run strict MkDocs checks and return build output logs.
+	 * Run strict docs checks and return build output logs.
 	 */
 	@func()
 	@check()
@@ -77,7 +64,7 @@ export class UbiHome {
 		})
 		source: Directory,
 	): Container {
-		return this.docsContainer(source).withExec(["mkdocs", "build", "--strict"]);
+		return this.docsContainer(source).withExec(["npm", "run", "build"]);
 	}
 
 	/**
@@ -108,7 +95,16 @@ export class UbiHome {
 		return this.docsContainer(source)
 			.withExposedPort(port)
 			.asService({
-				args: ["mkdocs", "serve", "--dev-addr", `0.0.0.0:${port}`],
+				args: [
+					"npm",
+					"run",
+					"dev",
+					"--",
+					"--host",
+					"0.0.0.0",
+					"--port",
+					`${port}`,
+				],
 			});
 	}
 

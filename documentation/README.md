@@ -1,33 +1,18 @@
-# [Documentation](https://ubihome.github.io/) Repository for UbiHome
-
-Use Dagger for docs preview, checks, and builds.
-
-Install Dagger:
+# Documentation (Astro Starlight)
 
 ```bash
-curl -fsSL https://dl.dagger.io/dagger/install.sh | BIN_DIR="$HOME/.local/bin" sh
+cd documentation
+npm install
+npm run dev      # local preview on http://localhost:8000
+npm run check    # content/type checks
+npm run build    # production build in documentation/site
+npm run preview  # preview built site
 ```
 
-Run a local preview:
+Dagger commands:
 
 ```bash
 dagger call docs-preview up
-```
-
-Run strict checks:
-
-```bash
 dagger check
-```
-
-Build static docs output:
-
-```bash
 dagger call docs-build-dir export --path ./documentation/site
 ```
-
-Visit [http://localhost:8000](http://localhost:8000) to see the documentation preview.
-
-## Links
-
-- [Icons and Emojis](https://squidfunk.github.io/mkdocs-material/reference/icons-emojis/)

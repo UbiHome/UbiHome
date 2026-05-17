@@ -42,7 +42,7 @@ UbiHome is a Rust workspace with:
 - Root binary crate (`src/`) — CLI entrypoint and runtime orchestration
 - Platform component crates (`components/*/`) — each is a separate Rust crate
 - Shared core crate (`components/core/`) — traits, macros, common types
-- Documentation site (`documentation/`) — MkDocs Material, built with Dagger
+- Documentation site (`documentation/`) — Astro Starlight, built with Dagger
 
 ## Step 1: Inspect the Pull Request
 
