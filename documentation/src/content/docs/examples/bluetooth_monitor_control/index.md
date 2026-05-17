@@ -1,29 +1,25 @@
 ---
-title: "Monitor and control Bluetooth devices"
+title: 'Monitor and control Bluetooth devices'
 ---
 
-# Monitor and control Bluetooth devices
-
 ## Linux
-
 
 ## Bluetoothctl
 
 ```yaml
-shell: 
+shell:
 
 button:
- - platform: shell
-   id: disconnect_speaker
-   name: "Disconnect Speaker"
-   command: bluetoothctl -- disconnect 00:12:6F:F1:FF:61
-
+  - platform: shell
+    id: disconnect_speaker
+    name: 'Disconnect Speaker'
+    command: bluetoothctl -- disconnect 00:12:6F:F1:FF:61
 
 binary_sensor:
   - platform: shell
-    name: "Bluetooth Speaker connected"
+    name: 'Bluetooth Speaker connected'
     id: bluetooth_connected
-    icon: "mdi:bluetooth-settings"
+    icon: 'mdi:bluetooth-settings'
     device_class: presence
     update_interval: 10s
     command: |-
@@ -37,13 +33,13 @@ binary_sensor:
 ## Hcitool
 
 ```yaml
-shell: 
+shell:
 
 binary_sensor:
   - platform: shell
-    name: "Bluetooth Speaker connected"
+    name: 'Bluetooth Speaker connected'
     id: bluetooth_connected
-    icon: "mdi:bluetooth-settings"
+    icon: 'mdi:bluetooth-settings'
     device_class: presence
     update_interval: 10s
     command: |-
@@ -58,9 +54,3 @@ binary_sensor:
 
 - Components: [Button](/features/components/entities/button/), [Binary Sensor](/features/components/entities/binary_sensor/)
 - Platform: [Shell](/features/platforms/shell/)
-
-
-
-
-
-

@@ -71,7 +71,6 @@ export default defineConfig({
 						showViewAllLink: true,
 					},
 				}),
-				starlightSiteGraph(),
 				// TODO: https://starlight-showcases.vercel.app/components/text/
 				// TODO: https://starlight-changelogs.netlify.app/providers/github/
 				// TODO: https://frostybee.github.io/starlight-announcement/
@@ -90,7 +89,9 @@ export default defineConfig({
 									],
 								},
 								{ label: "Roadmap", link: "/roadmap/" },
-								{ label: "Help", link: "/help/" },
+								{ label: "Help", items: [
+										{ autogenerate: { directory: "help/" } },
+                ] },
 							],
 						},
 						{
@@ -141,12 +142,15 @@ export default defineConfig({
 				starlightLinksValidator({
 					exclude: ["/tags/", "/tags/**"],
 				}),
+        // https://starlight-latest-version.trueberryless.org/
 				starlightLatestVersion({
 					source: {
 						type: "github",
 						slug: "UbiHome/UbiHome",
 					},
 				}),
+        // https://fevol.github.io/starlight-site-graph/configuration/
+				starlightSiteGraph()
 			],
 		}),
 	],

@@ -1,78 +1,71 @@
 ---
-title: "Platforms"
+title: 'Platforms'
 ---
-
-# Platforms
 
 Platforms extend the functionality of UbiHome. They implement how [Components](/features/components/) interact with the system. Or allow for completely new features with built in components.
 
 <div class="grid cards" markdown>
 
--   :material-thermometer:{ .lg .middle } [__BME280__](/features/platforms/bme280/)
+- :material-thermometer:{ .lg .middle } [**BME280**](/features/platforms/bme280/)
 
-    ---
+  ***
 
-    Read temperature, humidity and pressure from the BME280 sensor.
+  Read temperature, humidity and pressure from the BME280 sensor.
 
-    [:octicons-arrow-right-24: View Documentation](/features/platforms/bme280/)
+  [:octicons-arrow-right-24: View Documentation](/features/platforms/bme280/)
 
--   :simple-bluetooth:{ .lg .middle } [__Bluetooth__](/features/platforms/bluetooth/)
+- :simple-bluetooth:{ .lg .middle } [**Bluetooth**](/features/platforms/bluetooth/)
 
-    ---
+  ***
 
-    Bluetooth Proxy for Home Assistant.
+  Bluetooth Proxy for Home Assistant.
 
-    [:octicons-arrow-right-24: View Documentation](/features/platforms/bluetooth/)
+  [:octicons-arrow-right-24: View Documentation](/features/platforms/bluetooth/)
 
--   :fontawesome-solid-microchip:{ .lg .middle } [__GPIO__](/features/platforms/gpio/)
+- :fontawesome-solid-microchip:{ .lg .middle } [**GPIO**](/features/platforms/gpio/)
 
-    ---
+  ***
 
-    Interact with the GPIO pins of your device.
+  Interact with the GPIO pins of your device.
 
-    [:octicons-arrow-right-24: View Documentation](/features/platforms/gpio/)
+  [:octicons-arrow-right-24: View Documentation](/features/platforms/gpio/)
 
--   :material-brightness-percent:{ .lg .middle } [__Illuminance__](/features/platforms/illuminance/)
+- :material-brightness-percent:{ .lg .middle } [**Illuminance**](/features/platforms/illuminance/)
 
-    ---
+  ***
 
-    Read out the Integrated Light sensor of your device.
+  Read out the Integrated Light sensor of your device.
 
-    [:octicons-arrow-right-24: View Documentation](/features/platforms/illuminance/)
+  [:octicons-arrow-right-24: View Documentation](/features/platforms/illuminance/)
 
--   :material-power:{ .lg .middle } [__Power Utilities__](/features/platforms/power_utils/)
+- :material-power:{ .lg .middle } [**Power Utilities**](/features/platforms/power_utils/)
 
-    ---
+  ***
 
-    Turn your device on or off, reboot it or put it into sleep mode.
+  Turn your device on or off, reboot it or put it into sleep mode.
 
-    [:octicons-arrow-right-24: View Documentation](/features/platforms/power_utils/)
+  [:octicons-arrow-right-24: View Documentation](/features/platforms/power_utils/)
 
--   :fontawesome-solid-arrows-spin:{ .lg .middle } [__Sendspin__](/features/platforms/sendspin/)
+- :fontawesome-solid-arrows-spin:{ .lg .middle } [**Sendspin**](/features/platforms/sendspin/)
 
-    ---
+  ***
 
-    Stream Music via Sendspin Protocol.
+  Stream Music via Sendspin Protocol.
 
-    [:octicons-arrow-right-24: View Documentation](/features/platforms/sendspin/)
+  [:octicons-arrow-right-24: View Documentation](/features/platforms/sendspin/)
 
--   :material-bash:{ .lg .middle } [__Shell__](/features/platforms/shell/)
+- :material-bash:{ .lg .middle } [**Shell**](/features/platforms/shell/)
 
-    ---
+  ***
 
-    Execute any command for retrieving data or on trigger.
+  Execute any command for retrieving data or on trigger.
 
-    [:octicons-arrow-right-24: View Documentation](/features/platforms/shell/)
+  [:octicons-arrow-right-24: View Documentation](/features/platforms/shell/)
 
--   :material-unfold-more-vertical:{ .lg .middle } More
+- :material-unfold-more-vertical:{ .lg .middle } More
 
-    ---
+  ***
 
-    More to come...
+  More to come...
 
 </div>
-
-
-
-
-

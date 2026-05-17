@@ -4,8 +4,6 @@ sidebar:
   order: 1
 ---
 
-# Sensor
-
 ```yaml title="Base Example"
 sensor:
   - platform: ... # [!code highlight]

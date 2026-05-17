@@ -4,8 +4,6 @@ sidebar:
   order: 1
 ---
 
-# Number
-
 ```yaml title="Base Example"
 number:
   - platform: ... # [!code highlight]
@@ -45,8 +43,8 @@ Common attributes are documented in [Common Component Properties](/features/comp
 
 ## Supported Platforms
 
-| Platform                                                     | Notes                                                        |
-| ------------------------------------------------------------ | ------------------------------------------------------------ |
+| Platform                            | Notes                                                        |
+| ----------------------------------- | ------------------------------------------------------------ |
 | [Shell](/features/platforms/shell/) | Uses `command_state` for reads and `command_set` for writes. |
 
 For platform-specific configuration options, use the linked platform pages.

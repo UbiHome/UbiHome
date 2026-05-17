@@ -7,6 +7,4 @@ sidebar:
     variant: tip
 ---
 
-# Fan
-
 Fan component documentation will be added here.

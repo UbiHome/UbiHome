@@ -7,6 +7,4 @@ sidebar:
     variant: tip
 ---
 
-# Select
-
 Select component documentation will be added here.

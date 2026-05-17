@@ -1,8 +1,6 @@
 ---
-title: "Triggers and Actions"
+title: 'Triggers and Actions'
 ---
-
-# Triggers and Actions
 
 Different components can expose different triggers.
 
@@ -12,6 +10,3 @@ Currently, trigger configuration is available on [Binary Sensor](/features/compo
 
 - `switch.turn_on`
 - `switch.turn_off`
-
-
-

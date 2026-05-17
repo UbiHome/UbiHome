@@ -1,12 +1,10 @@
 ---
-title: 'Sendspin Music Streaming'
+title: 'Sendspin - Music Streaming'
 sidebar:
   badge:
     text: Experimental
     variant: caution
 ---
-
-# Sendspin Music Streaming
 
 UbiHome can be used as a client for [Sendspin](https://www.sendspin-audio.com/), e.g. for [Music Assistant](https://www.music-assistant.io/) which natively integrates with Home Assistant.
 

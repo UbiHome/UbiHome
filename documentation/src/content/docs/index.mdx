@@ -2,6 +2,8 @@
 title: 'Welcome to UbiHome!'
 ---
 
+import Version from 'starlight-latest-version/components/Version.astro';
+
 UbiHome is a single executable that allows you to integrate any device running an OS into your smart home.
 It is designed to be lightweight and easy to use - similar to ESPHome.
 
@@ -13,11 +15,9 @@ See the [getting started](/getting_started/) guide for installation instructions
 
 Explore the [examples](/examples/) to see how to use UbiHome.
 
-<!-- x-release-please-start-version -->
-
 ```bash
 pi@raspberrypi:~/ $ ubihome
-UbiHome - 0.14.0
+UbiHome - <Version />
 
 UbiHome is a system which allows you to integrate any device running an OS into your smart home.
 https://github.com/UbiHome/UbiHome
@@ -38,27 +38,3 @@ Options:
   -V, --version
           Print version
 ```
-
-<!-- x-release-please-end -->
-
-## Roadmap
-
-- Monitor connected bluetooth devices and maybe even proxy them to home assistant.
-- [ ] Auto installation
-- [ ] Templates and Services
-- [ ] Additional Components:
-  - [ ] HTTP and Web Enpoint
-  - [ ] BLE (https://github.com/deviceplug/btleplug)
-  - [ ] Bluetooth Proxy (https://esphome.io/components/bluetooth_proxy.html) https://docs.rs/bluer/latest/bluer/
-- [ ] Online Sensor
-- [ ] Custom compilation for modular builds and custom extensions.
-- [ ] CLI for automatic generation of executables
-- [ ] Builder Component similar to ESP Home
-- [ ] Kernel events (e.g. Keyboard press) https://docs.rs/evdev/latest/evdev/
-- [ ] Windows Current User https://docs.rs/wmi/latest/wmi/
-
-... Control USB Devices?
-
-Add Badges?
-https://github.com/squidfunk/mkdocs-material/discussions/7137
-

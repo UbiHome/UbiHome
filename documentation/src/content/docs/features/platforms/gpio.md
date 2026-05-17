@@ -1,8 +1,6 @@
 ---
-title: "GPIO"
+title: 'GPIO'
 ---
-
-# GPIO
 
 ```yaml
 gpio:
@@ -10,8 +8,8 @@ gpio:
 
 binary_sensor:
   - platform: gpio
-    name: "Motion"
-    icon: "mdi:motion-sensor"
+    name: 'Motion'
+    icon: 'mdi:motion-sensor'
     device_class: presence
     pin: 23
 ```
@@ -20,4 +18,3 @@ binary_sensor:
 
 - [Motion Detection](/examples/motion_detection/)
 - [Automatic Screen Power Control](/examples/automatic_screen_power_control/)
-

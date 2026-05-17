@@ -1,8 +1,6 @@
 ---
-title: "Examples"
+title: 'Examples'
 ---
-
-# Examples
 
 Here you can find practical UbiHome configuration examples.
 
@@ -15,4 +13,3 @@ Start with one of these guides:
 - [Monitor system resources](/examples/system_ressources/)
 - [Turn Raspberry screen on or off](/examples/screen_on_off/)
 - [Automatic Screen Power Control](/examples/automatic_screen_power_control/)
-

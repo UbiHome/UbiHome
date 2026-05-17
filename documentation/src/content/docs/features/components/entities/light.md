@@ -7,6 +7,4 @@ sidebar:
     variant: tip
 ---
 
-# Light
-
 Light component documentation will be added here.

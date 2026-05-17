@@ -4,8 +4,6 @@ sidebar:
   order: 1
 ---
 
-# Text Sensor
-
 ```yaml title="Base Example"
 text_sensor:
   - platform: ... # [!code highlight]

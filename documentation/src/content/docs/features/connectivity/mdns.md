@@ -6,8 +6,6 @@ sidebar:
     variant: note
 ---
 
-# MDNS
-
 ```yaml
 mdns:
 ```

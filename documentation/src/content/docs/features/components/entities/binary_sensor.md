@@ -4,8 +4,6 @@ sidebar:
   order: 1
 ---
 
-# Binary Sensor
-
 ```yaml title="Base Example"
 binary_sensor:
   - platform: ... # [!code highlight]

@@ -1,8 +1,6 @@
 ---
-title: "MQTT"
+title: 'MQTT'
 ---
-
-# MQTT
 
 > Note: Not all platforms are currently exposed via MQTT.
 

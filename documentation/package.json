@@ -20,5 +20,8 @@
 		"starlight-sidebar-topics": "^0.7.1",
 		"starlight-site-graph": "^0.5.0",
 		"starlight-tags": "^1.0.1"
+	},
+	"overrides": {
+		"picomatch": "^4.0.3"
 	}
 }

@@ -1,8 +1,6 @@
 ---
-title: "Stop or reboot your system"
+title: 'Stop or reboot your system'
 ---
-
-# Stop or reboot your system
 
 This example shows how to stop or reboot your system using UbiHome. This is useful if you want to stop or reboot your system based on a trigger in Home Assistant.
 
@@ -14,23 +12,23 @@ power_utils:
 
 button:
   - platform: power_utils
-    name: "Reboot"
+    name: 'Reboot'
     action: reboot
 
   - platform: power_utils
-    name: "Shutdown"
+    name: 'Shutdown'
     action: shutdown
 
   - platform: power_utils
-    name: "Hibernate"
+    name: 'Hibernate'
     action: hibernate
 
   - platform: power_utils
-    name: "Logout"
+    name: 'Logout'
     action: logout
 
   - platform: power_utils
-    name: "Sleep"
+    name: 'Sleep'
     action: sleep
 ```
 
@@ -43,9 +41,3 @@ Similar to ESPHome:
 
 - [https://esphome.io/components/button/restart](https://esphome.io/components/button/restart)
 - [https://esphome.io/components/button/shutdown](https://esphome.io/components/button/shutdown)
-
-
-
-
-
-

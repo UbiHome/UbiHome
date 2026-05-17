@@ -2,8 +2,6 @@
 title: 'Display a Notification'
 ---
 
-# Display a Notification
-
 ## Windows
 
 ```yaml
@@ -57,9 +55,3 @@ button:
 
 - Component: [Button](/features/components/entities/button/)
 - Platform: [Shell](/features/platforms/shell/)
-
-
-
-
-
-

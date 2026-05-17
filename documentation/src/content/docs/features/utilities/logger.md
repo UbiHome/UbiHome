@@ -1,8 +1,6 @@
 ---
-title: "Logger"
+title: 'Logger'
 ---
-
-# Logger
 
 ```yaml title="Example configuration entry"
 logger:
@@ -24,10 +22,10 @@ logger:
 
 ## Default Logging Directory
 
-| OS      | Directory                                    | Example Path |
-| ------- | -------------------------------------------- |-- |
-| Linux   | `$XDG_DATA_HOME/ubihome/` or `$HOME/.local/share/ubihome/` | `/home/alice/.local/share/ubihome/logs` |
-| Windows | `{FOLDERID_LocalAppData}\ubihome\` | `C:\Users\Alice\AppData\Local\ubihome\` |
-| MacOS   | `$HOME/Library/Application Support/ubihome/` | `/Users/Alice/Library/Application Support/ubihome/` |
+| OS      | Directory                                                  | Example Path                                        |
+| ------- | ---------------------------------------------------------- | --------------------------------------------------- |
+| Linux   | `$XDG_DATA_HOME/ubihome/` or `$HOME/.local/share/ubihome/` | `/home/alice/.local/share/ubihome/logs`             |
+| Windows | `{FOLDERID_LocalAppData}\ubihome\`                         | `C:\Users\Alice\AppData\Local\ubihome\`             |
+| MacOS   | `$HOME/Library/Application Support/ubihome/`               | `/Users/Alice/Library/Application Support/ubihome/` |
 
 > From Rust [Directories](https://docs.rs/directories/latest/directories/struct.BaseDirs.html#method.data_local_dir)

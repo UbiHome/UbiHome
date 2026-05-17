@@ -7,6 +7,4 @@ sidebar:
     variant: tip
 ---
 
-# Cover
-
 Cover component documentation will be added here.

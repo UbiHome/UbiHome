@@ -7,6 +7,4 @@ sidebar:
     variant: tip
 ---
 
-# Valve
-
 Valve component documentation will be added here.

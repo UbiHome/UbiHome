@@ -7,6 +7,4 @@ sidebar:
     variant: tip
 ---
 
-# Text
-
 Text component documentation will be added here.

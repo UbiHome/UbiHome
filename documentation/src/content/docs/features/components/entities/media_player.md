@@ -7,6 +7,4 @@ sidebar:
     variant: tip
 ---
 
-# Media Player
-
 Media Player component documentation will be added here.

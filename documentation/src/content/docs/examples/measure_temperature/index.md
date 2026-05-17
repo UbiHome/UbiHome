@@ -1,8 +1,6 @@
 ---
-title: "Measure Temperature, Humidity and Pressure with BME280"
+title: 'Measure Temperature, Humidity and Pressure with BME280'
 ---
-
-# Measure Temperature, Humidity and Pressure with BME280
 
 Get the BME280 readings and make them available via the native API:
 
@@ -23,13 +21,14 @@ api:
   #   key:  # Generate here: https://ubihome.github.io/features/connectivity/native_api.html
 ```
 
-With the following pin usage: 
+With the following pin usage:
 
-BME280: 
- - Vin	-- PIN 1 / 3.3V
- - GND	-- PIN 9 / GND
- - SCL	-- PIN 5 / GPIO 3
- - SDA  -- PIN 3 / GPIO 2
+BME280:
+
+- Vin -- PIN 1 / 3.3V
+- GND -- PIN 9 / GND
+- SCL -- PIN 5 / GPIO 3
+- SDA -- PIN 3 / GPIO 2
 
 > The BME Component automatically detects devices on i2c1
 
@@ -37,9 +36,3 @@ BME280:
 
 - Component: [Sensor](/features/components/entities/sensor/)
 - Platform: [BME280](/features/platforms/bme280/)
-
-
-
-
-
-

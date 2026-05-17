@@ -1,23 +1,20 @@
 ---
-title: "Monitor system resources"
+title: 'Monitor system resources'
 ---
-
-# Monitor system resources
 
 ## Windows
 
-
 ```yaml
-shell: 
+shell:
   type: powershell
 
 sensor:
   - platform: shell
-    name: "RAM Usage"
+    name: 'RAM Usage'
     id: ram_usage
     icon: mdi:memory
-    state_class: "measurement"
-    unit_of_measurement: "%"
+    state_class: 'measurement'
+    unit_of_measurement: '%'
     update_interval: 30s
     command: |-
       Get-WmiObject Win32_OperatingSystem -Property * | % {([math]::Round(($_.FreePhysicalMemory)/$_.totalvisiblememorysize,2))}
@@ -25,17 +22,16 @@ sensor:
 
 ## Linux
 
-
 ```yaml
-shell: 
+shell:
 
 sensor:
   - platform: shell
-    name: "RAM Usage"
+    name: 'RAM Usage'
     id: ram_usage
     icon: mdi:memory
-    state_class: "measurement"
-    unit_of_measurement: "%"
+    state_class: 'measurement'
+    unit_of_measurement: '%'
     update_interval: 30s
     command: |-
       free | grep Mem | awk '{print $3/$2 * 100.0}'
@@ -45,9 +41,3 @@ sensor:
 
 - Component: [Sensor](/features/components/entities/sensor/)
 - Platform: [Shell](/features/platforms/shell/)
-
-
-
-
-
-

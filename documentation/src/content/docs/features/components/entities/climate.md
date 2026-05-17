@@ -7,6 +7,4 @@ sidebar:
     variant: tip
 ---
 
-# Climate
-
 Climate component documentation will be added here.

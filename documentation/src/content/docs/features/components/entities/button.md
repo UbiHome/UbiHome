@@ -4,8 +4,6 @@ sidebar:
   order: 1
 ---
 
-# Button
-
 ```yaml title="Base Example"
 button:
   - platform: ... # [!code highlight]

@@ -1,15 +1,13 @@
 ---
-title: "Filters"
+title: 'Filters'
 ---
-
-# Filters
 
 Filters can be used on supported components to modify incoming state values.
 
 ```yaml
 sensor:
   - platform: shell
-    name: "RAM Usage"
+    name: 'RAM Usage'
     command: echo 1.123345
     filters:
       - round: 2
@@ -26,7 +24,7 @@ Rounds numeric sensor values to the configured number of decimal places.
 ```yaml
 sensor:
   - platform: shell
-    name: "CPU Usage"
+    name: 'CPU Usage'
     command: echo 12.3456
     filters:
       - round: 2
@@ -41,7 +39,7 @@ Inverts a boolean binary sensor value (`true` becomes `false`, `false` becomes `
 ```yaml
 binary_sensor:
   - platform: shell
-    name: "Door Closed"
+    name: 'Door Closed'
     command: test -f /tmp/door_open && echo true || echo false
     filters:
       - invert:
@@ -56,7 +54,7 @@ Delays propagation of `true` values by the configured duration. `false` values a
 ```yaml
 binary_sensor:
   - platform: gpio
-    name: "Motion"
+    name: 'Motion'
     pin: 17
     filters:
       - delayed_on: 1s
@@ -69,7 +67,7 @@ Delays propagation of `false` values by the configured duration. `true` values a
 ```yaml
 binary_sensor:
   - platform: gpio
-    name: "Motion"
+    name: 'Motion'
     pin: 17
     filters:
       - delayed_off: 5s
@@ -77,15 +75,12 @@ binary_sensor:
 
 ## Filter Support by Component
 
-| Component | Supported Filters |
-| --- | --- |
-| [Sensor](/features/components/entities/sensor/) | [`round`](#round) |
+| Component                                                     | Supported Filters                                                               |
+| ------------------------------------------------------------- | ------------------------------------------------------------------------------- |
+| [Sensor](/features/components/entities/sensor/)               | [`round`](#round)                                                               |
 | [Binary Sensor](/features/components/entities/binary_sensor/) | [`invert`](#invert), [`delayed_on`](#delayed_on), [`delayed_off`](#delayed_off) |
-| [Button](/features/components/entities/button/) | None |
-| [Number](/features/components/entities/number/) | None |
-| [Switch](/features/components/entities/switch/) | None |
+| [Button](/features/components/entities/button/)               | None                                                                            |
+| [Number](/features/components/entities/number/)               | None                                                                            |
+| [Switch](/features/components/entities/switch/)               | None                                                                            |
 
 See each component page for details and examples.
-
-
-

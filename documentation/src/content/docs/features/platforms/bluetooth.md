@@ -1,8 +1,6 @@
 ---
-title: "Bluetooth"
+title: 'Bluetooth'
 ---
-
-# Bluetooth
 
 Scans for Bluetooth devices and reports them to HomeAssistant via its native API.
 
@@ -20,7 +18,6 @@ bluetooth_proxy:
 TODOs:
 
 - [ ] Allow pausing the bluetooth proxy (e.g. while media is played)
-
 
 Similar to ESPHome:
 

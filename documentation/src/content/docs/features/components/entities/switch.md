@@ -4,8 +4,6 @@ sidebar:
   order: 1
 ---
 
-# Switch
-
 ```yaml title="Base Example"
 switch:
   - platform: ... # [!code highlight]

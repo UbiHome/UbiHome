@@ -6,8 +6,6 @@ sidebar:
     variant: caution
 ---
 
-# Web Server
-
 TBD
 
 Similar to ESPHome:

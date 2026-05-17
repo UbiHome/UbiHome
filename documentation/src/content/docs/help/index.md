@@ -1,8 +1,6 @@
 ---
-title: "Help"
+title: 'General'
 ---
-
-# Help
 
 ## Documentation migration notes
 

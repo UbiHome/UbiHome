@@ -2,8 +2,6 @@
 title: "Components"
 ---
 
-# Components
-
 Components make data or functionality available for external systems via [Connectivity Features](/features/connectivity/), or for reuse in other components.
 
 [Platforms](/features/platforms/) provide the implementation for component behavior.
