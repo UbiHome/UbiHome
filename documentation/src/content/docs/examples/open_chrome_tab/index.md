@@ -31,5 +31,11 @@ button:
 
 ## Related documentation
 
-- Component: [Button](../../features/components/button)
-- Platform: [Shell](../../features/platforms/shell)
+- Component: [Button](/features/components/entities/button/)
+- Platform: [Shell](/features/platforms/shell/)
+
+
+
+
+
+

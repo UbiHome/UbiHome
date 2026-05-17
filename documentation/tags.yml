@@ -47,13 +47,18 @@ tags:
   # Feature: Components
   components-binary-sensor:
     label: Binary Sensor
+    type: component
   components-button:
     label: Button
+    type: component
   components-number:
     label: Number
+    type: component
   components-sensor:
     label: Sensor
+    type: component
   components-switch:
     label: Switch
   components-text-sensor:
     label: Text Sensor
+    type: component

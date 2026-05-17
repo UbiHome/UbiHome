@@ -1,5 +1,7 @@
 ---
-title: "Text Sensor"
+title: 'Text Sensor'
+sidebar:
+  order: 1
 ---
 
 # Text Sensor
@@ -12,7 +14,6 @@ text_sensor:
     icon: mdi:identifier
     # device_class: "timestamp"
 ```
-
 
 Text sensors publish string values instead of numeric values.
 

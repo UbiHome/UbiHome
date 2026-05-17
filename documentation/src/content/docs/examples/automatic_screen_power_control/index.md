@@ -41,9 +41,15 @@ binary_sensor:
         - switch.turn_off: "screen"
 ```
 
-> If the commands are not working you can try out others from the [screen on/off example](../screen_on_off/index).
+> If the commands are not working you can try out others from the [screen on/off example](/examples/screen_on_off/).
 
 ## Related documentation
 
-- Components: [Switch](../../features/components/switch), [Binary Sensor](../../features/components/binary_sensor)
-- Platforms: [Shell](../../features/platforms/shell), [GPIO](../../features/platforms/gpio)
+- Components: [Switch](/features/components/entities/switch/), [Binary Sensor](/features/components/entities/binary_sensor/)
+- Platforms: [Shell](/features/platforms/shell/), [GPIO](/features/platforms/gpio/)
+
+
+
+
+
+

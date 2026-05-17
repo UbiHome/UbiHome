@@ -1,5 +1,7 @@
 ---
 title: "Sensor"
+sidebar:
+  order: 1
 ---
 
 # Sensor
@@ -18,12 +20,12 @@ sensor:
 
 
 :::note[Platform-specific properties]
-Each platform requires additional properties not shown above. Check the [Platforms documentation](../platforms/index) and the page for your chosen platform for the full list of required and optional options.
+Each platform requires additional properties not shown above. Check the [Platforms documentation](/features/platforms/) and the page for your chosen platform for the full list of required and optional options.
 :::
 
 ## Attributes
 
-Common attributes are documented in [Common Component Properties](./base).
+Common attributes are documented in [Common Component Properties](/features/components/base/).
 
 | Property | Description | Example |
 | --- | --- | --- |
@@ -36,22 +38,28 @@ Common attributes are documented in [Common Component Properties](./base).
 
 | Filter | Description |
 | --- | --- |
-| [`round`](./filters#round) | Rounds numeric sensor values to the configured decimal precision. |
+| [`round`](/features/components/filters/#round) | Rounds numeric sensor values to the configured decimal precision. |
 
 ## Supported Platforms
 
 | Platform | Notes |
 | --- | --- |
-| [Shell](../platforms/shell) | Reads sensor values from command output. |
-| [BME280](../platforms/bme280) | Exposes temperature, pressure, and humidity as sensor components. |
-| [Illuminance](../platforms/illuminance) | Exposes ambient light as a sensor component. |
+| [Shell](/features/platforms/shell/) | Reads sensor values from command output. |
+| [BME280](/features/platforms/bme280/) | Exposes temperature, pressure, and humidity as sensor components. |
+| [Illuminance](/features/platforms/illuminance/) | Exposes ambient light as a sensor component. |
 
 For platform-specific configuration options, use the linked platform pages.
 
 ## Used in Examples
 
-- [Monitor system resources](../../examples/system_ressources/index)
-- [Measure Temperature, Humidity and Pressure with BME280](../../examples/measure_temperature/index)
-- [Report your laptop's ambient light sensor](../../examples/illuminance/index)
+- [Monitor system resources](/examples/system_ressources/)
+- [Measure Temperature, Humidity and Pressure with BME280](/examples/measure_temperature/)
+- [Report your laptop's ambient light sensor](/examples/illuminance/)
 
 Similar to ESPHome: [Sensor](https://esphome.io/components/sensor/)
+
+
+
+
+
+

@@ -6,6 +6,7 @@ import starlightLatestVersion from "starlight-latest-version";
 import starlightLinksValidator from "starlight-links-validator";
 import starlightSidebarTopics from "starlight-sidebar-topics";
 import starlightTagsPlugin from "starlight-tags";
+import starlightSiteGraph from 'starlight-site-graph'
 
 // Helper function to convert snake_case to Title Case
 function formatLabel(str) {
@@ -70,7 +71,7 @@ export default defineConfig({
 						showViewAllLink: true,
 					},
 				}),
-				// TODO: starlightSiteGraph()
+				starlightSiteGraph(),
 				// TODO: https://starlight-showcases.vercel.app/components/text/
 				// TODO: https://starlight-changelogs.netlify.app/providers/github/
 				// TODO: https://frostybee.github.io/starlight-announcement/
@@ -88,13 +89,14 @@ export default defineConfig({
 										{ label: "Getting started", link: "/getting_started/" },
 									],
 								},
+								{ label: "Roadmap", link: "/roadmap/" },
 								{ label: "Help", link: "/help/" },
 							],
 						},
 						{
 							label: "Features",
 							link: "/features",
-							icon: "open-book",
+							icon: "rocket",
 							items: [
 								{ label: "Overview", link: "/features/" },
 								{

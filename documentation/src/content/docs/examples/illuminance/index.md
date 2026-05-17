@@ -26,5 +26,11 @@ sensor:
 
 ## Related documentation
 
-- Component: [Sensor](../../features/components/sensor)
-- Platform: [Illuminance](../../features/platforms/illuminance)
+- Component: [Sensor](/features/components/entities/sensor/)
+- Platform: [Illuminance](/features/platforms/illuminance/)
+
+
+
+
+
+

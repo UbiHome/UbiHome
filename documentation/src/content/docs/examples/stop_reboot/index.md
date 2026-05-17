@@ -36,10 +36,16 @@ button:
 
 ## Related documentation
 
-- Component: [Button](../../features/components/button)
-- Platform: [Power Utilities](../../features/platforms/power_utils)
+- Component: [Button](/features/components/entities/button/)
+- Platform: [Power Utilities](/features/platforms/power_utils/)
 
 Similar to ESPHome:
 
 - [https://esphome.io/components/button/restart](https://esphome.io/components/button/restart)
 - [https://esphome.io/components/button/shutdown](https://esphome.io/components/button/shutdown)
+
+
+
+
+
+

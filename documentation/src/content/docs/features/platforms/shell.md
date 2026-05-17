@@ -80,9 +80,10 @@ text_sensor:
 
 ## Used in Examples
 
-- [Open a new tab in chrome](../../examples/open_chrome_tab/index)
-- [Display a Notification](../../examples/display_notification/index)
-- [Monitor system resources](../../examples/system_ressources/index)
-- [Turn Raspberry screen on or off](../../examples/screen_on_off/index)
-- [Automatic Screen Power Control](../../examples/automatic_screen_power_control/index)
-- [Monitor and control Bluetooth devices](../../examples/bluetooth_monitor_control/index)
+- [Open a new tab in chrome](/examples/open_chrome_tab/)
+- [Display a Notification](/examples/display_notification/)
+- [Monitor system resources](/examples/system_ressources/)
+- [Turn Raspberry screen on or off](/examples/screen_on_off/)
+- [Automatic Screen Power Control](/examples/automatic_screen_power_control/)
+- [Monitor and control Bluetooth devices](/examples/bluetooth_monitor_control/)
+

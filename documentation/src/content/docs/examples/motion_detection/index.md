@@ -26,9 +26,15 @@ binary_sensor:
 ```
 
 
-You can combine this with the [screen on/off example](../screen_on_off/index) to turn the screen on when motion is detected and off after a timeout. Look at the [automatic screen power control](../automatic_screen_power_control/index) on how to set it up.
+You can combine this with the [screen on/off example](/examples/screen_on_off/) to turn the screen on when motion is detected and off after a timeout. Look at the [automatic screen power control](/examples/automatic_screen_power_control/) on how to set it up.
 
 ## Related documentation
 
-- Component: [Binary Sensor](../../features/components/binary_sensor)
-- Platform: [GPIO](../../features/platforms/gpio)
+- Component: [Binary Sensor](/features/components/entities/binary_sensor/)
+- Platform: [GPIO](/features/platforms/gpio/)
+
+
+
+
+
+

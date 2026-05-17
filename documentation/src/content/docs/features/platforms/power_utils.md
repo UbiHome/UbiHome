@@ -31,9 +31,10 @@ button:
 
 ## Used in Examples
 
-- [Stop or reboot your system](../../examples/stop_reboot/index)
+- [Stop or reboot your system](/examples/stop_reboot/)
 
 Similar to ESPHome:
 
 - https://esphome.io/components/button/restart.html
 - https://esphome.io/components/button/shutdown
+

@@ -43,5 +43,11 @@ sensor:
 
 ## Related documentation
 
-- Component: [Sensor](../../features/components/sensor)
-- Platform: [Shell](../../features/platforms/shell)
+- Component: [Sensor](/features/components/entities/sensor/)
+- Platform: [Shell](/features/platforms/shell/)
+
+
+
+
+
+

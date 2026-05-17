@@ -67,5 +67,11 @@ switch:
 
 ## Related documentation
 
-- Component: [Switch](../../features/components/switch)
-- Platform: [Shell](../../features/platforms/shell)
+- Component: [Switch](/features/components/entities/switch/)
+- Platform: [Shell](/features/platforms/shell/)
+
+
+
+
+
+

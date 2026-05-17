@@ -35,5 +35,11 @@ BME280:
 
 ## Related documentation
 
-- Component: [Sensor](../../features/components/sensor)
-- Platform: [BME280](../../features/platforms/bme280)
+- Component: [Sensor](/features/components/entities/sensor/)
+- Platform: [BME280](/features/platforms/bme280/)
+
+
+
+
+
+

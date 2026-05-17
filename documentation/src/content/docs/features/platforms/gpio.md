@@ -18,5 +18,6 @@ binary_sensor:
 
 ## Used in Examples
 
-- [Motion Detection](../../examples/motion_detection/index)
-- [Automatic Screen Power Control](../../examples/automatic_screen_power_control/index)
+- [Motion Detection](/examples/motion_detection/)
+- [Automatic Screen Power Control](/examples/automatic_screen_power_control/)
+

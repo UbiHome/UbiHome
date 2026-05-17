@@ -5,13 +5,13 @@ title: 'Welcome to UbiHome!'
 UbiHome is a single executable that allows you to integrate any device running an OS into your smart home.
 It is designed to be lightweight and easy to use - similar to ESPHome.
 
-- [Execute a command on a device](./examples/display_notification/index) based on a trigger in home assistant.
-- [Monitor the status of a device](./examples/system_ressources/index) with a custom command.
+- [Execute a command on a device](/examples/display_notification/) based on a trigger in home assistant.
+- [Monitor the status of a device](/examples/system_ressources/) with a custom command.
 - Integrate all of your _one off python scripts^TM^_ without thinking about connectivity or setting up yet another service.
 
-See the [getting started](getting_started/index) guide for installation instructions.
+See the [getting started](/getting_started/) guide for installation instructions.
 
-Explore the [examples](examples/index) to see how to use UbiHome.
+Explore the [examples](/examples/) to see how to use UbiHome.
 
 <!-- x-release-please-start-version -->
 
@@ -61,3 +61,4 @@ Options:
 
 Add Badges?
 https://github.com/squidfunk/mkdocs-material/discussions/7137
+

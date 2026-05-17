@@ -6,21 +6,21 @@ title: "Connectivity"
 
 <div class="grid cards" markdown>
 
--   :material-server-network:{ .lg .middle } [__Native API__](./native_api)
+-   :material-server-network:{ .lg .middle } [__Native API__](/features/connectivity/native_api/)
 
     ---
 
     Use ESPHome's native API to connect to your device
 
-    [:octicons-arrow-right-24: See Documentation](./native_api)
+    [:octicons-arrow-right-24: See Documentation](/features/connectivity/native_api/)
     
--   :simple-mqtt:{ .lg .middle } [__MQTT__](./mqtt)
+-   :simple-mqtt:{ .lg .middle } [__MQTT__](/features/connectivity/mqtt/)
 
     ---
 
     Connect to any MQTT broker
 
-    [:octicons-arrow-right-24: See Documentation](./mqtt)
+    [:octicons-arrow-right-24: See Documentation](/features/connectivity/mqtt/)
 
 
 -  :material-dns:{ .lg .middle } __MDNS__
@@ -29,7 +29,7 @@ title: "Connectivity"
 
     Advertise the device and its services via mDNS. 
 
-    [:octicons-arrow-right-24: See Documentation](./mdns)
+    [:octicons-arrow-right-24: See Documentation](/features/connectivity/mdns/)
 
 -  :material-webhook:{ .lg .middle } __Web Server (REST API)__
 
@@ -38,7 +38,7 @@ title: "Connectivity"
 
     Trigger an action via the web server and it's REST API.
 
-    [:octicons-arrow-right-24: See Documentation](./web_server)
+    [:octicons-arrow-right-24: See Documentation](/features/connectivity/web_server/)
 
 -  :material-web:{ .lg .middle } __HTTP__
 
@@ -47,6 +47,11 @@ title: "Connectivity"
 
     Call any HTTP endpoint to trigger.
 
-    [:octicons-arrow-right-24: See Documentation](./http)
+    [:octicons-arrow-right-24: See Documentation](/features/connectivity/http/)
 
 </div>
+
+
+
+
+
