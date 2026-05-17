@@ -1,8 +1,6 @@
 ---
-title: "Welcome to UbiHome!"
+title: 'Welcome to UbiHome!'
 ---
-
-# Welcome to UbiHome!
 
 UbiHome is a single executable that allows you to integrate any device running an OS into your smart home.
 It is designed to be lightweight and easy to use - similar to ESPHome.
@@ -60,7 +58,6 @@ Options:
 - [ ] Windows Current User https://docs.rs/wmi/latest/wmi/
 
 ... Control USB Devices?
-
 
 Add Badges?
 https://github.com/squidfunk/mkdocs-material/discussions/7137

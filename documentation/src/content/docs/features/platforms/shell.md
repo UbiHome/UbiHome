@@ -1,8 +1,10 @@
 ---
-title: "Shell"
+title: 'Shell'
+tags:
+  - linux
+  - macos
+  - windows
 ---
-
-# Shell
 
 Enable the platform:
 

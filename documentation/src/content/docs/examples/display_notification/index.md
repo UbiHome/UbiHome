@@ -1,11 +1,10 @@
 ---
-title: "Display a Notification"
+title: 'Display a Notification'
 ---
 
 # Display a Notification
 
 ## Windows
-
 
 ```yaml
 shell:
@@ -41,7 +40,6 @@ button:
 
 ## Ubuntu
 
-
 ```yaml
 shell:
 
@@ -57,6 +55,5 @@ button:
 
 ## Related documentation
 
-- Component: [Button](../../features/components/button)
+- Component: [Button](../../features/components/entities/button)
 - Platform: [Shell](../../features/platforms/shell)
-

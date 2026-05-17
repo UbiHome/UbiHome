@@ -1,5 +1,9 @@
 ---
-title: "Sendspin Music Streaming"
+title: 'Sendspin Music Streaming'
+sidebar:
+  badge:
+    text: Experimental
+    variant: caution
 ---
 
 # Sendspin Music Streaming

@@ -1,0 +1,18 @@
+---
+/**
+ * Custom PageTitle that displays tags below the page heading
+ */
+import StarlightPageTitle from "@astrojs/starlight/components/PageTitle.astro";
+import { PageTags, TagsList } from "starlight-tags/components";
+---
+
+<StarlightPageTitle {...Astro.props} />
+<!-- <PageTags layout='inline' variant='outline' size='small' /> -->
+<!-- <TagsList tagIds={['windows', 'macos', 'linux']} title='OS Support' variant='outline' layout='inline' /> -->
+
+<!-- <style>
+  /* Optional: Add spacing between title and tags */
+  :global(.fb-page-tags) {
+    margin-top: 0.75rem;
+  }
+</style> -->

@@ -1,0 +1,25 @@
+---
+title: 'Features'
+---
+
+import { Card, CardGrid } from '@astrojs/starlight/components';
+
+UbiHome is built in a modular way. The modules can be split into the following categories:
+
+<CardGrid>
+  <Card title="Connectivity" href="./connectivity/index">
+    Connect with Home Assistant via the native API, use MQTT or the built-in web server (REST API).
+  </Card>
+
+  <Card title="Platforms" href="./platforms/index">
+    Use the built-in platforms to access device sensors (e.g. GPIO) or control them. Execute a program. Or create your own platform.
+  </Card>
+
+  <Card title="Sensors &amp; Actions" href="./components/index">
+    Make data or actions available in a structured way, for example as sensor, button, switch, or number.
+  </Card>
+
+  <Card title="Utilities" href="./utilities/index">
+    Stuck at configuring something? Use the built-in utilities to help you out.
+  </Card>
+</CardGrid>

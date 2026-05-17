@@ -1,64 +1,151 @@
-import { defineConfig } from 'astro/config';
-import mdx from '@astrojs/mdx';
-import starlight from '@astrojs/starlight';
-import starlightTagsPlugin from 'starlight-tags';
+import starlight from "@astrojs/starlight";
+import { defineConfig } from "astro/config";
+import { existsSync, readdirSync } from "fs";
+import { join } from "path";
+import starlightLatestVersion from "starlight-latest-version";
+import starlightLinksValidator from "starlight-links-validator";
+import starlightSidebarTopics from "starlight-sidebar-topics";
+import starlightTagsPlugin from "starlight-tags";
+
+// Helper function to convert snake_case to Title Case
+function formatLabel(str) {
+	return str
+		.split("_")
+		.map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+		.join(" ");
+}
+
+// Generate examples sidebar items by reading the examples directory
+function getExamplesItems() {
+	const examplesDir = join(process.cwd(), "src/content/docs/examples");
+	const entries = readdirSync(examplesDir, { withFileTypes: true });
+
+	return entries
+		.filter((entry) => entry.isDirectory())
+		.map((entry) => entry.name)
+		.filter((dir) => existsSync(join(examplesDir, dir, "index.md")))
+		.sort()
+		.map((dir) => `examples/${dir}`);
+}
 
 export default defineConfig({
-  site: 'https://ubihome.github.io',
-  outDir: './site',
-  integrations: [
-    starlight({
-      title: 'UbiHome',
-      description:
-        'UbiHome is a single executable that allows you to integrate any device running an OS into your smart home.',
-      favicon: '/assets/favicon.png',
-      logo: {
-        src: './src/content/docs/assets/logo.png',
-        alt: 'UbiHome'
-      },
-      editLink: {
-        baseUrl: 'https://github.com/UbiHome/UbiHome/edit/main/documentation/src/content/docs/'
-      },
-      social: [
-        {
-          icon: 'github',
-          label: 'GitHub',
-          href: 'https://github.com/UbiHome/UbiHome'
-        }
-      ],
-      sidebar: [
-        { label: 'Home', link: '/' },
-        { label: 'Getting started', link: '/getting_started/' },
-        {
-          label: 'Features',
-          items: [
-            { label: 'Overview', link: '/features/' },
-            { label: 'Connectivity', autogenerate: { directory: 'features/connectivity' } },
-            { label: 'Platforms', autogenerate: { directory: 'features/platforms' } },
-            { label: 'Components', autogenerate: { directory: 'features/components' } },
-            { label: 'Utilities', autogenerate: { directory: 'features/utilities' } }
-          ]
-        },
-        {
-          label: 'Examples',
-          autogenerate: { directory: 'examples' }
-        },
-        { label: 'Help', link: '/help/' }
-      ],
-      plugins: [
-        starlightTagsPlugin({
-          configPath: 'tags.yml',
-          tagsPagesPrefix: 'tags',
-          tagsIndexSlug: 'tags',
-          sidebar: {
-            enabled: true,
-            position: 'bottom',
-            showCount: true,
-            showViewAllLink: true
-          }
-        })
-      ]
-    }),
-    mdx()
-  ]
+	site: "https://ubihome.github.io",
+	outDir: "./site",
+	prefetch: true,
+	integrations: [
+		starlight({
+			title: "UbiHome",
+			description:
+				"UbiHome is a single executable that allows you to integrate any device running an OS into your smart home.",
+			favicon: "/assets/favicon.png",
+			logo: {
+				src: "./src/content/docs/assets/logo.png",
+				alt: "UbiHome",
+			},
+			editLink: {
+				baseUrl:
+					"https://github.com/UbiHome/UbiHome/edit/main/documentation/src/content/docs/",
+			},
+			social: [
+				{
+					icon: "github",
+					label: "GitHub",
+					href: "https://github.com/UbiHome/UbiHome",
+				},
+			],
+			components: {
+				PageTitle: "./src/components/PageTitleOverride.astro",
+			},
+			plugins: [
+				starlightTagsPlugin({
+					configPath: "tags.yml",
+					tagsPagesPrefix: "tags",
+					tagsIndexSlug: "tags",
+					onInlineTagsNotFound: "error",
+					sidebar: {
+						enabled: true,
+						position: "bottom",
+						collapsed: true,
+						showCount: true,
+						showViewAllLink: true,
+					},
+				}),
+				// TODO: starlightSiteGraph()
+				// TODO: https://starlight-showcases.vercel.app/components/text/
+				// TODO: https://starlight-changelogs.netlify.app/providers/github/
+				// TODO: https://frostybee.github.io/starlight-announcement/
+				starlightSidebarTopics(
+					[
+						// https://starlight-sidebar-topics.netlify.app/docs/getting-started/
+						{
+							label: "Documentation",
+							link: "/",
+							icon: "open-book",
+							items: [
+								{
+									label: "Home",
+									items: [
+										{ label: "Getting started", link: "/getting_started/" },
+									],
+								},
+								{ label: "Help", link: "/help/" },
+							],
+						},
+						{
+							label: "Features",
+							link: "/features",
+							icon: "open-book",
+							items: [
+								{ label: "Overview", link: "/features/" },
+								{
+									label: "Components",
+									items: [
+										{ autogenerate: { directory: "features/components" } },
+									],
+								},
+								{
+									label: "Platforms",
+									items: [
+										{
+											label: "Connectivity",
+											items: [
+												{
+													autogenerate: { directory: "features/connectivity" },
+												},
+											],
+										},
+										{ autogenerate: { directory: "features/platforms" } },
+									],
+								},
+								{
+									label: "Utilities",
+									items: [
+										{ autogenerate: { directory: "features/utilities" } },
+									],
+								},
+							],
+						},
+						{
+							label: "Examples",
+							link: "/examples/",
+							icon: "information",
+							items: [{ label: "Overview", items: getExamplesItems() }],
+						},
+					],
+					{
+						exclude: ["/tags", "/tags/**"],
+					},
+				),
+				starlightLinksValidator({
+					exclude: ["/tags/", "/tags/**"],
+				}),
+				starlightLatestVersion({
+					source: {
+						type: "github",
+						slug: "UbiHome/UbiHome",
+					},
+				}),
+			],
+		}),
+	],
 });
