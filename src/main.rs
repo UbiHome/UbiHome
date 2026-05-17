@@ -67,9 +67,9 @@ fn windows_service_main(_arguments: Vec<std::ffi::OsString>) {
     let mut dir = env::current_exe().unwrap();
     dir.pop();
     dir.push("config.yaml");
-    let config_file = dir.to_string_lossy().to_string();
+    let config_file = dir.to_string_lossy();
 
-    if let Err(e) = run::run(Some(config_file), false, Some(shutdown_rx)) {
+    if let Err(e) = run::run(&config_file, false, Some(shutdown_rx)) {
         log::error!("{}", e)
     }
 
@@ -148,27 +148,35 @@ fn main() {
 
     match matches {
         Ok(matches) => {
-            let mut config_file = matches
+            let config_file_option = matches
                 .try_get_one::<String>("configuration_file")
-                .unwrap_or_default()
-                .cloned();
-            if config_file.is_none() && DEFAULT_CONFIG.is_none() {
-                // Check if the default config file exists
-                let default_config_file = format!(
-                    "{}/{}",
-                    env::current_dir().unwrap().display(),
-                    DEFAULT_CONFIG_FILE_YML
-                );
-                if fs::metadata(&default_config_file).is_ok() {
-                    config_file = Some(default_config_file);
-                } else {
-                    config_file = Some(format!(
-                        "{}/{}",
-                        env::current_dir().unwrap().display(),
-                        DEFAULT_CONFIG_FILE_YAML
-                    ));
+                .unwrap_or_default();
+
+            let default_config_file = format!(
+                "{}/{}",
+                env::current_dir().unwrap().display(),
+                DEFAULT_CONFIG_FILE_YML
+            );
+            let alternate_config_file = format!(
+                "{}/{}",
+                env::current_dir().unwrap().display(),
+                DEFAULT_CONFIG_FILE_YAML
+            );
+            let config_file = match config_file_option {
+                Some(file) => file.clone(),
+                None => {
+                    if DEFAULT_CONFIG.is_none() {
+                        log::info!("Checking default configs");
+                        if fs::metadata(&default_config_file).is_ok() {
+                            default_config_file
+                        } else {
+                            alternate_config_file
+                        }
+                    } else {
+                        "".to_owned()
+                    }
                 }
-            }
+            };
 
             let log_level = matches.try_get_one::<String>("log_level").unwrap();
 
@@ -193,10 +201,10 @@ fn main() {
                     let location = sub_matches.try_get_one::<String>("location").unwrap();
                     uninstall(location.cloned());
                 }
-                Some(("validate", _)) => match run::run(config_file, true, None) {
+                Some(("validate", _)) => match run::run(&config_file, true, None) {
                     Ok(_) => println!("Configuration is valid."),
                     Err(e) => {
-                        eprintln!("Configuration is invalid: {}", e);
+                        eprintln!("Configuration is invalid:\n{}", e);
                         std::process::exit(1);
                     }
                 },
@@ -218,13 +226,13 @@ fn main() {
                         panic!("Running as a Windows service is not supported on Linux.");
                     } else {
                         // Run normally
-                        if let Err(e) = run::run(config_file, false, None) {
+                        if let Err(e) = run::run(&config_file, false, None) {
                             eprintln!("Configuration is invalid: {}", e);
                             std::process::exit(1);
                         }
                     }
                     #[cfg(not(target_os = "windows"))]
-                    if let Err(e) = run::run(config_file, false, None) {
+                    if let Err(e) = run::run(&config_file, false, None) {
                         eprintln!("Configuration is invalid: {}", e);
                         std::process::exit(1);
                     }

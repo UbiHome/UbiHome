@@ -80,9 +80,10 @@ pub struct UbiHomePlatform {
 }
 
 impl Module for UbiHomePlatform {
-    fn new(config_string: &str) -> Result<Self, String> {
+    fn new(config_string: &str, config_path: &str) -> Result<Self, String> {
         let config =
-            serde_saphyr::from_str::<CoreConfig>(config_string).map_err(|e| e.to_string())?;
+            ubihome_core::validation::validate_config::<CoreConfig>(config_string, config_path)?;
+
         let config_clone = config.clone();
         Ok(UbiHomePlatform {
             config,

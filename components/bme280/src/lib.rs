@@ -82,9 +82,10 @@ config_template!(
 );
 
 impl Module for UbiHomePlatform {
-    fn new(config_string: &str) -> Result<Self, String> {
+    fn new(config_string: &str, config_path: &str) -> Result<Self, String> {
         let config =
-            serde_saphyr::from_str::<CoreConfig>(config_string).map_err(|e| e.to_string())?;
+            ubihome_core::validation::validate_config::<CoreConfig>(config_string, config_path)?;
+
         // info!("BME280 config: {:?}", config);
         let mut components: Vec<UbiComponent> = Vec::new();
         let mut sensors: Vec<BME280Sensor> = Vec::new();

@@ -5,6 +5,8 @@ pub mod internal;
 pub mod mapper;
 pub mod text_sensor;
 pub mod utils;
+#[cfg(feature = "validation")]
+pub mod validation;
 pub extern crate serde_value;
 
 use garde::Validate;
@@ -23,7 +25,7 @@ where
     Self: Send,
 {
     /// This is the main entry point for the module.
-    fn new(config_string: &str) -> Result<Self, String>
+    fn new(config_string: &str, config_path: &str) -> Result<Self, String>
     where
         Self: Sized;
 

@@ -1593,7 +1593,7 @@ dependencies = [
  "once_cell",
  "regex",
  "serde",
- "smallvec 1.15.1",
+ "smallvec",
 ]
 
 [[package]]
@@ -1739,6 +1739,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "granit-parser"
+version = "0.0.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b7e736dfe3881c53a7dce0685eb18202d0d9fe6911782f9870946eb9ee89d778"
+dependencies = [
+ "arraydeque",
+ "smallvec",
+]
+
+[[package]]
 name = "hardware-address"
 version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1865,7 +1875,7 @@ dependencies = [
  "httpdate",
  "itoa",
  "pin-project-lite",
- "smallvec 1.15.1",
+ "smallvec",
  "tokio",
  "want",
 ]
@@ -1982,7 +1992,7 @@ dependencies = [
  "icu_normalizer_data",
  "icu_properties",
  "icu_provider",
- "smallvec 1.15.1",
+ "smallvec",
  "zerovec",
 ]
 
@@ -2040,7 +2050,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3b0875f23caa03898994f6ddc501886a45c7d3d62d04d2d90788d47be1b1e4de"
 dependencies = [
  "idna_adapter",
- "smallvec 1.15.1",
+ "smallvec",
  "utf8_iter",
 ]
 
@@ -3025,7 +3035,7 @@ dependencies = [
  "cfg-if",
  "libc",
  "redox_syscall 0.5.18",
- "smallvec 1.15.1",
+ "smallvec",
  "windows-link 0.2.1",
 ]
 
@@ -3214,7 +3224,7 @@ checksum = "eeaf08a13de400bc215877b5bdc088f241b12eb42f0a548d3390dc1c56bb7071"
 dependencies = [
  "proc-macro2",
  "quote",
- "smallvec 1.15.1",
+ "smallvec",
 ]
 
 [[package]]
@@ -3567,7 +3577,7 @@ dependencies = [
  "rancor",
  "rend",
  "rkyv_derive",
- "smallvec 1.15.1",
+ "smallvec",
  "tinyvec",
  "uuid",
 ]
@@ -3793,23 +3803,12 @@ dependencies = [
 
 [[package]]
 name = "saphyr-parser-bw"
-version = "0.0.601"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "774c33a6543af6939bd9b250c86c72d2dcc169db3c028e13ae07a6927c863dab"
-dependencies = [
- "arraydeque",
- "smallvec 2.0.0-alpha.12",
- "thiserror 2.0.18",
-]
-
-[[package]]
-name = "saphyr-parser-bw"
 version = "0.0.611"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "67dec0c833db75dc98957956b303fe447ffc5eb13f2325ef4c2350f7f3aa69e3"
 dependencies = [
  "arraydeque",
- "smallvec 1.15.1",
+ "smallvec",
  "thiserror 2.0.18",
 ]
 
@@ -3899,28 +3898,6 @@ dependencies = [
 
 [[package]]
 name = "serde-saphyr"
-version = "0.0.15"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "abbf50012d4bcae3935e6c4f961fdcd9f99bba08522696113c1df7c151150a68"
-dependencies = [
- "ahash",
- "annotate-snippets",
- "base64",
- "encoding_rs_io",
- "garde",
- "miette",
- "nohash-hasher",
- "num-traits",
- "regex",
- "saphyr-parser-bw 0.0.601",
- "serde",
- "serde_json",
- "smallvec 2.0.0-alpha.12",
- "zmij",
-]
-
-[[package]]
-name = "serde-saphyr"
 version = "0.0.23"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "09fbdfe7a27a1b1633dfc0c4c8e65940b8d819c5ddb9cca48ebc3223b00c8b14"
@@ -3935,9 +3912,30 @@ dependencies = [
  "nohash-hasher",
  "num-traits",
  "regex",
- "saphyr-parser-bw 0.0.611",
+ "saphyr-parser-bw",
  "serde",
- "smallvec 1.15.1",
+ "smallvec",
+ "zmij",
+]
+
+[[package]]
+name = "serde-saphyr"
+version = "0.0.26"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "dcc7fe48e34d02a97bc8e6253b8b91e5a47fe2c47eaacb5149cefbb69922eaf0"
+dependencies = [
+ "ahash",
+ "annotate-snippets",
+ "base64",
+ "encoding_rs_io",
+ "garde",
+ "getrandom 0.3.4",
+ "granit-parser",
+ "miette",
+ "nohash-hasher",
+ "num-traits",
+ "serde",
+ "smallvec",
  "zmij",
 ]
 
@@ -3989,7 +3987,6 @@ version = "1.0.149"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "83fc039473c5595ace860d8c4fafa220ff474b3fc6bfdb4293327f1a37e94d86"
 dependencies = [
- "indexmap",
  "itoa",
  "memchr",
  "serde",
@@ -4175,12 +4172,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "smallvec"
-version = "2.0.0-alpha.12"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ef784004ca8777809dcdad6ac37629f0a97caee4c685fcea805278d81dd8b857"
-
-[[package]]
 name = "smallvec-wrapper"
 version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4190,7 +4181,7 @@ dependencies = [
  "paste",
  "rkyv",
  "serde",
- "smallvec 1.15.1",
+ "smallvec",
 ]
 
 [[package]]
@@ -4882,7 +4873,7 @@ dependencies = [
  "garde",
  "log",
  "serde",
- "serde-saphyr 0.0.15",
+ "serde-saphyr 0.0.26",
  "tokio",
  "ubihome-core",
  "whoami",
@@ -4900,7 +4891,7 @@ dependencies = [
  "libdbus-sys",
  "log",
  "serde",
- "serde-saphyr 0.0.15",
+ "serde-saphyr 0.0.26",
  "tokio",
  "ubihome-core",
 ]
@@ -4915,7 +4906,7 @@ dependencies = [
  "linux-embedded-hal",
  "log",
  "serde",
- "serde-saphyr 0.0.15",
+ "serde-saphyr 0.0.26",
  "tokio",
  "ubihome-core",
 ]
@@ -4931,6 +4922,7 @@ dependencies = [
  "log",
  "regex",
  "serde",
+ "serde-saphyr 0.0.26",
  "serde-value",
  "tokio",
 ]
@@ -4945,7 +4937,7 @@ dependencies = [
  "garde",
  "log",
  "serde",
- "serde-saphyr 0.0.15",
+ "serde-saphyr 0.0.26",
  "tokio",
  "ubihome-core",
 ]
@@ -4960,7 +4952,7 @@ dependencies = [
  "log",
  "rppal",
  "serde",
- "serde-saphyr 0.0.15",
+ "serde-saphyr 0.0.26",
  "tokio",
  "ubihome-core",
 ]
@@ -4974,7 +4966,7 @@ dependencies = [
  "industrial-io",
  "log",
  "serde",
- "serde-saphyr 0.0.15",
+ "serde-saphyr 0.0.26",
  "tokio",
  "ubihome-core",
  "windows 0.61.3",
@@ -4990,7 +4982,7 @@ dependencies = [
  "log",
  "mdns-sd 0.13.11",
  "serde",
- "serde-saphyr 0.0.15",
+ "serde-saphyr 0.0.26",
  "tokio",
  "ubihome-core",
 ]
@@ -5004,7 +4996,7 @@ dependencies = [
  "log",
  "rumqttc",
  "serde",
- "serde-saphyr 0.0.15",
+ "serde-saphyr 0.0.26",
  "serde_json",
  "serde_tuple",
  "tokio",
@@ -5020,7 +5012,7 @@ dependencies = [
  "garde",
  "log",
  "serde",
- "serde-saphyr 0.0.15",
+ "serde-saphyr 0.0.26",
  "system_shutdown",
  "tokio",
  "ubihome-core",
@@ -5038,7 +5030,7 @@ dependencies = [
  "parking_lot",
  "sendspin",
  "serde",
- "serde-saphyr 0.0.15",
+ "serde-saphyr 0.0.26",
  "tokio",
  "tokio-tungstenite",
  "ubihome-core",
@@ -5053,7 +5045,7 @@ dependencies = [
  "garde",
  "log",
  "serde",
- "serde-saphyr 0.0.15",
+ "serde-saphyr 0.0.26",
  "shell_exec",
  "tokio",
  "ubihome-core",
@@ -5070,7 +5062,7 @@ dependencies = [
  "garde",
  "log",
  "serde",
- "serde-saphyr 0.0.15",
+ "serde-saphyr 0.0.26",
  "tokio",
  "tokio-stream",
  "tower-http",

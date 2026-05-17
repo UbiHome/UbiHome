@@ -41,6 +41,7 @@ macro_rules! generate_component_methods {
         // Generate the configure_platforms function
         pub(crate) fn configure_platforms(
             config_string: &str,
+            config_path: &str,
             platforms: &BTreeSet::<Platform>,
         ) -> Result<Vec<Box<dyn Module>>, String> {
 
@@ -50,13 +51,13 @@ macro_rules! generate_component_methods {
                 match module {
                     $(
                         Platform::$variant => {
-                            let result = <$module_path::$type_name>::new(config_string);
+                            let result = <$module_path::$type_name>::new(config_string, config_path);
                             match result {
                                 Ok(component) => {
                                     modules.push(Box::new(component));
                                 }
                                 Err(e) => {
-                                    return Err(format!("Module {}: {}", stringify!($platform_name), e));
+                                    return Err(format!("{}", e));
                                 }
                             }
                         }
