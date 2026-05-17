@@ -4,7 +4,7 @@ title: "Getting Started"
 
 # Getting Started
 
-For now[^1] a single executable is provided. You can download them from the [GitHub Releases page](https://github.com/UbiHome/UbiHome/releases) or use the direct links below.
+For now[^1] a single executable is provided. You can download it from the [GitHub Releases page](https://github.com/UbiHome/UbiHome/releases) or use the direct links below.
 
 
 <!-- x-release-please-start-version -->

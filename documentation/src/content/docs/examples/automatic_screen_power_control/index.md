@@ -4,7 +4,7 @@ title: "Automatic Screen Power Control"
 
 # Automatic Screen Power Control
 
-Control the screen power state based of a PIR sensor. The screen will turn on when motion is detected and off after a timeout.
+Control the screen power state based on a PIR sensor. The screen will turn on when motion is detected and off after a timeout.
 
 ```yaml
 ubihome:
