@@ -56,8 +56,6 @@ binary_sensor:
     pin: 17
     filters:
       - delayed_on: 1s
-
-# Motion must stay true for 1 second before state changes to true
 ```
 
 ### delayed_off
@@ -71,8 +69,6 @@ binary_sensor:
     pin: 17
     filters:
       - delayed_off: 5s
-
-# Motion must stay false for 5 seconds before state changes to false
 ```
 
 ## Filter Support by Component
