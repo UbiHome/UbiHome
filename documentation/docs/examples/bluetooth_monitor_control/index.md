@@ -20,4 +20,8 @@
     --8<-- "examples/bluetooth_monitor_control/linux_hcitool.yml"
     ```
 
+## Related documentation
+
+- Components: [Button](../../features/components/button.md), [Binary Sensor](../../features/components/binary_sensor.md)
+- Platform: [Shell](../../features/platforms/shell.md)
 

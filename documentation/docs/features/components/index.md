@@ -1,89 +1,95 @@
 # Components
 
-Components make data or functionality available for external systems via the [Connectivity Features](../connectivity/index.md) or for reuse in other components.
+Components make data or functionality available for external systems via [Connectivity Features](../connectivity/index.md), or for reuse in other components.
 
-[Platforms](../platforms/index.md) offer extended functionality for any component.
+[Platforms](../platforms/index.md) provide the implementation for component behavior.
 
-## Common Entity Attributes
+A component entry is defined under a component key (for example `sensor:` or `switch:`), and each entry selects a `platform`.
 
-All entities share a set of [common attributes](./base.md) that can be used to customize their behavior.
+## Common Component Attributes
 
-<!-- ```yaml title="Example Component Entry"
+All components share a set of [common attributes](./base.md) that can be used to customize their behavior.
 
-``` -->
-
-## Entities
+## Components
 
 <div class="grid cards" markdown>
 
-- :material-thermometer:{ .lg .middle } [**Sensor**](./sensor.md)
+-   :material-motion-sensor:{ .lg .middle } [**Binary Sensor**](./binary_sensor.md)
 
-  ***
+    ---
 
-  Make data available as a sensor.
+    Track on/off states or occupancy.
 
-  [:octicons-arrow-right-24: View Documentation](./sensor.md)
+    [:octicons-arrow-right-24: View Documentation](./binary_sensor.md)
 
-- :material-form-textbox:{ .lg .middle } [**Text Sensor**](./text_sensor.md)
+-   :material-button-pointer:{ .lg .middle } [**Button**](./button.md)
 
-  ***
+    ---
 
-  Make text values available as a sensor.
+    Trigger an action on the device.
 
-  [:octicons-arrow-right-24: View Documentation](./text_sensor.md)
+    [:octicons-arrow-right-24: View Documentation](./button.md)
 
-- :material-button-pointer:{ .lg .middle } [**Button**](./button.md)
+-   :material-toggle-switch-outline:{ .lg .middle } [**Switch**](./switch.md)
 
-  ***
+    ---
 
-  Trigger an action on the device.
+    Switch something on or off.
 
-  [:octicons-arrow-right-24: View Documentation](./button.md)
+    [:octicons-arrow-right-24: View Documentation](./switch.md)
 
-- :material-motion-sensor:{ .lg .middle } [**Binary Sensor**](./binary_sensor.md)
+-   :material-tune-vertical:{ .lg .middle } [**Number**](./number.md)
 
-  ***
+    ---
 
-  Track on/off states or occupancy.
+    Set or read numeric values with min/max/step constraints.
 
-  [:octicons-arrow-right-24: View Documentation](./binary_sensor.md)
+    [:octicons-arrow-right-24: View Documentation](./number.md)
 
-- :material-toggle-switch-outline:{ .lg .middle } [**Switch**](./switch.md)
+-   :material-thermometer:{ .lg .middle } [**Sensor**](./sensor.md)
 
-  ***
+    ---
 
-  Switch something on or off.
+    Make data available as a sensor.
 
-  [:octicons-arrow-right-24: View Documentation](./switch.md)
+    [:octicons-arrow-right-24: View Documentation](./sensor.md)
 
-- :material-tune-vertical:{ .lg .middle } [**Number**](./number.md)
+-   :material-form-textbox:{ .lg .middle } [**Text Sensor**](./text_sensor.md)
 
-  ***
+    ---
 
-  Set or read numeric values with min/max/step constraints.
+    Make text values available as a sensor.
 
-  [:octicons-arrow-right-24: View Documentation](./number.md)
+    [:octicons-arrow-right-24: View Documentation](./text_sensor.md)
+
+-   :material-toggle-switch-outline:{ .lg .middle } [**Switch**](./switch.md)
+
+    ---
+
+    Switch something on or off.
+
+    [:octicons-arrow-right-24: View Documentation](./switch.md)
 
 </div>
 
-## Entity Attributes
+## Component Features
 
 <div class="grid cards" markdown>
 
-- :material-graph-outline:{ .lg .middle } [**Actions**](./actions.md)
+-   :material-graph-outline:{ .lg .middle } [**Actions**](./actions.md)
 
-  ***
+    ---
 
-  Trigger actions from state changes. This even works offline!
+    Trigger actions from state changes. This even works offline!
 
-  [:octicons-arrow-right-24: View Documentation](./actions.md)
+    [:octicons-arrow-right-24: View Documentation](./actions.md)
 
-- :material-function:{ .lg .middle } [**Filters**](./filters.md)
+-   :material-function:{ .lg .middle } [**Filters**](./filters.md)
 
-  ***
+    ---
+    
+    Modify component values (for example `round`, `delayed_on`).
 
-  Modify the data of an entity (e.g. round, delay).
-
-  [:octicons-arrow-right-24: View Documentation](./filters.md)
+    [:octicons-arrow-right-24: View Documentation](./filters.md)
 
 </div>

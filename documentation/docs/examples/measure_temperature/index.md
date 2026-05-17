@@ -15,3 +15,8 @@ BME280:
  - SDA  -- PIN 3 / GPIO 2
 
 > The BME Component automatically detects devices on i2c1
+
+## Related documentation
+
+- Component: [Sensor](../../features/components/sensor.md)
+- Platform: [BME280](../../features/platforms/bme280.md)

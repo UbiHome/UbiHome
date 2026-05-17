@@ -4,30 +4,6 @@ Platforms extend the functionality of UbiHome. They implement how [Components](.
 
 <div class="grid cards" markdown>
 
--   :material-bash:{ .lg .middle } [__Shell__](./shell.md)
-
-    ---
-
-    Execute any command for retrieving data or on trigger.
-
-    [:octicons-arrow-right-24: View Documentation](./shell.md)
-
--   :fontawesome-solid-microchip:{ .lg .middle } [__GPIO__](./gpio.md)
-
-    ---
-
-    Interact with the GPIO pins of your device.
-
-    [:octicons-arrow-right-24: View Documentation](./gpio.md)
-
--   :material-power:{ .lg .middle } [__Power Utilities__](./power_utils.md)
-
-    ---
-
-    Turn you device on or off, reboot it or put it into sleep mode.
-
-    [:octicons-arrow-right-24: View Documentation](./power_utils.md)
-
 -   :material-thermometer:{ .lg .middle } [__BME280__](./bme280.md)
 
     ---
@@ -40,32 +16,54 @@ Platforms extend the functionality of UbiHome. They implement how [Components](.
 
     ---
 
-    Bluetooth Proxy for Home Assistant. 
+    Bluetooth Proxy for Home Assistant.
 
     [:octicons-arrow-right-24: View Documentation](./bluetooth.md)
 
--   :fontawesome-solid-arrows-spin:{ .lg .middle } [__Sendspin__](./sendspin.md)
+-   :fontawesome-solid-microchip:{ .lg .middle } [__GPIO__](./gpio.md)
 
     ---
 
-    Stream Music via Sendspin Protocol. 
+    Interact with the GPIO pins of your device.
 
-    [:octicons-arrow-right-24: View Documentation](./sendspin.md)
+    [:octicons-arrow-right-24: View Documentation](./gpio.md)
 
 -   :material-brightness-percent:{ .lg .middle } [__Illuminance__](./illuminance.md)
 
     ---
 
-    Read out the Integrated Light sensor of your device. 
+    Read out the Integrated Light sensor of your device.
 
     [:octicons-arrow-right-24: View Documentation](./illuminance.md)
 
+-   :material-power:{ .lg .middle } [__Power Utilities__](./power_utils.md)
 
--   :material-unfold-more-vertical:{ .lg .middle } More 
+    ---
+
+    Turn your device on or off, reboot it or put it into sleep mode.
+
+    [:octicons-arrow-right-24: View Documentation](./power_utils.md)
+
+-   :fontawesome-solid-arrows-spin:{ .lg .middle } [__Sendspin__](./sendspin.md)
+
+    ---
+
+    Stream Music via Sendspin Protocol.
+
+    [:octicons-arrow-right-24: View Documentation](./sendspin.md)
+
+-   :material-bash:{ .lg .middle } [__Shell__](./shell.md)
+
+    ---
+
+    Execute any command for retrieving data or on trigger.
+
+    [:octicons-arrow-right-24: View Documentation](./shell.md)
+
+-   :material-unfold-more-vertical:{ .lg .middle } More
 
     ---
 
     More to come...
-
 
 </div>

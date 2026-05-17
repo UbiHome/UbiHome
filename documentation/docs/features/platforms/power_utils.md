@@ -25,6 +25,10 @@ button:
     action: sleep
 ```
 
+## Used in Examples
+
+- [Stop or reboot your system](../../examples/stop_reboot/index.md)
+
 Similar to ESPHome:
 
 - https://esphome.io/components/button/restart.html
