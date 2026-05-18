@@ -27,5 +27,5 @@ You can combine this with the [screen on/off example](/examples/screen_on_off/) 
 
 ## Related documentation
 
-- Component: [Binary Sensor](/features/components/entities/binary_sensor/)
+- Component: [Binary Sensor](/features/entities/binary_sensor/)
 - Platform: [GPIO](/features/platforms/gpio/)

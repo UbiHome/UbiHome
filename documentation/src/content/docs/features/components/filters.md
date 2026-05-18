@@ -75,12 +75,12 @@ binary_sensor:
 
 ## Filter Support by Component
 
-| Component                                                     | Supported Filters                                                               |
-| ------------------------------------------------------------- | ------------------------------------------------------------------------------- |
-| [Sensor](/features/components/entities/sensor/)               | [`round`](#round)                                                               |
-| [Binary Sensor](/features/components/entities/binary_sensor/) | [`invert`](#invert), [`delayed_on`](#delayed_on), [`delayed_off`](#delayed_off) |
-| [Button](/features/components/entities/button/)               | None                                                                            |
-| [Number](/features/components/entities/number/)               | None                                                                            |
-| [Switch](/features/components/entities/switch/)               | None                                                                            |
+| Component                                          | Supported Filters                                                               |
+| -------------------------------------------------- | ------------------------------------------------------------------------------- |
+| [Sensor](/features/entities/sensor/)               | [`round`](#round)                                                               |
+| [Binary Sensor](/features/entities/binary_sensor/) | [`invert`](#invert), [`delayed_on`](#delayed_on), [`delayed_off`](#delayed_off) |
+| [Button](/features/entities/button/)               | None                                                                            |
+| [Number](/features/entities/number/)               | None                                                                            |
+| [Switch](/features/entities/switch/)               | None                                                                            |
 
 See each component page for details and examples.

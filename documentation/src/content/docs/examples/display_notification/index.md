@@ -53,5 +53,5 @@ button:
 
 ## Related documentation
 
-- Component: [Button](/features/components/entities/button/)
+- Component: [Button](/features/entities/button/)
 - Platform: [Shell](/features/platforms/shell/)

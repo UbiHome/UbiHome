@@ -6,7 +6,7 @@ import starlightLatestVersion from "starlight-latest-version";
 import starlightLinksValidator from "starlight-links-validator";
 import starlightSidebarTopics from "starlight-sidebar-topics";
 import starlightTagsPlugin from "starlight-tags";
-import starlightSiteGraph from 'starlight-site-graph'
+import starlightSiteGraph from "starlight-site-graph";
 
 // Helper function to convert snake_case to Title Case
 function formatLabel(str) {
@@ -89,9 +89,10 @@ export default defineConfig({
 									],
 								},
 								{ label: "Roadmap", link: "/roadmap/" },
-								{ label: "Help", items: [
-										{ autogenerate: { directory: "help/" } },
-                ] },
+								{
+									label: "Help",
+									items: [{ autogenerate: { directory: "help/" } }],
+								},
 							],
 						},
 						{
@@ -104,6 +105,16 @@ export default defineConfig({
 									label: "Components",
 									items: [
 										{ autogenerate: { directory: "features/components" } },
+										{
+											label: "Entities",
+											items: [
+												{
+													autogenerate: {
+														directory: "features/entities",
+													},
+												},
+											],
+										},
 									],
 								},
 								{
@@ -142,16 +153,19 @@ export default defineConfig({
 				starlightLinksValidator({
 					exclude: ["/tags/", "/tags/**"],
 				}),
-        // https://starlight-latest-version.trueberryless.org/
+				// https://starlight-latest-version.trueberryless.org/
 				starlightLatestVersion({
 					source: {
 						type: "github",
 						slug: "UbiHome/UbiHome",
 					},
 				}),
-        // https://fevol.github.io/starlight-site-graph/configuration/
-				starlightSiteGraph()
+				// https://fevol.github.io/starlight-site-graph/configuration/
+				starlightSiteGraph(),
 			],
 		}),
 	],
+	// redirects: {
+	// 	"/features/components/[slug]": "/features/entities/[slug]",
+	// },
 });

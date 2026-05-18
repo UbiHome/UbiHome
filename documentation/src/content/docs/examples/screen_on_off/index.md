@@ -66,5 +66,5 @@ switch:
 
 ## Related documentation
 
-- Component: [Switch](/features/components/entities/switch/)
+- Component: [Switch](/features/entities/switch/)
 - Platform: [Shell](/features/platforms/shell/)

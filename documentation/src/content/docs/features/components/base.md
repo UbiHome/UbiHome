@@ -1,5 +1,7 @@
 ---
-title: 'Common Component Properties'
+title: 'Common Properties'
+sidebar:
+  order: 2
 ---
 
 These properties are available on all components.

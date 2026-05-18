@@ -43,5 +43,5 @@ binary_sensor:
 
 ## Related documentation
 
-- Components: [Switch](/features/components/entities/switch/), [Binary Sensor](/features/components/entities/binary_sensor/)
+- Components: [Switch](/features/entities/switch/), [Binary Sensor](/features/entities/binary_sensor/)
 - Platforms: [Shell](/features/platforms/shell/), [GPIO](/features/platforms/gpio/)

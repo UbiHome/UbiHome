@@ -34,7 +34,7 @@ button:
 
 ## Related documentation
 
-- Component: [Button](/features/components/entities/button/)
+- Component: [Button](/features/entities/button/)
 - Platform: [Power Utilities](/features/platforms/power_utils/)
 
 Similar to ESPHome:

@@ -52,5 +52,5 @@ binary_sensor:
 
 ## Related documentation
 
-- Components: [Button](/features/components/entities/button/), [Binary Sensor](/features/components/entities/binary_sensor/)
+- Components: [Button](/features/entities/button/), [Binary Sensor](/features/entities/binary_sensor/)
 - Platform: [Shell](/features/platforms/shell/)

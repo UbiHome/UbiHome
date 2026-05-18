@@ -1,0 +1,71 @@
+---
+title: 'Components'
+sidebar:
+  order: 1
+---
+
+import { LinkCard, CardGrid } from '@astrojs/starlight/components';
+
+Components make data or functionality available for external systems via [Connectivity Features](/features/connectivity/), or for reuse in other components.
+
+[Platforms](/features/platforms/) provide the implementation for component behavior.
+
+A component entry is defined under a component key (for example `sensor:` or `switch:`), and each entry selects a `platform`.
+
+All components share a set of [common attributes](/features/components/base/) that can be used to customize their behavior.
+
+## Entities
+
+<CardGrid>
+  <LinkCard
+    title='Binary Sensor'
+    href='/features/entities/binary_sensor/'
+    description='Track on/off states or occupancy.'
+  />
+
+  <LinkCard
+    title='Button'
+    href='/features/entities/button/'
+    description='Trigger an action on the device.'
+  />
+
+  <LinkCard
+    title='Switch'
+    href='/features/entities/switch/'
+    description='Switch something on or off.'
+  />
+
+  <LinkCard
+    title='Number'
+    href='/features/entities/number/'
+    description='Set or read numeric values with min/max/step constraints.'
+  />
+
+  <LinkCard
+    title='Sensor'
+    href='/features/entities/sensor/'
+    description='Make data available as a sensor.'
+  />
+
+  <LinkCard
+    title='Text Sensor'
+    href='/features/entities/text_sensor/'
+    description='Make text values available as a sensor.'
+  />
+</CardGrid>
+
+## Component Features
+
+<CardGrid>
+  <LinkCard
+    title='Actions'
+    href='/features/components/actions/'
+    description='Trigger actions from state changes. This even works offline!'
+  />
+
+  <LinkCard
+    title='Filters'
+    href='/features/components/filters/'
+    description='Modify component values (for example `round`, `delayed_on`).'
+  />
+</CardGrid>
