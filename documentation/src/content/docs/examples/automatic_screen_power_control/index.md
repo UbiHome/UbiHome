@@ -1,5 +1,6 @@
 ---
 title: 'Automatic Screen Power Control'
+description: 'Automatically switch a screen on or off based on device state.'
 ---
 
 Control the screen power state based on a PIR sensor. The screen will turn on when motion is detected and off after a timeout.

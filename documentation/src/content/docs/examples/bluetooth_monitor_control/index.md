@@ -1,5 +1,6 @@
 ---
 title: 'Monitor and control Bluetooth devices'
+description: 'Use Bluetooth state to monitor or control attached devices.'
 ---
 
 ## Linux

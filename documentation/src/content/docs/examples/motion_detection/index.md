@@ -1,5 +1,6 @@
 ---
 title: 'Motion Detection'
+description: 'Trigger UbiHome actions when motion is detected on a Raspberry Pi.'
 ---
 
 Detect motion using a simple PIR Sensor.

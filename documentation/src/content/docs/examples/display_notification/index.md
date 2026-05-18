@@ -1,5 +1,6 @@
 ---
 title: 'Display a Notification'
+description: 'Send a desktop notification from Windows or Ubuntu.'
 ---
 
 ## Windows

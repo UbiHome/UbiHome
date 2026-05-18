@@ -1,5 +1,6 @@
 ---
 title: 'Open a new tab in chrome'
+description: 'Launch Chrome and open a new tab with a button action.'
 ---
 
 ## Windows

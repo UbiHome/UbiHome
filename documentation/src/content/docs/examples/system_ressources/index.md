@@ -1,5 +1,6 @@
 ---
 title: 'Monitor system resources'
+description: 'Expose RAM usage as a sensor on Windows or Linux.'
 ---
 
 ## Windows

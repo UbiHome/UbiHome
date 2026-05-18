@@ -1,5 +1,6 @@
 ---
 title: 'Measure Temperature, Humidity and Pressure with BME280'
+description: 'Read BME280 temperature, humidity, and pressure values with UbiHome.'
 ---
 
 Get the BME280 readings and make them available via the native API:

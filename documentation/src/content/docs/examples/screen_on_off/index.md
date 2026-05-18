@@ -1,5 +1,6 @@
 ---
 title: 'Turn Raspberry screen on or off'
+description: 'Control a Raspberry Pi display power state with UbiHome.'
 ---
 
 Control the screen power state of a Raspberry Pi using the `vcgencmd` command or `wlr-randr` for Wayland.

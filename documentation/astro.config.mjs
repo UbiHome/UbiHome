@@ -83,10 +83,8 @@ export default defineConfig({
 							icon: "open-book",
 							items: [
 								{
-									label: "Home",
-									items: [
-										{ label: "Getting started", link: "/getting_started/" },
-									],
+									label: "Getting started",
+									link: "/getting_started/",
 								},
 								{ label: "Roadmap", link: "/roadmap/" },
 								{
@@ -107,6 +105,7 @@ export default defineConfig({
 										{ autogenerate: { directory: "features/components" } },
 										{
 											label: "Entities",
+											collapsed: true,
 											items: [
 												{
 													autogenerate: {
@@ -131,18 +130,12 @@ export default defineConfig({
 										{ autogenerate: { directory: "features/platforms" } },
 									],
 								},
-								{
-									label: "Utilities",
-									items: [
-										{ autogenerate: { directory: "features/utilities" } },
-									],
-								},
 							],
 						},
 						{
 							label: "Examples",
 							link: "/examples/",
-							icon: "information",
+							icon: "puzzle",
 							items: [{ label: "Overview", items: getExamplesItems() }],
 						},
 					],
