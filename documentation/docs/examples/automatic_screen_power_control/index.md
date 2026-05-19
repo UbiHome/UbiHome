@@ -7,3 +7,8 @@ Control the screen power state based of a PIR sensor. The screen will turn on wh
 ```
 
 > If the commands are not working you can try out others from the [screen on/off example](../screen_on_off/index.md).
+
+## Related documentation
+
+- Components: [Switch](../../features/components/switch.md), [Binary Sensor](../../features/components/binary_sensor.md)
+- Platforms: [Shell](../../features/platforms/shell.md), [GPIO](../../features/platforms/gpio.md)

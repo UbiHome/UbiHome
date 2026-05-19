@@ -39,8 +39,7 @@ binary_sensor:
 """
     sensor_mock.set_value("false")
 
-    async with UbiHome("run", config=DEVICE_INFO_CONFIG) as ubihome:
-
+    async with UbiHome("run", config=DEVICE_INFO_CONFIG):
         sensor_mock.set_value("true")
         switch_mock.wait_for_mock_state("true")
         switch_mock.remove()

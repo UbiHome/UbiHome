@@ -6,7 +6,10 @@ This example shows how to stop or reboot your system using UbiHome. This is usef
 --8<-- "examples/stop_reboot/example.yml"
 ```
 
+## Related documentation
 
+- Component: [Button](../../features/components/button.md)
+- Platform: [Power Utilities](../../features/platforms/power_utils.md)
 
 Similar to ESPHome:
 

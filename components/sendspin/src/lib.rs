@@ -18,7 +18,8 @@ use std::{future::Future, pin::Pin, str};
 use tokio::sync::broadcast::Receiver;
 use tokio::sync::broadcast::Sender;
 use tokio::time::interval;
-use ubihome_core::internal::sensors::InternalComponent;
+use tokio_tungstenite::tungstenite::client::IntoClientRequest;
+use ubihome_core::internal::sensors::UbiComponent;
 use ubihome_core::NoConfig;
 use ubihome_core::{config_template, ChangedMessage, Module, PublishedMessage};
 
@@ -51,7 +52,8 @@ fn env_bool(key: &str) -> bool {
         .unwrap_or(false)
 }
 
-#[derive(Clone, Deserialize, Debug)]
+#[derive(Clone, Deserialize, Debug, Validate)]
+#[garde(allow_unvalidated)]
 pub struct SendspinConfig {
     pub name: Option<String>,
     pub server: Option<String>,
@@ -68,32 +70,30 @@ config_template!(
     NoConfig,
     NoConfig,
     NoConfig,
+    NoConfig,
+    NoConfig,
     NoConfig
 );
 
 #[derive(Clone, Debug)]
-pub struct UbiHomeDefault {
+pub struct UbiHomePlatform {
     config: CoreConfig,
     pub sendspin_config: SendspinConfig,
 }
 
-impl Module for UbiHomeDefault {
-    fn new(config_string: &String) -> Result<Self, String> {
-        match serde_yaml::from_str::<CoreConfig>(config_string) {
-            Ok(config) => {
-                let config_clone = config.clone();
-                Ok(UbiHomeDefault {
-                    config: config,
-                    sendspin_config: config_clone.sendspin,
-                })
-            }
-            Err(e) => {
-                return Err(format!("Failed to parse API config: {:?}", e));
-            }
-        }
+impl Module for UbiHomePlatform {
+    fn new(config_string: &str, config_path: &str) -> Result<Self, String> {
+        let config =
+            ubihome_core::validation::validate_config::<CoreConfig>(config_string, config_path)?;
+
+        let config_clone = config.clone();
+        Ok(UbiHomePlatform {
+            config,
+            sendspin_config: config_clone.sendspin,
+        })
     }
 
-    fn components(&mut self) -> Vec<InternalComponent> {
+    fn components(&mut self) -> Vec<UbiComponent> {
         Vec::new()
     }
 
@@ -124,6 +124,10 @@ impl Module for UbiHomeDefault {
             //     .default_output_device()
             //     .map(|dev| dev.name().unwrap())
             //     .map(|name| name.to_string());
+            let _default_out = host
+                .default_output_device()
+                .map(|dev| dev.name().unwrap())
+                .map(|name| name.to_string());
             selected_device = host.default_output_device();
 
             let devices = host.devices().unwrap();
@@ -180,27 +184,24 @@ impl Module for UbiHomeDefault {
             // Browse for sendspin servers
             let receiver = mdns.browse(service_type).expect("Failed to browse");
             while let Ok(event) = receiver.recv() {
-                match event {
-                    ServiceEvent::ServiceResolved(resolved) => {
-                        info!("Resolved a new service: {:?}", resolved);
-                        let path = resolved
-                            .txt_properties
-                            .get_property_val("path")
-                            .and_then(|opt_v| opt_v.and_then(|v| str::from_utf8(v).ok()))
-                            .unwrap_or("");
-                        let address = resolved.get_addresses().iter().next();
+                if let ServiceEvent::ServiceResolved(resolved) = event {
+                    info!("Resolved a new service: {:?}", resolved);
+                    let path = resolved
+                        .txt_properties
+                        .get_property_val("path")
+                        .and_then(|opt_v| opt_v.and_then(|v| str::from_utf8(v).ok()))
+                        .unwrap_or("");
+                    let address = resolved.get_addresses().iter().next();
 
-                        if let Some(addr) = address {
-                            let server = format!("ws://{}:{}{}", addr, resolved.get_port(), path);
-                            info!("Using Sendspin server at {}", server);
-                            mdns_found_server = Some(server);
-                            break;
-                        } else {
-                            info!("No address found for resolved service.");
-                            continue;
-                        }
+                    if let Some(addr) = address {
+                        let server = format!("ws://{}:{}{}", addr, resolved.get_port(), path);
+                        info!("Using Sendspin server at {}", server);
+                        mdns_found_server = Some(server);
+                        break;
+                    } else {
+                        info!("No address found for resolved service.");
+                        continue;
                     }
-                    _ => {}
                 }
             }
             if let Some(mdns_servier) = mdns_found_server {
@@ -234,6 +235,10 @@ impl Module for UbiHomeDefault {
 
             let client = test.connect(&server).await.unwrap();
             debug!("Connected!");
+            // info!("Connecting to {}...", server);
+            // let request = server.into_client_request().unwrap();
+            // let client = ProtocolClient::connect(request, hello).await.unwrap();
+            // info!("Connected!");
 
             let (mut message_rx, mut audio_rx, clock_sync, ws_tx, _guard) = client.split();
 

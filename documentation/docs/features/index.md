@@ -24,7 +24,7 @@ UbiHome is built in a modular way. The modules can be split into the following c
 
     ---
 
-    Make the data or actions available in a structured way, as sensor, button or switch.
+    Make data or actions available in a structured way, for example as sensor, button, switch, or number.
 
     [:octicons-arrow-right-24: Getting started](./components/index.md)
 

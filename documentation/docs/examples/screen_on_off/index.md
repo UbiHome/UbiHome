@@ -35,3 +35,8 @@ To see which one you are using run `loginctl show-session 1 | grep "Desktop"` It
     ```yaml
     --8<-- "examples/screen_on_off/raspberry_x11.yml"
     ```
+
+## Related documentation
+
+- Component: [Switch](../../features/components/switch.md)
+- Platform: [Shell](../../features/platforms/shell.md)

@@ -14,7 +14,8 @@ api:
   # Optional: Default Port is 6053
   port: 6053
   # Secure your API:
-  encryption_key: 'copy_your_generated_key_here'
+  encryption:
+    key: 'copy_your_generated_key_here'
 ```
 
 {{ encryption_key_generator() }}
@@ -22,3 +23,7 @@ api:
 Similar to ESPHome:
 
 - [ESPHome API](https://esphome.io/components/api.html)
+
+## Supported Entities
+
+The native API exposes all configured entities.
