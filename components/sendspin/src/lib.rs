@@ -4,21 +4,16 @@ use cpal::Device;
 use log::{debug, error, info, trace};
 use sendspin::audio::decode::{Decoder, PcmDecoder, PcmEndian};
 use sendspin::audio::{AudioBuffer, AudioFormat, Codec, SyncedPlayer};
-use sendspin::protocol::messages::{
-    AudioFormatSpec, ClientState, ClientTime, Message, PlayerState, PlayerSyncState,
-    PlayerV1Support,
-};
+use sendspin::protocol::messages::{AudioFormatSpec, Message, PlayerState, PlayerV1Support};
 use sendspin::sync::ClockSync;
 use sendspin::ProtocolClientBuilder;
 use serde::{Deserialize, Deserializer};
 use std::collections::HashMap;
 use std::sync::Arc;
-use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
+use std::time::{Instant, SystemTime, UNIX_EPOCH};
 use std::{future::Future, pin::Pin, str};
 use tokio::sync::broadcast::Receiver;
 use tokio::sync::broadcast::Sender;
-use tokio::time::interval;
-use tokio_tungstenite::tungstenite::client::IntoClientRequest;
 use ubihome_core::internal::sensors::UbiComponent;
 use ubihome_core::NoConfig;
 use ubihome_core::{config_template, ChangedMessage, Module, PublishedMessage};
@@ -126,17 +121,17 @@ impl Module for UbiHomePlatform {
             //     .map(|name| name.to_string());
             let _default_out = host
                 .default_output_device()
-                .map(|dev| dev.name().unwrap())
-                .map(|name| name.to_string());
+                .map(|dev| dev.id().unwrap())
+                .map(|id| id.to_string());
             selected_device = host.default_output_device();
 
             let devices = host.devices().unwrap();
             debug!("  Devices: ");
             for (_, device) in devices.enumerate() {
                 let id = device
-                    .name() // id()
+                    .id() // id()
                     .map_or("Unknown Id".to_string(), |id| id.to_string());
-                let description = device.name().unwrap(); // description
+                let description = device.id().unwrap(); // description
                 debug!("  {id} - {description}");
 
                 // Output configs
@@ -165,9 +160,9 @@ impl Module for UbiHomePlatform {
             selected_device
                 .clone()
                 .unwrap()
-                .name() // id
+                .id() // id
                 .map_or("Unknown Id".to_string(), |id| id.to_string()),
-            selected_device.clone().unwrap().name().unwrap() // description
+            selected_device.clone().unwrap().id().unwrap() // description
         );
 
         // End List Hosts
@@ -225,12 +220,12 @@ impl Module for UbiHomePlatform {
                     buffer_capacity: 50 * 1024 * 1024, // 50 MB
                     supported_commands: vec!["volume".to_string(), "mute".to_string()],
                 })
-                // .initial_player_state(PlayerState {
-                //     volume: Some(100),
-                //     muted: Some(false),
-                //     static_delay_ms: Some(0),
-                //     supported_commands: None,
-                // })
+                .initial_player_state(PlayerState {
+                    volume: Some(100),
+                    muted: Some(false),
+                    static_delay_ms: Some(0),
+                    supported_commands: None,
+                })
                 .build();
 
             let client = test.connect(&server).await.unwrap();
@@ -240,51 +235,44 @@ impl Module for UbiHomePlatform {
             // let client = ProtocolClient::connect(request, hello).await.unwrap();
             // info!("Connected!");
 
-            let (mut message_rx, mut audio_rx, clock_sync, ws_tx, _guard) = client.split();
-
-            //Send initial client/state message (handshake step 3)
-            let client_state = Message::ClientState(ClientState {
-                player: Some(PlayerState {
-                    state: PlayerSyncState::Synchronized,
-                    volume: Some(100),
-                    muted: Some(false),
-                }),
-            });
-            ws_tx.send_message(client_state).await.unwrap();
-            info!("Sent initial client/state");
+            let conn = client.split();
+            let mut message_rx = conn.messages;
+            let mut audio_rx = conn.audio;
+            let clock_sync = conn.clock_sync;
+            let _guard = conn.guard;
 
             // Send immediate initial clock sync
-            let client_transmitted = SystemTime::now()
-                .duration_since(UNIX_EPOCH)
-                .unwrap()
-                .as_micros() as i64;
-            let time_msg = Message::ClientTime(ClientTime { client_transmitted });
-            ws_tx.send_message(time_msg).await.unwrap();
+            // let client_transmitted = SystemTime::now()
+            //     .duration_since(UNIX_EPOCH)
+            //     .unwrap()
+            //     .as_micros() as i64;
+            // let time_msg = Message::ClientTime(ClientTime { client_transmitted });
+            // ws_tx.send_message(time_msg).await.unwrap();
             info!("Sent initial client/time for clock sync");
 
             info!("Waiting for stream to start...");
 
             // Spawn clock sync task that sends client/time every 5 seconds
-            tokio::spawn(async move {
-                let mut interval = interval(Duration::from_secs(5));
-                loop {
-                    interval.tick().await;
+            // tokio::spawn(async move {
+            //     let mut interval = interval(Duration::from_secs(5));
+            //     loop {
+            //         interval.tick().await;
 
-                    // Get current Unix epoch microseconds
-                    let client_transmitted = SystemTime::now()
-                        .duration_since(UNIX_EPOCH)
-                        .unwrap()
-                        .as_micros() as i64;
+            //         // Get current Unix epoch microseconds
+            //         let client_transmitted = SystemTime::now()
+            //             .duration_since(UNIX_EPOCH)
+            //             .unwrap()
+            //             .as_micros() as i64;
 
-                    let time_msg = Message::ClientTime(ClientTime { client_transmitted });
+            //         let time_msg = Message::ClientTime(ClientTime { client_transmitted });
 
-                    // Send time sync message
-                    if let Err(e) = ws_tx.send_message(time_msg).await {
-                        debug!("Failed to send time sync: {}", e);
-                        break;
-                    }
-                }
-            });
+            //         // Send time sync message
+            //         if let Err(e) = ws_tx.send_message(time_msg).await {
+            //             debug!("Failed to send time sync: {}", e);
+            //             break;
+            //         }
+            //     }
+            // });
 
             // // Configuration from environment variables
             let start_buffer_ms = env_u64("SS_PLAY_START_BUFFER_MS", 500);
