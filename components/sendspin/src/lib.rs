@@ -56,6 +56,10 @@ pub struct SendspinConfig {
     pub output_id: Option<String>,
     pub bit_depth: Option<u8>,
     pub sample_rate: Option<u32>,
+    /// ALSA buffer size in frames. Increase this on slow hardware (e.g. Raspberry Pi Zero W)
+    /// to prevent buffer underruns ("Broken pipe" errors). At 48 kHz stereo,
+    /// 4096 frames ≈ 85 ms. Default: system default (typically 512-1024 frames).
+    pub buffer_size: Option<u32>,
 }
 
 config_template!(
@@ -106,6 +110,7 @@ impl Module for UbiHomePlatform {
         let id = self.sendspin_config.id.clone().unwrap_or(name.clone());
         let bit_depth = self.sendspin_config.bit_depth.unwrap_or(16);
         let sample_rate = self.sendspin_config.sample_rate.unwrap_or(48000);
+        let buffer_size = self.sendspin_config.buffer_size;
 
         let mut selected_device: Option<Device> = None;
         // List Hosts
@@ -299,6 +304,7 @@ impl Module for UbiHomePlatform {
                                 selected_device.clone(),
                                 100,
                                 false,
+                                buffer_size,
                             ) {
                                 Ok(player) => {
                                     info!("Synced audio output initialized");

@@ -18,7 +18,7 @@ parking_lot = "0.12"
 mdns-sd = "0.17.2"
 # Use until https://github.com/RustAudio/cpal/issues/1157
 # sendspin = { path = "../../../../DanielHabenicht/fork.sendspin-rs/" }
-sendspin = { git = "https://github.com/DanielHabenicht/fork.sendspin-rs", rev = "82b8cc51ac96aba4e8e46c7fad9b9fd50c72ee03" } #branch = "pi-zero-w-cpal-errors"
+sendspin = { git = "https://github.com/DanielHabenicht/fork.sendspin-rs", rev = "00d7469ec0001386dfa712110c0f565a6211c816" } #branch = "pi-zero-w-cpal-errors"
 # cpal = "0.15.3"
 cpal = { git = "https://github.com/rustaudio/cpal", rev = "c3afb40df0b3aa7386ac42b4aa221a7b1ba3ce40" }
 garde = { version = "0.22.1", features = ["serde"] }
