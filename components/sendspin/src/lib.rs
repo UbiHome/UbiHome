@@ -9,6 +9,7 @@ use sendspin::sync::ClockSync;
 use sendspin::ProtocolClientBuilder;
 use serde::{Deserialize, Deserializer};
 use std::collections::HashMap;
+use std::f32::consts::E;
 use std::sync::Arc;
 use std::time::{Instant, SystemTime, UNIX_EPOCH};
 use std::{future::Future, pin::Pin, str};
@@ -318,11 +319,15 @@ impl Module for UbiHomePlatform {
                         PlayerCommand::Enqueue(buffer) => {
                             if let Some(ref player) = synced_player {
                                 player.enqueue(buffer);
+                            } else {
+                                debug!("Player not initialized yet, dropping audio buffer");
                             }
                         }
                         PlayerCommand::Clear => {
                             if let Some(ref player) = synced_player {
                                 player.clear();
+                            } else {
+                                debug!("Player not initialized yet, cannot clear");
                             }
                         }
                         PlayerCommand::Shutdown => {
@@ -530,6 +535,7 @@ impl Module for UbiHomePlatform {
                         }
                     }
                     else => {
+                        debug!("Message and audio channels closed, exiting");
                         // Both channels closed
                         break;
                     }
