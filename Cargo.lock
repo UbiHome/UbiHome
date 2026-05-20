@@ -882,6 +882,35 @@ dependencies = [
 [[package]]
 name = "cpal"
 version = "0.18.0"
+source = "git+https://github.com/rustaudio/cpal?branch=fix%2Falsa-double-open#b57e74f6346d5fd6a518515089de4fa9c960592c"
+dependencies = [
+ "alsa",
+ "block2 0.6.2",
+ "coreaudio-rs",
+ "dasp_sample",
+ "jni 0.21.1",
+ "js-sys",
+ "libc",
+ "mach2 0.6.0",
+ "ndk",
+ "ndk-context",
+ "num-derive",
+ "num-traits",
+ "objc2 0.6.4",
+ "objc2-audio-toolbox",
+ "objc2-avf-audio",
+ "objc2-core-audio",
+ "objc2-core-audio-types",
+ "objc2-core-foundation",
+ "objc2-foundation 0.3.2",
+ "web-sys",
+ "windows 0.61.3",
+ "windows-core 0.61.2",
+]
+
+[[package]]
+name = "cpal"
+version = "0.18.0"
 source = "git+https://github.com/rustaudio/cpal?rev=c3afb40df0b3aa7386ac42b4aa221a7b1ba3ce40#c3afb40df0b3aa7386ac42b4aa221a7b1ba3ce40"
 dependencies = [
  "alsa",
@@ -3867,7 +3896,7 @@ name = "sendspin"
 version = "0.2.0"
 source = "git+https://github.com/DanielHabenicht/fork.sendspin-rs?rev=66867d40fafd77e1e9d6f84af4630588bb8eb91f#66867d40fafd77e1e9d6f84af4630588bb8eb91f"
 dependencies = [
- "cpal",
+ "cpal 0.18.0 (git+https://github.com/rustaudio/cpal?rev=c3afb40df0b3aa7386ac42b4aa221a7b1ba3ce40)",
  "crossbeam",
  "futures-util",
  "libc",
@@ -5038,7 +5067,7 @@ dependencies = [
 name = "ubihome-sendspin"
 version = "0.13.0"
 dependencies = [
- "cpal",
+ "cpal 0.18.0 (git+https://github.com/rustaudio/cpal?branch=fix%2Falsa-double-open)",
  "duration-str",
  "garde",
  "log",
