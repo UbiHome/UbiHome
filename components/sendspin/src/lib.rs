@@ -312,7 +312,7 @@ impl Module for UbiHomePlatform {
                                     synced_player = Some(player);
                                 }
                                 Err(e) => {
-                                    debug!("Failed to create synced output: {}", e);
+                                    error!("Failed to create synced output: {}", e);
                                 }
                             }
                         }
@@ -320,14 +320,14 @@ impl Module for UbiHomePlatform {
                             if let Some(ref player) = synced_player {
                                 player.enqueue(buffer);
                             } else {
-                                debug!("Player not initialized yet, dropping audio buffer");
+                                log::warn!("Player not initialized yet, dropping audio buffer");
                             }
                         }
                         PlayerCommand::Clear => {
                             if let Some(ref player) = synced_player {
                                 player.clear();
                             } else {
-                                debug!("Player not initialized yet, cannot clear");
+                                log::warn!("Player not initialized yet, cannot clear");
                             }
                         }
                         PlayerCommand::Shutdown => {

@@ -909,35 +909,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "cpal"
-version = "0.18.0"
-source = "git+https://github.com/rustaudio/cpal?rev=c3afb40df0b3aa7386ac42b4aa221a7b1ba3ce40#c3afb40df0b3aa7386ac42b4aa221a7b1ba3ce40"
-dependencies = [
- "alsa",
- "block2 0.6.2",
- "coreaudio-rs",
- "dasp_sample",
- "jni 0.21.1",
- "js-sys",
- "libc",
- "mach2 0.6.0",
- "ndk",
- "ndk-context",
- "num-derive",
- "num-traits",
- "objc2 0.6.4",
- "objc2-audio-toolbox",
- "objc2-avf-audio",
- "objc2-core-audio",
- "objc2-core-audio-types",
- "objc2-core-foundation",
- "objc2-foundation 0.3.2",
- "web-sys",
- "windows 0.62.2",
- "windows-core 0.62.2",
-]
-
-[[package]]
 name = "cpufeatures"
 version = "0.2.17"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3894,9 +3865,9 @@ checksum = "8a7852d02fc848982e0c167ef163aaff9cd91dc640ba85e263cb1ce46fae51cd"
 [[package]]
 name = "sendspin"
 version = "0.2.0"
-source = "git+https://github.com/DanielHabenicht/fork.sendspin-rs?rev=66867d40fafd77e1e9d6f84af4630588bb8eb91f#66867d40fafd77e1e9d6f84af4630588bb8eb91f"
+source = "git+https://github.com/DanielHabenicht/fork.sendspin-rs?rev=1a55d2bb69f102332e1fa72c47eb6697f756c408#1a55d2bb69f102332e1fa72c47eb6697f756c408"
 dependencies = [
- "cpal 0.18.0 (git+https://github.com/rustaudio/cpal?rev=c3afb40df0b3aa7386ac42b4aa221a7b1ba3ce40)",
+ "cpal",
  "crossbeam",
  "futures-util",
  "libc",
@@ -5067,7 +5038,7 @@ dependencies = [
 name = "ubihome-sendspin"
 version = "0.13.0"
 dependencies = [
- "cpal 0.18.0 (git+https://github.com/rustaudio/cpal?branch=fix%2Falsa-double-open)",
+ "cpal",
  "duration-str",
  "garde",
  "log",
