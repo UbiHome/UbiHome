@@ -335,6 +335,7 @@ impl Module for UbiHomePlatform {
                         }
                     }
                 }
+                debug!("Audio player thread exited");
             });
 
             // Message handling variables
