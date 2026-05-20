@@ -4,12 +4,13 @@ use cpal::Device;
 use log::{debug, error, info, trace};
 use sendspin::audio::decode::{Decoder, PcmDecoder, PcmEndian};
 use sendspin::audio::{AudioBuffer, AudioFormat, Codec, SyncedPlayer};
-use sendspin::protocol::messages::{AudioFormatSpec, Message, PlayerState, PlayerV1Support};
+use sendspin::protocol::messages::{
+    AudioFormatSpec, ClientState, Message, PlayerCommandType, PlayerState, PlayerV1Support,
+};
 use sendspin::sync::ClockSync;
 use sendspin::ProtocolClientBuilder;
 use serde::{Deserialize, Deserializer};
 use std::collections::HashMap;
-use std::f32::consts::E;
 use std::sync::Arc;
 use std::time::{Instant, SystemTime, UNIX_EPOCH};
 use std::{future::Future, pin::Pin, str};
@@ -30,6 +31,10 @@ enum PlayerCommand {
     Clear,
     /// Initialize the player with the given format and clock sync
     Init(AudioFormat, ClockSyncRef),
+    /// Set the player volume (0-100)
+    SetVolume(u8),
+    /// Mute or unmute the player
+    SetMute(bool),
     /// Shutdown the player thread
     Shutdown,
 }
@@ -245,6 +250,7 @@ impl Module for UbiHomePlatform {
             let mut message_rx = conn.messages;
             let mut audio_rx = conn.audio;
             let clock_sync = conn.clock_sync;
+            let sender = conn.sender;
             let _guard = conn.guard;
 
             // Send immediate initial clock sync
@@ -258,29 +264,7 @@ impl Module for UbiHomePlatform {
 
             info!("Waiting for stream to start...");
 
-            // Spawn clock sync task that sends client/time every 5 seconds
-            // tokio::spawn(async move {
-            //     let mut interval = interval(Duration::from_secs(5));
-            //     loop {
-            //         interval.tick().await;
-
-            //         // Get current Unix epoch microseconds
-            //         let client_transmitted = SystemTime::now()
-            //             .duration_since(UNIX_EPOCH)
-            //             .unwrap()
-            //             .as_micros() as i64;
-
-            //         let time_msg = Message::ClientTime(ClientTime { client_transmitted });
-
-            //         // Send time sync message
-            //         if let Err(e) = ws_tx.send_message(time_msg).await {
-            //             debug!("Failed to send time sync: {}", e);
-            //             break;
-            //         }
-            //     }
-            // });
-
-            // // Configuration from environment variables
+            // Configuration from environment variables
             let start_buffer_ms = env_u64("SS_PLAY_START_BUFFER_MS", 500);
             let log_lead = env_bool("SS_LOG_LEAD");
             info!(
@@ -328,6 +312,20 @@ impl Module for UbiHomePlatform {
                                 player.clear();
                             } else {
                                 log::warn!("Player not initialized yet, cannot clear");
+                            }
+                        }
+                        PlayerCommand::SetVolume(vol) => {
+                            if let Some(ref mut player) = synced_player {
+                                player.set_volume(vol);
+                            } else {
+                                log::warn!("Player not initialized yet, cannot set volume");
+                            }
+                        }
+                        PlayerCommand::SetMute(muted) => {
+                            if let Some(ref mut player) = synced_player {
+                                player.set_mute(muted);
+                            } else {
+                                log::warn!("Player not initialized yet, cannot set mute");
                             }
                         }
                         PlayerCommand::Shutdown => {
@@ -433,6 +431,63 @@ impl Module for UbiHomePlatform {
                                 playback_started = false;
                                 first_chunk_logged = false;
                                 player_initialized = false;
+                            }
+                            Message::ServerCommand(cmd) => {
+                                // debug!("Received server command: {}", );
+                                // Set Volume
+                                if !player_initialized {
+                                    debug!("Received server command before player initialized: {:?}", cmd);
+                                    continue;
+                                }
+                                match cmd.player {
+                                    None => {
+                                        debug!("Received server command without player field: {:?}", cmd);
+                                        continue;
+                                    }
+                                    Some(player) => {
+                                        match player.command {
+                                            PlayerCommandType::Volume => {
+                                                log::info!("Received volume command");
+                                                match player.volume {
+                                                    None => {
+                                                        debug!("Received server command without volume field");
+                                                    }
+                                                    Some(vol) => {
+                                                        info!("Setting player volume to {}", vol);
+                                                        let _ = player_tx.send(PlayerCommand::SetVolume(vol));
+                                                    }
+                                                }
+                                            }
+                                            PlayerCommandType::Mute => {
+                                                match player.mute {
+                                                    None => {
+                                                        debug!("Received server command without muted field");
+                                                    }
+                                                    Some(mute) => {
+                                                        log::info!("Received mute command: {}", mute);
+                                                        let _ = player_tx.send(PlayerCommand::SetMute(mute));
+                                                        sender.send_message(Message::ClientState(
+                                                            ClientState {
+                                                                state: None,
+                                                                player: Some(PlayerState {
+                                                                    volume: None,
+                                                                    muted: Some(mute),
+                                                                    static_delay_ms: None,
+                                                                    supported_commands: None,
+                                                                }),
+                                                            }
+                                                        )).await.unwrap();
+                                                    }
+                                                }
+                                            }
+                                            _ => {
+                                                debug!("Received unsupported server command: {:?}", player.command);
+                                                continue;
+                                            }
+                                        }
+
+                                    }
+                                }
                             }
                             _ => {
                                 debug!("Received message: {:?}", msg);
