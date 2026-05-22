@@ -4,6 +4,11 @@ sidebar:
   badge:
     text: Experimental
     variant: caution
+tags: 
+  - windows
+  - linux
+  - macos
+
 ---
 
 UbiHome can be used as a client for [Sendspin](https://www.sendspin-audio.com/), e.g. for [Music Assistant](https://www.music-assistant.io/) which natively integrates with Home Assistant.

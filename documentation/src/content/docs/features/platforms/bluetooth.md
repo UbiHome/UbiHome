@@ -1,5 +1,7 @@
 ---
 title: 'Bluetooth'
+tags:
+  - linux
 ---
 
 Scans for Bluetooth devices and reports them to HomeAssistant via its native API.

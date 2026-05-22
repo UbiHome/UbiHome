@@ -1,5 +1,9 @@
 ---
 title: 'Power Utilities'
+tags:
+  - linux
+  - macos
+  - windows
 ---
 
 ```yaml

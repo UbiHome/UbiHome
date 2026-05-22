@@ -22,9 +22,8 @@ tags:
     color: '#64748b'
 
   # Hardware Platforms
-  raspberry-pi:
-    label: RaspberryPi
-    description: test.log
+  raspberry-pi-zero-w-rev1:
+    label: RaspberryPi Zero W Rev1
     color: '#000000'
 
   # OS

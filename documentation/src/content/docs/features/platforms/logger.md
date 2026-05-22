@@ -1,5 +1,9 @@
 ---
 title: 'Logger'
+tags:
+  - linux
+  - macos
+  - windows
 ---
 
 ```yaml title="Example configuration entry"

@@ -1,5 +1,7 @@
 ---
 title: 'GPIO'
+tags:
+  - linux
 ---
 
 ```yaml
