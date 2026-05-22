@@ -12,7 +12,7 @@ ubihome-core = { path = "../core", features = ["ip"] }
 serde_json = "1.0"
 serde_yaml = "0.9.34"
 duration-str = "0.16.1"
-souvlaki = "0.8.2"
+souvlaki = "0.8.3"
 serde-saphyr = { version = "0.0.26", features = ["garde", "miette"] }
 garde = { version = "0.22.1", features = ["serde"] }
 

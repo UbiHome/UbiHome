@@ -55,7 +55,7 @@ config_template!(
 pub struct UbiHomePlatform {
     config: MediaControlsConfig,
     components: Vec<UbiComponent>,
-    events: HashMap<String, UbiEvent>,
+    ubi_events: HashMap<String, UbiEvent>,
 }
 
 impl Module for UbiHomePlatform {
@@ -90,7 +90,7 @@ impl Module for UbiHomePlatform {
         Ok(UbiHomePlatform {
             config: config.media_controls,
             components,
-            events,
+            ubi_events: events,
         })
     }
 
@@ -105,7 +105,7 @@ impl Module for UbiHomePlatform {
     ) -> Pin<Box<dyn Future<Output = Result<(), Box<dyn std::error::Error>>> + Send + 'static>>
     {
         let config = self.config.clone();
-        let events = self.events.clone();
+        let ubi_events = self.ubi_events.clone();
         // let sender = buttons.clone();
         Box::pin(async move {
             if let Some(display_entity) = config.display_entity {
@@ -114,6 +114,12 @@ impl Module for UbiHomePlatform {
                     "Subscribing to media control display entity: {}",
                     display_entity
                 );
+                sender
+                    .send(ChangedMessage::APISubscribeEntity {
+                        entity: display_entity.clone(),
+                        attribute: "".to_string(),
+                    })
+                    .unwrap();
                 sender
                     .send(ChangedMessage::APISubscribeEntity {
                         entity: display_entity.clone(),
@@ -144,12 +150,6 @@ impl Module for UbiHomePlatform {
                         attribute: "entity_picture".to_string(),
                     })
                     .unwrap();
-                sender
-                    .send(ChangedMessage::APISubscribeEntity {
-                        entity: display_entity.clone(),
-                        attribute: "".to_string(),
-                    })
-                    .unwrap();
             }
 
             #[cfg(not(target_os = "windows"))]
@@ -173,16 +173,17 @@ impl Module for UbiHomePlatform {
             debug!("Create MediaControls instance");
             // The closure must be Send and have a static lifetime.
             let sender_clone = sender.clone();
-            let event = events
+            let event = ubi_events
                 .iter()
                 .next()
                 .map(|(id, event)| (id.clone(), event.clone()));
+
             if let Some((id, event)) = event {
                 controls
-                    .attach(move |event: MediaControlEvent| {
-                        println!("Event received: {:?}", event);
+                    .attach(move |control_event: MediaControlEvent| {
+                        println!("Event received: {:?}", control_event);
                         let mut message: Option<ChangedMessage> = None;
-                        match event {
+                        match control_event {
                             MediaControlEvent::Play => {
                                 message = Some(ChangedMessage::EventChange {
                                     key: id.to_string(),
