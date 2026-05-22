@@ -1,20 +1,12 @@
+import { existsSync, readdirSync } from "node:fs";
+import { join } from "node:path";
 import starlight from "@astrojs/starlight";
 import { defineConfig } from "astro/config";
-import { existsSync, readdirSync } from "fs";
-import { join } from "path";
 import starlightLatestVersion from "starlight-latest-version";
 import starlightLinksValidator from "starlight-links-validator";
 import starlightSidebarTopics from "starlight-sidebar-topics";
-import starlightTagsPlugin from "starlight-tags";
 import starlightSiteGraph from "starlight-site-graph";
-
-// Helper function to convert snake_case to Title Case
-function formatLabel(str) {
-	return str
-		.split("_")
-		.map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-		.join(" ");
-}
+import starlightTagsPlugin from "starlight-tags";
 
 // Generate examples sidebar items by reading the examples directory
 function getExamplesItems() {

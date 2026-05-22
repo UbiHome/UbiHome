@@ -1,4 +1,7 @@
 ---
+// biome-ignore-all lint/correctness/noUnusedImports: not supported yet
+// biome-ignore-all lint/correctness/noUnusedVariables: not supported yet
+
 import Default from "@astrojs/starlight/components/PageSidebar.astro";
 import { PageGraph } from "starlight-site-graph/components";
 
@@ -13,9 +16,12 @@ const stripSlashes = (value: string, onlyStripPrefix?: boolean): string => {
 	return normalized;
 };
 
-const ensureTrailingSlash = (value: string): string => (value.endsWith("/") ? value : `${value}/`);
+const ensureTrailingSlash = (value: string): string =>
+	value.endsWith("/") ? value : `${value}/`;
 
-const slug = ensureTrailingSlash(stripSlashes(Astro.url.pathname.replaceAll("\\", "/")));
+const slug = ensureTrailingSlash(
+	stripSlashes(Astro.url.pathname.replaceAll("\\", "/")),
+);
 ---
 
 <PageGraph class="right-sidebar-panel slsg-graph-panel">

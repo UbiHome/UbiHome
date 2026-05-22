@@ -1,4 +1,6 @@
 ---
+// biome-ignore-all lint/correctness/noUnusedImports: not supported yet
+// biome-ignore-all lint/correctness/noUnusedVariables: not supported yet
 /**
  * Custom PageTitle that displays tags below the page heading
  */
@@ -6,19 +8,19 @@ import StarlightPageTitle from "@astrojs/starlight/components/PageTitle.astro";
 import { TagsList } from "starlight-tags/components";
 
 interface StarlightRouteData {
-  tags?: string[];
-  hideTags?: boolean;
+	tags?: string[];
+	hideTags?: boolean;
 }
 
 interface StarlightLocals {
-  starlightRoute?: {
-    entry?: {
-      data?: StarlightRouteData;
-    };
-  };
-  starlightTags?: {
-    tags: Map<string, { type?: string }>;
-  };
+	starlightRoute?: {
+		entry?: {
+			data?: StarlightRouteData;
+		};
+	};
+	starlightTags?: {
+		tags: Map<string, { type?: string }>;
+	};
 }
 
 const locals = Astro.locals as StarlightLocals;
@@ -26,7 +28,9 @@ const pageData = locals.starlightRoute?.entry?.data;
 const pageTagIds = pageData?.tags ?? [];
 const hideTags = pageData?.hideTags ?? false;
 
-const osTagIds = pageTagIds.filter((tagId) => locals.starlightTags?.tags.get(tagId)?.type === "os");
+const osTagIds = pageTagIds.filter(
+	(tagId) => locals.starlightTags?.tags.get(tagId)?.type === "os",
+);
 ---
 
 <StarlightPageTitle {...Astro.props} />
