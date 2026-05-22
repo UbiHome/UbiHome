@@ -6,6 +6,8 @@ sidebar:
     variant: note
 ---
 
+Answers for mdns requests. This allows UbiHome to be detected by Home Assistant installations.
+
 ```yaml
 mdns:
 ```
