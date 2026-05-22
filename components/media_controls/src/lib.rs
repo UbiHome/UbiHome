@@ -1,4 +1,4 @@
-use log::{debug, error, info};
+use log::{debug, error};
 use serde::{Deserialize, Deserializer};
 use std::{collections::HashMap, time::Duration};
 use std::{future::Future, pin::Pin, str};
@@ -173,54 +173,48 @@ impl Module for UbiHomePlatform {
             debug!("Create MediaControls instance");
             // The closure must be Send and have a static lifetime.
             let sender_clone = sender.clone();
-            let event = ubi_events
-                .iter()
-                .next()
-                .map(|(id, event)| (id.clone(), event.clone()));
+            let event_id = ubi_events.keys().next().cloned();
 
-            if let Some((id, event)) = event {
-                controls
-                    .attach(move |control_event: MediaControlEvent| {
-                        println!("Event received: {:?}", control_event);
-                        let mut message: Option<ChangedMessage> = None;
-                        match control_event {
-                            MediaControlEvent::Play => {
-                                message = Some(ChangedMessage::EventChange {
-                                    key: id.to_string(),
-                                    r#type: "play".to_string(),
-                                });
-                            }
-                            MediaControlEvent::Pause => {
-                                message = Some(ChangedMessage::EventChange {
-                                    key: id.to_string(),
-                                    r#type: "pause".to_string(),
-                                });
-                            }
-                            MediaControlEvent::Next => {
-                                message = Some(ChangedMessage::EventChange {
-                                    key: id.to_string(),
-                                    r#type: "next".to_string(),
-                                });
-                            }
-                            MediaControlEvent::Previous => {
-                                message = Some(ChangedMessage::EventChange {
-                                    key: id.to_string(),
-                                    r#type: "previous".to_string(),
-                                });
-                            }
-                            MediaControlEvent::Stop => {
-                                message = Some(ChangedMessage::EventChange {
-                                    key: id.to_string(),
-                                    r#type: "stop".to_string(),
-                                });
-                            }
-                            _ => {}
-                        }
-                        if let Some(message) = message {
-                            sender_clone.send(message).unwrap();
-                        }
-                    })
-                    .unwrap();
+            if let Err(err) = controls.attach(move |control_event: MediaControlEvent| {
+                println!("Event received: {:?}", control_event);
+
+                let Some(id) = event_id.as_ref() else {
+                    return;
+                };
+
+                let message: Option<ChangedMessage> = match control_event {
+                    MediaControlEvent::Play => Some(ChangedMessage::EventChange {
+                        key: id.to_string(),
+                        r#type: "play".to_string(),
+                    }),
+                    MediaControlEvent::Pause => Some(ChangedMessage::EventChange {
+                        key: id.to_string(),
+                        r#type: "pause".to_string(),
+                    }),
+                    MediaControlEvent::Next => Some(ChangedMessage::EventChange {
+                        key: id.to_string(),
+                        r#type: "next".to_string(),
+                    }),
+                    MediaControlEvent::Previous => Some(ChangedMessage::EventChange {
+                        key: id.to_string(),
+                        r#type: "previous".to_string(),
+                    }),
+                    MediaControlEvent::Stop => Some(ChangedMessage::EventChange {
+                        key: id.to_string(),
+                        r#type: "stop".to_string(),
+                    }),
+                    _ => None,
+                };
+                if let Some(message) = message {
+                    if let Err(send_err) = sender_clone.send(message) {
+                        error!("Failed to send media control event: {:?}", send_err);
+                    }
+                }
+            }) {
+                error!(
+                    "Failed to initialize media control event handling: {:?}",
+                    err
+                );
             }
 
             // Handle Button Presses
