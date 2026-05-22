@@ -31,11 +31,13 @@ export class UbiHome {
 
 		return dag
 			.container()
-			.from("node:22-slim")
-			.withMountedDirectory("/docs", docsDir)
-			.withMountedCache("/docs/node_modules", dag.cacheVolume("docs-node-modules"))
+			.from("node:24-slim")
 			.withWorkdir("/docs")
-			.withExec(["npm", "install"]);
+			.withMountedCache("/docs/node_modules", dag.cacheVolume("docs-node-modules"))
+			.withFile("/docs/package.json", docsDir.file("package.json"))
+			.withFile("/docs/package-lock.json", docsDir.file("package-lock.json"))
+			.withExec(["npm", "ci"])
+			.withMountedDirectory("/docs", docsDir);
 	}
 
 	/**
