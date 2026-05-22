@@ -196,8 +196,8 @@ pub(crate) fn update(include_pre_release: bool) -> Result<(), String> {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use super::is_normal_release_tag;
+    use super::*;
 
     #[test]
     fn accepts_normal_release_tag() {
