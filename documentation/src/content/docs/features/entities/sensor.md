@@ -47,10 +47,12 @@ Common attributes are documented in [Common Component Properties](/features/comp
 
 For platform-specific configuration options, use the linked platform pages.
 
-## Used in Examples
-
-- [Monitor system resources](/examples/system_ressources/)
-- [Measure Temperature, Humidity and Pressure with BME280](/examples/measure_temperature/)
-- [Report your laptop's ambient light sensor](/examples/illuminance/)
 
 Similar to ESPHome: [Sensor](https://esphome.io/components/sensor/)
+
+<!-- Backlinks to be displayed  -->
+<div style="display:none" aria-hidden="true">
+  <a href="/examples/system_ressources/">Monitor system resources</a>
+  <a href="/examples/measure_temperature/">Measure Temperature, Humidity and Pressure with BME280</a>
+  <a href="/examples/illuminance/">Report your laptop's ambient light sensor</a>
+</div>

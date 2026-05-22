@@ -42,10 +42,12 @@ Common attributes are documented in [Common Component Properties](/features/comp
 
 For platform-specific configuration options, use the linked platform pages.
 
-## Used in Examples
-
-- [Motion Detection](/examples/motion_detection/)
-- [Automatic Screen Power Control](/examples/automatic_screen_power_control/)
-- [Monitor and control Bluetooth devices](/examples/bluetooth_monitor_control/)
 
 Similar to ESPHome: [Binary Sensor](https://esphome.io/components/binary_sensor/)
+
+<!-- Backlinks to be displayed  -->
+<div style="display:none" aria-hidden="true">
+  <a href="/examples/motion_detection/">Motion Detection</a>
+  <a href="/examples/automatic_screen_power_control/">Automatic Screen Power Control</a>
+  <a href="/examples/bluetooth_monitor_control/">Monitor and control Bluetooth devices</a>
+</div>

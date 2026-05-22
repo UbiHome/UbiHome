@@ -78,12 +78,13 @@ text_sensor:
     command: 'hostname'
 ```
 
-## Used in Examples
-
-- [Open a new tab in chrome](/examples/open_chrome_tab/)
-- [Display a Notification](/examples/display_notification/)
-- [Monitor system resources](/examples/system_ressources/)
-- [Turn Raspberry screen on or off](/examples/screen_on_off/)
-- [Automatic Screen Power Control](/examples/automatic_screen_power_control/)
-- [Monitor and control Bluetooth devices](/examples/bluetooth_monitor_control/)
+<!-- Backlinks to be displayed  -->
+<div style="display:none" aria-hidden="true">
+  <a href="/examples/open_chrome_tab/">Open a new tab in chrome</a>
+  <a href="/examples/display_notification/">Display a Notification</a>
+  <a href="/examples/system_ressources/">Monitor system resources</a>
+  <a href="/examples/screen_on_off/">Turn Raspberry screen on or off</a>
+  <a href="/examples/automatic_screen_power_control/">Automatic Screen Power Control</a>
+  <a href="/examples/bluetooth_monitor_control/">Monitor and control Bluetooth devices</a>
+</div>
 

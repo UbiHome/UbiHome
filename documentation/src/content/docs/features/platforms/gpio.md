@@ -16,7 +16,8 @@ binary_sensor:
     pin: 23
 ```
 
-## Used in Examples
-
-- [Motion Detection](/examples/motion_detection/)
-- [Automatic Screen Power Control](/examples/automatic_screen_power_control/)
+<!-- Backlinks to be displayed  -->
+<div style="display:none" aria-hidden="true">
+  <a href="/examples/motion_detection/">Motion Detection</a>
+  <a href="/examples/automatic_screen_power_control/">Automatic Screen Power Control</a>
+</div>

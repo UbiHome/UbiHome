@@ -31,11 +31,12 @@ button:
     action: sleep
 ```
 
-## Used in Examples
-
-- [Stop or reboot your system](/examples/stop_reboot/)
-
 Similar to ESPHome:
 
 - https://esphome.io/components/button/restart.html
 - https://esphome.io/components/button/shutdown
+
+<!-- Backlinks to be displayed  -->
+<div style="display:none" aria-hidden="true">
+  <a href="/examples/stop_reboot/">Stop or reboot your system</a>
+</div>

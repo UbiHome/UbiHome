@@ -37,11 +37,13 @@ Common attributes are documented in [Common Component Properties](/features/comp
 
 For platform-specific configuration options, use the linked platform pages.
 
-## Used in Examples
-
-- [Open a new tab in chrome](/examples/open_chrome_tab/)
-- [Display a Notification](/examples/display_notification/)
-- [Stop or reboot your system](/examples/stop_reboot/)
-- [Monitor and control Bluetooth devices](/examples/bluetooth_monitor_control/)
 
 Similar to ESPHome: [Button](https://esphome.io/components/button/)
+
+<!-- Backlinks to be displayed  -->
+<div style="display:none" aria-hidden="true">
+  <a href="/examples/open_chrome_tab/">Open a new tab in chrome</a>
+  <a href="/examples/display_notification/">Display a Notification</a>
+  <a href="/examples/stop_reboot/">Stop or reboot your system</a>
+  <a href="/examples/bluetooth_monitor_control/">Monitor and control Bluetooth devices</a>
+</div>

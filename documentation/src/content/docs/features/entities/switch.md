@@ -36,10 +36,11 @@ Common attributes are documented in [Common Component Properties](/features/comp
 
 For platform-specific configuration options, use the linked platform pages.
 
-## Used in Examples
-
-- [Turn Raspberry screen on or off](/examples/screen_on_off/)
-- [Automatic Screen Power Control](/examples/automatic_screen_power_control/)
+<!-- Backlinks to be displayed  -->
+<div style="display:none" aria-hidden="true">
+  <a href="/examples/screen_on_off/">Turn Raspberry screen on or off</a>
+  <a href="/examples/automatic_screen_power_control/">Automatic Screen Power Control</a>
+</div>
 
 ## Shell Platform Notes
 
