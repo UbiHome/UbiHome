@@ -11,7 +11,8 @@ use futures_util::StreamExt;
 use indicatif::{ProgressBar, ProgressStyle};
 use serde::Deserialize;
 
-const VERSION: &str = env!("GIT_TAG");
+const VERSION_GIT_TAG: &str = env!("GIT_TAG");
+const GIT_HASH: &str = env!("GIT_HASH");
 
 #[derive(Clone, Deserialize, Debug)]
 struct Release {
@@ -48,31 +49,30 @@ fn is_normal_release_tag(tag: &str) -> bool {
 fn build_update_changelog(
     releases: &[Release],
     include_pre_release: bool,
-    current_version: &str,
+    current_version_tag: &str,
 ) -> String {
-    let current_tag = format!("v{}", current_version);
-
     releases
         .iter()
-        .rev()
         .filter(|release| include_pre_release || is_normal_release_tag(&release.tag_name))
-        .take_while(|release| release.tag_name != current_tag)
-        .map(|release| format!("## {}\n\n{}", release.tag_name, release.body.trim()))
+        .take_while(|release| release.tag_name != current_version_tag)
+        .map(|release| release.body.clone())
+        .collect::<Vec<_>>()
+        .into_iter()
+        .rev()
         .collect::<Vec<_>>()
         .join("\n\n")
 }
 
-
 pub(crate) fn update(include_pre_release: bool) -> Result<(), String> {
     let rt = Runtime::new().unwrap();
     rt.block_on(async {
-        println!("Current version: {}\n", VERSION);
+        println!("Current version: {} ({})", VERSION_GIT_TAG, GIT_HASH);
 
         let client = reqwest::Client::new();
 
         let resp = client
             .get("https://api.github.com/repos/UbiHome/UbiHome/releases")
-            .header(USER_AGENT, format!("UbiHome {}", VERSION)) 
+            .header(USER_AGENT, format!("UbiHome {}", VERSION_GIT_TAG)) 
             .send()
             .await
             .unwrap();
@@ -86,18 +86,18 @@ pub(crate) fn update(include_pre_release: bool) -> Result<(), String> {
             return Err("No matching release found.".to_string());
         };
 
-        if new_version == format!("v{}", VERSION) {
+        if new_version == format!("v{}", VERSION_GIT_TAG) {
             println!("Already on the latest version.");
             return Ok(());
         }
 
 
-        let update_changelog = build_update_changelog(&releases, include_pre_release, VERSION);
-        println!("{}\n", update_changelog);
+        let update_changelog = build_update_changelog(&releases, include_pre_release, VERSION_GIT_TAG);
+        println!("Changes since:\n\n{}\n", update_changelog);
 
         let ans = Confirm::new(&format!("Update to version {}?", new_version))
             .with_default(true)
-            .with_help_message(format!("This will overwrite the current ({}) executable.", VERSION).as_str())
+            .with_help_message(format!("This will overwrite the current ({}) executable.", VERSION_GIT_TAG).as_str())
             .prompt();
 
         match ans {
