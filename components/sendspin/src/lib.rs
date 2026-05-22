@@ -292,7 +292,7 @@ impl Module for UbiHomePlatform {
                                 buffer_size,
                             ) {
                                 Ok(player) => {
-                                    info!("Synced audio output initialized");
+                                    debug!("Synced audio output initialized");
                                     synced_player = Some(player);
                                 }
                                 Err(e) => {
@@ -436,21 +436,20 @@ impl Module for UbiHomePlatform {
                                 // debug!("Received server command: {}", );
                                 // Set Volume
                                 if !player_initialized {
-                                    debug!("Received server command before player initialized: {:?}", cmd);
+                                    log::warn!("Received server command before player initialized: {:?}", cmd);
                                     continue;
                                 }
                                 match cmd.player {
                                     None => {
-                                        debug!("Received server command without player field: {:?}", cmd);
+                                        log::warn!("Received server command without player field: {:?}", cmd);
                                         continue;
                                     }
                                     Some(player) => {
                                         match player.command {
                                             PlayerCommandType::Volume => {
-                                                log::info!("Received volume command");
                                                 match player.volume {
                                                     None => {
-                                                        debug!("Received server command without volume field");
+                                                        log::warn!("Received server command without volume field");
                                                     }
                                                     Some(vol) => {
                                                         info!("Setting player volume to {}", vol);
@@ -461,7 +460,7 @@ impl Module for UbiHomePlatform {
                                             PlayerCommandType::Mute => {
                                                 match player.mute {
                                                     None => {
-                                                        debug!("Received server command without muted field");
+                                                        log::warn!("Received server command without muted field");
                                                     }
                                                     Some(mute) => {
                                                         log::info!("Received mute command: {}", mute);
