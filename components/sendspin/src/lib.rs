@@ -147,14 +147,14 @@ impl Module for UbiHomePlatform {
 
                 // Output configs
                 if let Ok(conf) = device.default_output_config() {
-                    debug!("    Default output stream config:");
-                    debug!("      {conf:?}");
+                    trace!("    Default output stream config:");
+                    trace!("      {conf:?}");
                 }
 
                 if let Ok(configs) = device.supported_output_configs() {
-                    debug!("    Supported output stream config:\n");
+                    trace!("    Supported output stream config:\n");
                     for conf in configs {
-                        debug!("      {conf:?}");
+                        trace!("      {conf:?}");
                     }
                 }
 
