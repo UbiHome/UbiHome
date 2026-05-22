@@ -1,20 +1,6 @@
 ---
 import Default from "@astrojs/starlight/components/PageSidebar.astro";
 import { PageGraph } from "starlight-site-graph/components";
-import config from "virtual:starlight-site-graph/config";
-import astroConfig from "virtual:starlight-site-graph/astro-config";
-
-interface SitemapEntry {
-	title?: string;
-	backlinks?: string[];
-}
-
-const ensureTrailingSlash = (value: string, add: boolean): string => {
-	if (!add) {
-		return value.endsWith("/") ? value.slice(0, -1) : value;
-	}
-	return value.endsWith("/") ? value : `${value}/`;
-};
 
 const stripSlashes = (value: string, onlyStripPrefix?: boolean): string => {
 	let normalized = value;
@@ -27,41 +13,9 @@ const stripSlashes = (value: string, onlyStripPrefix?: boolean): string => {
 	return normalized;
 };
 
-const isExampleBacklink = (link: string): boolean => {
-	const normalized = stripSlashes(link);
-	return (
-		normalized === "examples" ||
-		normalized.startsWith("examples/") ||
-		normalized.includes("/examples/")
-	);
-};
+const ensureTrailingSlash = (value: string): string => (value.endsWith("/") ? value : `${value}/`);
 
-const isExamplesOverviewBacklink = (link: string): boolean => stripSlashes(link) === "examples";
-
-const isTagBacklink = (link: string): boolean => {
-	const normalized = stripSlashes(link);
-	return (
-		normalized === "tags" ||
-		normalized.startsWith("tags/") ||
-		normalized.includes("/tags/")
-	);
-};
-
-const trailingSlashes = astroConfig.trailingSlashes !== "never";
-const slugWithBase = ensureTrailingSlash(
-	stripSlashes(Astro.url.pathname.replaceAll("\\", "/")),
-	trailingSlashes,
-);
-
-const sitemap = (config.sitemapConfig?.sitemap ?? {}) as Record<string, SitemapEntry>;
-const backlinks = [...(sitemap[slugWithBase]?.backlinks ?? [])]
-	.filter((link) => !isTagBacklink(link))
-	.filter((link) => !isExamplesOverviewBacklink(link))
-	.sort((a, b) => (sitemap[a]?.title ?? a).localeCompare(sitemap[b]?.title ?? b));
-
-const exampleBacklinks = backlinks.filter(isExampleBacklink);
-const relatedBacklinks = backlinks.filter((link) => !isExampleBacklink(link));
-const showBacklinksPanel = backlinks.length > 0;
+const slug = ensureTrailingSlash(stripSlashes(Astro.url.pathname.replaceAll("\\", "/")));
 ---
 
 <PageGraph class="right-sidebar-panel slsg-graph-panel">
@@ -72,41 +26,25 @@ const showBacklinksPanel = backlinks.length > 0;
 	<slot />
 </Default>
 
-{showBacklinksPanel && (
-	<div class="right-sidebar-panel slsg-backlinks-panel" data-slug={slugWithBase}>
-		<h2>{Astro.locals.t("starlight-site-graph.backlinks")}</h2>
 
-		{exampleBacklinks.length > 0 && (
-			<section class="slsg-backlinks-section" data-group="examples">
-				<h3>Examples</h3>
-				<ul class="slsg-backlinks" style="--depth: 0;">
-					{exampleBacklinks.map((link) => (
-						<li style="--depth: 0;">
-							<a href={`/${stripSlashes(link, true)}`} style="--depth: 0;" target="_self" class="slsg-backlink">
-								<span style="--depth: 0;">{sitemap[link]?.title ?? link}</span>
-							</a>
-						</li>
-					))}
-				</ul>
-			</section>
-		)}
+<div class="right-sidebar-panel slsg-backlinks-panel" data-slug={slug} hidden>
+	<h2>{Astro.locals.t("starlight-site-graph.backlinks")}</h2>
 
-		{relatedBacklinks.length > 0 && (
-			<section class="slsg-backlinks-section" data-group="related">
-				<h3>Related</h3>
-				<ul class="slsg-backlinks" style="--depth: 0;">
-					{relatedBacklinks.map((link) => (
-						<li style="--depth: 0;">
-							<a href={`/${stripSlashes(link, true)}`} style="--depth: 0;" target="_self" class="slsg-backlink">
-								<span style="--depth: 0;">{sitemap[link]?.title ?? link}</span>
-							</a>
-						</li>
-					))}
-				</ul>
-			</section>
-		)}
-	</div>
-)}
+	<section class="slsg-backlinks-section" data-group="examples" hidden>
+		<h3>Examples</h3>
+		<ul class="slsg-backlinks" style="--depth: 0;"></ul>
+	</section>
+
+	<section class="slsg-backlinks-section" data-group="entities" hidden>
+		<h3>Entities</h3>
+		<ul class="slsg-backlinks" style="--depth: 0;"></ul>
+	</section>
+
+	<section class="slsg-backlinks-section" data-group="related" hidden>
+		<h3>Related</h3>
+		<ul class="slsg-backlinks" style="--depth: 0;"></ul>
+	</section>
+</div>
 
 <script>
 	const cleanLink = (link) => String(link || "").replace(/^\/+/, "");
@@ -129,6 +67,15 @@ const showBacklinksPanel = backlinks.length > 0;
 			normalized === "tags" ||
 			normalized.startsWith("tags/") ||
 			normalized.includes("/tags/")
+		);
+	};
+
+	const isEntitiesBacklink = (link) => {
+		const normalized = trimSlashes(link);
+		return (
+			normalized === "features/entities" ||
+			normalized.startsWith("features/entities/") ||
+			normalized.includes("/features/entities/")
 		);
 	};
 
@@ -158,6 +105,7 @@ const showBacklinksPanel = backlinks.length > 0;
 
 		const list = section.querySelector(".slsg-backlinks");
 		if (!list) return;
+		section.hidden = false;
 		list.innerHTML = "";
 
 		for (const link of links) {
@@ -181,15 +129,12 @@ const showBacklinksPanel = backlinks.length > 0;
 	};
 
 	window.addEventListener("DOMContentLoaded", () => {
-		if (!import.meta.env.PROD) return;
-
 		let baseUrl = import.meta.env.BASE_URL;
 		if (!baseUrl.endsWith("/")) {
 			baseUrl += "/";
 		}
 
-		const onIdle = window.requestIdleCallback || ((cb) => setTimeout(cb, 1));
-		onIdle(async () => {
+		(async () => {
 			const panel = document.querySelector(".slsg-backlinks-panel[data-slug]");
 			if (!panel) return;
 
@@ -211,20 +156,28 @@ const showBacklinksPanel = backlinks.length > 0;
 			);
 
 			const examples = allBacklinks.filter(isExampleBacklink);
-			const related = allBacklinks.filter((link) => !isExampleBacklink(link));
+			const entities = allBacklinks.filter(isEntitiesBacklink);
+			const related = allBacklinks.filter((link) => !isExampleBacklink(link) && !isEntitiesBacklink(link));
 
 			renderGroup(panel, "Examples", examples, sitemap, "examples");
+			renderGroup(panel, "Entities", entities, sitemap, "entities");
 			renderGroup(panel, "Related", related, sitemap, "related");
-		});
+
+			if (panel.querySelectorAll(".slsg-backlinks-section").length === 0) {
+				panel.remove();
+			} else {
+				panel.hidden = false;
+			}
+		})();
 	});
 </script>
 
 <style>
-	.slsg-backlinks-section + .slsg-backlinks-section {
+	:global(.slsg-backlinks-section + .slsg-backlinks-section) {
 		margin-top: 0.75rem;
 	}
 
-	.slsg-backlinks-section h3 {
+	:global(.slsg-backlinks-section h3) {
 		font-size: var(--sl-text-xs);
 		font-weight: 600;
 		color: var(--sl-color-gray-2);
