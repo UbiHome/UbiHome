@@ -52,7 +52,8 @@ button:
 
 > Sample script from: [https://superuser.com/questions/31917/is-there-a-way-to-show-notification-from-bash-script-in-ubuntu](https://superuser.com/questions/31917/is-there-a-way-to-show-notification-from-bash-script-in-ubuntu))
 
-## Related documentation
-
-- Component: [Button](/features/entities/button/)
-- Platform: [Shell](/features/platforms/shell/)
+<!-- Backlinks to be displayed  -->
+<div style="display:none" aria-hidden="true">
+  <a href="/features/entities/button/">Button</a>
+  <a href="/features/platforms/shell/">Shell</a>
+</div>

@@ -38,7 +38,8 @@ sensor:
       free | grep Mem | awk '{print $3/$2 * 100.0}'
 ```
 
-## Related documentation
-
-- Component: [Sensor](/features/entities/sensor/)
-- Platform: [Shell](/features/platforms/shell/)
+<!-- Backlinks to be displayed  -->
+<div style="display:none" aria-hidden="true">
+  <a href="/features/entities/sensor/">Sensor</a>
+  <a href="/features/platforms/shell/">Shell</a>
+</div>

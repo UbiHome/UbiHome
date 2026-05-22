@@ -51,7 +51,9 @@ binary_sensor:
       fi
 ```
 
-## Related documentation
-
-- Components: [Button](/features/entities/button/), [Binary Sensor](/features/entities/binary_sensor/)
-- Platform: [Shell](/features/platforms/shell/)
+<!-- Backlinks to be displayed  -->
+<div style="display:none" aria-hidden="true">
+  <a href="/features/entities/button/">Button</a>
+  <a href="/features/entities/binary_sensor/">Binary Sensor</a>
+  <a href="/features/platforms/shell/">Shell</a>
+</div>

@@ -42,7 +42,10 @@ binary_sensor:
 
 > If the commands are not working you can try out others from the [screen on/off example](/examples/screen_on_off/).
 
-## Related documentation
-
-- Components: [Switch](/features/entities/switch/), [Binary Sensor](/features/entities/binary_sensor/)
-- Platforms: [Shell](/features/platforms/shell/), [GPIO](/features/platforms/gpio/)
+<!-- Backlinks to be displayed  -->
+<div style="display:none" aria-hidden="true">
+  <a href="/features/entities/switch/">Switch</a>
+  <a href="/features/entities/binary_sensor/">Binary Sensor</a>
+  <a href="/features/platforms/shell/">Shell</a>
+  <a href="/features/platforms/gpio/">GPIO</a>
+</div>

@@ -25,7 +25,8 @@ button:
     command: 'chrome "https://ubihome.github.io/"'
 ```
 
-## Related documentation
-
-- Component: [Button](/features/entities/button/)
-- Platform: [Shell](/features/platforms/shell/)
+<!-- Backlinks to be displayed  -->
+<div style="display:none" aria-hidden="true">
+  <a href="/features/entities/button/">Button</a>
+  <a href="/features/platforms/shell/">Shell</a>
+</div>

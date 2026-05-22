@@ -33,12 +33,10 @@ button:
     action: sleep
 ```
 
-## Related documentation
-
-- Component: [Button](/features/entities/button/)
-- Platform: [Power Utilities](/features/platforms/power_utils/)
-
-Similar to ESPHome:
-
-- [https://esphome.io/components/button/restart](https://esphome.io/components/button/restart)
-- [https://esphome.io/components/button/shutdown](https://esphome.io/components/button/shutdown)
+<!-- Backlinks to be displayed  -->
+<div style="display:none" aria-hidden="true">
+  <a href="/features/entities/button/">Button</a>
+  <a href="/features/platforms/power_utils/">Power Utilities</a>
+  <a href="https://esphome.io/components/button/restart">https://esphome.io/components/button/restart</a>
+  <a href="https://esphome.io/components/button/shutdown">https://esphome.io/components/button/shutdown</a>
+</div>

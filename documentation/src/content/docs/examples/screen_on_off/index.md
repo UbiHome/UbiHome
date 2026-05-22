@@ -65,7 +65,8 @@ switch:
       fi
 ```
 
-## Related documentation
-
-- Component: [Switch](/features/entities/switch/)
-- Platform: [Shell](/features/platforms/shell/)
+<!-- Backlinks to be displayed  -->
+<div style="display:none" aria-hidden="true">
+  <a href="/features/entities/switch/">Switch</a>
+  <a href="/features/platforms/shell/">Shell</a>
+</div>
