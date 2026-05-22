@@ -44,6 +44,8 @@ binary_sensor:
 
 <!-- Backlinks to be displayed  -->
 <div style="display:none" aria-hidden="true">
+  <a href="/features/components/actions/"></a>
+  <a href="/features/components/filters/"></a>
   <a href="/features/entities/switch/">Switch</a>
   <a href="/features/entities/binary_sensor/">Binary Sensor</a>
   <a href="/features/platforms/shell/">Shell</a>
