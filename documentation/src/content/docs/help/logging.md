@@ -19,7 +19,7 @@ logger:
     ubihome_api: debug
 ```
 
-You can also set the log directory to a custom location. The default logging locations are document on the [logger documentation page](/features/utilities/logger/).
+You can also set the log directory to a custom location. The default logging locations are document on the [logger documentation page](/features/platforms/logger/).
 
 ```yaml
 logger:

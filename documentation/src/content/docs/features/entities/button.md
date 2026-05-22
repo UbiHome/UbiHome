@@ -11,7 +11,7 @@ button:
 ```
 
 :::note[Platform-specific properties]
-Each platform requires additional properties not shown above. Check the [Platforms documentation](/features/platforms/) and the page for your chosen platform for the full list of required and optional options.
+Each platform requires additional properties not shown above. Check the [Platforms documentation](/features/) and the page for your chosen platform for the full list of required and optional options.
 :::
 
 ## Attributes

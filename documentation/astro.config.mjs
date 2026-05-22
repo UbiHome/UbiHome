@@ -56,6 +56,7 @@ export default defineConfig({
 			],
 			components: {
 				PageTitle: "./src/components/PageTitleOverride.astro",
+				PageSidebar: "./src/components/PageSidebarOverride.astro",
 			},
 			plugins: [
 				starlightTagsPlugin({
@@ -143,9 +144,6 @@ export default defineConfig({
 						exclude: ["/tags", "/tags/**"],
 					},
 				),
-				starlightLinksValidator({
-					exclude: ["/tags/", "/tags/**"],
-				}),
 				// https://starlight-latest-version.trueberryless.org/
 				starlightLatestVersion({
 					source: {
@@ -155,6 +153,9 @@ export default defineConfig({
 				}),
 				// https://fevol.github.io/starlight-site-graph/configuration/
 				starlightSiteGraph(),
+				starlightLinksValidator({
+					exclude: ["/tags/", "/tags/**"],
+				}),
 			],
 		}),
 	],

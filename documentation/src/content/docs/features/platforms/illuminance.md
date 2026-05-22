@@ -1,12 +1,12 @@
 ---
-title: 'Illuminance Sensor'
+title: 'Illuminance'
 tags:
   - illuminance
   - linux
   - windows
 ---
 
-The illuminance sensor platform allows you to integrate a laptop ambient light sensors into UbiHome. It supports both Linux and Windows systems.
+The illuminance platform allows you to integrate a laptop ambient light sensors into UbiHome. It supports both Linux and Windows systems.
 
 ## Supported Platforms
 
@@ -105,6 +105,7 @@ illuminance:
        device_path: '/sys/bus/iio/devices/iio:device0/in_illuminance_raw'
    ```
 
-## Used in Examples
-
-- [Report your laptop's ambient light sensor](/examples/illuminance/)
+<!-- Backlinks to be displayed  -->
+<div style="display:none" aria-hidden="true">
+  <a href="/examples/illuminance/"></a>
+</div>

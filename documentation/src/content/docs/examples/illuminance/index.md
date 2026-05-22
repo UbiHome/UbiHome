@@ -23,7 +23,10 @@ sensor:
     update_interval: 15s
 ```
 
-## Related documentation
+<!-- Backlinks to be displayed  -->
+<div style="display:none" aria-hidden="true">
+  <a href="/features/entities/sensor/">Sensor</a>
+  <a href="/features/platforms/illuminance/">Illuminance</a>
+</div>
 
-- Component: [Sensor](/features/entities/sensor/)
-- Platform: [Illuminance](/features/platforms/illuminance/)
+
