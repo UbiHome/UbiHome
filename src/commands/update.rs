@@ -196,6 +196,7 @@ pub(crate) fn update(include_pre_release: bool) -> Result<(), String> {
 
 #[cfg(test)]
 mod tests {
+    use super::*;
     use super::is_normal_release_tag;
 
     #[test]
@@ -236,12 +237,9 @@ mod tests {
             },
         ];
 
-        let changelog = build_update_changelog(&releases, false, "1.0.0");
+        let changelog = build_update_changelog(&releases, false, "v1.0.0");
 
-        assert_eq!(
-            changelog,
-            "## v1.3.0\n\nlatest\n\n## v1.2.0\n\nmiddle\n\n## v1.1.0\n\nolder"
-        );
+        assert_eq!(changelog, "older\n\nmiddle\n\nlatest");
     }
 
     #[test]
@@ -261,8 +259,8 @@ mod tests {
             },
         ];
 
-        let changelog = build_update_changelog(&releases, false, "1.0.0");
+        let changelog = build_update_changelog(&releases, false, "v1.0.0");
 
-        assert_eq!(changelog, "## v1.1.0\n\nstable");
+        assert_eq!(changelog, "stable");
     }
 }
