@@ -59,6 +59,9 @@ export default defineConfig({
 				PageSidebar: "./src/components/PageSidebarOverride.astro",
 			},
 			plugins: [
+				// TODO: https://starlight-changelogs.netlify.app/providers/github/
+				// TODO: https://frostybee.github.io/starlight-announcement/
+				// https://frostybee.github.io/starlight-tags/
 				starlightTagsPlugin({
 					configPath: "tags.yml",
 					tagsPagesPrefix: "tags",
@@ -72,9 +75,6 @@ export default defineConfig({
 						showViewAllLink: true,
 					},
 				}),
-				// TODO: https://starlight-showcases.vercel.app/components/text/
-				// TODO: https://starlight-changelogs.netlify.app/providers/github/
-				// TODO: https://frostybee.github.io/starlight-announcement/
 				starlightSidebarTopics(
 					[
 						// https://starlight-sidebar-topics.netlify.app/docs/getting-started/
