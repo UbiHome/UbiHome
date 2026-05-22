@@ -4,26 +4,30 @@
 power_utils:
 
 button:
- - platform: power_utils
-   name: "Power Off"
-   action: poweroff
+  - platform: power_utils
+    name: 'Shutdown'
+    action: shutdown
 
- - platform: power_utils
-   name: "Reboot"
-   action: reboot
+  - platform: power_utils
+    name: 'Reboot'
+    action: reboot
 
- - platform: power_utils
-   name: "Logout"
-   action: logout
+  - platform: power_utils
+    name: 'Logout'
+    action: logout
 
- - platform: power_utils
-   name: "Hibernate"
-   action: hibernate
+  - platform: power_utils
+    name: 'Hibernate'
+    action: hibernate
 
- - platform: power_utils
-   name: "Sleep"
-   action: sleep
+  - platform: power_utils
+    name: 'Sleep'
+    action: sleep
 ```
+
+## Used in Examples
+
+- [Stop or reboot your system](../../examples/stop_reboot/index.md)
 
 Similar to ESPHome:
 

@@ -3,29 +3,32 @@
 {
 	"name": "Rust Dev Container",
 	// Or use a Dockerfile or Docker Compose file. More info: https://containers.dev/guide/dockerfile
-	"image": "mcr.microsoft.com/devcontainers/universal:2-focal",
+	"image": "mcr.microsoft.com/devcontainers/universal:5-noble",
 	"remoteEnv": {
 		"RUST_LOG": "debug",
 		"RUST_BACKTRACE": "1"
 	},
 	"customizations": {
 		"vscode": {
-		"extensions": [
-			"GitHub.copilot",
-			"GitHub.copilot-chat",
-			"GitHub.copilot-labs",
-			"ms-azuretools.vscode-docker",
-			"github.vscode-github-actions",
-			"streetsidesoftware.code-spell-checker",
-			"ms-python.python"
-		]
+			"extensions": [
+				"GitHub.copilot",
+				"GitHub.copilot-chat",
+				"GitHub.copilot-labs",
+				"ms-azuretools.vscode-docker",
+				"github.vscode-github-actions",
+				"streetsidesoftware.code-spell-checker",
+				"ms-python.python",
+				"biomejs.biome",
+				"charliermarsh.ruff"
+			]
 		},
 		"settings": {
-		"terminal.integrated.shell.linux": "/bin/bash"
+			"terminal.integrated.shell.linux": "/bin/bash"
 		}
 	},
-	"postCreateCommand": "sudo apt update && sudo apt install -y libdbus-1-dev pkg-config && rustup component add rustfmt clippy && cargo build",
+	"postCreateCommand": "sudo apt update && sudo apt install -y libdbus-1-dev pkg-config libasound2-dev && rustup component add rustfmt clippy && cargo build",
 	"features": {
-			"ghcr.io/devcontainers/features/rust:1": {}
+		"ghcr.io/devcontainers/features/rust:1": {},
+		"ghcr.io/devcontainers-extra/features/uv:1": {}
 	}
 }

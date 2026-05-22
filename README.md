@@ -1,34 +1,32 @@
 # UbiHome
 
-
-[Repository](https://github.com/UbiHome/UbiHome) -- [Documentation](https://ubihome.github.io/UbiHome/) -- [Issues](https://github.com/UbiHome/UbiHome/issues)
+[Repository](https://github.com/UbiHome/UbiHome) -- [Documentation](https://ubihome.github.io/) -- [Issues](https://github.com/UbiHome/UbiHome/issues)
 
 ---
 
 `UbiHome` is a ubiquitous system which allows you to integrate a device running any OS (Linux, Windows, MacOS) into your smart home via a simple YAML configuration file (similar to ESPHome for Microcontrollers).
 
 > Attention: This is a work in progress. The documentation is not complete and the project is still in development.
-> Still many things already work - so feel free to try it out.
+> Still many things already work (I already use it throughout my own home) - so feel free to try it out.
 
 Simply [download](https://ubihome.github.io/getting_started/index.html) the executable and configure it.
 
 ```yaml
-# Example configuration
+# Unsecure example configuration
 
 ubihome:
-  name: "Raspberry Pi behind the TV"
+  name: 'Raspberry Pi behind the TV'
 
-mqtt: 
-  broker: 192.168.100.23
-  username: ubihome-tv
-  password: <secure_password>
+api:
+# Have a look at the documentation to secure your API:
+# https://ubihome.github.io/features/connectivity/native_api.html
 
 sensor:
   - platform: shell
-    name: "RAM Usage"
+    name: 'RAM Usage'
     icon: mdi:memory
-    state_class: "measurement"
-    unit_of_measurement: "%"
+    state_class: 'measurement'
+    unit_of_measurement: '%'
     update_interval: 30s
     # Execute any command you like:
     command: |-
@@ -48,3 +46,7 @@ Test it out:
 ```
 
 Have a look at the [examples](https://ubihome.github.io/examples/index.html) to get started.
+
+### AI Disclaimer
+
+This project of course uses AI and encourages its usage. But the same conditions apply as with any contributions: Whoever contributes the code is responsible for it. Everything is reviewed and tested before being merged. 

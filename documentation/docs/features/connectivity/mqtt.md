@@ -1,11 +1,12 @@
 # MQTT
 
+> Note: Not all platforms are currently exposed via MQTT.
+
 The MQTT client connects to your MQTT broker and allows you to receive sensor updates or send actions to your device.
 
-This is a simple configuration: 
+This is a simple configuration:
 
 ```yaml
-
 mqtt:
   broker: <your_broker>
   username: <your_username>
@@ -32,4 +33,4 @@ Device Discovery is enabled by default, so the device will automatically be disc
 
 Similar to ESPHome:
 
- - https://esphome.io/components/mqtt.html
+- https://esphome.io/components/mqtt.html

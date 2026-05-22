@@ -17,19 +17,24 @@ jobs:
       matrix:
         include:
           - runs-on: ubuntu-24.04
-            target: x86_64-unknown-linux-musl
+            target: x86_64-unknown-linux-gnu
             file: ubihome
             release_file_name: ubihome-linux-x86_64
-            
+
           - runs-on: windows-latest
             target: x86_64-pc-windows-msvc
             file: ubihome.exe
             release_file_name: ubihome-windows-x86_64.exe
-            
-          - runs-on: macOS-latest
+
+          - runs-on: macos-26-intel
             target: x86_64-apple-darwin
             file: ubihome
             release_file_name: ubihome-macos-x86_64
+
+          - runs-on: macos-26
+            target: aarch64-apple-darwin
+            file: ubihome
+            release_file_name: ubihome-macos-aarch64
 
           - runs-on: ubuntu-24.04
             target: armv7-unknown-linux-musleabi
@@ -41,7 +46,6 @@ jobs:
             file: ubihome
             release_file_name: ubihome-linux-arm
 
-
           # - runs-on: ubuntu-24.04
           #   target: aarch64-unknown-linux-musl
 
@@ -51,20 +55,18 @@ jobs:
           # - runs-on: ubuntu-24.04
           #   target: x86_64-unknown-freebsd
 
-
-
     runs-on: ${{ matrix.runs-on }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
       - name: Add extra packages (MacOS)
-        if: matrix.runs-on == 'macOS-latest'
+        if: startsWith(matrix.runs-on, 'macos-')
         run: brew install libmodbus
 
       - name: Add extra packages (Linux)
         if: matrix.runs-on == 'ubuntu-24.04'
-        run: sudo apt install -y libdbus-1-dev pkg-config
+        run: sudo apt install -y libdbus-1-dev pkg-config libasound2-dev
 
       - name: Build binary
         uses: houseabsolute/actions-rust-cross@v1
@@ -72,7 +74,7 @@ jobs:
           command: build
           target: ${{ matrix.target }}
           # Add "--locked" again when release please is not updating all Cargo.toml files
-          args: "--release"
+          args: '--release'
           strip: true
 
       - name: Copy example config (Linux)
@@ -80,11 +82,11 @@ jobs:
         run: cp documentation/docs/getting_started/linux.yml config.yaml
 
       - name: Copy example config (Windows)
-        if: matrix.runs-on == 'windows-latest'
+        if: startsWith(matrix.runs-on, 'windows-')
         run: cp documentation/docs/getting_started/windows.yml config.yaml
 
       - name: Copy example config (macOS)
-        if: matrix.runs-on == 'macOS-latest'
+        if: startsWith(matrix.runs-on, 'macos-')
         run: cp documentation/docs/getting_started/macos.yml config.yaml
 
       - name: Publish artifacts and release

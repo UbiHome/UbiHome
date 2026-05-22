@@ -1,27 +1,25 @@
+mod components;
+mod config;
 mod constants;
 
 use commands::run;
 use commands::un_install::{install, uninstall};
 use commands::update::update;
 use flexi_logger::{Duplicate, Logger};
-use inquire::Text;
 
-use clap::{Arg, ArgAction, Command};
-use log::{debug, error, info, trace, warn};
+use clap::{Arg, Command};
 use std::{env, fs};
 
 mod commands;
 
-const VERSION: &str = env!("CARGO_PKG_VERSION");
-const DESCRIPTION: &str = env!("CARGO_PKG_DESCRIPTION");
-const CARGO_PKG_HOMEPAGE: &str = env!("CARGO_PKG_HOMEPAGE");
+const VERSION: &str = concat!(env!("GIT_TAG"), " (", env!("GIT_HASH"), ")");
+const DESCRIPTION: &str = "UbiHome is a system which allows you to integrate any device running an OS into your smart home.";
+const HOMEPAGE: &str = "https://github.com/UbiHome/UbiHome";
 const DEFAULT_CONFIG_FILE_YML: &str = "config.yml";
 const DEFAULT_CONFIG_FILE_YAML: &str = "config.yaml";
 
 // Embed the default configuration file at compile time
 const DEFAULT_CONFIG: Option<&str> = option_env!("CONFIG_YAML");
-
-
 
 #[cfg(target_os = "windows")]
 use windows_service::{
@@ -37,7 +35,6 @@ define_windows_service!(ffi_service_main, windows_service_main);
 
 #[cfg(target_os = "windows")]
 fn windows_service_main(_arguments: Vec<std::ffi::OsString>) {
-    use log::error;
     use std::time::Duration;
 
     use constants::SERVICE_NAME;
@@ -70,13 +67,13 @@ fn windows_service_main(_arguments: Vec<std::ffi::OsString>) {
     let mut dir = env::current_exe().unwrap();
     dir.pop();
     dir.push("config.yaml");
-    let config_file = dir.to_string_lossy().to_string();
+    let config_file = dir.to_string_lossy();
 
-    if let Err(e) = run::run(Some(config_file), Some(shutdown_rx)) {
-        error!("{}", e)
+    if let Err(e) = run::run(&config_file, false, Some(shutdown_rx)) {
+        log::error!("{}", e)
     }
 
-    info!("Service is stopping...");
+    log::info!("Service is stopping...");
     status_handle
         .set_service_status(ServiceStatus {
             process_id: None,
@@ -97,12 +94,12 @@ fn cli() -> Command {
             .long("as-windows-service")
             .help("Flag to identify if run as windows service.")
             .hide(true)
-            .action(ArgAction::SetTrue)
+            .action(clap::ArgAction::SetTrue)
             .num_args(0),
     ];
 
     Command::new("UbiHome")
-        .about(format!("UbiHome {}\n\n{}\nDocumentation: https://ubihome.github.io/\nHomepage: {}" ,VERSION, DESCRIPTION, CARGO_PKG_HOMEPAGE))
+        .about(format!("UbiHome {}\n\n{}\nDocumentation: https://ubihome.github.io/\nHomepage: {}" ,VERSION, DESCRIPTION, HOMEPAGE))
         .version(VERSION)
         .subcommand_required(true)
         .arg_required_else_help(true)
@@ -128,7 +125,15 @@ fn cli() -> Command {
                 .arg(Arg::new("location").help("The location to install UbiHome.")),
         )
         .subcommand(
-            Command::new("update").about("Update the current UbiHome executable (from GitHub)."),
+            Command::new("update")
+                .about("Update the current UbiHome executable (from GitHub).")
+                .arg(
+                    Arg::new("include_pre_release")
+                        .long("include-pre-release")
+                        .help("Include pre-release tags (unstable versions).")
+                        .action(clap::ArgAction::SetTrue)
+                        .num_args(0),
+                ),
         )
         .subcommand(
             Command::new("uninstall")
@@ -143,18 +148,35 @@ fn main() {
 
     match matches {
         Ok(matches) => {
-            let mut config_file = matches.try_get_one::<String>("configuration_file").unwrap_or_default().cloned();
-            if config_file.is_none() {
-                if DEFAULT_CONFIG.is_none() {
-                    // Check if the default config file exists
-                    let default_config_file = format!("{}/{}", env::current_dir().unwrap().display(), DEFAULT_CONFIG_FILE_YML);
-                    if fs::metadata(&default_config_file).is_ok() {
-                        config_file = Some(default_config_file);
+            let config_file_option = matches
+                .try_get_one::<String>("configuration_file")
+                .unwrap_or_default();
+
+            let default_config_file = format!(
+                "{}/{}",
+                env::current_dir().unwrap().display(),
+                DEFAULT_CONFIG_FILE_YML
+            );
+            let alternate_config_file = format!(
+                "{}/{}",
+                env::current_dir().unwrap().display(),
+                DEFAULT_CONFIG_FILE_YAML
+            );
+            let config_file = match config_file_option {
+                Some(file) => file.clone(),
+                None => {
+                    if DEFAULT_CONFIG.is_none() {
+                        log::info!("Checking default configs");
+                        if fs::metadata(&default_config_file).is_ok() {
+                            default_config_file
+                        } else {
+                            alternate_config_file
+                        }
                     } else {
-                        config_file = Some(format!("{}/{}", env::current_dir().unwrap().display(), DEFAULT_CONFIG_FILE_YAML));
+                        "".to_owned()
                     }
                 }
-            }
+            };
 
             let log_level = matches.try_get_one::<String>("log_level").unwrap();
 
@@ -163,21 +185,30 @@ fn main() {
                     let location = sub_matches.try_get_one::<String>("location").unwrap();
                     install(location.cloned());
                 }
-                Some(("update", _)) => {
+                Some(("update", sub_matches)) => {
                     if let Some(log_level) = log_level {
                         let mut logger_builder = Logger::try_with_env_or_str(log_level).unwrap();
-                        logger_builder = logger_builder.duplicate_to_stdout(Duplicate::Debug);
+                        logger_builder = logger_builder.duplicate_to_stdout(Duplicate::Trace);
                         logger_builder.start().unwrap();
                     }
-                    update().unwrap();
+                    let include_pre_release = sub_matches
+                        .get_one::<bool>("include_pre_release")
+                        .copied()
+                        .unwrap_or(false);
+                    update(include_pre_release).unwrap();
                 }
                 Some(("uninstall", sub_matches)) => {
                     let location = sub_matches.try_get_one::<String>("location").unwrap();
                     uninstall(location.cloned());
                 }
-                Some(("validate", _)) => {
-                    todo!("Validate UbiHome");
-                }
+                Some(("validate", _)) => match run::run(&config_file, true, None) {
+                    Ok(_) => println!("Configuration is valid."),
+                    Err(e) => {
+                        eprintln!("Configuration is invalid:\n{}", e);
+                        std::process::exit(1);
+                    }
+                },
+                #[allow(unused_variables)]
                 Some(("run", sub_matches)) => {
                     println!("UbiHome - {}", VERSION);
                     #[cfg(target_os = "windows")]
@@ -186,18 +217,25 @@ fn main() {
                     #[cfg(target_os = "windows")]
                     if *is_windows_service {
                         // Run as a Windows service
-                        info!("Running as Windows service");
+                        log::info!("Running as Windows service");
                         #[cfg(target_os = "windows")]
                         use windows_service::service_dispatcher;
                         #[cfg(target_os = "windows")]
-                        service_dispatcher::start(constants::SERVICE_NAME, ffi_service_main).unwrap();
+                        service_dispatcher::start(constants::SERVICE_NAME, ffi_service_main)
+                            .unwrap();
                         panic!("Running as a Windows service is not supported on Linux.");
                     } else {
                         // Run normally
-                        run::run(config_file, None).unwrap();
+                        if let Err(e) = run::run(&config_file, false, None) {
+                            eprintln!("Configuration is invalid: {}", e);
+                            std::process::exit(1);
+                        }
                     }
                     #[cfg(not(target_os = "windows"))]
-                    run::run(config_file, None).unwrap();
+                    if let Err(e) = run::run(&config_file, false, None) {
+                        eprintln!("Configuration is invalid: {}", e);
+                        std::process::exit(1);
+                    }
                 }
                 _ => {
                     println!("No subcommand was used");
@@ -205,8 +243,6 @@ fn main() {
             }
             std::process::exit(0);
         }
-        Err(err) => {
-            err.exit()
-        }
+        Err(err) => err.exit(),
     };
 }

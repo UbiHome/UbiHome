@@ -1,35 +1,33 @@
+use crate::components::{configure_platforms, initialize_platforms, run_platforms, Platform};
+use crate::config::{get_platforms_from_config, BaseConfig, BaseConfigContext};
 use flexi_logger::writers::FileLogWriter;
 use flexi_logger::{detailed_format, Age, Cleanup, Criterion, Duplicate, FileSpec, Logger, Naming};
-use tokio::time::sleep;
-use ubihome::CoreConfig;
-use ubihome_core::binary_sensor::{ActionType, FilterType};
-use ubihome_core::home_assistant::sensors::Component;
-use ubihome_core::internal::sensors::InternalComponent;
-use ubihome_core::sensor::SensorFilterType;
-use ubihome_core::{ChangedMessage, Module, PublishedMessage};
+
+use ubihome_core::configuration::binary_sensor::{ActionType, FilterType};
+use ubihome_core::configuration::sensor::SensorFilterType;
+use ubihome_core::internal::sensors::UbiComponent;
+use ubihome_core::{ChangedMessage, PublishedMessage};
 
 use futures_signals::signal::{Mutable, SignalExt};
-use log::{debug, error, info, trace, warn};
-use std::collections::HashMap;
+use log::{debug, trace, warn};
+use std::collections::{BTreeSet, HashMap};
+use std::fs;
 use std::path::Path;
 use std::sync::mpsc;
 use std::time::Duration;
-use std::fs;
-use tokio::sync::broadcast::{self, Receiver, Sender};
+use tokio::sync::broadcast;
 use tokio::{runtime::Runtime, signal};
 
-
-
-fn read_base_config(path: Option<String>) -> Result<String, String> {
-    if let Some(path) = path {
-        println!("Config: {}", &path);
-        let config_file_path = fs::canonicalize(&path).unwrap();
+fn read_base_config(path: &str) -> Result<String, String> {
+    if !path.is_empty() {
+        println!("Config: {}", path);
+        let config_file_path = fs::canonicalize(path).unwrap();
         if let Ok(content) = fs::read_to_string(config_file_path) {
             return Ok(content);
         } else {
             warn!(
                 "Failed to read the configuration file at '{}'.", //, falling back to default.",
-                &path
+                path
             );
         }
     }
@@ -41,98 +39,11 @@ fn read_base_config(path: Option<String>) -> Result<String, String> {
     panic!("oh no!");
 }
 
-fn get_all_modules(yaml: &String) -> Vec<Box<dyn Module>> {
-    // Match all top level keys in the YAML file
-    let modules_to_load = yaml
-        .lines()
-        .filter_map(|line| {
-            let line = line;
-            if line.starts_with(' ') {
-                None
-            } else if line.is_empty() {
-                None
-            } else if line.starts_with('#') {
-                None
-            } else {
-                line.split(':').next().map(|key| key.trim().to_string())
-            }
-        })
-        .collect::<Vec<String>>();
-    println!("Modules to load: {:?}", modules_to_load);
-
-    let mut modules: Vec<Box<dyn Module>> = Vec::new();
-    if modules_to_load.contains(&"api".to_string()) {
-        modules.push(Box::new(ubihome_api::UbiHomeDefault::new(&yaml).unwrap()));
-    }
-    if modules_to_load.contains(&"bme280".to_string()) {
-        modules.push(Box::new(ubihome_bme280::Default::new(&yaml).unwrap()));
-    }
-    if modules_to_load.contains(&"gpio".to_string()) {
-        modules.push(Box::new(ubihome_gpio::Default::new(&yaml).unwrap()));
-    }
-    if modules_to_load.contains(&"shell".to_string()) {
-        modules.push(Box::new(ubihome_shell::Default::new(&yaml).unwrap()));
-    }
-    if modules_to_load.contains(&"illuminance".to_string()) {
-        modules.push(Box::new(ubihome_illuminance::Default::new(&yaml).unwrap()));
-    }
-    // if modules_to_load.contains(&"mdns".to_string()) {
-        modules.push(Box::new(ubihome_mdns::Default::new(&yaml).unwrap()));
-    // }
-    if modules_to_load.contains(&"mqtt".to_string()) {
-        modules.push(Box::new(ubihome_mqtt::Default::new(&yaml).unwrap()));
-    }
-    if modules_to_load.contains(&"media_controls".to_string()) {
-        modules.push(Box::new(ubihome_media_controls::UbiHomeDefault::new(&yaml).unwrap()));
-    }
-    if modules_to_load.contains(&"power_utils".to_string()) {
-        modules.push(Box::new(ubihome_power_utils::Default::new(&yaml).unwrap()));
-    }
-    if modules_to_load.contains(&"web_server".to_string()) {
-        modules.push(Box::new(ubihome_web_server::Default::new(&yaml).unwrap()));
-    }
-
-    // TODO: Throw error if platform is used in sensor but not configured
-    if modules_to_load.contains(&"bluetooth_proxy".to_string()) {
-        modules.push(Box::new(ubihome_bluetooth_proxy::Default::new(&yaml).unwrap()));
-    }
-    return modules;
-}
-
-
-async fn initialize_modules(
-    modules: &mut Vec<Box<dyn Module>>,
-) -> Result<Vec<InternalComponent>, String> {
-    let mut all_components: Vec<InternalComponent> = Vec::new();
-    for module in modules.iter_mut() {
-        let mut components = module.components();
-        // println!("Module: {:?}", &components);
-        all_components.append(&mut components);
-    }
-    Ok(all_components)
-}
-
-async fn run_modules(
-    modules: Vec<Box<dyn Module>>,
-    sender: Sender<ChangedMessage>,
-    receiver: Receiver<PublishedMessage>,
-) {
-    for module in modules {
-        let tx = sender.clone();
-        let rx = receiver.resubscribe();
-        tokio::spawn({
-            async move {
-                module.run(tx, rx).await.unwrap();
-            }
-        });
-    }
-}
-
 pub(crate) fn run(
-    config_path: Option<String>,
+    mut config_path: &str,
+    validate_only: bool,
     shutdown_signal: Option<mpsc::Receiver<()>>,
 ) -> Result<(), Box<dyn std::error::Error>> {
-
     #[cfg(not(debug_assertions))]
     use directories::BaseDirs;
     #[cfg(not(debug_assertions))]
@@ -153,7 +64,7 @@ pub(crate) fn run(
 
     logger_builder = logger_builder
         .format_for_files(detailed_format)
-        .log_to_file(FileSpec::default().directory(&log_directory)) // write logs to file
+        .log_to_file(FileSpec::default().directory(log_directory)) // write logs to file
         // .write_mode(WriteMode::BufferAndFlush)
         .append()
         .rotate(
@@ -163,7 +74,7 @@ pub(crate) fn run(
         );
 
     // if cfg!(debug_assertions) {
-    logger_builder = logger_builder.duplicate_to_stdout(Duplicate::Debug);
+    logger_builder = logger_builder.duplicate_to_stdout(Duplicate::Trace);
     // }
 
     let mut logger = logger_builder.start().unwrap();
@@ -172,8 +83,32 @@ pub(crate) fn run(
 
     let config_string: String =
         read_base_config(config_path).expect("Failed to load base configuration");
+    if config_path.is_empty() {
+        config_path = "BUILTIN";
+    }
 
-    let config = serde_yaml::from_str::<CoreConfig>(&config_string).unwrap();
+    let platforms = get_platforms_from_config(&config_string);
+    debug!("Configured modules: {:?}", &platforms);
+
+    let no_snippet = serde_saphyr::Options {
+        with_snippet: false,
+        ..Default::default()
+    };
+    let ctx = BaseConfigContext {
+        allowed_platforms: Some(platforms.clone()),
+    };
+    let validation_result = serde_saphyr::from_str_with_options_context_valid::<BaseConfig>(
+        &config_string,
+        no_snippet.clone(),
+        &ctx,
+    );
+
+    if let Err(errors) = validation_result {
+        let report = serde_saphyr::miette::to_miette_report(&errors, &config_string, config_path);
+        return Err(format!("{:?}", report).into());
+    }
+    let config = validation_result.unwrap();
+
     if let Some(logger_config) = config.logger.clone() {
         logger
             .reset_flw(&FileLogWriter::builder(
@@ -191,15 +126,37 @@ pub(crate) fn run(
             .unwrap();
     };
 
-    // warn!("Config: {:?}", &config);
+    debug!("BaseConfiguration: {:?}", config);
+
+    let mut platforms_to_load: BTreeSet<Platform> = BTreeSet::new();
+    println!("Platforms to load: {:?}", platforms);
+    for platform in platforms.iter() {
+        if let Ok(platform_enum) = Platform::from_str(platform) {
+            platforms_to_load.insert(platform_enum);
+        } else {
+            return Err(format!(
+                r#"Unknown platform specified: {}
+Remove the "{}:" entry from your configuration or install the cargo crate containing the platform."#,
+                platform, platform
+            ).into());
+        }
+    }
+    let configuration_result = configure_platforms(&config_string, config_path, &platforms_to_load);
+    if let Err(e) = configuration_result {
+        return Err(e.into());
+    }
+    let mut configured_platforms = configuration_result.unwrap();
+    log::info!("Loaded {} modules", configured_platforms.len());
+    let initialized_platforms = initialize_platforms(&mut configured_platforms).unwrap();
+
+    if validate_only {
+        return Ok(());
+    }
 
     // Spawn the root task
     let rt = Runtime::new().unwrap();
     rt.block_on(async {
-        let mut modules = get_all_modules(&config_string);
-        log::info!("Loaded {} modules", modules.len());
 
-        let components = initialize_modules(&mut modules).await.unwrap();
 
         let (internal_tx, modules_rx) = broadcast::channel::<PublishedMessage>(16);
         let (modules_tx, mut internal_rx) = broadcast::channel::<ChangedMessage>(16);
@@ -208,15 +165,15 @@ pub(crate) fn run(
         let mut signal_map_binary_sensor: HashMap<String, Mutable<Option<Option<bool>>>> = HashMap::new();
         let mut signal_map_sensor: HashMap<String, Mutable<Option<Option<f32>>>> = HashMap::new();
 
-        for component in components.clone() {
+        for component in initialized_platforms.clone() {
             match component {
-                InternalComponent::Button(button) => {
+                UbiComponent::Button(_button) => {
                     // println!("Button: {:?}", button);
                 }
-                InternalComponent::Sensor(sensor) => {
+                UbiComponent::Sensor(sensor) => {
                     let mutable: Mutable<Option<Option<f32>>> = Mutable::new(Option::None);
                     signal_map_sensor
-                        .insert(sensor.ha.id.clone(), mutable.clone());
+                        .insert(sensor.id.clone(), mutable.clone());
                     let internal_tx_clone = internal_tx.clone();
 
                     let mutable_clone = mutable.clone();
@@ -224,20 +181,20 @@ pub(crate) fn run(
                         // println!("Filters: {:?}", binary_sensor.filters);
 
                         let mut signal = mutable_clone.signal_cloned().boxed();
-                        for filter in sensor.base.filters.unwrap_or_default() {
+                        for filter in sensor.filters.unwrap_or_default() {
                             match filter.filter {
-                                SensorFilterType::round(decimals) => {
+                                SensorFilterType::Round(decimals) => {
                                     trace!("round");
                                     signal = signal
                                     .map(move |value| {
-                                        
-                                        if let Some(v) = value.clone().and_then(|v| v) {
+                                        if let Some(v) = value.and_then(|v| v) {
                                             // let number: f64 = v.parse().unwrap();
                                             let output: f32 = format!("{:.1$}", v, decimals).parse().unwrap();
-                                            warn!("Round: {}", output);
-                                            return Some(Some(output))
+                                            debug!("Round: {}", output);
+                                            Some(Some(output))
+                                        } else {
+                                            value
                                         }
-                                        return value
                                     })
                                     .boxed();
                                 }
@@ -249,14 +206,14 @@ pub(crate) fn run(
                             .for_each(|value| {
                                 let signal_tx_clone = internal_tx_clone.clone();
 
-                                let key = sensor.ha.id.clone();
+                                let key = sensor.id.clone();
                                 if let Some(value) = value.and_then(|v| v) {
                                     let pcmd = PublishedMessage::SensorValueChanged {
-                                        key: key,
-                                        value: value,
+                                        key,
+                                        value,
                                     };
                                     debug!("Publishing command from signal: {:?}", pcmd);
-                                        
+
                                     signal_tx_clone.send(pcmd).unwrap();
                                 }
 
@@ -266,19 +223,25 @@ pub(crate) fn run(
                             .await;
                     });
                 }
-                InternalComponent::Switch(switch) => {
+                UbiComponent::Switch(_switch) => {
                     // println!("Switch: {:?}", switch);
                 }
-                InternalComponent::Light(light) => {
+                UbiComponent::Light(_light) => {
                     // println!("Light: {:?}", light);
                 }
-                InternalComponent::Event(switch) => {
+                UbiComponent::Event(switch) => {
                     println!("Event: {:?}", switch);
                 }
-                InternalComponent::BinarySensor(binary_sensor) => {
+                UbiComponent::Number(_number) => {
+                    // Numbers don't have filters, state changes are forwarded directly
+                }
+                UbiComponent::TextSensor(_text_sensor) => {
+                    // Text sensors are read-only, state changes are forwarded directly
+                }
+                UbiComponent::BinarySensor(binary_sensor) => {
                     let mutable: Mutable<Option<Option<bool>>> = Mutable::new(Option::None);
                     signal_map_binary_sensor
-                        .insert(binary_sensor.ha.id.clone(), mutable.clone());
+                        .insert(binary_sensor.id.clone(), mutable.clone());
                     let internal_tx_clone = internal_tx.clone();
 
                     let mutable_clone = mutable.clone();
@@ -286,80 +249,77 @@ pub(crate) fn run(
                         // println!("Filters: {:?}", binary_sensor.filters);
 
                         let mut signal = mutable_clone.signal().boxed();
-                        for filter in binary_sensor.base.filters.unwrap_or_default() {
+                        for filter in binary_sensor.filters.unwrap_or_default() {
                             match filter.filter {
-                                FilterType::delayed_on(time) => {
+                                FilterType::DelayedOn(time) => {
                                     trace!("delayed_on");
-                                    let time_clone = time.clone();
                                     signal = signal
                                         .map_future(move |value| {
-                                            let time_clone = time_clone.clone();
                                             Box::pin(async move {
                                                 let value = value.and_then(|v| v);
                                                 if let Some(v) = value {
                                                     // Delay on (true) values
                                                     if v {
-                                                        tokio::time::sleep(time_clone).await;
-                                                        return value;
+                                                        tokio::time::sleep(time).await;
+                                                        value
+                                                    } else {
+                                                        value
                                                     }
+                                                } else {
+                                                    value
                                                 }
-                                                return value;
                                             })
                                         })
                                         .boxed();
                                 }
-                                FilterType::delayed_off(time) => {
+                                FilterType::DelayedOff(time) => {
                                     trace!("delayed_off");
-                                    let time_clone = time.clone();
                                     signal = signal
                                         .map_future(move |value| {
-                                            let time_clone = time_clone.clone();
-
                                             Box::pin(async move {
                                                 let value = value.and_then(|v| v);
                                                 if let Some(v) = value {
                                                     // Delay off (false) values
                                                     if !v {
-                                                        tokio::time::sleep(time_clone).await;
-                                                        return value;
+                                                        tokio::time::sleep(time).await;
+                                                        value
+                                                    } else {
+                                                        value
                                                     }
+                                                } else {
+                                                    value
                                                 }
-                                                return value;
                                             })
                                         })
                                         .boxed();
                                 }
-                                FilterType::invert(_) => {
+                                FilterType::Invert(_) => {
                                     signal = signal
                                         .map(|value| {
                                             trace!("invert");
                                             if value.is_some() {
-                                                return Some(Some(!value.and_then(|v| v).unwrap()));
+                                                Some(Some(!value.and_then(|v| v).unwrap()))
+                                            } else {
+                                                value
                                             }
-                                            return value;
                                         })
                                         .boxed();
                                 }
                             }
                         }
 
-
-
-
-
                         // React to signal changes
-
                         signal
                             .for_each(|value| {
                                 let signal_tx_clone = internal_tx_clone.clone();
 
-                                let key = binary_sensor.ha.id.clone();
+                                let key = binary_sensor.id.clone();
                                 if let Some(value) = value.and_then(|v| v) {
-                                    if value == true {
-                                        if let Some(on_press) = binary_sensor.base.on_press.clone() {
+                                    if value {
+                                        if let Some(on_press) = binary_sensor.on_press.clone() {
                                             for action in on_press.then {
                                                 match &action.action {
-                                                    ActionType::switch_turn_on(key) => {
+                                                    ActionType::SwitchTurnOn(key) => {
                                                         let pcmd = PublishedMessage::SwitchStateCommand {
                                                             key: key.clone(),
                                                             state: true,
@@ -367,7 +327,7 @@ pub(crate) fn run(
                                                         debug!("Publishing command from action {:?}: {:?}", action.clone(), pcmd);
                                                         internal_tx_clone.send(pcmd).unwrap();
                                                     }
-                                                    ActionType::switch_turn_off(key) => {
+                                                    ActionType::SwitchTurnOff(key) => {
                                                         let pcmd = PublishedMessage::SwitchStateCommand {
                                                             key: key.clone(),
                                                             state: false,
@@ -379,10 +339,10 @@ pub(crate) fn run(
                                             }
                                         }
                                     }else{
-                                        if let Some(on_release) = binary_sensor.base.on_release.clone() {
+                                        if let Some(on_release) = binary_sensor.on_release.clone() {
                                             for action in on_release.then {
                                                 match &action.action {
-                                                    ActionType::switch_turn_on(key) => {
+                                                    ActionType::SwitchTurnOn(key) => {
                                                         let pcmd = PublishedMessage::SwitchStateCommand {
                                                             key: key.clone(),
                                                             state: true,
@@ -390,7 +350,7 @@ pub(crate) fn run(
                                                         debug!("Publishing command from action {:?}: {:?}", action.clone(), pcmd);
                                                         internal_tx_clone.send(pcmd).unwrap();
                                                     }
-                                                    ActionType::switch_turn_off(key) => {
+                                                    ActionType::SwitchTurnOff(key) => {
                                                         let pcmd = PublishedMessage::SwitchStateCommand {
                                                             key: key.clone(),
                                                             state: false,
@@ -405,11 +365,11 @@ pub(crate) fn run(
 
 
                                     let pcmd = PublishedMessage::BinarySensorValueChanged {
-                                        key: key,
-                                        value: value,
+                                        key,
+                                        value,
                                     };
                                     debug!("Publishing command from signal: {:?}", pcmd);
-                                        
+
                                     signal_tx_clone.send(pcmd).unwrap();
                                 }
 
@@ -437,51 +397,59 @@ pub(crate) fn run(
             async move {
                 while let Ok(cmd) = internal_rx.recv().await {
                     debug!("Received command: {:?}", cmd);
-                    let publish_cmd: Option<PublishedMessage>;
-                    match cmd {
+                    let publish_cmd: Option<PublishedMessage> = match cmd {
                         ChangedMessage::SwitchStateChange { key, state } => {
-                            publish_cmd = Some(PublishedMessage::SwitchStateChange { key, state });
+                            Some(PublishedMessage::SwitchStateChange { key, state })
                         }
                         ChangedMessage::SwitchStateCommand { key, state } => {
-                            publish_cmd = Some(PublishedMessage::SwitchStateCommand { key, state });
+                            Some(PublishedMessage::SwitchStateCommand { key, state })
                         }
                         ChangedMessage::LightStateChange { key, state, brightness, red, green, blue } => {
-                            publish_cmd = Some(PublishedMessage::LightStateChange { key, state, brightness, red, green, blue });
+                            Some(PublishedMessage::LightStateChange { key, state, brightness, red, green, blue })
                         }
                         ChangedMessage::LightStateCommand { key, state, brightness, red, green, blue } => {
-                            publish_cmd = Some(PublishedMessage::LightStateCommand { key, state, brightness, red, green, blue });
+                            Some(PublishedMessage::LightStateCommand { key, state, brightness, red, green, blue })
                         }
                         ChangedMessage::ButtonPress { key } => {
-                            publish_cmd = Some(PublishedMessage::ButtonPressed { key });
+                            Some(PublishedMessage::ButtonPressed { key })
                         }
                         ChangedMessage::SensorValueChange { key, value } => {
-                            signal_map_sensor.get(&key).map(|signal| {
+                            if let Some(signal) = signal_map_sensor.get(&key) {
                                 signal.set(Some(Some(value)));
-                            });
-                            publish_cmd = None;
+                            }
+                            None
                         }
                         ChangedMessage::BinarySensorValueChange { key, value } => {
                             debug!("BinarySensorValueChange: {}", value);
-                            signal_map_binary_sensor.get(&key).map(|signal| {
+                            if let Some(signal) = signal_map_binary_sensor.get(&key) {
                                 signal.set(Some(Some(value)));
-                            });
-                            publish_cmd = None;
+                            }
+                            None
                         }
                         ChangedMessage::BluetoothProxyMessage(msg) => {
-                            publish_cmd = Some(PublishedMessage::BluetoothProxyMessage(msg));
+                            Some(PublishedMessage::BluetoothProxyMessage(msg))
                         }
                         ChangedMessage::EventChange { key, r#type } => {
-                            publish_cmd = Some(PublishedMessage::EventChange { key, r#type });
+                            Some(PublishedMessage::EventChange { key, r#type })
                         }
                         ChangedMessage::APISubscribeEntity { entity, attribute } => {
                             debug!("Publish APISubscribeEntity: {:?}", entity);
-                            publish_cmd = Some(PublishedMessage::APISubscribeEntity { entity, attribute });
+                            Some(PublishedMessage::APISubscribeEntity { entity, attribute })
                         }
                         ChangedMessage::APISubscribedEntityChange { entity, attribute, state } => {
                             debug!("Publish APISubscribedEntityChange: {:?}", entity);
-                            publish_cmd = Some(PublishedMessage::APISubscribedEntityChange { entity, attribute, state });
+                            Some(PublishedMessage::APISubscribedEntityChange { entity, attribute, state })
                         }
-                    }
+                        ChangedMessage::NumberValueChange { key, value } => {
+                            Some(PublishedMessage::NumberValueChanged { key, value })
+                        }
+                        ChangedMessage::NumberValueCommand { key, value } => {
+                            Some(PublishedMessage::NumberValueCommand { key, value })
+                        }
+                        ChangedMessage::TextSensorValueChange { key, value } => {
+                            Some(PublishedMessage::TextSensorValueChanged { key, value })
+                        }
+                    };
                     if let Some(pcmd) = publish_cmd {
                         debug!("Publishing command: {:?}", pcmd);
                         internal_tx_clone.send(pcmd).unwrap();
@@ -490,23 +458,28 @@ pub(crate) fn run(
             }
         });
 
+        run_platforms(configured_platforms, modules_tx.clone(), modules_rx).await;
 
-        run_modules(modules, modules_tx.clone(), modules_rx).await;
-
-        println!("Components: {:?}", components);
+        println!("Platforms: {:?}", initialized_platforms);
         internal_tx
             .send(PublishedMessage::Components {
-                components: components
+                components: initialized_platforms
                     .iter()
                     .map(|c| match c {
-                        InternalComponent::Event(event) => Component::Event(event.ha.clone()),
-                        InternalComponent::Switch(switch) => Component::Switch(switch.ha.clone()),
-                        InternalComponent::Button(button) => Component::Button(button.ha.clone()),
-                        InternalComponent::Sensor(sensor) => Component::Sensor(sensor.ha.clone()),
-                        InternalComponent::BinarySensor(binary_sensor) => {
-                            Component::BinarySensor(binary_sensor.ha.clone())
+                        UbiComponent::Event(event) => UbiComponent::Event(event.clone()),
+                        UbiComponent::Switch(switch) => UbiComponent::Switch(switch.clone()),
+                        UbiComponent::Button(button) => UbiComponent::Button(button.clone()),
+                        UbiComponent::Sensor(sensor) => UbiComponent::Sensor(sensor.clone()),
+                        UbiComponent::BinarySensor(binary_sensor) => {
+                            UbiComponent::BinarySensor(binary_sensor.clone())
                         }
-                        InternalComponent::Light(light) => Component::Light(light.ha.clone()),
+                        UbiComponent::Light(light) => UbiComponent::Light(light.clone()),
+                        UbiComponent::Number(number) => {
+                            UbiComponent::Number(number.clone())
+                        }
+                        UbiComponent::TextSensor(text_sensor) => {
+                            UbiComponent::TextSensor(text_sensor.clone())
+                        }
                     })
                     .collect(),
             })
@@ -554,6 +527,6 @@ pub(crate) fn run(
             }
         }
     });
-    info!("Shutdown complete");
+    debug!("Shutdown complete");
     Ok(())
 }

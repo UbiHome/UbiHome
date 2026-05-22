@@ -5,3 +5,5 @@ testfile
 
 __pycache__
 .venv
+allure-results
+test-results

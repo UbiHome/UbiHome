@@ -1,5 +1,71 @@
 # Changelog
 
+## [0.14.0](https://github.com/UbiHome/UbiHome/compare/v0.13.0...v0.14.0) (2026-05-14)
+
+
+### Features
+
+* better validation ([#101](https://github.com/UbiHome/UbiHome/issues/101)) ([c3099f1](https://github.com/UbiHome/UbiHome/commit/c3099f1a2ebec34c2f621e149a5ad839d2780b8b))
+
+## [0.13.0](https://github.com/UbiHome/UbiHome/compare/v0.12.0...v0.13.0) (2026-05-10)
+
+
+### Features
+
+* add `number` platform support for shell component ([#112](https://github.com/UbiHome/UbiHome/issues/112)) ([1799769](https://github.com/UbiHome/UbiHome/commit/1799769ccddf70cfff0f73e764e659cdef5280cd))
+* add macos aarch64 ([#119](https://github.com/UbiHome/UbiHome/issues/119)) ([7655876](https://github.com/UbiHome/UbiHome/commit/765587638ed69048a5f64a69a300f53d5c5959d0))
+
+## [0.12.0](https://github.com/UbiHome/UbiHome/compare/v0.11.2...v0.12.0) (2026-04-16)
+
+
+### Features
+
+* support `accuracy_decimals` in sensor entity configuration ([#113](https://github.com/UbiHome/UbiHome/issues/113)) ([9ccbcd4](https://github.com/UbiHome/UbiHome/commit/9ccbcd4efd39304b4a1960d548eb33b6e282ff41))
+
+## [0.11.2](https://github.com/UbiHome/UbiHome/compare/v0.11.1...v0.11.2) (2026-04-14)
+
+
+### Bug Fixes
+
+* update native api package ([372358e](https://github.com/UbiHome/UbiHome/commit/372358e90953e4e22a641012e959fd637aecd4df))
+
+## [0.11.1](https://github.com/UbiHome/UbiHome/compare/v0.11.0...v0.11.1) (2026-04-14)
+
+
+### Bug Fixes
+
+* linux-x86_64 release build ([7bd266d](https://github.com/UbiHome/UbiHome/commit/7bd266d4fc6af2e6d90ca053da9ab4a948d43b2f))
+
+## [0.11.0](https://github.com/UbiHome/UbiHome/compare/v0.10.3...v0.11.0) (2026-04-14)
+
+
+### Features
+
+* add sendspin ([#103](https://github.com/UbiHome/UbiHome/issues/103)) ([ae13951](https://github.com/UbiHome/UbiHome/commit/ae139514d94c5b9e86f9d6438d1bf9f85a6fa434))
+
+
+### Bug Fixes
+
+* [#105](https://github.com/UbiHome/UbiHome/issues/105) ([b564199](https://github.com/UbiHome/UbiHome/commit/b5641993f3825ac0f7f690f543318dd3db08092e))
+
+## [0.10.3](https://github.com/UbiHome/UbiHome/compare/v0.10.2...v0.10.3) (2026-01-17)
+
+
+### Bug Fixes
+
+* entities in mixed order ([80638c4](https://github.com/UbiHome/UbiHome/commit/80638c48ef75e9b7dc7bcac09aa914c800020f93))
+* windows service for existing installs ([5c06178](https://github.com/UbiHome/UbiHome/commit/5c0617871acd4a15487e3581a887e54d7561006e))
+
+## [0.10.2](https://github.com/UbiHome/UbiHome/compare/v0.10.1...v0.10.2) (2025-12-30)
+
+## [0.10.1](https://github.com/UbiHome/UbiHome/compare/v0.10.0...v0.10.1) (2025-12-29)
+
+
+### Bug Fixes
+
+* api panic crashing all api connections ([1f0c2dd](https://github.com/UbiHome/UbiHome/commit/1f0c2ddf4a03b9c02f8738843553168669038565))
+* update native api package ([951a9d7](https://github.com/UbiHome/UbiHome/commit/951a9d7b9984382a99b6ff386592bb475e74715c))
+
 ## [0.10.0](https://github.com/UbiHome/UbiHome/compare/v0.9.3...v0.10.0) (2025-12-21)
 
 

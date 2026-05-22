@@ -24,7 +24,7 @@ jobs:
 
       - name: Add extra packages (Linux)
         if: inputs.runs-on == 'ubuntu-24.04'
-        run: sudo apt install -y libdbus-1-dev pkg-config
+        run: sudo apt install -y libdbus-1-dev pkg-config libasound2-dev
 
       - name: Set up Rust
         if: inputs.runs-on == 'macOS-latest'
@@ -90,16 +90,26 @@ jobs:
           path: tests/
       - uses: actions/setup-python@v5
         with:
-          python-version: 3.12
+          python-version: 3.14
       - name: Install uv
         uses: astral-sh/setup-uv@v6
         with:
           # Install a specific version of uv.
-          version: "0.8.4"
+          version: '0.8.4'
       - name: Run tests
         run: |-
+          docker pull ghcr.io/home-assistant/home-assistant:2026.4.3
           cd tests
           chmod +x ubihome
           ls -l
-          uv sync
-          uv run pytest
+          uv run --locked playwright install --with-deps
+          uv run --locked pytest -vvv
+
+      - name: Archive artifacts
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: results-${{ inputs.target }}
+          path: |
+            tests/test-results
+            tests/allure-results

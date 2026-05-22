@@ -6,8 +6,9 @@ bme280:
 sensor:
   - platform: bme280
     update_interval: 30s
-    name: "bla"
+    name: 'Temperature'
 
 # Native Homeassistant API
 api:
-  # encryption_key: "set your own!"
+  # encryption:
+  #   key:  # Generate here: https://ubihome.github.io/features/connectivity/native_api.html

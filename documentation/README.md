@@ -1,9 +1,29 @@
 # [Documentation](https://ubihome.github.io/) Repository for UbiHome
 
-Work on it:
+Use Dagger for docs preview, checks, and builds.
+
+Install Dagger:
 
 ```bash
-docker compose up
+curl -fsSL https://dl.dagger.io/dagger/install.sh | BIN_DIR="$HOME/.local/bin" sh
+```
+
+Run a local preview:
+
+```bash
+dagger call docs-preview up
+```
+
+Run strict checks:
+
+```bash
+dagger check
+```
+
+Build static docs output:
+
+```bash
+dagger call docs-build-dir export --path ./documentation/site
 ```
 
 Visit [http://localhost:8000](http://localhost:8000) to see the documentation preview.

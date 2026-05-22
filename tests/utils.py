@@ -1,9 +1,51 @@
 import asyncio
-from asyncio.subprocess import Process
+import logging
 import os
+import platform
+import random
+import re
+import signal
 import socket
-import time
-from typing import Optional
+from asyncio.subprocess import Process
+from dataclasses import dataclass
+from enum import Enum
+
+import yaml
+
+
+def represent_none(self, _):
+    return self.represent_scalar("tag:yaml.org,2002:null", "")
+
+
+yaml.add_representer(type(None), represent_none)
+
+
+@dataclass
+class HomeAssistantRuntime:
+    base_url: str
+    username: str
+    password: str
+
+
+class Platform(Enum):
+    WINDOWS = "Windows"
+    LINUX = "Linux"
+    MACOS = "Darwin"
+
+
+def os_platform() -> Platform:
+    platform_str = platform.system()
+    if platform_str == "Linux":
+        return Platform.LINUX
+    elif platform_str == "Darwin":
+        return Platform.MACOS
+    elif platform_str == "Windows":
+        return Platform.WINDOWS
+    else:
+        raise ValueError(f"Unsupported platform: {platform_str}")
+
+
+OS_PLATFORM = os_platform()
 
 DEFAULT_CONFIG = """
 ubihome:
@@ -12,10 +54,10 @@ ubihome:
 logger:
   level: DEBUG
 
-shell: 
+shell:
   type: bash
 
-button: 
+button:
  - platform: shell
    id: my_button
    name: "Write Hello World"
@@ -48,64 +90,105 @@ api:
 """
 
 
-class UbiHome(object):
-    process: Optional[Process] = None
+class UbiHome:
+    """Context manager to run UbiHome with a given configuration."""
+
+    process: Process | None = None
     _stdout_task = None
     _stderr_task = None
-    port = 6053
     stdout: str | None = None
     stderr: str | None = None
-    
-    def __init__(self, *arguments, config=None, throw_on_error=True, wait_for_api=False):
-        self.config = config if config else DEFAULT_CONFIG
+    port: int | None = None
+
+    def __init__(
+        self,
+        *arguments,
+        config=DEFAULT_CONFIG,
+        throw_on_error=True,
+        wait_for_api=False,
+        extra_logging=True,
+        # executable=None,
+    ):
         self.arguments = arguments
         self.configuration_file = f"config{os.getpid()}.yaml"
         self.throw_on_error = throw_on_error
         self.wait_for_api = wait_for_api
+        self.extra_logging = extra_logging
+        if platform.system() == "Windows":
+            file = "ubihome.exe"
+        else:
+            file = "ubihome"
+        # self.executable = os.path.join(os.getcwd(), "..", "target", "debug", file)
+        self.executable = os.path.join(os.getcwd(), file)
+        logging.info("Using UbiHome executable: %s", self.executable)
+
+        if config:
+            config_yaml = yaml.safe_load(config)
+            if "api" in config_yaml:
+                if config_yaml["api"] is None:
+                    config_yaml["api"] = {}
+                self.port = random.randint(1024, 65535)
+                config_yaml["api"]["port"] = self.port
+
+            self.config = yaml.dump(config_yaml)
+        else:
+            self.config = None
 
     async def __aenter__(self):
         my_env = os.environ.copy()
-        my_env["RUST_LOG"] = "debug"
+        if self.extra_logging:
+            my_env["RUST_LOG"] = "TRACE"
+        else:
+            my_env["RUST_LOG"] = ""
+        my_env["RUST_BACKTRACE"] = "1"
         my_env["RUSTFLAGS"] = "-Awarnings"
-        with open(self.configuration_file, "w") as f:
-            f.write(self.config)
+        if self.config:
+            with open(self.configuration_file, "w") as f:
+                f.write(self.config)
 
-        executable = os.path.join(os.getcwd(), "ubihome")
-        if os.path.exists(executable):
+        if os.path.exists(self.executable):
             # Use pre-build binaries
+            arguments = [self.executable]
+            if self.config:
+                arguments += ["-c", self.configuration_file]
+            if len(self.arguments) > 0 and self.arguments[0]:
+                arguments += list(self.arguments)
+
+            logging.info("Starting with command: %s", " ".join(arguments))
             self.process = await asyncio.create_subprocess_exec(
-                executable,
-                "-c",
-                self.configuration_file,
-                *self.arguments,
+                *arguments,
                 env=my_env,
                 stderr=asyncio.subprocess.PIPE,
                 stdout=asyncio.subprocess.PIPE,
             )
         else:
-            raise Exception(f"{executable} does not exist. Please build UbiHome first.")
+            raise Exception(
+                f"{self.executable} does not exist. Please build UbiHome first."
+            )
 
         self._stdout_task = asyncio.create_task(self._read_stdout())
         self._stderr_task = asyncio.create_task(self._read_stderr())
 
-        if self.wait_for_api:
-          print("Waiting for server to start...")
-          sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-          while True:
-              result = sock.connect_ex(("127.0.0.1", self.port))
-              if result == 0:
-                  print("Port is open")
-                  break
-              else:
-                  await asyncio.sleep(0.1)
-          sock.close()
+        if self.port and self.wait_for_api:
+            print("Waiting for server to start...")
+            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            while True:
+                result = sock.connect_ex(("127.0.0.1", self.port))
+                if result == 0:
+                    print("Port is open")
+                    break
+                else:
+                    await asyncio.sleep(0.1)
+            sock.close()
 
         return self
 
     async def __aexit__(self, exctype, value, tb):
-        os.remove(self.configuration_file)
+        try:
+            os.remove(self.configuration_file)
+        except OSError:
+            pass
         if self.process:
-
             # Try to terminate gracefully
             try:
                 self.process.terminate()
@@ -113,7 +196,7 @@ class UbiHome(object):
                 pass
             try:
                 await asyncio.wait_for(self.process.wait(), timeout=5)
-            except asyncio.TimeoutError:
+            except TimeoutError:
                 self.process.kill()
                 await self.process.wait()
 
@@ -132,7 +215,8 @@ class UbiHome(object):
                 except asyncio.CancelledError:
                     pass
             # Works on windows?!
-            # os.kill(self.process.pid, signal.CTRL_BREAK_EVENT)
+            if platform.system() == "Windows":
+                os.kill(self.process.pid, signal.CTRL_BREAK_EVENT)
 
             # self.process = None
 
@@ -164,45 +248,46 @@ class UbiHome(object):
             print(message.rstrip())
 
 
-async def run_ubihome(*arguments, config=None) -> str:
-    async with UbiHome(*arguments, config=config) as ubihome:
+async def run_ubihome(*arguments, config=None, extra_logging=True) -> tuple[str, str]:
+    async with UbiHome(
+        *arguments, config=config, extra_logging=extra_logging
+    ) as ubihome:
         await asyncio.sleep(1)
-        return ubihome.stdout or ""
+        return (ubihome.stdout or "", ubihome.stderr or "")
 
 
-def wait_and_get_file(file_path, timeout=5):
+# FROM https://github.com/esphome/esphome/blob/58a9e30017b7094c9cf8bfb0739b610ba5bcd450/esphome/helpers.py#L65
+
+FNV1_OFFSET_BASIS = 2166136261
+FNV1_PRIME = 16777619
+
+
+def snake_case(value):
+    """Same behaviour as `helpers.cpp` method `str_snake_case`."""
+    return value.replace(" ", "_").lower()
+
+
+_DISALLOWED_CHARS = re.compile(r"[^a-zA-Z0-9-_]")
+
+
+def sanitize(value):
+    """Same behaviour as `helpers.cpp` method `str_sanitize`."""
+    return _DISALLOWED_CHARS.sub("_", value)
+
+
+def fnv1_hash(string: str) -> int:
+    """FNV-1 32-bit hash function (multiply then XOR)."""
+    hash_value = FNV1_OFFSET_BASIS
+    for char in string:
+        hash_value = (hash_value * FNV1_PRIME) & 0xFFFFFFFF
+        hash_value ^= ord(char)
+    return hash_value
+
+
+def fnv1_hash_object_id(name: str) -> int:
+    """Compute FNV-1 hash of name with snake_case + sanitize transformations.
+
+    IMPORTANT: Must produce same result as C++ fnv1_hash_object_id() in helpers.h.
+    Used for pre-computing entity object_id hashes at code generation time.
     """
-    Wait for a file to be created or modified.
-    """
-    start_time = time.time()
-    while not os.path.exists(file_path):
-        if time.time() - start_time > timeout:
-            raise TimeoutError(
-                f"File {file_path} was not created within {timeout} seconds."
-            )
-        time.sleep(0.1)
-    return open(file_path, "r").read()
-
-
-def wait_for_mock_state(file_path, expected_state, timeout=5):
-    """
-    Wait for a file to be created or modified.
-    """
-    state = None
-    start_time = time.time()
-    while expected_state != state:
-        if time.time() - start_time > timeout:
-            raise TimeoutError(
-                f"State does not match within {timeout} seconds: {expected_state} != {state}."
-            )
-        while not os.path.exists(file_path):
-            if time.time() - start_time > timeout:
-                raise TimeoutError(
-                    f"File {file_path} was not created within {timeout} seconds."
-                )
-            time.sleep(0.1)
-
-        state = open(file_path, "r").read()
-        time.sleep(0.1)
-
-    return True
+    return fnv1_hash(sanitize(snake_case(name)))

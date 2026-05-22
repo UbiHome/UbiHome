@@ -9,19 +9,17 @@ cd tests
 uv sync
 ```
 
+## Linux
+
 ## Just run them
 
 ```bash
 make prepare-test-linux
 make test
-```
-## Development
-
-```bash
-make prepare-test-linux
 cd tests
-eval $(poetry env activate)
-pytest
+uv run pytest
+
+uv run ruff check
 ```
 
 ## If something is not working
@@ -31,4 +29,12 @@ pytest
 pkill -8  ubihome
 # Check that no processes are running
 ps aux | grep ubihome
+```
+
+## Windows
+
+```powershell
+cd tests
+cp ..\target\debug\ubihome.exe .\ubihome.exe
+uv run pytest
 ```

@@ -6,23 +6,37 @@ use tokio::{
     sync::broadcast::{Receiver, Sender},
     time::sleep,
 };
+use ubihome_core::constants::is_id_string_option;
+use ubihome_core::constants::is_readable_string;
+use ubihome_core::internal::sensors::{UbiComponent, UbiEvent};
+use ubihome_core::with_base_entity_properties;
 use ubihome_core::{
-    config_template,
-    home_assistant::sensors::{UbiButton, UbiEvent},
-    internal::sensors::{InternalButton, InternalComponent, InternalEvent},
-    ChangedMessage, Module, NoConfig, PublishedMessage,
+    config_template, template_button, template_event, ChangedMessage, Module, NoConfig,
+    PublishedMessage,
 };
 
 use souvlaki::{MediaControlEvent, MediaControls, MediaMetadata, MediaPosition, PlatformConfig};
 
-#[derive(Clone, Deserialize, Debug)]
+#[derive(Clone, Deserialize, Debug, Validate)]
+#[garde(allow_unvalidated)]
 pub struct MediaControlsConfig {
     pub display_entity: Option<String>,
 }
 
-#[derive(Clone, Deserialize, Debug)]
-pub struct MediaControlsButtonConfig {
-    // pub action: PowerAction
+template_button! {
+
+    #[derive(Clone, Deserialize, Debug, Validate)]
+    #[garde(allow_unvalidated)]
+    pub struct MediaControlsButtonConfig {
+        // pub action: PowerAction
+    }
+}
+
+template_event! {
+    #[derive(Clone, Deserialize, Debug, Validate)]
+    #[garde(allow_unvalidated)]
+    pub struct MediaControlsEventConfig {
+    }
 }
 
 config_template!(
@@ -33,60 +47,54 @@ config_template!(
     NoConfig,
     NoConfig,
     NoConfig,
-    NoConfig
+    NoConfig,
+    NoConfig,
+    MediaControlsEventConfig
 );
 
-pub struct UbiHomeDefault {
+pub struct UbiHomePlatform {
     config: MediaControlsConfig,
-    components: Vec<InternalComponent>,
-    events: HashMap<String, InternalEvent>,
+    components: Vec<UbiComponent>,
+    events: HashMap<String, UbiEvent>,
 }
 
-impl Module for UbiHomeDefault {
-    fn new(config_string: &String) -> Result<Self, String> {
-        let config = serde_yaml::from_str::<CoreConfig>(config_string).unwrap();
-        info!("Media Controls config: {:?}", config);
-        let mut components: Vec<InternalComponent> = Vec::new();
-        let mut events: HashMap<String, InternalEvent> = HashMap::new();
+impl Module for UbiHomePlatform {
+    fn new(config_string: &str, config_path: &str) -> Result<Self, String> {
+        let config =
+            ubihome_core::validation::validate_config::<CoreConfig>(config_string, config_path)?;
+        debug!("media_controls config: {:?}", config);
+        let mut components: Vec<UbiComponent> = Vec::new();
+        let mut events: HashMap<String, UbiEvent> = HashMap::new();
 
         for (_, any_sensor) in config.event.clone().unwrap_or_default() {
-            match any_sensor.extra {
-                EventKind::media_controls(event) => {
-                    let id = any_sensor.default.get_object_id();
-                    let button_component;
-                    button_component = InternalEvent {
-                        ha: UbiEvent {
-                            platform: "sensor".to_string(),
-                            icon: Some(
-                                any_sensor.default.icon.unwrap_or("mdi:restart".to_string()),
-                            ),
-                            name: any_sensor.default.name.clone(),
-                            id: id.clone(),
-                            device_class: None,
-                            event_types: vec![
-                                "play".to_string(),
-                                "pause".to_string(),
-                                "next".to_string(),
-                                "previous".to_string(),
-                                "stop".to_string(),
-                            ],
-                        },
-                    };
+            let id = any_sensor.get_object_id();
+            let button_component;
+            button_component = UbiEvent {
+                platform: "sensor".to_string(),
+                icon: Some(any_sensor.icon.unwrap_or("mdi:restart".to_string())),
+                name: any_sensor.name.clone(),
+                id: id.clone(),
+                device_class: None,
+                event_types: vec![
+                    "play".to_string(),
+                    "pause".to_string(),
+                    "next".to_string(),
+                    "previous".to_string(),
+                    "stop".to_string(),
+                ],
+            };
 
-                    components.push(InternalComponent::Event(button_component.clone()));
-                    events.insert(id, button_component);
-                }
-                _ => {}
-            }
+            components.push(UbiComponent::Event(button_component.clone()));
+            events.insert(id, button_component);
         }
-        Ok(UbiHomeDefault {
+        Ok(UbiHomePlatform {
             config: config.media_controls,
             components,
             events,
         })
     }
 
-    fn components(&mut self) -> Vec<InternalComponent> {
+    fn components(&mut self) -> Vec<UbiComponent> {
         self.components.clone()
     }
 

@@ -44,3 +44,39 @@ switch:
           echo false
       fi
 ```
+
+### Number
+
+```yaml
+number:
+  - platform: shell
+    name: 'Display Brightness'
+    id: display_brightness
+    unit_of_measurement: '%'
+    min_value: 0.0
+    max_value: 100.0
+    step: 1.0
+    update_interval: 5s
+    command_state: 'cat /tmp/display_brightness'
+    command_set: 'echo {{ value }} > /tmp/display_brightness'
+```
+
+### Text Sensor
+
+```yaml
+text_sensor:
+  - platform: shell
+    name: 'Host Name'
+    id: host_name
+    update_interval: 30s
+    command: 'hostname'
+```
+
+## Used in Examples
+
+- [Open a new tab in chrome](../../examples/open_chrome_tab/index.md)
+- [Display a Notification](../../examples/display_notification/index.md)
+- [Monitor system resources](../../examples/system_ressources/index.md)
+- [Turn Raspberry screen on or off](../../examples/screen_on_off/index.md)
+- [Automatic Screen Power Control](../../examples/automatic_screen_power_control/index.md)
+- [Monitor and control Bluetooth devices](../../examples/bluetooth_monitor_control/index.md)

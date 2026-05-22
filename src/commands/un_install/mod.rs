@@ -6,7 +6,6 @@ mod linux;
 #[cfg(target_os = "windows")]
 mod windows;
 
-
 #[cfg(any(target_os = "linux", target_os = "macos"))]
 const DEFAULT_INSTALLATION_PATH: &str = "/usr/bin/ubihome";
 #[cfg(target_os = "windows")]
@@ -18,7 +17,8 @@ pub fn install(user_specified_location: Option<String>) {
     let location: String = user_specified_location.unwrap_or(
         Text::new("Where do you want to install UbiHome?")
             .with_default(DEFAULT_INSTALLATION_PATH)
-            .prompt().unwrap()
+            .prompt()
+            .unwrap(),
     );
 
     // Spawn the root task

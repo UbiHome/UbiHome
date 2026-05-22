@@ -5,20 +5,25 @@ This uses the same API as ESPHome.
 ## Basic Configuration
 
 ```yaml
-# This make the native api available
+# This makes the native api available unsecured
 api:
 ```
-
 
 ```yaml
 api:
   # Optional: Default Port is 6053
   port: 6053
-  password: "your_password" # Optional
-
+  # Secure your API:
+  encryption:
+    key: 'copy_your_generated_key_here'
 ```
 
+{{ encryption_key_generator() }}
 
 Similar to ESPHome:
 
 - [ESPHome API](https://esphome.io/components/api.html)
+
+## Supported Entities
+
+The native API exposes all configured entities.
