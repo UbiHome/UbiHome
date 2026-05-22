@@ -31,7 +31,7 @@ export class UbiHome {
 
 		return dag
 			.container()
-			.from("node:24-slim")
+			.from("node:22-slim")
 			.withWorkdir("/docs")
 			.withMountedCache("/docs/node_modules", dag.cacheVolume("docs-node-modules"))
 			.withFile("/docs/package.json", docsDir.file("package.json"))
