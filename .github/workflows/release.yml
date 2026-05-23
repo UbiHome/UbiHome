@@ -79,15 +79,15 @@ jobs:
 
       - name: Copy example config (Linux)
         if: matrix.runs-on == 'ubuntu-24.04'
-        run: cp documentation/docs/getting_started/linux.yml config.yaml
+        run: cp documentation/src/content/docs/getting_started/linux.yml config.yaml
 
       - name: Copy example config (Windows)
         if: startsWith(matrix.runs-on, 'windows-')
-        run: cp documentation/docs/getting_started/windows.yml config.yaml
+        run: cp documentation/src/content/docs/getting_started/windows.yml config.yaml
 
       - name: Copy example config (macOS)
         if: startsWith(matrix.runs-on, 'macos-')
-        run: cp documentation/docs/getting_started/macos.yml config.yaml
+        run: cp documentation/src/content/docs/getting_started/macos.yml config.yaml
 
       - name: Publish artifacts and release
         uses: houseabsolute/actions-rust-release@v0
