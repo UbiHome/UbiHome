@@ -15,7 +15,7 @@ on:
       docs_example_exclude_regex:
         type: string
         required: false
-        default: '^documentation/docs/examples/(automatic_screen_power_control/raspberry|motion_detection/raspberry)\.yml$'
+        default: ''
       docs_example_placeholder_values:
         type: string
         required: false
@@ -112,7 +112,10 @@ jobs:
           from pathlib import Path
 
           root = Path("documentation/docs")
-          pattern = os.environ.get("DOCS_EXAMPLE_EXCLUDE_REGEX", "^$")
+          pattern = (
+              os.environ.get("DOCS_EXAMPLE_EXCLUDE_REGEX")
+              or r"^documentation/docs/examples/(automatic_screen_power_control/raspberry|motion_detection/raspberry)\.yml$"
+          )
           placeholders_raw = os.environ.get("DOCS_EXAMPLE_PLACEHOLDER_VALUES", "{}")
 
           try:
@@ -152,7 +155,7 @@ jobs:
                   content = content.replace(f"<{key}>", value)
                   content = content.replace(f"__{key}__", value)
 
-              if not re.search(r"(?m)^ubihome\s*:", content):
+              if not re.search(r"(?m)^\s*ubihome\s*:", content):
                   content = "ubihome:\n  name: Documentation Example\n\n" + content
 
               with tempfile.NamedTemporaryFile("w", suffix=".yml", delete=False, encoding="utf-8") as tmp:
@@ -160,12 +163,14 @@ jobs:
                   tmp_path = tmp.name
 
               print(f"Validating: {rel}")
-              result = subprocess.run(
-                  [ubihome, "-c", tmp_path, "validate"],
-                  capture_output=True,
-                  text=True,
-              )
-              os.unlink(tmp_path)
+              try:
+                  result = subprocess.run(
+                      [ubihome, "-c", tmp_path, "validate"],
+                      capture_output=True,
+                      text=True,
+                  )
+              finally:
+                  os.unlink(tmp_path)
 
               if result.returncode != 0:
                   failed.append((rel, result.stdout, result.stderr))
