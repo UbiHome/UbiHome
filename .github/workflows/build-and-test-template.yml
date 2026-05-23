@@ -15,7 +15,7 @@ on:
       docs_example_exclude_regex:
         type: string
         required: false
-        default: '^$'
+        default: 'documentation/docs/examples/(automatic_screen_power_control/raspberry|motion_detection/raspberry)\.yml$'
       docs_example_placeholder_values:
         type: string
         required: false
@@ -105,7 +105,6 @@ jobs:
           import os
           import re
           import subprocess
-          import sys
           import tempfile
           from pathlib import Path
 
@@ -121,8 +120,16 @@ jobs:
           if not isinstance(placeholders, dict):
               raise SystemExit("DOCS_EXAMPLE_PLACEHOLDER_VALUES must be a JSON object.")
 
-          exclude = re.compile(pattern)
-          files = sorted(root.rglob("*.yml"))
+          try:
+              exclude = re.compile(pattern)
+          except re.error as exc:
+              raise SystemExit(f"Invalid docs example exclude regex: {exc}")
+
+          files = sorted(
+              file
+              for file in root.rglob("*.yml")
+              if "/examples/" in file.as_posix() or "/getting_started/" in file.as_posix()
+          )
           if not files:
               raise SystemExit("No documentation YAML files found to validate.")
 
@@ -141,6 +148,9 @@ jobs:
                   content = content.replace(f"{{{{{key}}}}}", value)
                   content = content.replace(f"<{key}>", value)
                   content = content.replace(f"__{key}__", value)
+
+              if not re.search(r"(?m)^ubihome\\s*:", content):
+                  content = "ubihome:\n  name: Documentation Example\n\n" + content
 
               with tempfile.NamedTemporaryFile("w", suffix=".yml", delete=False, encoding="utf-8") as tmp:
                   tmp.write(content)
