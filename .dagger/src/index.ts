@@ -26,7 +26,7 @@ import {
 
 @object()
 export class UbiHome {
-	private docsContainer(source: Directory): Container {
+	private docsDependenciesContainer(source: Directory): Container {
 		const docsDir = source.directory("documentation");
 
 		return dag
@@ -34,8 +34,18 @@ export class UbiHome {
 			.from("node:22-slim")
 			.withWorkdir("/docs")
 			.withMountedCache("/docs/node_modules", dag.cacheVolume("docs-node-modules"))
-			.withMountedDirectory("/docs", docsDir)
+			.withFile("/docs/package.json", docsDir.file("package.json"))
+			.withFile("/docs/package-lock.json", docsDir.file("package-lock.json"))
 			.withExec(["npm", "ci"]);
+	}
+
+	private docsContainer(source: Directory): Container {
+		const docsDir = source.directory("documentation");
+
+		return this.docsDependenciesContainer(source).withMountedDirectory(
+			"/docs",
+			docsDir,
+		);
 	}
 
 	/**
