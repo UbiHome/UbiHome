@@ -34,10 +34,8 @@ export class UbiHome {
 			.from("node:22-slim")
 			.withWorkdir("/docs")
 			.withMountedCache("/docs/node_modules", dag.cacheVolume("docs-node-modules"))
-			.withFile("/docs/package.json", docsDir.file("package.json"))
-			.withFile("/docs/package-lock.json", docsDir.file("package-lock.json"))
-			.withExec(["npm", "ci"])
-			.withMountedDirectory("/docs", docsDir);
+			.withMountedDirectory("/docs", docsDir)
+			.withExec(["npm", "ci"]);
 	}
 
 	/**
