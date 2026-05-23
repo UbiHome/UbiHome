@@ -12,6 +12,14 @@ on:
       fileending:
         type: string
         required: true
+      docs_example_exclude_regex:
+        type: string
+        required: false
+        default: '^$'
+      docs_example_placeholder_values:
+        type: string
+        required: false
+        default: '{}'
 jobs:
   build:
     runs-on: ${{ inputs.runs-on }}
@@ -88,6 +96,82 @@ jobs:
         with:
           name: release-${{ inputs.target }}
           path: tests/
+
+      - name: Validate documentation YAML examples
+        run: |-
+          chmod +x tests/ubihome
+          python - <<'PY'
+          import json
+          import os
+          import re
+          import subprocess
+          import sys
+          import tempfile
+          from pathlib import Path
+
+          root = Path("documentation/docs")
+          pattern = os.environ.get("DOCS_EXAMPLE_EXCLUDE_REGEX", "^$")
+          placeholders_raw = os.environ.get("DOCS_EXAMPLE_PLACEHOLDER_VALUES", "{}")
+
+          try:
+              placeholders = json.loads(placeholders_raw)
+          except json.JSONDecodeError as exc:
+              raise SystemExit(f"Invalid docs placeholder JSON: {exc}")
+
+          if not isinstance(placeholders, dict):
+              raise SystemExit("DOCS_EXAMPLE_PLACEHOLDER_VALUES must be a JSON object.")
+
+          exclude = re.compile(pattern)
+          files = sorted(root.rglob("*.yml"))
+          if not files:
+              raise SystemExit("No documentation YAML files found to validate.")
+
+          ubihome = str(Path("tests/ubihome").resolve())
+          failed = []
+
+          for file in files:
+              rel = file.as_posix()
+              if exclude.search(rel):
+                  print(f"Skipping (excluded): {rel}")
+                  continue
+
+              content = file.read_text(encoding="utf-8")
+              for key, value in placeholders.items():
+                  value = str(value)
+                  content = content.replace(f"{{{{{key}}}}}", value)
+                  content = content.replace(f"<{key}>", value)
+                  content = content.replace(f"__{key}__", value)
+
+              with tempfile.NamedTemporaryFile("w", suffix=".yml", delete=False, encoding="utf-8") as tmp:
+                  tmp.write(content)
+                  tmp_path = tmp.name
+
+              print(f"Validating: {rel}")
+              result = subprocess.run(
+                  [ubihome, "-c", tmp_path, "validate"],
+                  capture_output=True,
+                  text=True,
+              )
+              os.unlink(tmp_path)
+
+              if result.returncode != 0:
+                  failed.append((rel, result.stdout, result.stderr))
+
+          if failed:
+              print("\nValidation failed for documentation YAML files:")
+              for rel, out, err in failed:
+                  print(f"\n--- {rel} ---")
+                  if out.strip():
+                      print(out.strip())
+                  if err.strip():
+                      print(err.strip())
+              raise SystemExit(1)
+
+          print("All selected documentation YAML files are valid.")
+          PY
+        env:
+          DOCS_EXAMPLE_EXCLUDE_REGEX: ${{ inputs.docs_example_exclude_regex }}
+          DOCS_EXAMPLE_PLACEHOLDER_VALUES: ${{ inputs.docs_example_placeholder_values }}
       - uses: actions/setup-python@v5
         with:
           python-version: 3.14

@@ -9,6 +9,9 @@ on:
       - 'Cargo.toml'
       - 'Cargo.lock'
       - 'Cross.toml'
+      - 'documentation/docs/**/*.yml'
+      - '.github/workflows/ci_rust.yml'
+      - '.github/workflows/build-and-test-template.yml'
     branches-ignore:
       - release
 jobs:
