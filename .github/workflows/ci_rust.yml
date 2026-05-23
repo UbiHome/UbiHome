@@ -49,7 +49,7 @@ jobs:
       runs-on: ${{ matrix.runs-on }}
       target: ${{ matrix.target }}
       fileending: ${{ matrix.fileending }}
-      docs_example_exclude_regex: ${{ vars.DOCS_EXAMPLE_EXCLUDE_REGEX || 'documentation/docs/examples/(automatic_screen_power_control/raspberry|motion_detection/raspberry)\.yml$' }}
+      docs_example_exclude_regex: ${{ vars.DOCS_EXAMPLE_EXCLUDE_REGEX || '^documentation/docs/examples/(automatic_screen_power_control/raspberry|motion_detection/raspberry)\.yml$' }}
       docs_example_placeholder_values: ${{ vars.DOCS_EXAMPLE_PLACEHOLDER_VALUES || '{}' }}
     # If you might want to use a secret in the build or test job then you would need to pass secrets, inherit disables secret isolation
     secrets: inherit

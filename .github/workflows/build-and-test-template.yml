@@ -15,7 +15,7 @@ on:
       docs_example_exclude_regex:
         type: string
         required: false
-        default: 'documentation/docs/examples/(automatic_screen_power_control/raspberry|motion_detection/raspberry)\.yml$'
+        default: '^documentation/docs/examples/(automatic_screen_power_control/raspberry|motion_detection/raspberry)\.yml$'
       docs_example_placeholder_values:
         type: string
         required: false
@@ -97,6 +97,9 @@ jobs:
           name: release-${{ inputs.target }}
           path: tests/
 
+      - uses: actions/setup-python@v5
+        with:
+          python-version: 3.14
       - name: Validate documentation YAML examples
         run: |-
           chmod +x tests/ubihome
@@ -182,9 +185,6 @@ jobs:
         env:
           DOCS_EXAMPLE_EXCLUDE_REGEX: ${{ inputs.docs_example_exclude_regex }}
           DOCS_EXAMPLE_PLACEHOLDER_VALUES: ${{ inputs.docs_example_placeholder_values }}
-      - uses: actions/setup-python@v5
-        with:
-          python-version: 3.14
       - name: Install uv
         uses: astral-sh/setup-uv@v6
         with:
