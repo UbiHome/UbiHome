@@ -149,7 +149,7 @@ jobs:
                   content = content.replace(f"<{key}>", value)
                   content = content.replace(f"__{key}__", value)
 
-              if not re.search(r"(?m)^ubihome\\s*:", content):
+              if not re.search(r"(?m)^ubihome\s*:", content):
                   content = "ubihome:\n  name: Documentation Example\n\n" + content
 
               with tempfile.NamedTemporaryFile("w", suffix=".yml", delete=False, encoding="utf-8") as tmp:
