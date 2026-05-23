@@ -26,31 +26,29 @@ import {
 
 @object()
 export class UbiHome {
-	private docsDependenciesContainer(source: Directory): Container {
-		const docsDir = source.directory("documentation");
-
-		return dag
-			.container()
-			.from("node:22-slim")
-			.withWorkdir("/docs")
-			.withMountedCache("/docs/node_modules", dag.cacheVolume("docs-node-modules"))
-			.withFile("/docs/package.json", docsDir.file("package.json"))
-			.withFile("/docs/package-lock.json", docsDir.file("package-lock.json"))
-			.withExec(["npm", "ci"]);
-	}
-
 	private docsContainer(source: Directory): Container {
 		const docsDir = source.directory("documentation");
 
-		return this.docsDependenciesContainer(source).withDirectory(
-			"/docs",
-			docsDir,
-			{
-				exclude: ["node_modules", "node_modules/**"],
-			},
+		return (
+			dag
+				.container()
+				.from("node:22-slim")
+				.withWorkdir("/docs")
+				.withMountedCache(
+					"/docs/node_modules",
+					dag.cacheVolume("docs-node-modules"),
+				)
+				.withFile("/docs/package.json", docsDir.file("package.json"))
+				.withFile("/docs/package-lock.json", docsDir.file("package-lock.json"))
+				.withExec(["npm", "ci"])
+				.withMountedDirectory("/docs", docsDir)
+				// Remount cache as it would have been overwritten by docsDir
+				.withMountedCache(
+					"/docs/node_modules",
+					dag.cacheVolume("docs-node-modules"),
+				)
 		);
 	}
-
 	/**
 	 * Run strict docs checks and return build output logs.
 	 */
