@@ -42,9 +42,12 @@ export class UbiHome {
 	private docsContainer(source: Directory): Container {
 		const docsDir = source.directory("documentation");
 
-		return this.docsDependenciesContainer(source).withMountedDirectory(
+		return this.docsDependenciesContainer(source).withDirectory(
 			"/docs",
 			docsDir,
+			{
+				exclude: ["node_modules", "node_modules/**"],
+			},
 		);
 	}
 
