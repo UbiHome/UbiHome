@@ -3,10 +3,11 @@
 ```bash
 cd documentation
 npm install
-npm run dev      # local preview on http://localhost:8000
-npm run check    # content/type checks
-npm run build    # production build in documentation/site
-npm run preview  # preview built site
+npm run dev         # local preview on http://localhost:8000
+npm run check       # biome check with --write (formats/lints and updates files)
+npm run check-only  # non-mutating checks for CI/verification
+npm run build       # production build in documentation/site
+npm run preview    # preview built site
 ```
 
 Dagger commands:
