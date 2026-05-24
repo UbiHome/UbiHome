@@ -5,10 +5,12 @@ use esphome_native_api::proto::version_2025_12_1::BinarySensorStateResponse;
 use esphome_native_api::proto::version_2025_12_1::BluetoothLeAdvertisementResponse;
 use esphome_native_api::proto::version_2025_12_1::BluetoothServiceData;
 use esphome_native_api::proto::version_2025_12_1::EntityCategory;
+use esphome_native_api::proto::version_2025_12_1::EventResponse;
 use esphome_native_api::proto::version_2025_12_1::LightStateResponse;
 use esphome_native_api::proto::version_2025_12_1::ListEntitiesBinarySensorResponse;
 use esphome_native_api::proto::version_2025_12_1::ListEntitiesButtonResponse;
 use esphome_native_api::proto::version_2025_12_1::ListEntitiesDoneResponse;
+use esphome_native_api::proto::version_2025_12_1::ListEntitiesEventResponse;
 use esphome_native_api::proto::version_2025_12_1::ListEntitiesLightResponse;
 use esphome_native_api::proto::version_2025_12_1::ListEntitiesNumberResponse;
 use esphome_native_api::proto::version_2025_12_1::ListEntitiesSensorResponse;
@@ -21,6 +23,7 @@ use esphome_native_api::proto::version_2025_12_1::SensorStateResponse;
 use esphome_native_api::proto::version_2025_12_1::SubscribeLogsResponse;
 use esphome_native_api::proto::version_2025_12_1::SwitchStateResponse;
 use esphome_native_api::proto::version_2025_12_1::TextSensorStateResponse;
+use esphome_native_api::proto::SubscribeHomeAssistantStateResponse;
 use log::debug;
 use log::info;
 use serde::{Deserialize, Deserializer};
@@ -69,7 +72,7 @@ const fn default_port() -> u16 {
 }
 
 config_template!(
-    api, ApiConfig, NoConfig, NoConfig, NoConfig, NoConfig, NoConfig, NoConfig, NoConfig
+    api, ApiConfig, NoConfig, NoConfig, NoConfig, NoConfig, NoConfig, NoConfig, NoConfig, NoConfig
 );
 
 #[derive(Clone, Debug)]
@@ -228,6 +231,24 @@ impl Module for UbiHomePlatform {
                                 );
                             api_components_by_key.insert(key, component_binary_sensor);
                             api_components_key_id.insert(binary_sensor.id.clone(), key);
+                        }
+                        UbiComponent::Event(event) => {
+                            let key = hash_fnv1(&event.id);
+                            let component_event = ProtoMessage::ListEntitiesEventResponse(
+                                ListEntitiesEventResponse {
+                                    object_id: event.id.clone(),
+                                    key,
+                                    name: event.name,
+                                    device_id: 0,
+                                    icon: event.icon.unwrap_or_default(),
+                                    device_class: event.device_class.unwrap_or("".to_string()), //event.device_class,
+                                    event_types: event.event_types,
+                                    disabled_by_default: false,
+                                    entity_category: EntityCategory::None as i32,
+                                },
+                            );
+                            api_components_by_key.insert(key, component_event);
+                            api_components_key_id.insert(event.id.clone(), key);
                         }
                         UbiComponent::Light(light) => {
                             let key = hash_fnv1(&light.id);
@@ -484,6 +505,33 @@ impl Module for UbiHomePlatform {
                                             .await
                                             .unwrap();
                                     }
+                                    PublishedMessage::EventChange { key, r#type } => {
+                                        debug!("EventChange: {:?}", &key);
+                                        let key = api_components_key_id_clone.get(&key).unwrap();
+                                        tx_clone
+                                            .send(ProtoMessage::EventResponse(EventResponse {
+                                                key: *key,
+                                                device_id: 0,
+                                                event_type: r#type,
+                                            }))
+                                            .await
+                                            .unwrap();
+                                    }
+                                    PublishedMessage::APISubscribeEntity { entity, attribute } => {
+                                        debug!("APISubscribeEntity: {:?}", &entity);
+                                        tx_clone
+                                            .send(
+                                                ProtoMessage::SubscribeHomeAssistantStateResponse(
+                                                    SubscribeHomeAssistantStateResponse {
+                                                        entity_id: entity,
+                                                        attribute: attribute,
+                                                        once: false,
+                                                    },
+                                                ),
+                                            )
+                                            .await
+                                            .unwrap();
+                                    }
                                     _ => {}
                                 }
                             }
@@ -696,6 +744,16 @@ impl Module for UbiHomePlatform {
 
                                             cloned_sender.send(msg).unwrap();
                                         }
+                                    }
+                                    ProtoMessage::HomeAssistantStateResponse(state) => {
+                                        debug!("HomeAssistantStateResponse: {:?}", state);
+                                        let msg = ChangedMessage::APISubscribedEntityChange {
+                                            entity: state.entity_id.clone(),
+                                            attribute: state.attribute.clone(),
+                                            state: state.state,
+                                        };
+
+                                        cloned_sender.send(msg).unwrap();
                                     }
                                     _ => {
                                         debug!("Ignore message type: {:?}", message);

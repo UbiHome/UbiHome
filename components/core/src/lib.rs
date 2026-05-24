@@ -103,6 +103,19 @@ pub enum ChangedMessage {
         value: String,
     },
     BluetoothProxyMessage(BluetoothProxyMessage),
+    EventChange {
+        key: String,
+        r#type: String,
+    },
+    APISubscribeEntity {
+        entity: String,
+        attribute: String,
+    },
+    APISubscribedEntityChange {
+        entity: String,
+        attribute: String,
+        state: String,
+    },
 }
 
 #[derive(Debug, Clone)]
@@ -144,6 +157,19 @@ pub enum PublishedMessage {
         red: Option<f32>,
         green: Option<f32>,
         blue: Option<f32>,
+    },
+    EventChange {
+        key: String,
+        r#type: String,
+    },
+    APISubscribeEntity {
+        entity: String,
+        attribute: String,
+    },
+    APISubscribedEntityChange {
+        entity: String,
+        attribute: String,
+        state: String,
     },
     NumberValueChanged {
         key: String,
@@ -197,7 +223,9 @@ macro_rules! config_template {
         $switch_extension:ident,
         $light_extension:ident,
         $number_extension:ident,
-        $text_sensor_extension:ident) => {
+        $text_sensor_extension:ident,
+        $event_extension:ident
+    ) => {
         use duration_str::deserialize_option_duration;
         use garde::Validate;
         use ubihome_core::UbiHome;
@@ -210,6 +238,7 @@ macro_rules! config_template {
         template_mapper!(map_button, $component_name, $button_extension);
         template_mapper!(map_binary_sensor, $component_name, $binary_sensor_extension);
         template_mapper!(map_text_sensor, $component_name, $text_sensor_extension);
+        template_mapper!(map_event, $component_name, $event_extension);
 
         #[derive(Clone, Deserialize, Debug, Validate)]
         #[garde(allow_unvalidated)]
@@ -236,14 +265,20 @@ macro_rules! config_template {
             #[garde(dive)]
             pub switch: Option<HashMap<String, $switch_extension>>,
 
+            #[serde(default, deserialize_with = "map_event")]
+            #[garde(dive)]
+            pub event: Option<HashMap<String, $event_extension>>,
+
             #[serde(default, deserialize_with = "map_light")]
             #[garde(dive)]
             pub light: Option<HashMap<String, $light_extension>>,
 
             #[serde(default, deserialize_with = "map_number")]
+            #[garde(dive)]
             pub number: Option<HashMap<String, $number_extension>>,
 
             #[serde(default, deserialize_with = "map_text_sensor")]
+            #[garde(dive)]
             pub text_sensor: Option<HashMap<String, $text_sensor_extension>>,
         }
     };

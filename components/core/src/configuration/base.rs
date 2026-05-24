@@ -257,3 +257,32 @@ macro_rules! template_light {
 
     };
 }
+
+#[macro_export]
+macro_rules! template_event {
+    (
+        $(#[$meta:meta])*
+        $vis:vis struct $name:ident {
+            $(
+                $(#[$field_meta:meta])*
+                $field_vis:vis $field_name:ident : $field_type:ty
+            ),* $(,)?
+        }
+    ) => {
+            with_base_entity_properties! {
+                $(#[$meta])*
+                // TODO: Add? #[serde(deny_unknown_fields)]
+
+                $vis struct $name {
+                    // #[garde(dive)]
+                    // pub filters: Option<Vec<BinarySensorFilter>>,
+
+                    $(
+                        $(#[$field_meta])*
+                        $field_vis $field_name : $field_type,
+                    )*
+                }
+            }
+
+    };
+}

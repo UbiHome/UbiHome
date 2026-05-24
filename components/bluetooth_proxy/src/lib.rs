@@ -31,6 +31,7 @@ config_template!(
     NoConfig,
     NoConfig,
     NoConfig,
+    NoConfig,
     NoConfig
 );
 

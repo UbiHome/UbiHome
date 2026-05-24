@@ -15,6 +15,7 @@ pub enum UbiComponent {
     Light(UbiLight),
     Number(UbiNumber),
     TextSensor(UbiTextSensor),
+    Event(UbiEvent),
 }
 
 // Icons: https://pictogrammers.com/library/mdi/
@@ -119,3 +120,20 @@ pub struct UbiTextSensor {
     pub device_class: Option<String>,
 }
 }
+
+with_base_properties! {
+// https://developers.home-assistant.io/docs/core/entity/event
+#[derive(Clone, Serialize, Deserialize, Debug)]
+pub struct UbiEvent {
+    pub device_class: Option<String>,
+    pub event_types: Vec<String>,
+}
+}
+// #[derive(Clone, Serialize, Deserialize, Debug)]
+// pub struct UbiEvent {
+//     pub name: String,
+//     pub platform: String,
+//     pub icon: Option<String>,
+//     pub device_class: Option<String>,
+//     pub id: String,
+// }

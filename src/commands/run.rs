@@ -229,6 +229,9 @@ Remove the "{}:" entry from your configuration or install the cargo crate contai
                 UbiComponent::Light(_light) => {
                     // println!("Light: {:?}", light);
                 }
+                UbiComponent::Event(switch) => {
+                    println!("Event: {:?}", switch);
+                }
                 UbiComponent::Number(_number) => {
                     // Numbers don't have filters, state changes are forwarded directly
                 }
@@ -426,6 +429,17 @@ Remove the "{}:" entry from your configuration or install the cargo crate contai
                         ChangedMessage::BluetoothProxyMessage(msg) => {
                             Some(PublishedMessage::BluetoothProxyMessage(msg))
                         }
+                        ChangedMessage::EventChange { key, r#type } => {
+                            Some(PublishedMessage::EventChange { key, r#type })
+                        }
+                        ChangedMessage::APISubscribeEntity { entity, attribute } => {
+                            debug!("Publish APISubscribeEntity: {:?}", entity);
+                            Some(PublishedMessage::APISubscribeEntity { entity, attribute })
+                        }
+                        ChangedMessage::APISubscribedEntityChange { entity, attribute, state } => {
+                            debug!("Publish APISubscribedEntityChange: {:?}", entity);
+                            Some(PublishedMessage::APISubscribedEntityChange { entity, attribute, state })
+                        }
                         ChangedMessage::NumberValueChange { key, value } => {
                             Some(PublishedMessage::NumberValueChanged { key, value })
                         }
@@ -452,6 +466,7 @@ Remove the "{}:" entry from your configuration or install the cargo crate contai
                 components: initialized_platforms
                     .iter()
                     .map(|c| match c {
+                        UbiComponent::Event(event) => UbiComponent::Event(event.clone()),
                         UbiComponent::Switch(switch) => UbiComponent::Switch(switch.clone()),
                         UbiComponent::Button(button) => UbiComponent::Button(button.clone()),
                         UbiComponent::Sensor(sensor) => UbiComponent::Sensor(sensor.clone()),

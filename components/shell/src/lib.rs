@@ -2,6 +2,7 @@ use duration_str::deserialize_duration;
 use log::{debug, trace, warn};
 use serde::{Deserialize, Deserializer};
 use shell_exec::{Execution, Shell, ShellError};
+use std::any;
 use std::collections::HashMap;
 use std::{future::Future, pin::Pin, str, time::Duration};
 use tokio::{
@@ -13,6 +14,7 @@ use ubihome_core::internal::sensors::{
 };
 use ubihome_core::template_light;
 use ubihome_core::template_text_sensor;
+use ubihome_core::NoConfig;
 use ubihome_core::{
     config_template,
     internal::sensors::{UbiBinarySensor, UbiButton, UbiSensor},
@@ -168,7 +170,8 @@ config_template!(
     ShellSwitchConfig,
     ShellLightConfig,
     ShellNumberConfig,
-    ShellTextSensorConfig
+    ShellTextSensorConfig,
+    NoConfig
 );
 
 pub struct UbiHomePlatform {

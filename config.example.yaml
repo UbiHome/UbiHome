@@ -24,3 +24,10 @@ switch:
 #     unit_of_measurement: 'lx'
 #     device_class: illuminance
 #     state_class: measurement
+
+# media_controls:
+#   display_entity: media_player.squeezeplay_b8_27_eb_41_84_1c
+
+# event:
+#   - platform: media_controls
+#     name: test_control
