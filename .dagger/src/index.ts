@@ -169,6 +169,7 @@ export class UbiHome {
 		source: Directory,
 	): Promise<string> {
 		return this.rustContainer(source)
+			.withMountedCache("/target/", dag.cacheVolume("rust-target"))
 			.withExec(["cargo", "fmt", "--all", "--", "--check"])
 			.withExec([
 				"cargo",

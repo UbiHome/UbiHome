@@ -3,7 +3,7 @@
 {
 	"name": "Rust Dev Container",
 	// Or use a Dockerfile or Docker Compose file. More info: https://containers.dev/guide/dockerfile
-	"image": "mcr.microsoft.com/devcontainers/universal:5-noble",
+	"image": "mcr.microsoft.com/devcontainers/base:ubuntu",
 	"remoteEnv": {
 		"RUST_LOG": "debug",
 		"RUST_BACKTRACE": "1"
@@ -26,9 +26,13 @@
 			"terminal.integrated.shell.linux": "/bin/bash"
 		}
 	},
-	"postCreateCommand": "sudo apt update && sudo apt install -y libdbus-1-dev pkg-config libasound2-dev && rustup component add rustfmt clippy && cargo build",
+	"postCreateCommand": "sudo apt update && sudo apt install -y libdbus-1-dev pkg-config libasound2-dev && rustup component add rustfmt clippy && cd ./tests && uv run playwright install --with-deps && cd .. && cargo build",
 	"features": {
 		"ghcr.io/devcontainers/features/rust:1": {},
-		"ghcr.io/devcontainers-extra/features/uv:1": {}
+		"ghcr.io/devcontainers/features/docker-outside-of-docker:1": {},
+		"ghcr.io/devcontainers-extra/features/uv:1": {},
+		"ghcr.io/devcontainers/features/node:2": {
+			"version": "lts"
+		}
 	}
 }
