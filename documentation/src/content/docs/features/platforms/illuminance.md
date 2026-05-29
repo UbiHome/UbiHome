@@ -4,9 +4,10 @@ tags:
   - illuminance
   - linux
   - windows
+  - macos
 ---
 
-The illuminance platform allows you to integrate a laptop ambient light sensors into UbiHome. It supports both Linux and Windows systems.
+The illuminance platform allows you to integrate a laptop ambient light sensors into UbiHome. It supports Linux, Windows and macOS systems.
 
 ## Supported Platforms
 
@@ -26,6 +27,11 @@ The illuminance platform allows you to integrate a laptop ambient light sensors 
 - Native Windows Sensor API support using COM interfaces
 - Automatic detection of ambient light sensors through Windows Sensor Manager
 - Direct sensor data access without external dependencies
+
+### macOS
+
+- Works on both **Apple Silicon** and **Intel** Macs with a built-in ambient light sensor
+- Uses the `IOHIDEventSystemClient` API to poll the ambient light sensor HID service
 
 ## Configuration
 

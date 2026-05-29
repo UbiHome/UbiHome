@@ -4961,9 +4961,12 @@ dependencies = [
 name = "ubihome-illuminance"
 version = "0.14.0"
 dependencies = [
+ "core-foundation 0.10.1",
+ "core-foundation-sys",
  "duration-str",
  "garde",
  "industrial-io",
+ "libc",
  "log",
  "serde",
  "serde-saphyr 0.0.26",
