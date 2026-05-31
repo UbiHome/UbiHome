@@ -1,2 +1,4 @@
-.cache
-__pycache__
+node_modules
+.astro
+dist
+site

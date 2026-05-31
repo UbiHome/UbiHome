@@ -1,0 +1,109 @@
+---
+title: 'Features'
+tableOfContents: false
+---
+
+import { LinkCard, Card, CardGrid } from '@astrojs/starlight/components';
+
+UbiHome is built in a modular way. The modules can be split into the following categories:
+
+## Components
+
+Make data or actions available in a structured way, for example as sensor, button, switch, or number.
+[Platforms](#platforms) provide the implementation for component behavior.
+
+A component entry is defined under a component key (for example `sensor:` or `switch:`), and each entry selects a `platform`.
+
+All components share a set of [common attributes](/features/components/base/) that can be used to customize their behavior.
+
+### Entities
+
+<CardGrid>
+  <LinkCard
+    title='Binary Sensor'
+    href='/features/entities/binary_sensor/'
+    description='Track on/off states or occupancy.'
+  />
+
+<LinkCard title='Button' href='/features/entities/button/' description='Trigger an action on the device.' />
+
+<LinkCard title='Switch' href='/features/entities/switch/' description='Switch something on or off.' />
+
+<LinkCard
+  title='Number'
+  href='/features/entities/number/'
+  description='Set or read numeric values with min/max/step constraints.'
+/>
+
+<LinkCard title='Sensor' href='/features/entities/sensor/' description='Make data available as a sensor.' />
+
+  <LinkCard
+    title='Text Sensor'
+    href='/features/entities/text_sensor/'
+    description='Make text values available as a sensor.'
+  />
+</CardGrid>
+
+### Component Features
+
+<CardGrid>
+  <LinkCard
+    title='Actions'
+    href='/features/components/actions/'
+    description='Trigger actions from state changes. This even works offline!'
+  />
+
+  <LinkCard
+    title='Filters'
+    href='/features/components/filters/'
+    description='Modify component values (for example `round`, `delayed_on`).'
+  />
+</CardGrid>
+
+## Platforms
+
+Platforms extend the functionality of UbiHome.
+They implement how [Components](#components) interact with the system or [connectivity](#connectivity) to external systems.
+Use the built-in platforms to access device sensors (e.g. GPIO), execute commands or create your own component.
+
+<CardGrid>
+  <LinkCard title="GPIO" href="/features/platforms/gpio/" description="Access and control GPIO pins.">
+  </LinkCard>
+  <LinkCard title="Shell" href="/features/platforms/shell/" description="Execute any command when retrieving data or on trigger.">
+  </LinkCard>
+
+  <LinkCard
+    title="Many more..."
+    description="See the side navigation for more platforms."
+  />
+</CardGrid>
+
+### Connectivity
+
+Connect with Home Assistant via the native API, use MQTT or the built-in web server (REST API).
+
+<CardGrid>
+  <LinkCard title="Native API" href="/features/connectivity/native_api/" description="Use ESPHome's native API to connect to your device">
+  </LinkCard>
+
+<LinkCard title='MQTT' href='/features/connectivity/mqtt/' description='Connect to any MQTT broker'></LinkCard>
+
+<LinkCard
+  title='MDNS'
+  href='/features/connectivity/mdns/'
+  description='Advertise the device and its services via mDNS'
+></LinkCard>
+
+<LinkCard
+  title='Web Server (REST API)'
+  href='/features/connectivity/web_server/'
+  description="Trigger an action via the web server and its REST API."
+></LinkCard>
+
+  <LinkCard 
+    title="HTTP" 
+    href="/features/connectivity/http/" 
+    description="Call any HTTP endpoint to trigger."
+  ></LinkCard>
+</CardGrid>
+platform.

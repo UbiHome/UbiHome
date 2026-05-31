@@ -1,0 +1,28 @@
+{
+	"name": "ubihome-docs",
+	"private": true,
+	"type": "module",
+	"scripts": {
+		"dev": "astro dev --host 0.0.0.0 --port 8000",
+		"build": "astro build",
+		"preview": "astro preview --host 0.0.0.0 --port 8000",
+		"check-only": "biome check",
+		"check": "biome check --write"
+	},
+	"dependencies": {
+		"@astrojs/starlight": "^0.39.2",
+		"@biomejs/biome": "^2.4.15",
+		"@yeskunall/astro-umami": "^0.0.8",
+		"astro": "^6.3.3",
+		"sharp": "^0.34.5",
+		"starlight-showcases": "^0.3.2",
+		"starlight-latest-version": "^0.7.0",
+		"starlight-links-validator": "^0.24.0",
+		"starlight-sidebar-topics": "^0.7.1",
+		"starlight-site-graph": "^0.5.0",
+		"starlight-tags": "^1.0.1"
+	},
+	"overrides": {
+		"picomatch": "^4.0.3"
+	}
+}

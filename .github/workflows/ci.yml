@@ -7,11 +7,7 @@ on:
 
 jobs:
   check:
-    runs-on: depot-ubuntu-24.04
-    env:
-      ENGINE_TAR: /tmp/dagger-engine.tar
-      ENGINE_CACHE_TAR: /tmp/dagger-engine-cache.tar
-
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
 
