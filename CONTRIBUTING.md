@@ -18,6 +18,11 @@ Vendored:
 sudo apt-get install -y musl-tools
 ```
 
+### Linux ARM cross-builds
+
+- Keep using `armv7-unknown-linux-musleabi` and `arm-unknown-linux-musleabi` for the existing musl/static Linux ARM builds.
+- Use `armv7-unknown-linux-gnueabihf` or `arm-unknown-linux-gnueabi` when you need the normal GNU/glibc Linux userspace, for example shared ALSA plugins such as PulseAudio or PipeWire on Raspberry Pi.
+
 ## Current Pitfalls
 
 Logs are in `C:\Windows\System32\config\systemprofile\AppData\Local` as the service is running as `SYSTEM` user.

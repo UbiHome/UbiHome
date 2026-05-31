@@ -15,6 +15,14 @@ echo 'export ALSA_LIB_DIR=/usr/lib' >> /etc/profile
 """,
 ]
 
+[target.armv7-unknown-linux-gnueabihf]
+pre-build = [
+    """
+dpkg --add-architecture armhf
+apt-get update && apt-get install -y libdbus-1-dev:armhf libasound2-dev:armhf pkg-config
+""",
+]
+
 [target.arm-unknown-linux-musleabi]
 pre-build = [
     """
@@ -30,9 +38,23 @@ echo 'export ALSA_LIB_DIR=/usr/lib' >> /etc/profile
 """,
 ]
 
+[target.arm-unknown-linux-gnueabi]
+pre-build = [
+    """
+dpkg --add-architecture armel
+apt-get update && apt-get install -y libdbus-1-dev:armel libasound2-dev:armel pkg-config
+""",
+]
+
 # Set environment variables for the linker
 [target.arm-unknown-linux-musleabi.env]
 passthrough = ["PKG_CONFIG_PATH=/usr/lib/pkgconfig", "PKG_CONFIG_ALLOW_CROSS=1"]
 
+[target.arm-unknown-linux-gnueabi.env]
+passthrough = ["PKG_CONFIG_LIBDIR=/usr/lib/arm-linux-gnueabi/pkgconfig:/usr/share/pkgconfig", "PKG_CONFIG_ALLOW_CROSS=1"]
+
 [target.armv7-unknown-linux-musleabi.env]
 passthrough = ["PKG_CONFIG_PATH=/usr/lib/pkgconfig", "PKG_CONFIG_ALLOW_CROSS=1"]
+
+[target.armv7-unknown-linux-gnueabihf.env]
+passthrough = ["PKG_CONFIG_LIBDIR=/usr/lib/arm-linux-gnueabihf/pkgconfig:/usr/share/pkgconfig", "PKG_CONFIG_ALLOW_CROSS=1"]
