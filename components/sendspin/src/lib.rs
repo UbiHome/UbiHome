@@ -126,15 +126,9 @@ impl Module for UbiHomePlatform {
             let host = cpal::host_from_id(host_id).unwrap();
             debug!("Host: {}", host_id.name());
 
-            // let default_out = host
-            //     .default_output_device()
-            //     .map(|dev| dev.name().unwrap())
-            //     .map(|name| name.to_string());
-            let _default_out = host
-                .default_output_device()
-                .map(|dev| dev.id().unwrap())
-                .map(|id| id.to_string());
-            selected_device = host.default_output_device();
+            if selected_device.is_none() {
+                selected_device = host.default_output_device();
+            }
 
             let devices = host.devices().unwrap();
             debug!("  Devices: ");
