@@ -136,7 +136,7 @@ impl Module for UbiHomePlatform {
                 let id = device
                     .id() // id()
                     .map_or("Unknown Id".to_string(), |id| id.to_string());
-                let description = device.id().unwrap(); // description
+                let description = device.description().unwrap(); // description
                 debug!("  {id} - {description}");
 
                 // Output configs
