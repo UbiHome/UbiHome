@@ -22,13 +22,13 @@ export const labels = [
 
     1. Download and extract the archive and place the ubihome executable in a directory of your choice.
 
-       | Devices                                    | Download                                                                                                             | Target                         |
-       | ------------------------------------------ | -------------------------------------------------------------------------------------------------------------------- | ------------------------------ |
-       | Any Linux                                  | [TAR Link](https://github.com/UbiHome/UbiHome/releases/download/v0.14.0/ubihome-Linux-gnu-x86_64.tar.gz)          | x86_64-unknown-linux-gnu       |
-       | Raspberry Pi 3 / Linux with ALSA plugins   | [TAR Link](https://github.com/UbiHome/UbiHome/releases/download/v0.14.0/ubihome-Linux-gnueabihf-armv7.tar.gz)     | armv7-unknown-linux-gnueabihf  |
-       | Raspberry Pi 3 / self-contained musl build | [TAR Link](https://github.com/UbiHome/UbiHome/releases/download/v0.14.0/ubihome-Linux-musleabi-armv7.tar.gz)      | armv7-unknown-linux-musleabi   |
-       | Raspberry Pi / Linux ARM (GNU/glibc)       | [TAR Link](https://github.com/UbiHome/UbiHome/releases/download/v0.14.0/ubihome-Linux-gnueabi-arm.tar.gz)         | arm-unknown-linux-gnueabi      |
-       | Raspberry Pi / Linux ARM (musl)            | [TAR Link](https://github.com/UbiHome/UbiHome/releases/download/v0.14.0/ubihome-Linux-musleabi-arm.tar.gz)        | arm-unknown-linux-musleabi     |
+       | Devices                                        | Download                                                                                                             | Target                         |
+       | ---------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- | ------------------------------ |
+       | Any Linux                                      | [TAR Link](https://github.com/UbiHome/UbiHome/releases/download/v0.14.0/ubihome-Linux-musl-x86_64.tar.gz)         | x86_64-unknown-linux-musl      |
+       | ARMv7 Linux / Raspberry Pi 3 (GNU/glibc)      | [TAR Link](https://github.com/UbiHome/UbiHome/releases/download/v0.14.0/ubihome-Linux-gnueabihf-armv7.tar.gz)     | armv7-unknown-linux-gnueabihf  |
+       | ARMv7 Linux / Raspberry Pi 3 (musl)           | [TAR Link](https://github.com/UbiHome/UbiHome/releases/download/v0.14.0/ubihome-Linux-musleabi-armv7.tar.gz)      | armv7-unknown-linux-musleabi   |
+       | ARM Linux / Raspberry Pi (generic arm, GNU)   | [TAR Link](https://github.com/UbiHome/UbiHome/releases/download/v0.14.0/ubihome-Linux-gnueabi-arm.tar.gz)         | arm-unknown-linux-gnueabi      |
+       | ARM Linux / Raspberry Pi (generic arm, musl)  | [TAR Link](https://github.com/UbiHome/UbiHome/releases/download/v0.14.0/ubihome-Linux-musleabi-arm.tar.gz)        | arm-unknown-linux-musleabi     |
 
        ```bash
        # You might have to use a different link from the table above depending on your device type
@@ -36,7 +36,7 @@ export const labels = [
        tar xvzf ./ubihome.tar.gz
        ```
 
-       > Choose the GNU/glibc Linux ARM build when you need shared ALSA plugins such as PulseAudio or PipeWire (`pulse`, `default`, etc.). Choose the musl build for a more self-contained binary when direct ALSA devices are sufficient.
+       > Choose the GNU/glibc Linux ARM build when you need shared ALSA plugins such as PulseAudio or PipeWire (`pulse`, `default`, etc.). Choose the musl build for a more self-contained binary when direct ALSA devices such as `hw:0,0` or `plughw:0,0` are sufficient.
 
     2. Edit the configuration file `config.yaml` in the same directory as the executable. Example:
 
