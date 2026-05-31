@@ -18,7 +18,7 @@ parking_lot = "0.12"
 mdns-sd = "0.17.2"
 # Use until https://github.com/RustAudio/cpal/issues/1157
 # sendspin = { path = "../../../../DanielHabenicht/fork.sendspin-rs/" }
-sendspin = { git = "https://github.com/DanielHabenicht/fork.sendspin-rs", rev = "1a55d2bb69f102332e1fa72c47eb6697f756c408" } #branch = "pi-zero-w-cpal-errors"
+sendspin = { git = "https://github.com/DanielHabenicht/fork.sendspin-rs", rev = "8b70b428424ced2af847753ef978cc6d0bc1e845" } #branch = "pi-zero-w-cpal-errors"
 # cpal = "0.15.3"
 cpal = { git = "https://github.com/rustaudio/cpal", branch = "fix/alsa-double-open", features = [
   "pulseaudio",
