@@ -132,7 +132,7 @@ impl Module for UbiHomePlatform {
 
             let devices = host.devices().unwrap();
             debug!("  Devices: ");
-            for (_, device) in devices.enumerate() {
+            for device in devices {
                 let id = device
                     .id() // id()
                     .map_or("Unknown Id".to_string(), |id| id.to_string());
@@ -219,8 +219,8 @@ impl Module for UbiHomePlatform {
                     supported_formats: vec![AudioFormatSpec {
                         codec: "pcm".to_string(),
                         channels: 2,
-                        sample_rate: sample_rate.clone(),
-                        bit_depth: bit_depth.clone(),
+                        sample_rate,
+                        bit_depth,
                     }],
                     buffer_capacity: 50 * 1024 * 1024, // 50 MB
                     supported_commands: vec!["volume".to_string(), "mute".to_string()],
