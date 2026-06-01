@@ -18,7 +18,7 @@ parking_lot = "0.12"
 mdns-sd = "0.17.2"
 # Use until https://github.com/RustAudio/cpal/issues/1157
 # sendspin = { path = "../../../../DanielHabenicht/fork.sendspin-rs/" }
-sendspin = { git = "https://github.com/DanielHabenicht/fork.sendspin-rs", rev = "b6135a7170e1c1c6194a1893138ae7ab1126fb78" } #branch = "pi-zero-w-cpal-errors"
+sendspin = { git = "https://github.com/DanielHabenicht/fork.sendspin-rs", rev = "a3cbe159243f261aa9cca03688524c506c3f4284" } #branch = "pi-zero-w-cpal-errors"
 # cpal = "0.15.3"
 cpal = { git = "https://github.com/rustaudio/cpal", branch = "fix/pulseaudio-human-ids", features = [
   "pulseaudio",
