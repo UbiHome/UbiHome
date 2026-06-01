@@ -888,8 +888,37 @@ dependencies = [
  "block2 0.6.2",
  "coreaudio-rs",
  "dasp_sample",
- "futures",
  "jni 0.21.1",
+ "js-sys",
+ "libc",
+ "mach2 0.6.0",
+ "ndk",
+ "ndk-context",
+ "num-derive",
+ "num-traits",
+ "objc2 0.6.4",
+ "objc2-audio-toolbox",
+ "objc2-avf-audio",
+ "objc2-core-audio",
+ "objc2-core-audio-types",
+ "objc2-core-foundation",
+ "objc2-foundation 0.3.2",
+ "web-sys",
+ "windows 0.61.3",
+ "windows-core 0.61.2",
+]
+
+[[package]]
+name = "cpal"
+version = "0.18.0"
+source = "git+https://github.com/rustaudio/cpal?branch=fix%2Fpulseaudio-human-ids#fbc35de645a6d3614db86d264adac759c902ddd7"
+dependencies = [
+ "alsa",
+ "block2 0.6.2",
+ "coreaudio-rs",
+ "dasp_sample",
+ "futures",
+ "jni 0.22.4",
  "js-sys",
  "libc",
  "mach2 0.6.0",
@@ -2233,6 +2262,36 @@ dependencies = [
  "thiserror 1.0.69",
  "walkdir",
  "windows-sys 0.45.0",
+]
+
+[[package]]
+name = "jni"
+version = "0.22.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5efd9a482cf3a427f00d6b35f14332adc7902ce91efb778580e180ff90fa3498"
+dependencies = [
+ "cfg-if",
+ "combine",
+ "jni-macros",
+ "jni-sys 0.4.1",
+ "log",
+ "simd_cesu8",
+ "thiserror 2.0.18",
+ "walkdir",
+ "windows-link 0.2.1",
+]
+
+[[package]]
+name = "jni-macros"
+version = "0.22.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a00109accc170f0bdb141fed3e393c565b6f5e072365c3bd58f5b062591560a3"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "rustc_version",
+ "simd_cesu8",
+ "syn 2.0.117",
 ]
 
 [[package]]
@@ -3896,7 +3955,7 @@ name = "sendspin"
 version = "0.2.0"
 source = "git+https://github.com/DanielHabenicht/fork.sendspin-rs?rev=b6135a7170e1c1c6194a1893138ae7ab1126fb78#b6135a7170e1c1c6194a1893138ae7ab1126fb78"
 dependencies = [
- "cpal",
+ "cpal 0.18.0 (git+https://github.com/rustaudio/cpal?branch=fix%2Falsa-double-open)",
  "crossbeam",
  "futures-util",
  "libc",
@@ -4173,6 +4232,16 @@ checksum = "c4db69cba1110affc0e9f7bcd48bbf87b3f4fc7c61fc9155afd4c469eb3d6c1b"
 dependencies = [
  "errno",
  "libc",
+]
+
+[[package]]
+name = "simd_cesu8"
+version = "1.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "94f90157bb87cddf702797c5dadfa0be7d266cdf49e22da2fcaa32eff75b2c33"
+dependencies = [
+ "rustc_version",
+ "simdutf8",
 ]
 
 [[package]]
@@ -5067,7 +5136,7 @@ dependencies = [
 name = "ubihome-sendspin"
 version = "0.13.0"
 dependencies = [
- "cpal",
+ "cpal 0.18.0 (git+https://github.com/rustaudio/cpal?branch=fix%2Fpulseaudio-human-ids)",
  "duration-str",
  "garde",
  "log",
