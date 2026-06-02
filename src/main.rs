@@ -96,11 +96,6 @@ fn cli() -> Command {
             .hide(true)
             .action(clap::ArgAction::SetTrue)
             .num_args(0),
-        Arg::new("sentry_dsn")
-            .long("sentry-dsn")
-            .env("SENTRY_DSN")
-            .help("Sentry DSN to enable error reporting. If not provided, error reporting is disabled.")
-            .num_args(1),
     ];
 
     Command::new("UbiHome")
@@ -117,7 +112,14 @@ fn cli() -> Command {
             Arg::new("log_level")
             .long("log-level")
             .global(true)
-            .help("The log level (overwrites the config).")])
+            .help("The log level (overwrites the config)."),
+            Arg::new("sentry_dsn")
+            .long("sentry-dsn")
+            .env("SENTRY_DSN")
+            .global(true)
+            .help("Sentry DSN to enable error reporting. If not provided, error reporting is disabled.")
+            .num_args(1),
+        ])
         .subcommand(
             Command::new("run")
                 .about("Run UbiHome manually.")
@@ -185,6 +187,26 @@ fn main() {
 
             let log_level = matches.try_get_one::<String>("log_level").unwrap();
 
+            let sentry_dsn = matches
+                .try_get_one::<String>("sentry_dsn")
+                .unwrap_or(None)
+                .cloned();
+            if sentry_dsn.is_some() {
+                println!("Error reporting: active");
+            }
+            // The guard must be kept alive for the full duration of the process.
+            // Dropping it would shut down Sentry and stop error reporting.
+            #[allow(unused_variables)]
+            let sentry_guard = sentry_dsn.as_deref().map(|dsn| {
+                sentry::init((
+                    dsn,
+                    sentry::ClientOptions {
+                        release: Some(VERSION.into()),
+                        ..Default::default()
+                    },
+                ))
+            });
+
             match matches.subcommand() {
                 Some(("install", sub_matches)) => {
                     let location = sub_matches.try_get_one::<String>("location").unwrap();
@@ -215,26 +237,7 @@ fn main() {
                 },
                 #[allow(unused_variables)]
                 Some(("run", sub_matches)) => {
-                    let sentry_dsn = sub_matches
-                        .try_get_one::<String>("sentry_dsn")
-                        .unwrap_or(None)
-                        .cloned();
                     println!("UbiHome - {}", VERSION);
-                    if sentry_dsn.is_some() {
-                        println!("Error reporting: active");
-                    }
-                    // The guard must be kept alive for the full duration of the run command.
-                    // Dropping it would shut down Sentry and stop error reporting.
-                    #[allow(unused_variables)]
-                    let sentry_guard = sentry_dsn.as_deref().map(|dsn| {
-                        sentry::init((
-                            dsn,
-                            sentry::ClientOptions {
-                                release: Some(VERSION.into()),
-                                ..Default::default()
-                            },
-                        ))
-                    });
                     #[cfg(target_os = "windows")]
                     let is_windows_service =
                         sub_matches.get_one::<bool>("as-windows-service").unwrap();
