@@ -96,6 +96,11 @@ fn cli() -> Command {
             .hide(true)
             .action(clap::ArgAction::SetTrue)
             .num_args(0),
+        Arg::new("sentry_dsn")
+            .long("sentry-dsn")
+            .env("SENTRY_DSN")
+            .help("Sentry DSN to enable error reporting. If not provided, error reporting is disabled.")
+            .num_args(1),
     ];
 
     Command::new("UbiHome")
@@ -210,7 +215,26 @@ fn main() {
                 },
                 #[allow(unused_variables)]
                 Some(("run", sub_matches)) => {
+                    let sentry_dsn = sub_matches
+                        .try_get_one::<String>("sentry_dsn")
+                        .unwrap_or(None)
+                        .cloned();
                     println!("UbiHome - {}", VERSION);
+                    if sentry_dsn.is_some() {
+                        println!("Error reporting: active");
+                    }
+                    // The guard must be kept alive for the full duration of the run command.
+                    // Dropping it would shut down Sentry and stop error reporting.
+                    #[allow(unused_variables)]
+                    let sentry_guard = sentry_dsn.as_deref().map(|dsn| {
+                        sentry::init((
+                            dsn,
+                            sentry::ClientOptions {
+                                release: Some(VERSION.into()),
+                                ..Default::default()
+                            },
+                        ))
+                    });
                     #[cfg(target_os = "windows")]
                     let is_windows_service =
                         sub_matches.get_one::<bool>("as-windows-service").unwrap();
