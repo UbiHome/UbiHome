@@ -19,6 +19,7 @@ use ubihome_core::{
 };
 
 #[derive(Clone, Deserialize, Debug, Validate)]
+#[garde(allow_unvalidated)]
 pub struct IcmpPingConfig {
     #[serde(default = "default_timeout")]
     #[serde(deserialize_with = "deserialize_duration")]
@@ -28,6 +29,7 @@ pub struct IcmpPingConfig {
 
 template_sensor! {
     #[derive(Clone, Deserialize, Debug, Validate)]
+    #[garde(allow_unvalidated)]
     pub struct IcmpPingSensorConfig {
         #[garde(skip)]
         pub ip: IpAddr,
@@ -46,6 +48,7 @@ template_sensor! {
 
 template_binary_sensor! {
     #[derive(Clone, Deserialize, Debug, Validate)]
+    #[garde(allow_unvalidated)]
     pub struct IcmpPingBinarySensorConfig {
         #[garde(skip)]
         pub ip: IpAddr,
@@ -298,11 +301,27 @@ fn parse_latency_ms(output: &str) -> Option<f32> {
     for marker in ["time=", "time<"] {
         if let Some(index) = output.find(marker) {
             let value = &output[index + marker.len()..];
-            let numeric: String = value
-                .trim_start()
-                .chars()
-                .take_while(|character| character.is_ascii_digit() || *character == '.')
-                .collect();
+            let mut seen_decimal_separator = false;
+            let mut numeric = String::new();
+
+            for character in value.trim_start().chars() {
+                if character.is_ascii_digit() {
+                    numeric.push(character);
+                    continue;
+                }
+
+                if character == '.' {
+                    if seen_decimal_separator {
+                        return None;
+                    }
+
+                    seen_decimal_separator = true;
+                    numeric.push(character);
+                    continue;
+                }
+
+                break;
+            }
 
             if !numeric.is_empty() {
                 return numeric.parse().ok();
@@ -327,6 +346,12 @@ mod tests {
     fn parses_windows_ping_output() {
         let output = "Reply from 1.1.1.1: bytes=32 time<1ms TTL=57";
         assert_eq!(parse_latency_ms(output), Some(1.0));
+    }
+
+    #[test]
+    fn rejects_malformed_latency_output() {
+        let output = "64 bytes from 8.8.8.8: icmp_seq=1 ttl=117 time=1.2.3 ms";
+        assert_eq!(parse_latency_ms(output), None);
     }
 
     #[test]
