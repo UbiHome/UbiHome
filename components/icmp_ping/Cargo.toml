@@ -7,6 +7,7 @@ edition = "2021"
 [dependencies]
 duration-str = "0.16.1"
 log = "0.4"
+ping = "0.7.1"
 serde = { version = "1.0", features = ["derive"] }
 tokio = { version = "1", features = ["full"] }
 ubihome-core = { path = "../core", features = ["validation"] }

@@ -2,12 +2,11 @@ use duration_str::deserialize_duration;
 use log::{debug, warn};
 use serde::{Deserialize, Deserializer};
 use std::{
-    collections::HashMap, future::Future, net::IpAddr, pin::Pin, process::Stdio, time::Duration,
+    collections::HashMap, future::Future, io::ErrorKind, net::IpAddr, pin::Pin, time::Duration,
 };
 use tokio::{
-    process::Command,
     sync::broadcast::{Receiver, Sender},
-    time,
+    task, time,
 };
 #[allow(unused_imports)]
 use ubihome_core::constants::{is_id_string_option, is_readable_string};
@@ -242,117 +241,32 @@ impl Module for UbiHomePlatform {
 }
 
 async fn ping(ip: &IpAddr, timeout: Duration) -> Result<f32, String> {
-    let mut command = build_ping_command(ip);
-    command.kill_on_drop(true);
-    command.stdout(Stdio::piped());
-    command.stderr(Stdio::piped());
+    let ip = *ip;
 
-    let output = match time::timeout(timeout, command.output()).await {
-        Ok(result) => result.map_err(|error| format!("Failed to execute ping command: {error}"))?,
-        Err(_) => {
-            return Err(format!("Ping timed out after {}ms", timeout.as_millis()));
-        }
-    };
-
-    let stdout = String::from_utf8_lossy(&output.stdout);
-    let stderr = String::from_utf8_lossy(&output.stderr);
-
-    if !output.status.success() {
-        let error_output = if stderr.trim().is_empty() {
-            stdout.trim()
-        } else {
-            stderr.trim()
-        };
-
-        return Err(if error_output.is_empty() {
-            format!("Ping exited with status {}", output.status)
-        } else {
-            error_output.to_string()
-        });
-    }
-
-    parse_latency_ms(&stdout).ok_or_else(|| {
-        format!(
-            "Failed to parse latency from ping output: {}",
-            stdout.trim().replace('\n', " ")
-        )
+    task::spawn_blocking(move || {
+        let mut request = ::ping::new(ip);
+        request.timeout(timeout);
+        request
+            .send()
+            .map(|result| result.rtt.as_secs_f32() * 1000.0)
+            .map_err(|error| format_ping_error(error, timeout))
     })
+    .await
+    .map_err(|error| format!("Ping task failed: {error}"))?
 }
 
-fn build_ping_command(ip: &IpAddr) -> Command {
-    let mut command = Command::new("ping");
-
-    #[cfg(target_os = "windows")]
-    {
-        command.arg("-n").arg("1");
-    }
-
-    #[cfg(not(target_os = "windows"))]
-    {
-        command.arg("-c").arg("1");
-    }
-
-    command.arg(ip.to_string());
-    command
-}
-
-fn parse_latency_ms(output: &str) -> Option<f32> {
-    let output = output.to_ascii_lowercase();
-    for marker in ["time=", "time<"] {
-        if let Some(index) = output.find(marker) {
-            let value = &output[index + marker.len()..];
-            let mut seen_decimal_separator = false;
-            let mut numeric = String::new();
-
-            for character in value.trim_start().chars() {
-                if character.is_ascii_digit() {
-                    numeric.push(character);
-                    continue;
-                }
-
-                if character == '.' {
-                    if seen_decimal_separator {
-                        return None;
-                    }
-
-                    seen_decimal_separator = true;
-                    numeric.push(character);
-                    continue;
-                }
-
-                break;
-            }
-
-            if !numeric.is_empty() {
-                return numeric.parse().ok();
-            }
+fn format_ping_error(error: ::ping::Error, timeout: Duration) -> String {
+    match error {
+        ::ping::Error::IoError { error } if error.kind() == ErrorKind::TimedOut => {
+            format!("Ping timed out after {}ms", timeout.as_millis())
         }
+        other => other.to_string(),
     }
-
-    None
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    #[test]
-    fn parses_linux_ping_output() {
-        let output = "64 bytes from 8.8.8.8: icmp_seq=1 ttl=117 time=23.4 ms";
-        assert_eq!(parse_latency_ms(output), Some(23.4));
-    }
-
-    #[test]
-    fn parses_windows_ping_output() {
-        let output = "Reply from 1.1.1.1: bytes=32 time<1ms TTL=57";
-        assert_eq!(parse_latency_ms(output), Some(1.0));
-    }
-
-    #[test]
-    fn rejects_malformed_latency_output() {
-        let output = "64 bytes from 8.8.8.8: icmp_seq=1 ttl=117 time=1.2.3 ms";
-        assert_eq!(parse_latency_ms(output), None);
-    }
 
     #[test]
     fn parses_icmp_ping_config() {
