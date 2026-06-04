@@ -197,8 +197,7 @@ fn main() {
             }
             // The guard must be kept alive for the full duration of the process.
             // Dropping it would shut down Sentry and stop error reporting.
-            #[allow(unused_variables)]
-            let sentry_guard = sentry.as_deref().map(|dsn| {
+            let _sentry_guard = sentry.as_deref().map(|dsn| {
                 sentry::init((
                     dsn,
                     sentry::ClientOptions {
