@@ -248,11 +248,15 @@ async fn ping(ip: &IpAddr, timeout: Duration) -> Result<f32, String> {
         request.timeout(timeout);
         request
             .send()
-            .map(|result| result.rtt.as_secs_f32() * 1000.0)
+            .map(|result| latency_ms(result.rtt))
             .map_err(|error| format_ping_error(error, timeout))
     })
     .await
     .map_err(|error| format!("Ping task failed: {error}"))?
+}
+
+fn latency_ms(duration: Duration) -> f32 {
+    duration.as_secs_f32() * 1000.0
 }
 
 fn format_ping_error(error: ::ping::Error, timeout: Duration) -> String {
@@ -267,6 +271,32 @@ fn format_ping_error(error: ::ping::Error, timeout: Duration) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn converts_duration_to_latency_ms() {
+        assert_eq!(latency_ms(Duration::from_millis(1234)), 1234.0);
+    }
+
+    #[test]
+    fn formats_timeout_errors() {
+        let timeout = Duration::from_secs(2);
+        let error = ::ping::Error::IoError {
+            error: std::io::Error::new(ErrorKind::TimedOut, "Timeout occured"),
+        };
+
+        assert_eq!(
+            format_ping_error(error, timeout),
+            "Ping timed out after 2000ms"
+        );
+    }
+
+    #[test]
+    fn preserves_non_timeout_ping_errors() {
+        assert_eq!(
+            format_ping_error(::ping::Error::InternalError, Duration::from_secs(2)),
+            "internal error"
+        );
+    }
 
     #[test]
     fn parses_icmp_ping_config() {
