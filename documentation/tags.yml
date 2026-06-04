@@ -1,0 +1,63 @@
+tags:
+  illuminance:
+    label: Illuminance
+    description: Ambient light sensing and related features.
+    color: '#f59e0b'
+
+  temperature:
+    label: Temperature
+    description: Temperature sensors and examples.
+    color: '#ef4444'
+  humidity:
+    label: Humidity
+    description: Humidity sensors and examples.
+    color: '#14b8a6'
+  pressure:
+    label: Pressure
+    description: Pressure sensors and examples.
+    color: '#8b5cf6'
+  i2c:
+    label: I2C
+    description: Hardware integrations based on I2C devices.
+    color: '#64748b'
+
+  # Hardware Platforms
+  raspberry-pi-zero-w-rev1:
+    label: RaspberryPi Zero W Rev1
+    color: '#000000'
+
+  # OS
+  linux:
+    label: Linux
+    description: Features and examples targeting Linux devices.
+    color: '#2563eb'
+    type: os
+  windows:
+    label: Windows
+    description: Features and examples targeting Windows devices.
+    color: '#0ea5e9'
+    type: os
+  macos:
+    label: MacOS
+    description: Features and examples targeting MacOS devices.
+    color: '#0ea5e9'
+    type: os
+
+  # Feature: Components
+  components-binary-sensor:
+    label: Binary Sensor
+    type: component
+  components-button:
+    label: Button
+    type: component
+  components-number:
+    label: Number
+    type: component
+  components-sensor:
+    label: Sensor
+    type: component
+  components-switch:
+    label: Switch
+  components-text-sensor:
+    label: Text Sensor
+    type: component

@@ -1,0 +1,33 @@
+---
+title: Native Api
+---
+
+import EncryptionKeyGenerator from '../../../../components/EncryptionKeyGenerator.astro';
+
+This exposes the same native API server as ESPHome.
+
+## Basic Configuration
+
+```yaml
+# This makes the native api available unsecured
+api:
+```
+
+```yaml
+api:
+  # Optional: Default Port is 6053
+  port: 6053
+  # Secure your API:
+  encryption:
+    key: 'copy_your_generated_key_here'
+```
+
+<EncryptionKeyGenerator />
+
+Similar to ESPHome:
+
+- [ESPHome API](https://esphome.io/components/api.html)
+
+## Supported Entities
+
+The native API exposes all configured entities.

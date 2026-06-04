@@ -1,6 +1,6 @@
 use std::{env, fs, path::Path};
 
-use log::{debug, info};
+use log::debug;
 
 use crate::constants;
 

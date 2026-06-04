@@ -1,22 +1,21 @@
-use duration_str::deserialize_duration;
+use duration_str::{
+    deserialize_duration, deserialize_option_duration as deserialize_optional_duration,
+};
 use log::{debug, warn};
-use serde::Deserialize;
-use serde::Deserializer;
+use serde::{Deserialize, Deserializer};
 use std::{collections::HashMap, future::Future, pin::Pin, time::Duration};
 use tokio::{
     net::{TcpStream, UdpSocket},
     sync::broadcast::{Receiver, Sender},
     time,
 };
-use ubihome_core::{
-    config_template,
-    home_assistant::sensors::UbiBinarySensor,
-    internal::sensors::{InternalBinarySensor, InternalComponent},
-    ChangedMessage, Module, NoConfig, PublishedMessage,
-};
+use ubihome_core::constants::{is_id_string_option, is_readable_string};
+use ubihome_core::internal::sensors::{UbiBinarySensor, UbiComponent};
+use ubihome_core::template_binary_sensor;
+use ubihome_core::with_base_entity_properties;
+use ubihome_core::{config_template, ChangedMessage, Module, NoConfig, PublishedMessage};
 
-/// Transport protocol for a connectivity target.
-#[derive(Clone, Deserialize, Debug, PartialEq)]
+#[derive(Clone, Deserialize, Debug, PartialEq, Validate)]
 #[serde(rename_all = "lowercase")]
 pub enum Protocol {
     Tcp,
@@ -29,15 +28,16 @@ impl std::default::Default for Protocol {
     }
 }
 
-/// A single connectivity target.
-#[derive(Clone, Deserialize, Debug)]
+#[derive(Clone, Deserialize, Debug, Validate)]
+#[garde(allow_unvalidated)]
 pub struct TargetConfig {
     pub host: String,
     pub port: u16,
     #[serde(default)]
     pub protocol: Protocol,
     #[serde(default)]
-    #[serde(deserialize_with = "deserialize_option_duration")]
+    #[serde(deserialize_with = "deserialize_optional_duration")]
+    #[garde(skip)]
     pub timeout: Option<Duration>,
 }
 
@@ -70,15 +70,19 @@ fn default_targets() -> Vec<TargetConfig> {
     ]
 }
 
-#[derive(Clone, Deserialize, Debug)]
+#[derive(Clone, Deserialize, Debug, Validate)]
+#[garde(allow_unvalidated)]
 pub struct OnlineConfig {
     #[serde(default = "default_targets")]
+    #[garde(dive)]
     pub targets: Vec<TargetConfig>,
     #[serde(default = "default_update_interval")]
     #[serde(deserialize_with = "deserialize_duration")]
+    #[garde(skip)]
     pub update_interval: Duration,
     #[serde(default = "default_timeout")]
     #[serde(deserialize_with = "deserialize_duration")]
+    #[garde(skip)]
     pub timeout: Duration,
 }
 
@@ -90,17 +94,32 @@ fn default_timeout() -> Duration {
     Duration::from_secs(3)
 }
 
-#[derive(Clone, Deserialize, Debug)]
-pub struct OnlineBinarySensorConfig {
+#[derive(Clone, Deserialize, Debug, Validate)]
+#[garde(allow_unvalidated)]
+pub struct OnlineSensorConfig {
+    #[serde(default)]
+    #[garde(dive)]
     pub targets: Option<Vec<TargetConfig>>,
 
     #[serde(default)]
-    #[serde(deserialize_with = "deserialize_option_duration")]
+    #[serde(deserialize_with = "deserialize_optional_duration")]
+    #[garde(skip)]
     pub update_interval: Option<Duration>,
 
     #[serde(default)]
-    #[serde(deserialize_with = "deserialize_option_duration")]
+    #[serde(deserialize_with = "deserialize_optional_duration")]
+    #[garde(skip)]
     pub timeout: Option<Duration>,
+}
+
+template_binary_sensor! {
+#[derive(Clone, Deserialize, Debug, Validate)]
+#[garde(allow_unvalidated)]
+pub struct OnlineBinarySensorConfig {
+    #[serde(flatten)]
+    #[garde(dive)]
+    pub base: OnlineSensorConfig,
+}
 }
 
 config_template!(
@@ -108,6 +127,7 @@ config_template!(
     OnlineConfig,
     NoConfig,
     OnlineBinarySensorConfig,
+    NoConfig,
     NoConfig,
     NoConfig,
     NoConfig,
@@ -128,80 +148,78 @@ struct RuntimeBinarySensorConfig {
     update_interval: Duration,
 }
 
-pub struct Default {
-    components: Vec<InternalComponent>,
+#[derive(Clone, Debug)]
+pub struct UbiHomePlatform {
+    components: Vec<UbiComponent>,
     binary_sensors: HashMap<String, RuntimeBinarySensorConfig>,
 }
 
-impl Module for Default {
-    fn new(config_string: &String) -> Result<Self, String> {
-        let config = serde_yaml::from_str::<CoreConfig>(config_string)
-            .map_err(|e| format!("Failed to parse online config: {}", e))?;
+impl Module for UbiHomePlatform {
+    fn new(config_string: &str, config_path: &str) -> Result<Self, String> {
+        let config =
+            ubihome_core::validation::validate_config::<CoreConfig>(config_string, config_path)?;
 
         let global_timeout = config.online.timeout;
         let global_targets = &config.online.targets;
 
-        let mut components: Vec<InternalComponent> = Vec::new();
+        let mut components: Vec<UbiComponent> = Vec::new();
         let mut binary_sensors: HashMap<String, RuntimeBinarySensorConfig> = HashMap::new();
 
-        for (_, any_sensor) in config.binary_sensor.clone().unwrap_or_default() {
-            match any_sensor.extra {
-                BinarySensorKind::online(binary_sensor) => {
-                    let id = any_sensor.default.get_object_id();
+        for (_, binary_sensor) in config.binary_sensor.clone().unwrap_or_default() {
+            let id = binary_sensor.get_object_id();
+            components.push(UbiComponent::BinarySensor(UbiBinarySensor {
+                platform: "sensor".to_string(),
+                icon: binary_sensor
+                    .icon
+                    .clone()
+                    .or_else(|| Some("mdi:web".to_string())),
+                device_class: binary_sensor
+                    .device_class
+                    .clone()
+                    .or_else(|| Some("connectivity".to_string())),
+                name: binary_sensor.name.clone(),
+                id: id.clone(),
+                on_press: binary_sensor.on_press.clone(),
+                on_release: binary_sensor.on_release.clone(),
+                filters: binary_sensor.filters.clone(),
+            }));
 
-                    components.push(InternalComponent::BinarySensor(InternalBinarySensor {
-                        ha: UbiBinarySensor {
-                            platform: "sensor".to_string(),
-                            icon: any_sensor
-                                .default
-                                .icon
-                                .clone()
-                                .or_else(|| Some("mdi:web".to_string())),
-                            device_class: any_sensor
-                                .default
-                                .device_class
-                                .clone()
-                                .or_else(|| Some("connectivity".to_string())),
-                            name: any_sensor.default.name.clone(),
-                            id: id.clone(),
-                        },
-                        base: any_sensor.default.clone(),
-                    }));
+            let effective_timeout = binary_sensor.base.timeout.unwrap_or(global_timeout);
+            let source_targets = binary_sensor
+                .base
+                .targets
+                .as_ref()
+                .unwrap_or(global_targets);
 
-                    let effective_timeout = binary_sensor.timeout.unwrap_or(global_timeout);
-                    let source_targets = binary_sensor.targets.as_ref().unwrap_or(global_targets);
+            let targets = source_targets
+                .iter()
+                .map(|target| RuntimeTarget {
+                    host: target.host.clone(),
+                    port: target.port,
+                    protocol: target.protocol.clone(),
+                    timeout: target.timeout.unwrap_or(effective_timeout),
+                })
+                .collect();
 
-                    let targets = source_targets
-                        .iter()
-                        .map(|t| RuntimeTarget {
-                            host: t.host.clone(),
-                            port: t.port,
-                            protocol: t.protocol.clone(),
-                            timeout: t.timeout.unwrap_or(effective_timeout),
-                        })
-                        .collect();
-
-                    binary_sensors.insert(
-                        id,
-                        RuntimeBinarySensorConfig {
-                            targets,
-                            update_interval: binary_sensor
-                                .update_interval
-                                .unwrap_or(config.online.update_interval),
-                        },
-                    );
-                }
-                _ => {}
-            }
+            binary_sensors.insert(
+                id,
+                RuntimeBinarySensorConfig {
+                    targets,
+                    update_interval: binary_sensor
+                        .base
+                        .update_interval
+                        .unwrap_or(config.online.update_interval),
+                },
+            );
         }
 
-        Ok(Default {
+        Ok(UbiHomePlatform {
             components,
             binary_sensors,
         })
     }
 
-    fn components(&mut self) -> Vec<InternalComponent> {
+    fn components(&mut self) -> Vec<UbiComponent> {
         self.components.clone()
     }
 
@@ -241,7 +259,6 @@ impl Module for Default {
     }
 }
 
-/// Returns `true` if at least one target is reachable.
 async fn check_any_target(targets: &[RuntimeTarget]) -> bool {
     for target in targets {
         let reachable = match target.protocol {
@@ -257,6 +274,7 @@ async fn check_any_target(targets: &[RuntimeTarget]) -> bool {
 
 async fn check_tcp(host: &str, port: u16, timeout: Duration) -> bool {
     let address = format!("{}:{}", host, port);
+
     match time::timeout(timeout, TcpStream::connect(&address)).await {
         Ok(Ok(_)) => true,
         Ok(Err(e)) => {
@@ -270,17 +288,9 @@ async fn check_tcp(host: &str, port: u16, timeout: Duration) -> bool {
     }
 }
 
-/// Sends a minimal DNS query over UDP and waits for any response.
-///
-/// The query asks for the root zone (".") with type A. Any valid DNS response
-/// (including SERVFAIL or NXDOMAIN) proves the host is reachable.
 async fn check_udp_dns(host: &str, port: u16, timeout: Duration) -> bool {
     let address = format!("{}:{}", host, port);
 
-    // Minimal DNS query packet (RFC 1035):
-    //   ID=0x0001, Flags=0x0100 (standard query, RD=1),
-    //   QDCOUNT=1, ANCOUNT=0, NSCOUNT=0, ARCOUNT=0,
-    //   QNAME=<root> (single zero byte), QTYPE=A (1), QCLASS=IN (1)
     let query: [u8; 17] = [
         0x00, 0x01, // ID
         0x01, 0x00, // Flags: standard query, recursion desired
