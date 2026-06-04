@@ -281,7 +281,7 @@ mod tests {
     fn formats_timeout_errors() {
         let timeout = Duration::from_secs(2);
         let error = ::ping::Error::IoError {
-            error: std::io::Error::new(ErrorKind::TimedOut, "Timeout occured"),
+            error: std::io::Error::new(ErrorKind::TimedOut, "Timeout occurred"),
         };
 
         assert_eq!(
