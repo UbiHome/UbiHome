@@ -1,23 +1,21 @@
 use duration_str::deserialize_duration;
 use log::{debug, warn};
-use serde::Deserialize;
+use serde::{Deserialize, Deserializer};
 use std::{
-    collections::HashMap,
-    future::Future,
-    net::IpAddr,
-    pin::Pin,
-    process::Stdio,
-    time::Duration,
+    collections::HashMap, future::Future, net::IpAddr, pin::Pin, process::Stdio, time::Duration,
 };
 use tokio::{
     process::Command,
     sync::broadcast::{Receiver, Sender},
     time,
 };
+#[allow(unused_imports)]
+use ubihome_core::constants::{is_id_string_option, is_readable_string};
 use ubihome_core::internal::sensors::{UbiBinarySensor, UbiComponent, UbiSensor};
+#[allow(unused_imports)]
 use ubihome_core::{
-    config_template, template_binary_sensor, template_sensor, ChangedMessage, Module, NoConfig,
-    PublishedMessage,
+    config_template, template_binary_sensor, template_sensor, with_base_entity_properties,
+    ChangedMessage, Module, NoConfig, PublishedMessage,
 };
 
 #[derive(Clone, Deserialize, Debug, Validate)]
@@ -31,6 +29,7 @@ pub struct IcmpPingConfig {
 template_sensor! {
     #[derive(Clone, Deserialize, Debug, Validate)]
     pub struct IcmpPingSensorConfig {
+        #[garde(skip)]
         pub ip: IpAddr,
 
         #[serde(default = "default_update_interval")]
@@ -48,6 +47,7 @@ template_sensor! {
 template_binary_sensor! {
     #[derive(Clone, Deserialize, Debug, Validate)]
     pub struct IcmpPingBinarySensorConfig {
+        #[garde(skip)]
         pub ip: IpAddr,
 
         #[serde(default = "default_update_interval")]

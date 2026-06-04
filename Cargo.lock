@@ -4853,6 +4853,7 @@ dependencies = [
  "ubihome-bme280",
  "ubihome-core",
  "ubihome-gpio",
+ "ubihome-icmp_ping",
  "ubihome-illuminance",
  "ubihome-mdns",
  "ubihome-mqtt",
@@ -4951,6 +4952,19 @@ dependencies = [
  "garde",
  "log",
  "rppal",
+ "serde",
+ "serde-saphyr 0.0.26",
+ "tokio",
+ "ubihome-core",
+]
+
+[[package]]
+name = "ubihome-icmp_ping"
+version = "0.14.0"
+dependencies = [
+ "duration-str",
+ "garde",
+ "log",
  "serde",
  "serde-saphyr 0.0.26",
  "tokio",
