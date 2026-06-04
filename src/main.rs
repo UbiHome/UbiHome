@@ -8,6 +8,7 @@ use commands::update::update;
 use flexi_logger::{Duplicate, Logger};
 
 use clap::{Arg, Command};
+use std::sync::Arc;
 use std::{env, fs};
 
 mod commands;
@@ -112,7 +113,14 @@ fn cli() -> Command {
             Arg::new("log_level")
             .long("log-level")
             .global(true)
-            .help("The log level (overwrites the config).")])
+            .help("The log level (overwrites the config)."),
+            Arg::new("sentry")
+            .long("sentry")
+            .env("SENTRY")
+            .global(true)
+            .help("Sentry DSN to enable error reporting. If not provided, error reporting is disabled.")
+            .num_args(1),
+        ])
         .subcommand(
             Command::new("run")
                 .about("Run UbiHome manually.")
@@ -179,6 +187,30 @@ fn main() {
             };
 
             let log_level = matches.try_get_one::<String>("log_level").unwrap();
+
+            let sentry = matches
+                .try_get_one::<String>("sentry")
+                .unwrap_or(None)
+                .cloned();
+            if sentry.is_some() {
+                println!("Error reporting: active");
+            }
+            // The guard must be kept alive for the full duration of the process.
+            // Dropping it would shut down Sentry and stop error reporting.
+            let _sentry_guard = sentry.as_deref().map(|dsn| {
+                sentry::init((
+                    dsn,
+                    sentry::ClientOptions {
+                        before_send: Some(Arc::new(|mut event| {
+                            event.server_name = None; // Don't send server name
+                            Some(event)
+                        })),
+                        release: Some(VERSION.into()),
+                        session_mode: sentry::SessionMode::Application,
+                        ..Default::default()
+                    },
+                ))
+            });
 
             match matches.subcommand() {
                 Some(("install", sub_matches)) => {

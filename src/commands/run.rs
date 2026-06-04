@@ -90,6 +90,12 @@ pub(crate) fn run(
     let platforms = get_platforms_from_config(&config_string);
     debug!("Configured modules: {:?}", &platforms);
 
+    if sentry::Hub::current().client().is_some() {
+        sentry::configure_scope(|scope| {
+            scope.set_tag("modules", platforms.join(", "));
+        });
+    }
+
     let no_snippet = serde_saphyr::Options {
         with_snippet: false,
         ..Default::default()
