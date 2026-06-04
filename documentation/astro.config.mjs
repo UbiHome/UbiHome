@@ -79,6 +79,7 @@ export default defineConfig({
 									label: "Getting started",
 									link: "/getting_started/",
 								},
+								{ label: "Commands", link: "/commands/" },
 								{ label: "Roadmap", link: "/roadmap/" },
 								{
 									label: "Help",
