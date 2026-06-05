@@ -27,7 +27,9 @@ cpal = { git = "https://github.com/rustaudio/cpal", branch = "fix/pulseaudio-hum
 garde = { version = "0.22.1", features = ["serde"] }
 
 [target.'cfg(not(target_env = "musl"))'.dependencies]
-# Enable pipewire backend on non-musl targets (not available on Ubuntu 18.04 cross-compilation env)
+# Enable pipewire backend on non-musl targets (not available on Ubuntu 18.04 cross-compilation env).
+# Cargo unions features from [dependencies] and [target.xxx.dependencies], so non-musl targets
+# get features = ["pulseaudio", "pipewire"] while musl targets only get features = ["pulseaudio"].
 cpal = { git = "https://github.com/rustaudio/cpal", branch = "fix/pulseaudio-human-ids", features = [
   "pipewire",
 ] }
