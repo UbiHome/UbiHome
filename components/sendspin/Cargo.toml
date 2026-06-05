@@ -22,7 +22,12 @@ sendspin = { git = "https://github.com/DanielHabenicht/fork.sendspin-rs", rev = 
 # cpal = "0.15.3"
 cpal = { git = "https://github.com/rustaudio/cpal", branch = "fix/pulseaudio-human-ids", features = [
   "pulseaudio",
-  "pipewire",
 ] }
 # cpal = { git = "https://github.com/rustaudio/cpal", rev = "c3afb40df0b3aa7386ac42b4aa221a7b1ba3ce40" }
 garde = { version = "0.22.1", features = ["serde"] }
+
+[target.'cfg(not(target_env = "musl"))'.dependencies]
+# Enable pipewire backend on non-musl targets (not available on Ubuntu 18.04 cross-compilation env)
+cpal = { git = "https://github.com/rustaudio/cpal", branch = "fix/pulseaudio-human-ids", features = [
+  "pipewire",
+] }
