@@ -42,7 +42,7 @@ echo 'export ALSA_LIB_DIR=/usr/lib' >> /etc/profile
 pre-build = [
     """
 dpkg --add-architecture armel
-apt-get update && apt-get install -y libdbus-1-dev libasound2-dev pkg-config
+apt-get update && apt-get install -y libdbus-1-dev:armel libasound2-dev:armel pkg-config
 """,
 ]
 
