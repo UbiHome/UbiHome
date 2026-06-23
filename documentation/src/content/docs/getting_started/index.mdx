@@ -1,0 +1,192 @@
+---
+title: 'Getting Started'
+tableOfContents: false
+next:
+  link: /features/
+  label: Check out all the features
+---
+
+import { Code, Steps, Tabs, TabItem } from '@astrojs/starlight/components';
+import linuxConfig from './linux.yml?raw';
+import windowsConfig from './windows.yml?raw';
+import macosConfig from './macos.yml?raw';
+export const labels = [
+  { range: '6', label: '              Generate here: https://ubihome.github.io/features/connectivity/native_api.html' },
+];
+
+> For now[^1] a single executable is provided. You can download it from the [GitHub Releases page](https://github.com/UbiHome/UbiHome/releases) or use the direct links below.
+
+<Tabs>
+  <TabItem label="Linux" icon="linux" mark={labels}>
+    <Steps>
+
+    1. Download and extract the archive and place the ubihome executable in a directory of your choice.
+
+        | Devices            | Download                                                                                                             | Target                        |
+        | ------------------ | -------------------------------------------------------------------------------------------------------------------- | ----------------------------- |
+        | Any Linux          | [TAR Link](https://github.com/UbiHome/UbiHome/releases/download/v0.14.0/ubihome-Linux-musl-x86_64.tar.gz)         | x86_64-unknown-linux-musl     |
+        | Raspberry Pi 3     | [TAR Link](https://github.com/UbiHome/UbiHome/releases/download/v0.14.0/ubihome-Linux-musleabi-armv7.tar.gz)      | armv7-unknown-linux-musleabi  |
+        | Raspberry Pi Zero 2| [TAR Link](https://github.com/UbiHome/UbiHome/releases/download/v0.14.0/ubihome-Linux-musleabi-arm.tar.gz)        | arm-unknown-linux-musleabi    |
+
+       ```bash
+       # You might have to use a different link from the table above depending on your device type
+       curl -L -o ubihome.tar.gz https://github.com/UbiHome/UbiHome/releases/download/v0.14.0/ubihome-Linux-musleabi-armv7.tar.gz
+       tar xvzf ./ubihome.tar.gz
+       ```
+
+    2. Edit the configuration file `config.yaml` in the same directory as the executable. Example:
+
+       <Code code={linuxConfig} lang="yaml" title="config.yaml" />
+
+    3. Try it out:
+
+       ```bash
+       ./ubihome run
+       UbiHome - 0.14.0
+       LogDirectory: /home/codespace/.local/share
+       Config file path: /workspaces/ubihome/config.yaml
+       Binary Sensor 'bluetooth_connected' output: false
+       Sensor 'ram_usage' output: 38.3144
+       Button 'my_button' pressed.
+       Command executed successfully with no output.
+       # End the process with ctrl+c
+       ```
+
+    4. You should be able to see your device in Home Assistant now.
+
+    5. To persistently run the executable install it as a service:
+
+       ```bash
+       sudo ./ubihome install
+       # The CLI will ask you where to install it. (You can just hit enter to install it in the default location)
+       ? Where do you want to install UbiHome? (/usr/bin/ubihome)
+       ```
+
+       > If you do this more often you can add the `--install-path` flag to the command to specify the path for the installation. Instead of the CLI asking for it.
+
+    </Steps>
+
+
+    If you want to uninstall UbiHome you can run the following command:
+
+    ```bash
+    ./ubihome uninstall
+    ```
+
+  </TabItem>
+
+  <TabItem label="Windows" icon="seti:windows">
+    <Steps>
+
+    1. Download and extract the archive and place the ubihome executable in a directory of your choice.
+
+        | Device      | Download                                                                                                         | Target                    |
+        | ----------- | ---------------------------------------------------------------------------------------------------------------- | ------------------------- |
+        | Windows 11  | [ZIP Link](https://github.com/UbiHome/UbiHome/releases/download/v0.14.0/ubihome-Windows-msvc-x86_64.zip)         | x86_64-pc-windows-msvc    |
+
+       ```powershell
+       Invoke-WebRequest -OutFile ubihome.zip -Uri https://github.com/UbiHome/UbiHome/releases/download/v0.14.0/ubihome-Windows-msvc-x86_64.zip
+       Expand-Archive -Force ubihome.zip ./
+       ```
+
+    2. Edit the configuration file `config.yaml` in the same directory as the executable. Example:
+
+       <Code code={windowsConfig} lang="yaml" title="config.yaml" mark={labels} />
+
+    3. Try it out:
+
+       ```bash
+       ./ubihome.exe run
+       UbiHome - 0.14.0
+       LogDirectory: /home/codespace/.local/share
+       Config file path: /workspaces/UbiHome/config.yaml
+       Binary Sensor 'bluetooth_connected' output: false
+       Sensor 'ram_usage' output: 38.3144
+       Button 'my_button' pressed.
+       Command executed successfully with no output.
+       # End the process with ctrl+c
+       ```
+
+    4. You should be able to see your device in Home Assistant now.
+
+    5. To persistently run the executable install it as a service:
+
+       > Press `Windows + X + A` for the admin shell.
+
+       ```bash
+       ./ubihome.exe install
+       # The CLI will ask you where to install it. (You can just hit enter to install it in the default location)
+       ? Where do you want to install UbiHome? (C:\Program Files\ubihome)
+       ```
+
+       > If you do this more often you can add the `--install-path` flag to the command to specify the path for the installation. Instead of the CLI asking for it.
+
+    </Steps>
+
+    If you want to uninstall UbiHome you can run the following command:
+
+    ```powershell
+    ./ubihome.exe uninstall
+    ```
+
+  </TabItem>
+
+  <TabItem label="MacOS" icon="apple">
+    <Steps>
+
+    1. Download and extract the archive and place the ubihome executable in a directory of your choice.
+        | Device                              | Download                                                                                                      | Target                |
+        | ----------------------------------- | ------------------------------------------------------------------------------------------------------------- | --------------------- |
+        | MacOS (Intel)                       | [TAR Link](https://github.com/UbiHome/UbiHome/releases/download/v0.14.0/ubihome-macos-x86_64.tar.gz)       | x86_64-apple-darwin   |
+        | MacOS (Apple Silicon / M series)    | [TAR Link](https://github.com/UbiHome/UbiHome/releases/download/v0.14.0/ubihome-macos-aarch64.tar.gz)      | aarch64-apple-darwin  |
+
+       ```bash
+       # You might have to use a different link from the table above depending on your device type
+       curl -L -o ubihome.tar.gz https://github.com/UbiHome/UbiHome/releases/download/v0.14.0/ubihome-macos-aarch64.tar.gz
+       tar xvzf ./ubihome.tar.gz
+       ```
+
+    2. Edit the configuration file `config.yaml` in the same directory as the executable.
+
+       > Check out the [entities](/features/#entities) and [platforms](/features/#platforms) we support.
+
+       <Code code={macosConfig} lang="yaml" title="config.yaml" />
+
+    3. Try it out:
+
+       ```bash
+       ./ubihome run
+       UbiHome - 0.14.0
+       LogDirectory: /home/codespace/.local/share
+       Config file path: /workspaces/ubihome/config.yaml
+       Binary Sensor 'bluetooth_connected' output: false
+       Sensor 'ram_usage' output: 38.3144
+       Button 'my_button' pressed.
+       Command executed successfully with no output.
+       # End the process with ctrl+c
+       ```
+
+    4. You should be able to see your device in Home Assistant now.
+
+    5. To persistently run the executable install it as a service:
+
+       ```bash
+       sudo ./ubihome install
+       # The CLI will ask you where to install it. (You can just hit enter to install it in the default location)
+       ? Where do you want to install UbiHome? (/usr/bin/ubihome)
+       ```
+
+       > If you do this more often you can add the `--install-path` flag to the command to specify the path for the installation. Instead of the CLI asking for it.
+
+    </Steps>
+
+    If you want to uninstall UbiHome you can run the following command:
+
+    ```bash
+    ./ubihome uninstall
+    ```
+
+  </TabItem>
+</Tabs>
+
+[^1]: This will change in the future to allow for custom compilation for modular builds and custom extensions.

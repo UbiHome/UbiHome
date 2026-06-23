@@ -1,15 +1,13 @@
-name: CI
+name: CI - Checks
 
 on:
   pull_request:
+    branches-ignore:
+      - release
 
 jobs:
   check:
-    runs-on: depot-ubuntu-24.04
-    env:
-      ENGINE_TAR: /tmp/dagger-engine.tar
-      ENGINE_CACHE_TAR: /tmp/dagger-engine-cache.tar
-
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
 
@@ -24,5 +22,5 @@ jobs:
         uses: dagger/dagger-for-github@v8.4.1
         with:
           version: ${{ steps.read-engine-version.outputs.dagger_version }}
-          check: "**"
+          check: '**'
           cloud-token: ${{ secrets.DAGGER_CLOUD_TOKEN }}

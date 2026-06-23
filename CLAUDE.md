@@ -10,7 +10,7 @@ Prioritize safe, minimal changes, and validate behavior with targeted tests.
 - Workspace crates: `components/*` (platform modules).
 - Core shared crate: `components/core` (traits, config templates, mapping macros, common types).
 - Python tests: `tests/` (pytest + uv, includes API, MQTT, e2e and platform tests).
-- Documentation site: `documentation/` (MkDocs Material, built/checked with Dagger).
+- Documentation site: `documentation/` (Astro Starlight, built/checked with Dagger).
 
 ## Key Entry Points
 - CLI entrypoint: `src/main.rs`

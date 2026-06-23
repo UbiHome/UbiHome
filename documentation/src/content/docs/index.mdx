@@ -1,0 +1,50 @@
+---
+title: 'Welcome to UbiHome!'
+tableOfContents: false
+next:
+  link: /getting_started/
+  label: Getting Started
+---
+
+import { LinkButton } from '@astrojs/starlight/components';
+
+UbiHome is a single executable that allows you to integrate any device running an OS into your smart home.
+It is designed to be lightweight and easy to use - similar to ESPHome.
+
+<LinkButton href='/getting_started/' variant='secondary'>
+  Get started - Follow the installation guide
+</LinkButton>
+
+You can configure it by writing simple YAML configuration:
+
+```yaml
+ubihome:
+  name: 'Raspberry Pi behind the TV'
+
+api:
+# Have a look at the documentation to secure your API:
+# https://ubihome.github.io/features/connectivity/native_api.html
+
+sensor:
+  - platform: shell
+    name: 'RAM Usage'
+    icon: mdi:memory
+    state_class: 'measurement'
+    unit_of_measurement: '%'
+    update_interval: 30s
+    # Execute any command you like:
+    command: |-
+      free | grep Mem | awk '{print $3/$2 * 100.0}'
+
+# You can also add binary_sensors, buttons, and more!
+# https://ubihome.github.io/features/#entities
+```
+
+These are some things I use it for:
+
+- [Execute a command on a device](/examples/display_notification/) based on a trigger in Home Assistant.
+- [Monitor the status of a device](/examples/system_ressources/) with a custom command.
+- [Turning a screen on and off based on motion detection](/examples/automatic_screen_power_control/).
+- Integrate all of your _one off python scripts^TM^_ without thinking about connectivity or setting up yet another service.
+
+Check out the [examples to see more](/examples/).

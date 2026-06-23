@@ -34,6 +34,8 @@ Options:
           Optional configuration file. If not provided, the default configuration will be used. [default: config.yml config.yaml]
       --log-level <log_level>
           The log level (overwrites the config).
+      --sentry <sentry>
+          Sentry DSN to enable error reporting. If not provided, error reporting is disabled. [env: SENTRY=]
   -h, --help
           Print help
   -V, --version
@@ -73,6 +75,8 @@ Options:
           Optional configuration file. If not provided, the default configuration will be used. [default: config.yml config.yaml]
       --log-level <log_level>
           The log level (overwrites the config).
+      --sentry <sentry>
+          Sentry DSN to enable error reporting. If not provided, error reporting is disabled. [env: SENTRY=]
   -h, --help
           Print help
   -V, --version

@@ -19,7 +19,8 @@
 				"streetsidesoftware.code-spell-checker",
 				"ms-python.python",
 				"biomejs.biome",
-				"charliermarsh.ruff"
+				"charliermarsh.ruff",
+				"astro-build.astro-vscode"
 			]
 		},
 		"settings": {

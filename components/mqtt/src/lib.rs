@@ -36,7 +36,9 @@ pub struct MqttConfig {
     pub password: Option<String>,
 }
 
-config_template!(mqtt, MqttConfig, NoConfig, NoConfig, NoConfig, NoConfig, NoConfig, NoConfig);
+config_template!(
+    mqtt, MqttConfig, NoConfig, NoConfig, NoConfig, NoConfig, NoConfig, NoConfig, NoConfig
+);
 
 #[derive(Clone, Debug)]
 pub struct UbiHomePlatform {
@@ -44,9 +46,9 @@ pub struct UbiHomePlatform {
 }
 
 impl Module for UbiHomePlatform {
-    fn new(config_string: &str) -> Result<Self, String> {
+    fn new(config_string: &str, config_path: &str) -> Result<Self, String> {
         let config =
-            serde_saphyr::from_str::<CoreConfig>(config_string).map_err(|e| e.to_string())?;
+            ubihome_core::validation::validate_config::<CoreConfig>(config_string, config_path)?;
 
         Ok(UbiHomePlatform { config })
     }
@@ -249,6 +251,9 @@ impl Module for UbiHomePlatform {
                                                     }),
                                                 );
                                             }
+                                            UbiComponent::TextSensor(_text_sensor) => {
+                                                // TODO: Add MQTT text sensor support if needed
+                                            }
                                         }
                                     }
                                     {
@@ -373,6 +378,20 @@ impl Module for UbiHomePlatform {
                                             QoS::AtMostOnce,
                                             false,
                                             value.to_string(),
+                                        )
+                                        .await
+                                    {
+                                        error!("{}", e)
+                                    }
+                                }
+                                PublishedMessage::TextSensorValueChanged { key, value } => {
+                                    debug!("Text sensor value published: {} = {}", key, value);
+                                    if let Err(e) = client
+                                        .publish(
+                                            format!("{}/{}", base_topic_clone, key),
+                                            QoS::AtMostOnce,
+                                            false,
+                                            value,
                                         )
                                         .await
                                     {

@@ -14,6 +14,7 @@ pub enum UbiComponent {
     Switch(UbiSwitch),
     Light(UbiLight),
     Number(UbiNumber),
+    TextSensor(UbiTextSensor),
 }
 
 // Icons: https://pictogrammers.com/library/mdi/
@@ -108,5 +109,13 @@ pub struct UbiNumber {
     pub unit_of_measurement: Option<String>,
     pub device_class: Option<String>,
     pub mode: i32,
+}
+}
+
+with_base_properties! {
+// https://developers.home-assistant.io/docs/core/entity/text-sensor
+#[derive(Clone, Serialize, Deserialize, Debug)]
+pub struct UbiTextSensor {
+    pub device_class: Option<String>,
 }
 }

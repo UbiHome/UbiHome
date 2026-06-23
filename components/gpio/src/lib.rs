@@ -51,6 +51,7 @@ config_template!(
     NoConfig,
     NoConfig,
     NoConfig,
+    NoConfig,
     NoConfig
 );
 
@@ -61,9 +62,10 @@ pub struct UbiHomePlatform {
 }
 
 impl Module for UbiHomePlatform {
-    fn new(config_string: &str) -> Result<Self, String> {
+    fn new(config_string: &str, config_path: &str) -> Result<Self, String> {
         let config =
-            serde_saphyr::from_str::<CoreConfig>(config_string).map_err(|e| e.to_string())?;
+            ubihome_core::validation::validate_config::<CoreConfig>(config_string, config_path)?;
+
         // info!("GPIO config: {:?}", config);
         let mut components: Vec<UbiComponent> = Vec::new();
         let mut binary_sensors: HashMap<String, GpioSensorConfig> = HashMap::new();

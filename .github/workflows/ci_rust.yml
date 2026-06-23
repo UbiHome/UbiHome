@@ -1,4 +1,4 @@
-name: CI
+name: CI - Rust
 
 on:
   pull_request:
@@ -9,6 +9,8 @@ on:
       - 'Cargo.toml'
       - 'Cargo.lock'
       - 'Cross.toml'
+    branches-ignore:
+      - release
 jobs:
   build:
     strategy:

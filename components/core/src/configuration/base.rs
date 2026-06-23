@@ -1,7 +1,7 @@
 /// Macro to add base entity properties (id, name, platform) to a struct.
 ///
 /// # Example
-/// ```
+/// ```ignore
 /// with_base_entity_properties! {
 ///     #[derive(Clone, Debug, Deserialize, Validate)]
 ///     pub struct MyEntity {

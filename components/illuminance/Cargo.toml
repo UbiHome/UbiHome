@@ -8,8 +8,8 @@ edition = "2021"
 log = "0.4"
 serde = { version = "1.0", features = ["derive"] }
 tokio = { version = "1", features = ["full"] }
-ubihome-core = { path = "../core" }
-serde-saphyr = { version = "0.0.15", features = ["garde", "miette"] }
+ubihome-core = { path = "../core", features = ["validation"] }
+serde-saphyr = { version = "0.0.26", features = ["garde", "miette"] }
 duration-str = "0.16.1"
 garde = { version = "0.22.1", features = ["serde"] }
 

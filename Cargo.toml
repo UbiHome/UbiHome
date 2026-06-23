@@ -1,14 +1,11 @@
 [package]
 name = "ubihome"
-version = "0.14.0"
 authors = ["Daniel Habenicht <daniel-habenicht@outlook.de>"]
 edition = "2021"
-description = "UbiHome is a system which allows you to integrate any device running an OS into your smart home."
-homepage = "https://github.com/UbiHome/UbiHome"
 
 [dependencies]
 tokio = { version = "1", features = ["full"] }
-clap = { version = "4.5.21", features = ["derive"] }
+clap = { version = "4.5.21", features = ["derive", "env"] }
 rust-embed = "6.8"
 log = "0.4"
 rumqttc = "0.24.0"
@@ -43,6 +40,14 @@ serde-saphyr = { version = "0.0.23", features = ["garde", "miette"] }
 garde = { version = "0.22.1", features = ["serde", "regex"] }
 paste = "1.0.15"
 parameterized = "2.1.0"
+get_fields = "0.1.0"
+sentry = { version = "0.48.2", default-features = false, features = [
+    "backtrace",
+    "contexts",
+    "panic",
+    "reqwest",
+    "rustls",
+] }
 
 
 [build-dependencies]
@@ -76,6 +81,3 @@ members = [
     "components/shell",
     "components/web_server",
 ]
-
-[lints.clippy]
-redundant_field_names = "deny"
