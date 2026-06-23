@@ -1,26 +1,26 @@
 use esphome_native_api::esphomeapi::EspHomeApi;
 use esphome_native_api::hash::hash_fnv1;
 use esphome_native_api::parser::ProtoMessage;
-use esphome_native_api::proto::version_2025_12_1::BinarySensorStateResponse;
-use esphome_native_api::proto::version_2025_12_1::BluetoothLeAdvertisementResponse;
-use esphome_native_api::proto::version_2025_12_1::BluetoothServiceData;
-use esphome_native_api::proto::version_2025_12_1::EntityCategory;
-use esphome_native_api::proto::version_2025_12_1::LightStateResponse;
-use esphome_native_api::proto::version_2025_12_1::ListEntitiesBinarySensorResponse;
-use esphome_native_api::proto::version_2025_12_1::ListEntitiesButtonResponse;
-use esphome_native_api::proto::version_2025_12_1::ListEntitiesDoneResponse;
-use esphome_native_api::proto::version_2025_12_1::ListEntitiesLightResponse;
-use esphome_native_api::proto::version_2025_12_1::ListEntitiesNumberResponse;
-use esphome_native_api::proto::version_2025_12_1::ListEntitiesSensorResponse;
-use esphome_native_api::proto::version_2025_12_1::ListEntitiesSwitchResponse;
-use esphome_native_api::proto::version_2025_12_1::ListEntitiesTextSensorResponse;
-use esphome_native_api::proto::version_2025_12_1::NumberStateResponse;
-use esphome_native_api::proto::version_2025_12_1::SensorLastResetType;
-use esphome_native_api::proto::version_2025_12_1::SensorStateClass;
-use esphome_native_api::proto::version_2025_12_1::SensorStateResponse;
-use esphome_native_api::proto::version_2025_12_1::SubscribeLogsResponse;
-use esphome_native_api::proto::version_2025_12_1::SwitchStateResponse;
-use esphome_native_api::proto::version_2025_12_1::TextSensorStateResponse;
+use esphome_native_api::proto::version_2026_6_2::BinarySensorStateResponse;
+use esphome_native_api::proto::version_2026_6_2::BluetoothLeAdvertisementResponse;
+use esphome_native_api::proto::version_2026_6_2::BluetoothServiceData;
+use esphome_native_api::proto::version_2026_6_2::EntityCategory;
+use esphome_native_api::proto::version_2026_6_2::LightStateResponse;
+use esphome_native_api::proto::version_2026_6_2::ListEntitiesBinarySensorResponse;
+use esphome_native_api::proto::version_2026_6_2::ListEntitiesButtonResponse;
+use esphome_native_api::proto::version_2026_6_2::ListEntitiesDoneResponse;
+use esphome_native_api::proto::version_2026_6_2::ListEntitiesLightResponse;
+use esphome_native_api::proto::version_2026_6_2::ListEntitiesNumberResponse;
+use esphome_native_api::proto::version_2026_6_2::ListEntitiesSensorResponse;
+use esphome_native_api::proto::version_2026_6_2::ListEntitiesSwitchResponse;
+use esphome_native_api::proto::version_2026_6_2::ListEntitiesTextSensorResponse;
+use esphome_native_api::proto::version_2026_6_2::NumberStateResponse;
+use esphome_native_api::proto::version_2026_6_2::SensorLastResetType;
+use esphome_native_api::proto::version_2026_6_2::SensorStateClass;
+use esphome_native_api::proto::version_2026_6_2::SensorStateResponse;
+use esphome_native_api::proto::version_2026_6_2::SubscribeLogsResponse;
+use esphome_native_api::proto::version_2026_6_2::SwitchStateResponse;
+use esphome_native_api::proto::version_2026_6_2::TextSensorStateResponse;
 use log::debug;
 use log::info;
 use serde::{Deserialize, Deserializer};
@@ -713,7 +713,7 @@ impl Module for UbiHomePlatform {
 
 #[cfg(test)]
 mod tests {
-    use esphome_native_api::proto::version_2025_12_1::ListEntitiesLightResponse;
+    use esphome_native_api::proto::version_2026_6_2::ListEntitiesLightResponse;
 
     use super::*;
 
