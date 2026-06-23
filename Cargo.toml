@@ -15,6 +15,7 @@ ubihome-bluetooth_proxy = { path = "components/bluetooth_proxy" }
 ubihome-bme280 = { path = "components/bme280" }
 ubihome-core = { path = "components/core" }
 ubihome-gpio = { path = "components/gpio" }
+ubihome-icmp_ping = { path = "components/icmp_ping" }
 ubihome-illuminance = { path = "components/illuminance" }
 ubihome-mdns = { path = "components/mdns" }
 ubihome-mqtt = { path = "components/mqtt" }
@@ -73,6 +74,7 @@ members = [
     "components/core",
     "components/evdev",
     "components/gpio",
+    "components/icmp_ping",
     "components/illuminance",
     "components/mdns",
     "components/mqtt",

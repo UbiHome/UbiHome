@@ -3393,6 +3393,17 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8b870d8c151b6f2fb93e84a13146138f05d02ed11c7e7c54f8826aaaf7c9f184"
 
 [[package]]
+name = "ping"
+version = "0.7.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "044b1fa4f259f4df9ad5078e587b208f5d288a25407575fcddb9face30c7c692"
+dependencies = [
+ "rand 0.9.4",
+ "socket2 0.6.3",
+ "thiserror 2.0.18",
+]
+
+[[package]]
 name = "piper"
 version = "0.2.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -5389,6 +5400,7 @@ dependencies = [
  "ubihome-bme280",
  "ubihome-core",
  "ubihome-gpio",
+ "ubihome-icmp_ping",
  "ubihome-illuminance",
  "ubihome-mdns",
  "ubihome-mqtt",
@@ -5487,6 +5499,20 @@ dependencies = [
  "garde",
  "log",
  "rppal",
+ "serde",
+ "serde-saphyr 0.0.26",
+ "tokio",
+ "ubihome-core",
+]
+
+[[package]]
+name = "ubihome-icmp_ping"
+version = "0.14.0"
+dependencies = [
+ "duration-str",
+ "garde",
+ "log",
+ "ping",
  "serde",
  "serde-saphyr 0.0.26",
  "tokio",
