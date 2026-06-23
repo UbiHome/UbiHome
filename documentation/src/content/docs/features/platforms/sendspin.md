@@ -26,3 +26,5 @@ sendspin:
 
 On Linux you may need to specify the output device name manually, as UbiHome may detect the default device incorrectly.
 To find the device name enable debug logging for UbiHome and look for the line `Devices:` in the logs.
+
+If you want to use shared ALSA plugins such as PulseAudio or PipeWire ALSA devices (`pulse`, `default`, etc.) on Linux ARM / Raspberry Pi, prefer the GNU/glibc build. The musl ARM builds remain available, but they are better suited to direct ALSA devices than plugin-based outputs.

@@ -25,6 +25,10 @@ jobs:
             runs-on: ubuntu-24.04
             fileending: ''
 
+          - target: arm-unknown-linux-gnueabi
+            runs-on: ubuntu-24.04
+            fileending: ''
+
           - target: x86_64-apple-darwin
             runs-on: macos-26-intel
             fileending: ''
@@ -38,6 +42,10 @@ jobs:
             fileending: '.exe'
 
           - target: armv7-unknown-linux-musleabi
+            runs-on: ubuntu-24.04
+            fileending: ''
+
+          - target: armv7-unknown-linux-gnueabihf
             runs-on: ubuntu-24.04
             fileending: ''
     uses: ./.github/workflows/build-and-test-template.yml
