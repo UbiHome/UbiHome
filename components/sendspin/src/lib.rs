@@ -4,21 +4,18 @@ use cpal::Device;
 use log::{debug, error, info, trace};
 use sendspin::audio::decode::{Decoder, PcmDecoder, PcmEndian};
 use sendspin::audio::{AudioBuffer, AudioFormat, Codec, SyncedPlayer};
-use sendspin::protocol::client::ProtocolClient;
 use sendspin::protocol::messages::{
-    AudioFormatSpec, ClientHello, ClientState, ClientTime, DeviceInfo, Message, PlayerState,
-    PlayerSyncState, PlayerV1Support,
+    AudioFormatSpec, ClientState, Message, PlayerCommandType, PlayerState, PlayerV1Support,
 };
 use sendspin::sync::ClockSync;
+use sendspin::ProtocolClientBuilder;
 use serde::{Deserialize, Deserializer};
 use std::collections::HashMap;
 use std::sync::Arc;
-use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
+use std::time::{Instant, SystemTime, UNIX_EPOCH};
 use std::{future::Future, pin::Pin, str};
 use tokio::sync::broadcast::Receiver;
 use tokio::sync::broadcast::Sender;
-use tokio::time::interval;
-use tokio_tungstenite::tungstenite::client::IntoClientRequest;
 use ubihome_core::internal::sensors::UbiComponent;
 use ubihome_core::NoConfig;
 use ubihome_core::{config_template, ChangedMessage, Module, PublishedMessage};
@@ -34,6 +31,10 @@ enum PlayerCommand {
     Clear,
     /// Initialize the player with the given format and clock sync
     Init(AudioFormat, ClockSyncRef),
+    /// Set the player volume (0-100)
+    SetVolume(u8),
+    /// Mute or unmute the player
+    SetMute(bool),
     /// Shutdown the player thread
     Shutdown,
 }
@@ -58,7 +59,13 @@ pub struct SendspinConfig {
     pub name: Option<String>,
     pub server: Option<String>,
     pub id: Option<String>,
-    pub output_name: Option<String>,
+    pub output_id: Option<String>,
+    pub bit_depth: Option<u8>,
+    pub sample_rate: Option<u32>,
+    /// ALSA buffer size in frames. Increase this on slow hardware (e.g. Raspberry Pi Zero W)
+    /// to prevent buffer underruns ("Broken pipe" errors). At 48 kHz stereo,
+    /// 4096 frames ≈ 85 ms. Default: system default (typically 512-1024 frames).
+    pub buffer_size: Option<u32>,
 }
 
 config_template!(
@@ -107,6 +114,9 @@ impl Module for UbiHomePlatform {
             .clone()
             .unwrap_or(self.config.ubihome.name.clone());
         let id = self.sendspin_config.id.clone().unwrap_or(name.clone());
+        let bit_depth = self.sendspin_config.bit_depth.unwrap_or(16);
+        let sample_rate = self.sendspin_config.sample_rate.unwrap_or(48000);
+        let buffer_size = self.sendspin_config.buffer_size;
 
         let mut selected_device: Option<Device> = None;
         // List Hosts
@@ -114,28 +124,36 @@ impl Module for UbiHomePlatform {
 
         for host_id in available_hosts {
             let host = cpal::host_from_id(host_id).unwrap();
+            debug!("Host: {}", host_id.name());
 
-            let _default_out = host
-                .default_output_device()
-                .map(|dev| dev.name().unwrap())
-                .map(|name| name.to_string());
-            selected_device = host.default_output_device();
+            if selected_device.is_none() {
+                selected_device = host.default_output_device();
+            }
 
             let devices = host.devices().unwrap();
             debug!("  Devices: ");
-            for (device_index, device) in devices.enumerate() {
-                let name = device
-                    .name()
-                    .map_or("Unknown Name".to_string(), |id| id.to_string());
-                debug!("  {}. {name}", device_index + 1);
+            for device in devices {
+                let id = device
+                    .id() // id()
+                    .map_or("Unknown Id".to_string(), |id| id.to_string());
+                let description = device.description().unwrap(); // description
+                debug!("  {id} - {description}");
 
                 // Output configs
                 if let Ok(conf) = device.default_output_config() {
-                    debug!("    Default output stream config:\n      {conf:?}");
+                    trace!("    Default output stream config:");
+                    trace!("      {conf:?}");
                 }
 
-                if let Some(device_name) = &self.config.sendspin.output_name {
-                    if device_name == &name {
+                if let Ok(configs) = device.supported_output_configs() {
+                    trace!("    Supported output stream config:\n");
+                    for conf in configs {
+                        trace!("      {conf:?}");
+                    }
+                }
+
+                if let Some(output_id) = &self.config.sendspin.output_id {
+                    if output_id == &id {
                         selected_device = Some(device)
                     }
                 }
@@ -143,8 +161,13 @@ impl Module for UbiHomePlatform {
         }
 
         info!(
-            "Using Device: {}",
-            selected_device.clone().unwrap().name().unwrap()
+            "Using Device: {} - {}",
+            selected_device
+                .clone()
+                .unwrap()
+                .id() // id
+                .map_or("Unknown Id".to_string(), |id| id.to_string()),
+            selected_device.clone().unwrap().id().unwrap() // description
         );
 
         // End List Hosts
@@ -189,83 +212,53 @@ impl Module for UbiHomePlatform {
         };
 
         Box::pin(async move {
-            let hello = ClientHello {
-                client_id: id.clone(),
-                name: name.clone(),
-                version: 1,
-                supported_roles: vec!["player@v1".to_string()],
-                device_info: Some(DeviceInfo {
-                    product_name: Some(name.clone()),
-                    manufacturer: Some("Sendspin".to_string()),
-                    software_version: Some("0.1.0".to_string()),
-                }),
-                player_v1_support: Some(PlayerV1Support {
+            let test = ProtocolClientBuilder::builder()
+                .client_id(id.clone())
+                .name(name.clone())
+                .player_v1_support(PlayerV1Support {
                     supported_formats: vec![AudioFormatSpec {
                         codec: "pcm".to_string(),
                         channels: 2,
-                        sample_rate: 48000,
-                        bit_depth: 16,
+                        sample_rate,
+                        bit_depth,
                     }],
                     buffer_capacity: 50 * 1024 * 1024, // 50 MB
                     supported_commands: vec!["volume".to_string(), "mute".to_string()],
-                }),
-                artwork_v1_support: None,
-                visualizer_v1_support: None,
-            };
-
-            info!("Connecting to {}...", server);
-            let request = server.into_client_request().unwrap();
-            let client = ProtocolClient::connect(request, hello).await.unwrap();
-            info!("Connected!");
-
-            // Split client into separate receivers for concurrent processing
-            let (mut message_rx, mut audio_rx, clock_sync, ws_tx) = client.split();
-
-            //Send initial client/state message (handshake step 3)
-            let client_state = Message::ClientState(ClientState {
-                player: Some(PlayerState {
-                    state: PlayerSyncState::Synchronized,
+                })
+                .initial_player_state(PlayerState {
                     volume: Some(100),
                     muted: Some(false),
-                }),
-            });
-            ws_tx.send_message(client_state).await.unwrap();
-            info!("Sent initial client/state");
+                    static_delay_ms: Some(0),
+                    supported_commands: None,
+                })
+                .build();
+
+            let client = test.connect(&server).await.unwrap();
+            debug!("Connected!");
+            // info!("Connecting to {}...", server);
+            // let request = server.into_client_request().unwrap();
+            // let client = ProtocolClient::connect(request, hello).await.unwrap();
+            // info!("Connected!");
+
+            let conn = client.split();
+            let mut message_rx = conn.messages;
+            let mut audio_rx = conn.audio;
+            let clock_sync = conn.clock_sync;
+            let sender = conn.sender;
+            let _guard = conn.guard;
 
             // Send immediate initial clock sync
-            let client_transmitted = SystemTime::now()
-                .duration_since(UNIX_EPOCH)
-                .unwrap()
-                .as_micros() as i64;
-            let time_msg = Message::ClientTime(ClientTime { client_transmitted });
-            ws_tx.send_message(time_msg).await.unwrap();
+            // let client_transmitted = SystemTime::now()
+            //     .duration_since(UNIX_EPOCH)
+            //     .unwrap()
+            //     .as_micros() as i64;
+            // let time_msg = Message::ClientTime(ClientTime { client_transmitted });
+            // ws_tx.send_message(time_msg).await.unwrap();
             info!("Sent initial client/time for clock sync");
 
             info!("Waiting for stream to start...");
 
-            // Spawn clock sync task that sends client/time every 5 seconds
-            tokio::spawn(async move {
-                let mut interval = interval(Duration::from_secs(5));
-                loop {
-                    interval.tick().await;
-
-                    // Get current Unix epoch microseconds
-                    let client_transmitted = SystemTime::now()
-                        .duration_since(UNIX_EPOCH)
-                        .unwrap()
-                        .as_micros() as i64;
-
-                    let time_msg = Message::ClientTime(ClientTime { client_transmitted });
-
-                    // Send time sync message
-                    if let Err(e) = ws_tx.send_message(time_msg).await {
-                        debug!("Failed to send time sync: {}", e);
-                        break;
-                    }
-                }
-            });
-
-            // // Configuration from environment variables
+            // Configuration from environment variables
             let start_buffer_ms = env_u64("SS_PLAY_START_BUFFER_MS", 500);
             let log_lead = env_bool("SS_LOG_LEAD");
             info!(
@@ -284,24 +277,49 @@ impl Module for UbiHomePlatform {
                     match cmd {
                         PlayerCommand::Init(fmt, clock_sync) => {
                             // Use selected_device_for_thread only once
-                            match SyncedPlayer::new(fmt, clock_sync, selected_device.clone()) {
+                            match SyncedPlayer::new(
+                                fmt,
+                                clock_sync,
+                                selected_device.clone(),
+                                100,
+                                false,
+                                buffer_size,
+                            ) {
                                 Ok(player) => {
-                                    info!("Synced audio output initialized");
+                                    debug!("Synced audio output initialized");
                                     synced_player = Some(player);
                                 }
                                 Err(e) => {
-                                    debug!("Failed to create synced output: {}", e);
+                                    error!("Failed to create synced output: {}", e);
                                 }
                             }
                         }
                         PlayerCommand::Enqueue(buffer) => {
                             if let Some(ref player) = synced_player {
                                 player.enqueue(buffer);
+                            } else {
+                                log::warn!("Player not initialized yet, dropping audio buffer");
                             }
                         }
                         PlayerCommand::Clear => {
                             if let Some(ref player) = synced_player {
                                 player.clear();
+                            } else {
+                                log::warn!("Player not initialized yet, cannot clear");
+                            }
+                        }
+                        PlayerCommand::SetVolume(vol) => {
+                            if let Some(ref mut player) = synced_player {
+                                player.set_volume(vol);
+                            } else {
+                                log::warn!("Player not initialized yet, cannot set volume");
+                            }
+                        }
+                        PlayerCommand::SetMute(muted) => {
+                            if let Some(ref mut player) = synced_player {
+                                player.set_mute(muted);
+                            } else {
+                                log::warn!("Player not initialized yet, cannot set mute");
                             }
                         }
                         PlayerCommand::Shutdown => {
@@ -309,6 +327,7 @@ impl Module for UbiHomePlatform {
                         }
                     }
                 }
+                debug!("Audio player thread exited");
             });
 
             // Message handling variables
@@ -407,6 +426,62 @@ impl Module for UbiHomePlatform {
                                 first_chunk_logged = false;
                                 player_initialized = false;
                             }
+                            Message::ServerCommand(cmd) => {
+                                // debug!("Received server command: {}", );
+                                // Set Volume
+                                if !player_initialized {
+                                    log::warn!("Received server command before player initialized: {:?}", cmd);
+                                    continue;
+                                }
+                                match cmd.player {
+                                    None => {
+                                        log::warn!("Received server command without player field: {:?}", cmd);
+                                        continue;
+                                    }
+                                    Some(player) => {
+                                        match player.command {
+                                            PlayerCommandType::Volume => {
+                                                match player.volume {
+                                                    None => {
+                                                        log::warn!("Received server command without volume field");
+                                                    }
+                                                    Some(vol) => {
+                                                        info!("Setting player volume to {}", vol);
+                                                        let _ = player_tx.send(PlayerCommand::SetVolume(vol));
+                                                    }
+                                                }
+                                            }
+                                            PlayerCommandType::Mute => {
+                                                match player.mute {
+                                                    None => {
+                                                        log::warn!("Received server command without muted field");
+                                                    }
+                                                    Some(mute) => {
+                                                        log::info!("Received mute command: {}", mute);
+                                                        let _ = player_tx.send(PlayerCommand::SetMute(mute));
+                                                        sender.send_message(Message::ClientState(
+                                                            ClientState {
+                                                                state: None,
+                                                                player: Some(PlayerState {
+                                                                    volume: None,
+                                                                    muted: Some(mute),
+                                                                    static_delay_ms: None,
+                                                                    supported_commands: None,
+                                                                }),
+                                                            }
+                                                        )).await.unwrap();
+                                                    }
+                                                }
+                                            }
+                                            _ => {
+                                                debug!("Received unsupported server command: {:?}", player.command);
+                                                continue;
+                                            }
+                                        }
+
+                                    }
+                                }
+                            }
                             _ => {
                                 debug!("Received message: {:?}", msg);
                             }
@@ -416,10 +491,12 @@ impl Module for UbiHomePlatform {
                         // Log first chunk bytes for diagnostics
                         if !first_chunk_logged {
                             let preview_len = chunk.data.len().min(32);
-                            print!("First {} bytes (hex): ", preview_len);
-                            for byte in &chunk.data[..preview_len] {
-                                print!("{:02X} ", byte);
-                            }
+                            let hex_string = chunk.data[..preview_len]
+                                .iter()
+                                .map(|b| format!("{:02X}", b))
+                                .collect::<Vec<_>>()
+                                .join(" ");
+                            debug!("First {} bytes (hex): {}", preview_len, hex_string);
                             first_chunk_logged = true;
                         }
 
@@ -507,6 +584,7 @@ impl Module for UbiHomePlatform {
                         }
                     }
                     else => {
+                        debug!("Message and audio channels closed, exiting");
                         // Both channels closed
                         break;
                     }

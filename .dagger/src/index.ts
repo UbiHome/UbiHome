@@ -147,6 +147,7 @@ export class UbiHome {
 				"libdbus-1-dev",
 				"pkg-config",
 				"libasound2-dev",
+				"libpipewire-0.3-dev"
 			])
 			.withExec(["rustup", "component", "add", "rustfmt"])
 			.withExec(["rustup", "component", "add", "clippy"])

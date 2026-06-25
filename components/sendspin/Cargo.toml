@@ -11,13 +11,18 @@ tokio = { version = "1", features = ["full"] }
 ubihome-core = { path = "../core", features = ["ip", "validation"] }
 serde-saphyr = { version = "0.0.26", features = ["garde", "miette"] }
 duration-str = "0.16.1"
-# sendspin = { path = "../../../../DanielHabenicht/fork.sendspin-rs" }
-sendspin = { git = "https://github.com/DanielHabenicht/fork.sendspin-rs", rev = "084d7e50ad72bf640d2a51763837be6cb7294942" }
-# sendspin = { git = "https://github.com/Sendspin/sendspin-rs", branch = "main" }
 uuid = "1.19.0"
 tokio-tungstenite = "0.24.0"
 # tokio-tungstenite = { version = "0.24.0", features = ["rustls-tls-native-roots"] }
 parking_lot = "0.12"
 mdns-sd = "0.17.2"
-cpal = "0.15.3"
+# Use until https://github.com/RustAudio/cpal/issues/1157
+# sendspin = { path = "../../../../DanielHabenicht/fork.sendspin-rs/" }
+sendspin = { git = "https://github.com/DanielHabenicht/fork.sendspin-rs", rev = "a3cbe159243f261aa9cca03688524c506c3f4284" } #branch = "pi-zero-w-cpal-errors"
+# cpal = "0.15.3"
+cpal = { git = "https://github.com/rustaudio/cpal", branch = "fix/pulseaudio-human-ids", features = [
+  "pulseaudio",
+  "pipewire",
+] }
+# cpal = { git = "https://github.com/rustaudio/cpal", rev = "c3afb40df0b3aa7386ac42b4aa221a7b1ba3ce40" }
 garde = { version = "0.22.1", features = ["serde"] }
