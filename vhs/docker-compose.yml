@@ -1,0 +1,13 @@
+services:
+  generate:
+    build: .
+    volumes:
+      - ./:/vhs
+      - ./../target/release/ubihome:/vhs/ubihome
+    command: demo.tape
+  
+  record:
+    build: .
+    volumes:
+      - ./:/vhs
+    entrypoint: /bin/bash
