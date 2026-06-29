@@ -1,14 +1,7 @@
 use log::{debug, error, info, warn};
 use rumqttc::{AsyncClient, ConnectionError, Event, MqttOptions, QoS, StateError};
 use serde::{Deserialize, Deserializer};
-use std::{
-    collections::HashMap,
-    future::{self, Future},
-    pin::Pin,
-    str,
-    sync::Arc,
-    time::Duration,
-};
+use std::{collections::HashMap, future::Future, pin::Pin, str, sync::Arc, time::Duration};
 use tokio::{
     sync::{
         broadcast::{Receiver, Sender},
@@ -419,7 +412,9 @@ impl Module for UbiHomePlatform {
             // Handle incoming messages
             let base_topic1 = base_topic.clone();
             let all_mqtt_components_clone = all_mqtt_components.clone();
-            tokio::spawn(async move {
+            let eventloop_task: tokio::task::JoinHandle<
+                Result<(), Box<dyn std::error::Error + Send + Sync>>,
+            > = tokio::spawn(async move {
                 loop {
                     let mqtt_components = all_mqtt_components_clone.read().await;
                     match eventloop.poll().await {
@@ -494,7 +489,9 @@ impl Module for UbiHomePlatform {
                                 }
                                 _ => {
                                     error!("Network error: {:?}", e_io);
-                                    break;
+                                    return Err(
+                                        Box::new(e_io) as Box<dyn std::error::Error + Send + Sync>
+                                    );
                                 }
                             },
                             ConnectionError::MqttState(e_mqtt) => match e_mqtt {
@@ -511,7 +508,8 @@ impl Module for UbiHomePlatform {
                                     }
                                     _ => {
                                         error!("Network error: {:?}", io_error);
-                                        break;
+                                        return Err(Box::new(io_error)
+                                            as Box<dyn std::error::Error + Send + Sync>);
                                     }
                                 },
                                 StateError::AwaitPingResp => {
@@ -521,24 +519,26 @@ impl Module for UbiHomePlatform {
                                 }
                                 _ => {
                                     error!("MqttState error: {:?}", e_mqtt);
-                                    break;
+                                    return Err(Box::new(e_mqtt)
+                                        as Box<dyn std::error::Error + Send + Sync>);
                                 }
                             },
                             _ => {
                                 error!("Error in MQTT event loop: {:?}", e);
-                                break;
+                                return Err(Box::new(e) as Box<dyn std::error::Error + Send + Sync>);
                             }
                         },
                     }
                 }
-                error!("MQTT Receiver terminated");
             });
 
-            // Wait indefinitely to keep the eventloop alive
-            let future = future::pending();
-            let () = future.await;
-            error!("MQTT event loop terminated");
-            Ok(())
+            // Keep the eventloop alive. If it stops with a fatal error, propagate
+            // it (and a panic in the task surfaces as a JoinError) so the module
+            // reports the failure and the application can shut down.
+            match eventloop_task.await {
+                Ok(result) => result.map_err(|e| -> Box<dyn std::error::Error> { e }),
+                Err(join_err) => Err(Box::new(join_err) as Box<dyn std::error::Error>),
+            }
         })
     }
 }

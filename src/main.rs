@@ -202,7 +202,26 @@ fn main() {
                     dsn,
                     sentry::ClientOptions {
                         before_send: Some(Arc::new(|mut event| {
-                            event.server_name = None; // Don't send server name
+                            // Don't send server name
+                            event.server_name = None;
+                            // Centralized capture log: every event that Sentry sends —
+                            // explicitly captured errors AND panics caught by the panic
+                            // integration — passes through here.
+                            let module =
+                                event.tags.get("module").map(|m| m.as_str()).unwrap_or("-");
+                            let detail = event
+                                .exception
+                                .values
+                                .last()
+                                .and_then(|e| e.value.clone())
+                                .or_else(|| event.message.clone())
+                                .unwrap_or_else(|| "<no details>".to_string());
+                            log::info!(
+                                "Reporting {} event to Sentry (module: {}): {}",
+                                event.level,
+                                module,
+                                detail
+                            );
                             Some(event)
                         })),
                         release: Some(VERSION.into()),

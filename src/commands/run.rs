@@ -450,7 +450,16 @@ Remove the "{}:" entry from your configuration or install the cargo crate contai
             }
         });
 
-        run_platforms(configured_platforms, modules_tx.clone(), modules_rx).await;
+        // Channel used by module tasks to signal that one of them has failed
+        // (returned an error or panicked). Receiving on it triggers a full
+        // application shutdown below.
+        let (failure_tx, mut failure_rx) = tokio::sync::mpsc::unbounded_channel::<()>();
+        run_platforms(
+            configured_platforms,
+            modules_tx.clone(),
+            modules_rx,
+            failure_tx,
+        );
 
         println!("Platforms: {:?}", initialized_platforms);
         internal_tx
@@ -510,11 +519,19 @@ Remove the "{}:" entry from your configuration or install the cargo crate contai
                 _ = ctrl_c => {},
                 _ = terminate => {},
                 _ = shutdown_event => {},
+                _ = failure_rx.recv() => {
+                    // The failing module already logged the reason via its shutdown guard.
+                    debug!("Module failure signal received; shutting down.");
+                },
             }
         } else {
             tokio::select! {
                 _ = ctrl_c => {},
                 _ = terminate => {},
+                _ = failure_rx.recv() => {
+                    // The failing module already logged the reason via its shutdown guard.
+                    debug!("Module failure signal received; shutting down.");
+                },
             }
         }
     });
