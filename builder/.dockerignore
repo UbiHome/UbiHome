@@ -1,0 +1,7 @@
+# Keep the Docker build context (builder/) lean.
+frontend/node_modules/
+frontend/dist/
+target/
+**/target/
+data/
+cache/

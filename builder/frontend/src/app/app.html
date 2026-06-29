@@ -1,0 +1,161 @@
+<div class="app">
+  <header class="topbar">
+    <div class="brand">🏠 UbiHome <span>Builder</span></div>
+    <nav>
+      <button [class.active]="view() === 'editor'" (click)="view.set('editor')">Configs</button>
+      <button [class.active]="view() === 'history'" (click)="showHistory()">History</button>
+    </nav>
+  </header>
+
+  @if (banner(); as msg) {
+    <div class="banner">{{ msg }}</div>
+  }
+
+  @if (view() === 'editor') {
+    <div class="layout">
+      <!-- Config list -->
+      <aside class="sidebar">
+        <div class="sidebar-head">
+          <span>Configs</span>
+          <button class="ghost" (click)="newConfig()">+ New</button>
+        </div>
+        @for (c of configs(); track c.name) {
+          <div class="config-item" [class.selected]="selected() === c.name" (click)="openConfig(c.name)">
+            <div class="config-name">{{ c.name }}</div>
+            <div class="config-meta">
+              @for (comp of c.components; track comp) {
+                <span class="chip">{{ comp }}</span>
+              }
+              @if (c.components.length === 0) {
+                <span class="chip empty">no components</span>
+              }
+            </div>
+            <div class="config-actions">
+              <button class="ghost" title="Duplicate" (click)="duplicate(c.name, $event)">⧉</button>
+              <button class="ghost danger" title="Delete" (click)="deleteConfig(c.name, $event)">✕</button>
+            </div>
+          </div>
+        }
+        @if (configs().length === 0) {
+          <div class="empty-state">No configs yet. Create one to get started.</div>
+        }
+      </aside>
+
+      <!-- Editor + actions -->
+      <main class="main">
+        @if (selected(); as name) {
+          <div class="editor-head">
+            <h2>{{ name }}</h2>
+            <div class="actions">
+              <select [ngModel]="selectedVersion()" (ngModelChange)="selectedVersion.set($event)" title="UbiHome version">
+                <option value="">Latest stable{{ versions()[0] ? ' (' + versions()[0] + ')' : '' }}</option>
+                @for (v of versions(); track v) {
+                  <option [value]="v">{{ v }}</option>
+                }
+              </select>
+              <select [ngModel]="selectedTarget()" (ngModelChange)="selectedTarget.set($event)" title="Target platform">
+                <option value="">Host ({{ targets()[0]?.label || 'native' }})</option>
+                @for (t of targets(); track t.triple) {
+                  @if (!t.is_host) {
+                    <option [value]="t.triple">{{ t.label }}{{ t.needs_cross ? ' (cross)' : '' }}</option>
+                  }
+                }
+              </select>
+              <button class="ghost" (click)="save()">Save</button>
+              <button (click)="validate()" [disabled]="validating()">
+                {{ validating() ? 'Validating…' : 'Validate' }}
+              </button>
+              <button class="primary" (click)="build()" [disabled]="building() || detected().length === 0">
+                {{ building() ? 'Building…' : 'Build ▶' }}
+              </button>
+            </div>
+          </div>
+
+          <div class="editor-grid">
+            <textarea
+              class="yaml"
+              spellcheck="false"
+              [ngModel]="content()"
+              (ngModelChange)="content.set($event)"
+            ></textarea>
+
+            <div class="side-panels">
+              <div class="panel">
+                <h3>Components in build</h3>
+                <p class="hint">Detected from config.yml (read-only).</p>
+                <div class="components">
+                  @for (comp of detected(); track comp) {
+                    <label class="component"><input type="checkbox" checked disabled /> {{ comp }}</label>
+                  }
+                  @if (detected().length === 0) {
+                    <div class="empty-state">No platform components in this config.</div>
+                  }
+                </div>
+              </div>
+
+              @if (validation(); as v) {
+                <div class="panel" [class.ok]="v.ok" [class.bad]="!v.ok">
+                  <h3>{{ v.ok ? '✔ Valid' : '✕ Invalid' }}</h3>
+                  @if (v.output) {
+                    <pre class="validate-out">{{ v.output }}</pre>
+                  }
+                </div>
+              }
+            </div>
+          </div>
+
+          @if (logLines().length > 0) {
+            <div class="logs">
+              <h3>Build log</h3>
+              <pre class="log-out">@for (l of logLines(); track $index) {{{ l }}
+}</pre>
+            </div>
+          }
+        } @else {
+          <div class="empty-state big">Select a config on the left, or create a new one.</div>
+        }
+      </main>
+    </div>
+  }
+
+  @if (view() === 'history') {
+    <main class="main history">
+      <div class="editor-head">
+        <h2>Build history</h2>
+        <button class="ghost" (click)="refreshBuilds()">Refresh</button>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>#</th><th>Config</th><th>Version</th><th>Target</th><th>Components</th>
+            <th>Status</th><th>Size</th><th>When</th><th></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (b of builds(); track b.id) {
+            <tr>
+              <td>{{ b.id }}</td>
+              <td>{{ b.config }}</td>
+              <td>{{ b.version }}</td>
+              <td>{{ b.target }}</td>
+              <td>
+                @for (c of b.components; track c) { <span class="chip">{{ c }}</span> }
+              </td>
+              <td><span class="status" [class]="b.status">{{ b.status }}</span></td>
+              <td>{{ fmtSize(b.size) }}</td>
+              <td>{{ fmtTime(b.created_at) }}</td>
+              <td>
+                @if (b.status === 'success' && b.artifact) {
+                  <a [href]="artifactUrl(b.id)">Download</a>
+                }
+              </td>
+            </tr>
+          }
+          @if (builds().length === 0) {
+            <tr><td colspan="9" class="empty-state">No builds yet.</td></tr>
+          }
+        </tbody>
+      </table>
+    </main>
+  }
+</div>

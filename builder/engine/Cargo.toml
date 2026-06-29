@@ -1,0 +1,16 @@
+[package]
+name = "ubihome-builder-engine"
+edition.workspace = true
+version.workspace = true
+authors.workspace = true
+license.workspace = true
+description = "Core engine for the UbiHome builder: detect components, generate a trimmed Cargo.toml, compile a slim binary, validate configs."
+
+[dependencies]
+tokio = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+anyhow = { workspace = true }
+thiserror = { workspace = true }
+tracing = { workspace = true }
+toml_edit = "0.22"

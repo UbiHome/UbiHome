@@ -1,0 +1,12 @@
+# Rust build artifacts (the builder's own workspace target).
+/target/
+
+# Runtime state — created at runtime, never committed:
+#   data/  : configs, built binaries, logs, build history (server BUILDER_DATA)
+#   cache/ : UbiHome clone, git worktrees, cargo cache (server BUILDER_WORK)
+#   output/: default CLI build output (-o)
+/data/
+/cache/
+/output/
+
+# Cargo.lock IS committed (this is a binary workspace) — do not ignore it.

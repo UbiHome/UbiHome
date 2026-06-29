@@ -1,0 +1,27 @@
+# Run the UbiHome Builder dashboard.
+#   cd builder && docker compose up --build
+# Then open http://localhost:8080
+#
+# The image is fully decoupled from the UbiHome repo: it clones UbiHome on demand
+# and builds any tagged version. Override the source repo with BUILDER_REPO_URL.
+services:
+  builder:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: ubihome-builder
+    container_name: ubihome-builder
+    ports:
+      - "8080:8080"
+    environment:
+      # Repository the builder clones and builds versions from.
+      BUILDER_REPO_URL: https://github.com/UbiHome/UbiHome.git
+    volumes:
+      # Persisted configs, build outputs and history.
+      - ./data:/data
+      # Clone + worktrees + cargo cache. First build clones/compiles; then fast.
+      - ubihome-builder-cache:/cache
+    restart: unless-stopped
+
+volumes:
+  ubihome-builder-cache:

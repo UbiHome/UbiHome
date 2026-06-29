@@ -1,0 +1,17 @@
+[package]
+name = "ubihome-builder"
+edition.workspace = true
+version.workspace = true
+authors.workspace = true
+license.workspace = true
+description = "CLI to build a slim UbiHome binary containing only the components a config.yml uses. No web dependencies."
+
+[[bin]]
+name = "ubihome-builder"
+path = "src/main.rs"
+
+[dependencies]
+ubihome-builder-engine = { workspace = true }
+tokio = { workspace = true }
+anyhow = { workspace = true }
+clap = { version = "4.5", features = ["derive", "env"] }
