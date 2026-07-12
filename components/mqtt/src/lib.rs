@@ -472,7 +472,7 @@ impl Module for UbiHomePlatform {
                                     }
 
                                     if let Some(msg) = msg {
-                                        debug!("Received on '{}': {:?}", topic, &msg);
+                                        debug!("Received on '{}': {:?}", topic, msg);
                                         sender.send(msg).unwrap();
                                     }
                                 }
