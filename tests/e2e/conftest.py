@@ -13,9 +13,7 @@ from testcontainers.core.container import DockerContainer
 from utils import HomeAssistantRuntime
 
 
-def _api_request(
-    url: str, *, method: str = "GET", data=None, headers=None, form: bool = False
-):
+def _api_request(url: str, *, method: str = "GET", data=None, headers=None, form: bool = False):
     """Send an HTTP request and return a parsed JSON payload."""
     if data is None:
         payload = None
@@ -133,12 +131,8 @@ async def ha_page(
     page = await context.new_page()
 
     await page.goto(f"{home_assistant_runtime.base_url}/", wait_until="networkidle")
-    await page.get_by_role("textbox", name="Username").fill(
-        home_assistant_runtime.username
-    )
-    await page.get_by_role("textbox", name="Password").fill(
-        home_assistant_runtime.password
-    )
+    await page.get_by_role("textbox", name="Username").fill(home_assistant_runtime.username)
+    await page.get_by_role("textbox", name="Password").fill(home_assistant_runtime.password)
     await page.get_by_role("textbox", name="Password").press("Enter")
     await page.wait_for_url("**/home/overview", timeout=60000)
 

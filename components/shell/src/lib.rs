@@ -1,5 +1,5 @@
 use duration_str::deserialize_duration;
-use log::{debug, trace, warn};
+use log::{debug, error, trace, warn};
 use serde::{Deserialize, Deserializer};
 use shell_exec::{Execution, Shell, ShellError};
 use std::collections::HashMap;
@@ -355,13 +355,21 @@ impl Module for UbiHomePlatform {
                                     &command,
                                     &cloned_config.timeout,
                                 )
-                                .await
-                                .unwrap();
+                                .await;
                                 // If output is empty report status code
-                                if output.is_empty() {
-                                    trace!("Command executed successfully with no output.");
-                                } else {
-                                    trace!("Command executed successfully with output: {}", output);
+                                match output {
+                                    Ok(output) if output.is_empty() => {
+                                        trace!("Command executed successfully with no output.");
+                                    }
+                                    Ok(output) => {
+                                        trace!(
+                                            "Command executed successfully with output: {}",
+                                            output
+                                        );
+                                    }
+                                    Err(e) => {
+                                        error!("Error executing command: {}", e);
+                                    }
                                 }
 
                                 if let Some(command_state) = &switch.command_state {
@@ -392,7 +400,7 @@ impl Module for UbiHomePlatform {
                                             );
                                         }
                                         Err(e) => {
-                                            debug!("Error executing command: {}", e);
+                                            error!("Error executing command: {}", e);
                                         }
                                     };
                                 }
@@ -411,13 +419,21 @@ impl Module for UbiHomePlatform {
                                     &shell_button.command,
                                     &cloned_config.timeout,
                                 )
-                                .await
-                                .unwrap();
+                                .await;
                                 // If output is empty report status code
-                                if output.is_empty() {
-                                    trace!("Command executed successfully with no output.");
-                                } else {
-                                    trace!("Command executed successfully with output: {}", output);
+                                match output {
+                                    Ok(output) if output.is_empty() => {
+                                        trace!("Command executed successfully with no output.");
+                                    }
+                                    Ok(output) => {
+                                        trace!(
+                                            "Command executed successfully with output: {}",
+                                            output
+                                        );
+                                    }
+                                    Err(e) => {
+                                        error!("Error executing command: {}", e);
+                                    }
                                 }
                             }
                         }
@@ -448,13 +464,21 @@ impl Module for UbiHomePlatform {
                                     &command,
                                     &cloned_config.timeout,
                                 )
-                                .await
-                                .unwrap();
+                                .await;
 
-                                if output.is_empty() {
-                                    trace!("Command executed successfully with no output.");
-                                } else {
-                                    trace!("Command executed successfully with output: {}", output);
+                                match output {
+                                    Ok(output) if output.is_empty() => {
+                                        trace!("Command executed successfully with no output.");
+                                    }
+                                    Ok(output) => {
+                                        trace!(
+                                            "Command executed successfully with output: {}",
+                                            output
+                                        );
+                                    }
+                                    Err(e) => {
+                                        error!("Error executing command: {}", e);
+                                    }
                                 }
 
                                 // Handle brightness command if provided and supported
@@ -519,7 +543,7 @@ impl Module for UbiHomePlatform {
                                             );
                                         }
                                         Err(e) => {
-                                            debug!("Error executing state command: {}", e);
+                                            error!("Error executing state command: {}", e);
                                         }
                                     };
                                 }
@@ -555,7 +579,7 @@ impl Module for UbiHomePlatform {
                                             );
                                         }
                                         Err(e) => {
-                                            debug!("Error executing number set command: {}", e);
+                                            error!("Error executing number set command: {}", e);
                                         }
                                     }
                                 }
@@ -592,7 +616,7 @@ impl Module for UbiHomePlatform {
                                     });
                                 }
                                 Err(e) => {
-                                    debug!("Error executing command: {}", e);
+                                    error!("Error executing command: {}", e);
                                 }
                             };
                             interval.tick().await;
@@ -647,7 +671,7 @@ impl Module for UbiHomePlatform {
                                     });
                                 }
                                 Err(e) => {
-                                    debug!("Error executing command: {}", e);
+                                    error!("Error executing command: {}", e);
                                 }
                             };
 
@@ -696,7 +720,7 @@ impl Module for UbiHomePlatform {
                                     );
                                 }
                                 Err(e) => {
-                                    debug!("Error executing command: {}", e);
+                                    error!("Error executing command: {}", e);
                                 }
                             };
                             interval.tick().await;
@@ -752,7 +776,7 @@ impl Module for UbiHomePlatform {
                                     });
                                 }
                                 Err(e) => {
-                                    debug!("Error executing command: {}", e);
+                                    error!("Error executing command: {}", e);
                                 }
                             };
 
@@ -814,7 +838,7 @@ impl Module for UbiHomePlatform {
                                     }
                                 }
                                 Err(e) => {
-                                    debug!("Error executing number state command: {}", e);
+                                    error!("Error executing number state command: {}", e);
                                 }
                             };
 

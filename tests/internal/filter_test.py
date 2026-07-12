@@ -5,7 +5,7 @@ import aioesphomeapi
 import pytest
 
 from mock_file import IOMock
-from utils import OS_PLATFORM, Platform, UbiHome
+from utils import SHELL_TYPE, UbiHome
 
 
 async def test_round_filter(io_mock: IOMock):
@@ -18,7 +18,7 @@ ubihome:
 api:
 
 shell:
-  type: {"bash" if OS_PLATFORM is Platform.LINUX else "powershell"}
+  type: {SHELL_TYPE}
 
 sensor:
   - platform: shell
@@ -86,7 +86,7 @@ ubihome:
 api:
 
 shell:
-  type: {"bash" if OS_PLATFORM is Platform.LINUX else "powershell"}
+  type: {SHELL_TYPE}
 
 sensor:
   - platform: shell
