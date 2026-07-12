@@ -30,14 +30,10 @@ class IOMock:
         start_time = time.time()
         while expected_state not in state:
             if time.time() - start_time > timeout:
-                raise TimeoutError(
-                    f"State does not match within {timeout} seconds: {expected_state} != {state}."
-                )
+                raise TimeoutError(f"State does not match within {timeout} seconds: {expected_state} != {state}.")
             while not os.path.exists(self._full_path):
                 if time.time() - start_time > timeout:
-                    raise TimeoutError(
-                        f"File {self._full_path} was not created within {timeout} seconds."
-                    )
+                    raise TimeoutError(f"File {self._full_path} was not created within {timeout} seconds.")
                 time.sleep(0.1)
 
             if platform.system() == "Windows":

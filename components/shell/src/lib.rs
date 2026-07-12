@@ -362,7 +362,10 @@ impl Module for UbiHomePlatform {
                                         trace!("Command executed successfully with no output.");
                                     }
                                     Ok(output) => {
-                                        trace!("Command executed successfully with output: {}", output);
+                                        trace!(
+                                            "Command executed successfully with output: {}",
+                                            output
+                                        );
                                     }
                                     Err(e) => {
                                         error!("Error executing command: {}", e);
@@ -423,7 +426,10 @@ impl Module for UbiHomePlatform {
                                         trace!("Command executed successfully with no output.");
                                     }
                                     Ok(output) => {
-                                        trace!("Command executed successfully with output: {}", output);
+                                        trace!(
+                                            "Command executed successfully with output: {}",
+                                            output
+                                        );
                                     }
                                     Err(e) => {
                                         error!("Error executing command: {}", e);
@@ -465,7 +471,10 @@ impl Module for UbiHomePlatform {
                                         trace!("Command executed successfully with no output.");
                                     }
                                     Ok(output) => {
-                                        trace!("Command executed successfully with output: {}", output);
+                                        trace!(
+                                            "Command executed successfully with output: {}",
+                                            output
+                                        );
                                     }
                                     Err(e) => {
                                         error!("Error executing command: {}", e);

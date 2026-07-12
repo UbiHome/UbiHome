@@ -39,7 +39,9 @@ pub fn get_ip_address() -> Result<IpAddr, String> {
     // VPN). In that case fall back to any interface that does expose a MAC so we
     // still advertise a real device instead of failing.
     if all_addrs.is_empty() {
-        debug!("No best-route interface exposes a MAC address; falling back to any MAC-bearing interface");
+        debug!(
+            "No best-route interface exposes a MAC address; falling back to any MAC-bearing interface"
+        );
         all_addrs = mac_bearing_addrs;
     }
 

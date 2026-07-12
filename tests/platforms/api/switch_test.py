@@ -58,9 +58,7 @@ switch:
         # State update should be send back
         state_switched_to_true = False
         while state_switched_to_true:
-            state_switched_to_true = (
-                mock.called and mock.call_args.args[0].state is True
-            )
+            state_switched_to_true = mock.called and mock.call_args.args[0].state is True
             await sleep(0.1)
 
         mock.reset_mock()
@@ -72,9 +70,7 @@ switch:
         # State update should be send back
         state_switched_to_false = False
         while state_switched_to_false:
-            state_switched_to_false = (
-                mock.called and mock.call_args.args[0].state is False
-            )
+            state_switched_to_false = mock.called and mock.call_args.args[0].state is False
             await sleep(0.1)
         mock.reset_mock()
 
@@ -84,7 +80,5 @@ switch:
         # Wait for the state change
         state_switched_to_true = False
         while state_switched_to_true:
-            state_switched_to_true = (
-                mock.called and mock.call_args.args[0].state is True
-            )
+            state_switched_to_true = mock.called and mock.call_args.args[0].state is True
             await sleep(0.1)

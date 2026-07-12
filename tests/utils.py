@@ -129,7 +129,7 @@ class UbiHome:
                 pass
             try:
                 await asyncio.wait_for(self.process.wait(), timeout=5)
-            except asyncio.TimeoutError:
+            except TimeoutError:
                 self.process.kill()
                 await self.process.wait()
 
@@ -224,9 +224,7 @@ class UbiHome:
             while True:
                 await self._raise_if_stderr_task_failed()
                 if self.process and self.process.returncode is not None:
-                    raise AssertionError(
-                        f"UbiHome exited before API startup (exit code: {self.process.returncode})"
-                    )
+                    raise AssertionError(f"UbiHome exited before API startup (exit code: {self.process.returncode})")
 
                 # Use a fresh socket per attempt: on macOS/BSD a blocking socket
                 # whose connect() failed with ECONNREFUSED is poisoned and every
@@ -281,9 +279,7 @@ class UbiHome:
             raise AssertionError(f"UbiHome wrote to stderr:\n{(self.stderr or '').rstrip()}")
 
 
-async def run_ubihome(
-    *arguments, config=None, throw_on_error=False, extra_logging=True
-) -> tuple[str, str]:
+async def run_ubihome(*arguments, config=None, throw_on_error=False, extra_logging=True) -> tuple[str, str]:
     async with UbiHome(
         *arguments,
         config=config,
