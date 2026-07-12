@@ -1,0 +1,42 @@
+{
+  "name": "starlight-latest-version",
+  "version": "0.7.0-issue85-getLatestVersion",
+  "description": "Show the latest released version of your package in your Starlight documentation. Vendored from https://github.com/DanielHabenicht/fork.starlight-latest-version (branch starlight-issue-85-feature) to obtain the getLatestVersion virtual module. Replace with the published version once released.",
+  "keywords": [
+    "starlight",
+    "docs",
+    "astro",
+    "version",
+    "latest"
+  ],
+  "homepage": "https://starlight-latest-version.trueberryless.org",
+  "bugs": {
+    "url": "https://github.com/trueberryless-org/starlight-latest-version/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/trueberryless-org/starlight-latest-version.git",
+    "directory": "packages/starlight-latest-version"
+  },
+  "license": "MIT",
+  "author": "trueberryless <trueberryless@gmail.com> (https://trueberryless.org)",
+  "type": "module",
+  "exports": {
+    ".": "./index.ts",
+    "./components/DynamicVersionBadge.astro": "./components/DynamicVersionBadge.astro",
+    "./components/Version.astro": "./components/Version.astro",
+    "./components/VersionBadge.astro": "./components/VersionBadge.astro",
+    "./overrides/SiteTitle.astro": "./overrides/SiteTitle.astro",
+    "./package.json": "./package.json"
+  },
+  "peerDependencies": {
+    "@astrojs/starlight": ">=0.38",
+    "astro": "^6.0.4"
+  },
+  "engines": {
+    "node": ">=22.23.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

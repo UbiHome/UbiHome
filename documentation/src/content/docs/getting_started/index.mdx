@@ -7,9 +7,33 @@ next:
 ---
 
 import { Code, Steps, Tabs, TabItem } from '@astrojs/starlight/components';
+import { getLatestVersion } from 'virtual:starlight-latest-version';
 import linuxConfig from './linux.yml?raw';
 import windowsConfig from './windows.yml?raw';
 import macosConfig from './macos.yml?raw';
+
+export const latest = await getLatestVersion();
+export const releaseVersion = latest.versionAvailable ? latest.version : 'v0.14.0';
+export const displayVersion = latest.versionAvailable ? latest.versionWithoutPrefix : '0.14.0';
+export const downloadUrl = (file) => `https://github.com/UbiHome/UbiHome/releases/download/${releaseVersion}/${file}`;
+export const nixRun = `./ubihome run
+UbiHome - ${displayVersion}
+LogDirectory: /home/codespace/.local/share
+Config file path: /workspaces/ubihome/config.yaml
+Binary Sensor 'bluetooth_connected' output: false
+Sensor 'ram_usage' output: 38.3144
+Button 'my_button' pressed.
+Command executed successfully with no output.
+# End the process with ctrl+c`;
+export const windowsRun = `./ubihome.exe run
+UbiHome - ${displayVersion}
+LogDirectory: /home/codespace/.local/share
+Config file path: /workspaces/UbiHome/config.yaml
+Binary Sensor 'bluetooth_connected' output: false
+Sensor 'ram_usage' output: 38.3144
+Button 'my_button' pressed.
+Command executed successfully with no output.
+# End the process with ctrl+c`;
 export const labels = [
   { range: '6', label: '              Generate here: https://ubihome.github.io/features/connectivity/native_api.html' },
 ];
@@ -22,17 +46,13 @@ export const labels = [
 
     1. Download and extract the archive and place the ubihome executable in a directory of your choice.
 
-        | Devices            | Download                                                                                                             | Target                        |
-        | ------------------ | -------------------------------------------------------------------------------------------------------------------- | ----------------------------- |
-        | Any Linux          | [TAR Link](https://github.com/UbiHome/UbiHome/releases/download/v0.14.0/ubihome-Linux-musl-x86_64.tar.gz)         | x86_64-unknown-linux-musl     |
-        | Raspberry Pi 3     | [TAR Link](https://github.com/UbiHome/UbiHome/releases/download/v0.14.0/ubihome-Linux-musleabi-armv7.tar.gz)      | armv7-unknown-linux-musleabi  |
-        | Raspberry Pi Zero 2| [TAR Link](https://github.com/UbiHome/UbiHome/releases/download/v0.14.0/ubihome-Linux-musleabi-arm.tar.gz)        | arm-unknown-linux-musleabi    |
+        | Devices            | Download                                                                          | Target                        |
+        | ------------------ | --------------------------------------------------------------------------------- | ----------------------------- |
+        | Any Linux          | <a href={downloadUrl('ubihome-Linux-musl-x86_64.tar.gz')}>TAR Link</a>            | x86_64-unknown-linux-musl     |
+        | Raspberry Pi 3     | <a href={downloadUrl('ubihome-Linux-musleabi-armv7.tar.gz')}>TAR Link</a>         | armv7-unknown-linux-musleabi  |
+        | Raspberry Pi Zero 2| <a href={downloadUrl('ubihome-Linux-musleabi-arm.tar.gz')}>TAR Link</a>           | arm-unknown-linux-musleabi    |
 
-       ```bash
-       # You might have to use a different link from the table above depending on your device type
-       curl -L -o ubihome.tar.gz https://github.com/UbiHome/UbiHome/releases/download/v0.14.0/ubihome-Linux-musleabi-armv7.tar.gz
-       tar xvzf ./ubihome.tar.gz
-       ```
+       <Code code={`# You might have to use a different link from the table above depending on your device type\ncurl -L -o ubihome.tar.gz ${downloadUrl('ubihome-Linux-musleabi-armv7.tar.gz')}\ntar xvzf ./ubihome.tar.gz`} lang="bash" />
 
     2. Edit the configuration file `config.yaml` in the same directory as the executable. Example:
 
@@ -40,17 +60,7 @@ export const labels = [
 
     3. Try it out:
 
-       ```bash
-       ./ubihome run
-       UbiHome - 0.14.0
-       LogDirectory: /home/codespace/.local/share
-       Config file path: /workspaces/ubihome/config.yaml
-       Binary Sensor 'bluetooth_connected' output: false
-       Sensor 'ram_usage' output: 38.3144
-       Button 'my_button' pressed.
-       Command executed successfully with no output.
-       # End the process with ctrl+c
-       ```
+       <Code code={nixRun} lang="bash" />
 
     4. You should be able to see your device in Home Assistant now.
 
@@ -80,14 +90,11 @@ export const labels = [
 
     1. Download and extract the archive and place the ubihome executable in a directory of your choice.
 
-        | Device      | Download                                                                                                         | Target                    |
-        | ----------- | ---------------------------------------------------------------------------------------------------------------- | ------------------------- |
-        | Windows 11  | [ZIP Link](https://github.com/UbiHome/UbiHome/releases/download/v0.14.0/ubihome-Windows-msvc-x86_64.zip)         | x86_64-pc-windows-msvc    |
+        | Device      | Download                                                             | Target                    |
+        | ----------- | -------------------------------------------------------------------- | ------------------------- |
+        | Windows 11  | <a href={downloadUrl('ubihome-Windows-msvc-x86_64.zip')}>ZIP Link</a> | x86_64-pc-windows-msvc    |
 
-       ```powershell
-       Invoke-WebRequest -OutFile ubihome.zip -Uri https://github.com/UbiHome/UbiHome/releases/download/v0.14.0/ubihome-Windows-msvc-x86_64.zip
-       Expand-Archive -Force ubihome.zip ./
-       ```
+       <Code code={`Invoke-WebRequest -OutFile ubihome.zip -Uri ${downloadUrl('ubihome-Windows-msvc-x86_64.zip')}\nExpand-Archive -Force ubihome.zip ./`} lang="powershell" />
 
     2. Edit the configuration file `config.yaml` in the same directory as the executable. Example:
 
@@ -95,17 +102,7 @@ export const labels = [
 
     3. Try it out:
 
-       ```bash
-       ./ubihome.exe run
-       UbiHome - 0.14.0
-       LogDirectory: /home/codespace/.local/share
-       Config file path: /workspaces/UbiHome/config.yaml
-       Binary Sensor 'bluetooth_connected' output: false
-       Sensor 'ram_usage' output: 38.3144
-       Button 'my_button' pressed.
-       Command executed successfully with no output.
-       # End the process with ctrl+c
-       ```
+       <Code code={windowsRun} lang="bash" />
 
     4. You should be able to see your device in Home Assistant now.
 
@@ -135,16 +132,12 @@ export const labels = [
     <Steps>
 
     1. Download and extract the archive and place the ubihome executable in a directory of your choice.
-        | Device                              | Download                                                                                                      | Target                |
-        | ----------------------------------- | ------------------------------------------------------------------------------------------------------------- | --------------------- |
-        | MacOS (Intel)                       | [TAR Link](https://github.com/UbiHome/UbiHome/releases/download/v0.14.0/ubihome-macos-x86_64.tar.gz)       | x86_64-apple-darwin   |
-        | MacOS (Apple Silicon / M series)    | [TAR Link](https://github.com/UbiHome/UbiHome/releases/download/v0.14.0/ubihome-macos-aarch64.tar.gz)      | aarch64-apple-darwin  |
+        | Device                              | Download                                                        | Target                |
+        | ----------------------------------- | --------------------------------------------------------------- | --------------------- |
+        | MacOS (Intel)                       | <a href={downloadUrl('ubihome-macos-x86_64.tar.gz')}>TAR Link</a>  | x86_64-apple-darwin   |
+        | MacOS (Apple Silicon / M series)    | <a href={downloadUrl('ubihome-macos-aarch64.tar.gz')}>TAR Link</a> | aarch64-apple-darwin  |
 
-       ```bash
-       # You might have to use a different link from the table above depending on your device type
-       curl -L -o ubihome.tar.gz https://github.com/UbiHome/UbiHome/releases/download/v0.14.0/ubihome-macos-aarch64.tar.gz
-       tar xvzf ./ubihome.tar.gz
-       ```
+       <Code code={`# You might have to use a different link from the table above depending on your device type\ncurl -L -o ubihome.tar.gz ${downloadUrl('ubihome-macos-aarch64.tar.gz')}\ntar xvzf ./ubihome.tar.gz`} lang="bash" />
 
     2. Edit the configuration file `config.yaml` in the same directory as the executable.
 
@@ -154,17 +147,7 @@ export const labels = [
 
     3. Try it out:
 
-       ```bash
-       ./ubihome run
-       UbiHome - 0.14.0
-       LogDirectory: /home/codespace/.local/share
-       Config file path: /workspaces/ubihome/config.yaml
-       Binary Sensor 'bluetooth_connected' output: false
-       Sensor 'ram_usage' output: 38.3144
-       Button 'my_button' pressed.
-       Command executed successfully with no output.
-       # End the process with ctrl+c
-       ```
+       <Code code={nixRun} lang="bash" />
 
     4. You should be able to see your device in Home Assistant now.
 

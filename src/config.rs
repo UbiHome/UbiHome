@@ -18,8 +18,8 @@ fn only_allow_configured_platforms(value: &String, context: &BaseConfigContext) 
         if !allowed_platforms.contains(value) {
             return Err(garde::Error::new(format!(
                 "Platform '{}' is not configured in the configuration file. Allowed platforms are: {}",
-                &value,
-                &allowed_platforms.join(", ")
+                value,
+                allowed_platforms.join(", ")
             )));
         }
     }

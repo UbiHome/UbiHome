@@ -341,7 +341,7 @@ impl Module for UbiHomePlatform {
                                 let message = match cmd {
                                     PublishedMessage::SensorValueChanged { key, value } => {
                                         let key = api_components_key_id_clone.get(&key).unwrap();
-                                        debug!("SensorValueChanged: {:?}", &value);
+                                        debug!("SensorValueChanged: {:?}", value);
                                         Some(ProtoMessage::SensorStateResponse(
                                             SensorStateResponse {
                                                 key: *key,
@@ -353,7 +353,7 @@ impl Module for UbiHomePlatform {
                                     }
                                     PublishedMessage::BinarySensorValueChanged { key, value } => {
                                         let key = api_components_key_id_clone.get(&key).unwrap();
-                                        debug!("BinarySensorValueChanged: {:?}", &value);
+                                        debug!("BinarySensorValueChanged: {:?}", value);
                                         Some(ProtoMessage::BinarySensorStateResponse(
                                             BinarySensorStateResponse {
                                                 key: *key,
@@ -365,7 +365,7 @@ impl Module for UbiHomePlatform {
                                     }
                                     PublishedMessage::SwitchStateChange { key, state } => {
                                         let key = api_components_key_id_clone.get(&key).unwrap();
-                                        debug!("SwitchStateChanged: {:?}", &state);
+                                        debug!("SwitchStateChanged: {:?}", state);
                                         Some(ProtoMessage::SwitchStateResponse(
                                             SwitchStateResponse {
                                                 key: *key,
@@ -383,7 +383,7 @@ impl Module for UbiHomePlatform {
                                         blue,
                                     } => {
                                         let key = api_components_key_id_clone.get(&key).unwrap();
-                                        debug!("LightStateChanged: state={:?}, brightness={:?}, rgb=({:?},{:?},{:?})", &state, &brightness, &red, &green, &blue);
+                                        debug!("LightStateChanged: state={:?}, brightness={:?}, rgb=({:?},{:?},{:?})", state, brightness, red, green, blue);
                                         Some(ProtoMessage::LightStateResponse(LightStateResponse {
                                             key: *key,
                                             device_id: 0,
@@ -403,7 +403,7 @@ impl Module for UbiHomePlatform {
                                     }
                                     PublishedMessage::NumberValueChanged { key, value } => {
                                         api_components_key_id_clone.get(&key).map(|key| {
-                                            debug!("NumberValueChanged: {:?}", &value);
+                                            debug!("NumberValueChanged: {:?}", value);
                                             ProtoMessage::NumberStateResponse(NumberStateResponse {
                                                 key: *key,
                                                 device_id: 0,
@@ -414,7 +414,7 @@ impl Module for UbiHomePlatform {
                                     }
                                     PublishedMessage::TextSensorValueChanged { key, value } => {
                                         api_components_key_id_clone.get(&key).map(|key| {
-                                            debug!("TextSensorValueChanged: {:?}", &value);
+                                            debug!("TextSensorValueChanged: {:?}", value);
                                             ProtoMessage::TextSensorStateResponse(
                                                 TextSensorStateResponse {
                                                     key: *key,
@@ -426,7 +426,7 @@ impl Module for UbiHomePlatform {
                                         })
                                     }
                                     PublishedMessage::BluetoothProxyMessage(msg) => {
-                                        debug!("BluetoothProxyMessage: {:?}", &msg);
+                                        debug!("BluetoothProxyMessage: {:?}", msg);
                                         #[allow(deprecated)]
                                         let service_data: Vec<BluetoothServiceData> = msg
                                             .service_data
