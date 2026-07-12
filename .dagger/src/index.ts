@@ -29,30 +29,28 @@ export class UbiHome {
 	private docsContainer(source: Directory): Container {
 		const docsDir = source.directory("documentation");
 
-		return dag
-			.container()
-			.from("squidfunk/mkdocs-material:latest")
-			.withExec([
-				"pip",
-				"install",
-				"--upgrade",
-				"mkdocs-material[imaging]==9.7.6",
-				"pillow==12.1.1",
-				"cairosvg==2.9.0",
-				"mkdocs-awesome-nav==3.3.0",
-				"mkdocs-macros-plugin==1.5.0",
-				"mkdocs-git-revision-date-localized-plugin==1.5.1",
-			])
-			.withMountedDirectory("/docs", docsDir)
-			.withMountedCache(
-				"/docs/.cache",
-				dag.cacheVolume("mkdocs-material-cache"),
-			)
-			.withWorkdir("/docs");
+		return (
+			dag
+				.container()
+				.from("node:22-slim")
+				.withWorkdir("/docs")
+				.withMountedCache(
+					"/docs/node_modules",
+					dag.cacheVolume("docs-node-modules"),
+				)
+				.withFile("/docs/package.json", docsDir.file("package.json"))
+				.withFile("/docs/package-lock.json", docsDir.file("package-lock.json"))
+				.withExec(["npm", "ci"])
+				.withMountedDirectory("/docs", docsDir)
+				// Remount cache as it would have been overwritten by docsDir
+				.withMountedCache(
+					"/docs/node_modules",
+					dag.cacheVolume("docs-node-modules"),
+				)
+		);
 	}
-
 	/**
-	 * Run strict MkDocs checks and return build output logs.
+	 * Run strict docs checks and return build output logs.
 	 */
 	@func()
 	@check()
@@ -77,7 +75,7 @@ export class UbiHome {
 		})
 		source: Directory,
 	): Container {
-		return this.docsContainer(source).withExec(["mkdocs", "build", "--strict"]);
+		return this.docsContainer(source).withExec(["npm", "run", "build"]);
 	}
 
 	/**
@@ -108,7 +106,16 @@ export class UbiHome {
 		return this.docsContainer(source)
 			.withExposedPort(port)
 			.asService({
-				args: ["mkdocs", "serve", "--dev-addr", `0.0.0.0:${port}`],
+				args: [
+					"npm",
+					"run",
+					"dev",
+					"--",
+					"--host",
+					"0.0.0.0",
+					"--port",
+					`${port}`,
+				],
 			});
 	}
 
@@ -132,7 +139,17 @@ export class UbiHome {
 		return dag
 			.container()
 			.from("rust:latest")
+			.withExec(["apt-get", "update"])
+			.withExec([
+				"apt-get",
+				"install",
+				"-y",
+				"libdbus-1-dev",
+				"pkg-config",
+				"libasound2-dev",
+			])
 			.withExec(["rustup", "component", "add", "rustfmt"])
+			.withExec(["rustup", "component", "add", "clippy"])
 			.withMountedDirectory("/workspace", source)
 			.withWorkdir("/workspace");
 	}
@@ -159,7 +176,16 @@ export class UbiHome {
 		source: Directory,
 	): Promise<string> {
 		return this.rustContainer(source)
-			.withExec(["cargo", "fmt", "--check"])
+			.withExec(["cargo", "fmt", "--all", "--", "--check"])
+			.withExec([
+				"cargo",
+				"clippy",
+				"--all-targets",
+				"--all-features",
+				"--",
+				"-D",
+				"warnings",
+			])
 			.stdout();
 	}
 
@@ -171,17 +197,29 @@ export class UbiHome {
 	async ruffCheck(
 		@argument({
 			defaultPath: ".",
-			ignore: ["**", "!tests/**/*.py", "!ruff.toml", "tests/.venv/**"],
+			ignore: [
+				"**",
+				"!tests/**/*.py",
+				"!tests/ruff.toml",
+				"!tests/pyproject.toml",
+				"!tests/uv.lock",
+				"tests/.venv/**",
+			],
 		})
 		source: Directory,
 	): Promise<string> {
 		return dag
 			.container()
-			.from("python:3.12-slim")
-			.withExec(["pip", "install", "--quiet", "ruff"])
+			.from("ghcr.io/astral-sh/uv:python3.14-alpine")
+			.withWorkdir("/workspace/tests")
+			.withFile(
+				"/workspace/tests/pyproject.toml",
+				source.file("tests/pyproject.toml"),
+			)
+			.withFile("/workspace/tests/uv.lock", source.file("tests/uv.lock"))
+			.withExec(["uv", "sync", "--no-group", "e2e"])
 			.withMountedDirectory("/workspace", source)
-			.withWorkdir("/workspace")
-			.withExec(["ruff", "check", "tests/", "--config", "ruff.toml"])
+			.withExec(["uv", "run", "--no-group", "e2e", "ruff", "check"])
 			.stdout();
 	}
 

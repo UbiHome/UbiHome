@@ -6,13 +6,13 @@ use std::net::IpAddr;
 use std::{future::Future, pin::Pin, str};
 use tokio::sync::broadcast::{Receiver, Sender};
 use ubihome_core::features::ip::{get_ip_address, get_network_mac_address};
-use ubihome_core::internal::sensors::InternalComponent;
 use ubihome_core::NoConfig;
 use ubihome_core::{
-    config_template, home_assistant::sensors::Component, ChangedMessage, Module, PublishedMessage,
+    config_template, internal::sensors::UbiComponent, ChangedMessage, Module, PublishedMessage,
 };
 
-#[derive(Clone, Deserialize, Debug)]
+#[derive(Clone, Deserialize, Debug, Validate)]
+#[garde(allow_unvalidated)]
 pub struct MdnsConfig {
     pub disabled: Option<bool>,
     pub ip: Option<IpAddr>,
@@ -29,22 +29,24 @@ config_template!(
     NoConfig,
     NoConfig,
     NoConfig,
+    NoConfig,
     NoConfig
 );
 
 #[derive(Clone, Debug)]
-pub struct Default {
+pub struct UbiHomePlatform {
     config: CoreConfig,
 }
 
-impl Module for Default {
-    fn new(config_string: &String) -> Result<Self, String> {
-        let config = serde_yaml::from_str::<CoreConfig>(config_string).unwrap();
+impl Module for UbiHomePlatform {
+    fn new(config_string: &str, config_path: &str) -> Result<Self, String> {
+        let config =
+            ubihome_core::validation::validate_config::<CoreConfig>(config_string, config_path)?;
 
-        Ok(Default { config: config })
+        Ok(UbiHomePlatform { config })
     }
-    fn components(&mut self) -> Vec<InternalComponent> {
-        let components: Vec<InternalComponent> = Vec::new();
+    fn components(&mut self) -> Vec<UbiComponent> {
+        let components: Vec<UbiComponent> = Vec::new();
 
         components
     }
@@ -72,9 +74,9 @@ impl Module for Default {
                 .unwrap_or(default_mac);
             debug!("Advertising Mac: {:?}", mac);
 
-            let responder: libmdns::Responder;
             // let (responder, _) = libmdns::Responder::with_default_handle_and_ip_list_and_hostname(vec, "".to_string()).unwrap();
-            responder = libmdns::Responder::new_with_ip_list(vec![ip]).unwrap();
+            let responder: libmdns::Responder =
+                libmdns::Responder::new_with_ip_list(vec![ip]).unwrap();
 
             let svc_name = config.ubihome.name;
             let friendly_name = config.ubihome.friendly_name.unwrap_or(svc_name.clone());

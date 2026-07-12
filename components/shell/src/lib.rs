@@ -1,5 +1,5 @@
 use duration_str::deserialize_duration;
-use log::{debug, error, info, trace, warn};
+use log::{debug, error, trace, warn};
 use serde::{Deserialize, Deserializer};
 use shell_exec::{Execution, Shell, ShellError};
 use std::collections::HashMap;
@@ -8,16 +8,27 @@ use tokio::{
     sync::broadcast::{Receiver, Sender},
     time,
 };
-use ubihome_core::home_assistant::sensors::{UbiLight, UbiNumber, UbiSwitch};
-use ubihome_core::internal::sensors::{InternalLight, InternalNumber, InternalSwitch};
+use ubihome_core::internal::sensors::{
+    UbiComponent, UbiLight, UbiNumber, UbiSwitch, UbiTextSensor,
+};
+use ubihome_core::template_light;
+use ubihome_core::template_text_sensor;
 use ubihome_core::{
     config_template,
-    home_assistant::sensors::{UbiBinarySensor, UbiButton, UbiSensor},
-    internal::sensors::{InternalBinarySensor, InternalButton, InternalComponent, InternalSensor},
+    internal::sensors::{UbiBinarySensor, UbiButton, UbiSensor},
     ChangedMessage, Module, PublishedMessage,
 };
 
-#[derive(Debug, Copy, Clone, Deserialize)]
+use ubihome_core::constants::is_id_string_option;
+use ubihome_core::constants::is_readable_string;
+use ubihome_core::template_binary_sensor;
+use ubihome_core::template_button;
+use ubihome_core::template_number;
+use ubihome_core::template_sensor;
+use ubihome_core::template_switch;
+use ubihome_core::with_base_entity_properties;
+
+#[derive(Debug, Copy, Clone, Deserialize, Validate)]
 #[serde(rename_all = "camelCase")]
 pub enum CustomShell {
     Zsh,
@@ -28,13 +39,15 @@ pub enum CustomShell {
     Wsl,
 }
 
-#[derive(Clone, Deserialize, Debug)]
+#[derive(Clone, Deserialize, Debug, Validate)]
 pub struct ShellConfig {
     #[serde(rename = "type")]
+    #[garde(dive)]
     pub kind: Option<CustomShell>,
 
     #[serde(default = "default_timeout")]
     #[serde(deserialize_with = "deserialize_duration")]
+    #[garde(skip)]
     pub timeout: Duration,
 }
 
@@ -42,64 +55,104 @@ fn default_timeout() -> Duration {
     Duration::from_secs(5)
 }
 
-#[derive(Clone, Deserialize, Debug)]
-pub struct ShellBinarySensorConfig {
-    #[serde(default = "default_timeout_none")]
-    #[serde(deserialize_with = "deserialize_option_duration")]
-    pub update_interval: Option<Duration>,
-    pub command: String,
+template_binary_sensor! {
+    #[derive(Clone, Deserialize, Debug, Validate)]
+    #[garde(allow_unvalidated)]
+    pub struct ShellBinarySensorConfig {
+        #[serde(default = "default_timeout_none")]
+        #[serde(deserialize_with = "deserialize_option_duration")]
+        #[garde(skip)]
+        pub update_interval: Option<Duration>,
+        pub command: String,
+    }
 }
 
-#[derive(Clone, Deserialize, Debug)]
-pub struct ShellSensorConfig {
-    pub command: String,
+template_sensor! {
+    #[derive(Clone, Deserialize, Debug, Validate)]
+    pub struct ShellSensorConfig {
+        #[garde(skip)]
+        pub command: String,
 
-    #[serde(default = "default_timeout_none")]
-    #[serde(deserialize_with = "deserialize_option_duration")]
-    pub update_interval: Option<Duration>,
+        #[serde(default = "default_timeout_none")]
+        #[serde(deserialize_with = "deserialize_option_duration")]
+        #[garde(skip)]
+        pub update_interval: Option<Duration>,
+    }
 }
 
-#[derive(Clone, Deserialize, Debug)]
-pub struct ShellButtonConfig {
-    pub command: String,
+template_button! {
+    #[derive(Clone, Deserialize, Debug, Validate)]
+    pub struct ShellButtonConfig {
+        #[garde(length(min = 1))]
+        pub command: String,
+    }
 }
 
-#[derive(Clone, Deserialize, Debug)]
-pub struct ShellSwitchConfig {
-    pub command_on: String,
-    pub command_off: String,
-    pub command_state: Option<String>,
+template_switch! {
 
-    #[serde(default = "default_timeout_none")]
-    #[serde(deserialize_with = "deserialize_option_duration")]
-    pub update_interval: Option<Duration>,
+    #[derive(Clone, Deserialize, Debug, Validate)]
+    #[garde(allow_unvalidated)]
+    pub struct ShellSwitchConfig {
+        #[garde(length(min = 1))]
+        pub command_on: String,
+        #[garde(length(min = 1))]
+        pub command_off: String,
+        #[garde(skip)]
+        pub command_state: Option<String>,
+
+        #[serde(default = "default_timeout_none")]
+        #[serde(deserialize_with = "deserialize_option_duration")]
+        #[garde(skip)]
+        pub update_interval: Option<Duration>,
+    }
 }
 
-#[derive(Clone, Deserialize, Debug)]
-pub struct ShellLightConfig {
-    pub command_on: String,
-    pub command_off: String,
-    pub command_state: Option<String>,
-    // pub command_brightness: Option<String>,
-    // pub command_rgb: Option<String>,
+template_light! {
+    #[derive(Clone, Deserialize, Debug, Validate)]
+    pub struct ShellLightConfig {
+        #[garde(length(min = 1))]
+        pub command_on: String,
+        #[garde(length(min = 1))]
+        pub command_off: String,
+        #[garde(skip)]
+        pub command_state: Option<String>,
+        // pub command_brightness: Option<String>,
+        // pub command_rgb: Option<String>,
 
-    // pub supports_brightness: Option<bool>,
-    // pub supports_rgb: Option<bool>,
-    // pub supports_white_value: Option<bool>,
-    // pub supports_color_temperature: Option<bool>,
-    #[serde(default = "default_timeout_none")]
-    #[serde(deserialize_with = "deserialize_option_duration")]
-    pub update_interval: Option<Duration>,
+        // pub supports_brightness: Option<bool>,
+        // pub supports_rgb: Option<bool>,
+        // pub supports_white_value: Option<bool>,
+        // pub supports_color_temperature: Option<bool>,
+        #[serde(default = "default_timeout_none")]
+        #[serde(deserialize_with = "deserialize_option_duration")]
+        #[garde(skip)]
+        pub update_interval: Option<Duration>,
+    }
 }
 
-#[derive(Clone, Deserialize, Debug)]
-pub struct ShellNumberConfig {
-    pub command_state: Option<String>,
-    pub command_set: Option<String>,
+template_number! {
+    #[derive(Clone, Deserialize, Debug, Validate)]
+    #[garde(allow_unvalidated)]
+    pub struct ShellNumberConfig {
+        pub command_state: Option<String>,
+        pub command_set: Option<String>,
 
-    #[serde(default = "default_timeout_none")]
-    #[serde(deserialize_with = "deserialize_option_duration")]
-    pub update_interval: Option<Duration>,
+        #[serde(default = "default_timeout_none")]
+        #[serde(deserialize_with = "deserialize_option_duration")]
+        pub update_interval: Option<Duration>,
+    }
+}
+
+template_text_sensor! {
+    #[derive(Clone, Deserialize, Debug, Validate)]
+    #[garde(allow_unvalidated)]
+    pub struct ShellTextSensorConfig {
+        pub command: String,
+
+        #[serde(default = "default_timeout_none")]
+        #[serde(deserialize_with = "deserialize_option_duration")]
+        pub update_interval: Option<Duration>,
+    }
 }
 
 fn default_timeout_none() -> Option<Duration> {
@@ -114,161 +167,133 @@ config_template!(
     ShellSensorConfig,
     ShellSwitchConfig,
     ShellLightConfig,
-    ShellNumberConfig
+    ShellNumberConfig,
+    ShellTextSensorConfig
 );
 
-pub struct Default {
+pub struct UbiHomePlatform {
     config: ShellConfig,
-    components: Vec<InternalComponent>,
+    components: Vec<UbiComponent>,
     binary_sensors: HashMap<String, ShellBinarySensorConfig>,
     buttons: HashMap<String, ShellButtonConfig>,
     sensors: HashMap<String, ShellSensorConfig>,
     switches: HashMap<String, ShellSwitchConfig>,
     lights: HashMap<String, ShellLightConfig>,
     numbers: HashMap<String, ShellNumberConfig>,
+    text_sensors: HashMap<String, ShellTextSensorConfig>,
 }
 
-impl Module for Default {
-    fn new(config_string: &String) -> Result<Self, String> {
-        let config = serde_yaml::from_str::<CoreConfig>(config_string).unwrap();
+impl Module for UbiHomePlatform {
+    fn new(config_string: &str, config_path: &str) -> Result<Self, String> {
+        let config =
+            ubihome_core::validation::validate_config::<CoreConfig>(config_string, config_path)?;
         debug!("Shell config: {:?}", config);
-        let mut components: Vec<InternalComponent> = Vec::new();
+        let mut components: Vec<UbiComponent> = Vec::new();
 
         let mut sensors: HashMap<String, ShellSensorConfig> = HashMap::new();
-        for (_, any_sensor) in config.sensor.clone().unwrap_or_default() {
-            match any_sensor.extra {
-                SensorKind::shell(sensor) => {
-                    let id = any_sensor.default.get_object_id();
-                    components.push(InternalComponent::Sensor(InternalSensor {
-                        ha: UbiSensor {
-                            platform: "sensor".to_string(),
-                            icon: any_sensor.default.icon.clone(),
-                            device_class: any_sensor.default.device_class.clone(),
-                            state_class: any_sensor.default.state_class.clone(),
-                            unit_of_measurement: any_sensor.default.unit_of_measurement.clone(),
-                            accuracy_decimals: any_sensor.default.accuracy_decimals,
-                            name: any_sensor.default.name.clone(),
-                            id: id.clone(),
-                        },
-                        base: any_sensor.default.clone(),
-                    }));
-                    sensors.insert(id.clone(), sensor);
-                }
-                _ => {}
-            }
+        for (_, sensor) in config.sensor.clone().unwrap_or_default() {
+            let id = sensor.get_object_id();
+            components.push(UbiComponent::Sensor(UbiSensor {
+                platform: "sensor".to_string(),
+                icon: sensor.icon.clone(),
+                device_class: sensor.device_class.clone(),
+                state_class: sensor.state_class.clone(),
+                unit_of_measurement: sensor.unit_of_measurement.clone(),
+                accuracy_decimals: sensor.accuracy_decimals,
+                name: sensor.name.clone(),
+                id: id.clone(),
+                filters: sensor.filters.clone(),
+            }));
+            sensors.insert(id.clone(), sensor);
         }
 
         let mut binary_sensors: HashMap<String, ShellBinarySensorConfig> = HashMap::new();
-        for (_, any_sensor) in config.binary_sensor.clone().unwrap_or_default() {
-            match any_sensor.extra {
-                BinarySensorKind::shell(binary_sensor) => {
-                    let id = any_sensor.default.get_object_id();
-                    components.push(InternalComponent::BinarySensor(InternalBinarySensor {
-                        ha: UbiBinarySensor {
-                            platform: "sensor".to_string(),
-                            icon: any_sensor.default.icon.clone(),
-                            device_class: any_sensor.default.device_class.clone(),
-                            name: any_sensor.default.name.clone(),
-                            id: id.clone(),
-                        },
-                        base: any_sensor.default.clone(),
-                    }));
-                    binary_sensors.insert(id.clone(), binary_sensor);
-                }
-                _ => {}
-            }
+        for (_, binary_sensor) in config.binary_sensor.clone().unwrap_or_default() {
+            let id = binary_sensor.get_object_id();
+            components.push(UbiComponent::BinarySensor(UbiBinarySensor {
+                platform: "sensor".to_string(),
+                icon: binary_sensor.icon.clone(),
+                device_class: binary_sensor.device_class.clone(),
+                name: binary_sensor.name.clone(),
+                id: id.clone(),
+                on_press: binary_sensor.on_press.clone(),
+                on_release: binary_sensor.on_release.clone(),
+                filters: binary_sensor.filters.clone(),
+            }));
+            binary_sensors.insert(id.clone(), binary_sensor);
         }
 
         let mut buttons: HashMap<String, ShellButtonConfig> = HashMap::new();
-        for (_, any_sensor) in config.button.clone().unwrap_or_default() {
-            match any_sensor.extra {
-                ButtonKind::shell(button) => {
-                    let id = any_sensor.default.get_object_id();
-                    components.push(InternalComponent::Button(InternalButton {
-                        ha: UbiButton {
-                            platform: "sensor".to_string(),
-                            icon: any_sensor.default.icon.clone(),
-                            name: any_sensor.default.name.clone(),
-                            id: id.clone(),
-                        },
-                    }));
-                    buttons.insert(id.clone(), button);
-                }
-                _ => {}
-            }
+        for (_, button) in config.button.clone().unwrap_or_default() {
+            let id = button.get_object_id();
+            components.push(UbiComponent::Button(UbiButton {
+                platform: "sensor".to_string(),
+                icon: button.icon.clone(),
+                name: button.name.clone(),
+                id: id.clone(),
+            }));
+            buttons.insert(id.clone(), button);
         }
 
         let mut switches: HashMap<String, ShellSwitchConfig> = HashMap::new();
-        for (_, any_sensor) in config.switch.clone().unwrap_or_default() {
-            match any_sensor.extra {
-                SwitchKind::shell(switch) => {
-                    let id = any_sensor.default.get_object_id();
-                    components.push(InternalComponent::Switch(InternalSwitch {
-                        ha: UbiSwitch {
-                            // TODO
-                            platform: "sensor".to_string(),
-                            icon: any_sensor.default.icon.clone(),
-                            name: any_sensor.default.name.clone(),
-                            id: id.clone(),
-                            device_class: None,
-                            assumed_state: !switch.command_state.is_some(),
-                        },
-                    }));
-                    switches.insert(id.clone(), switch);
-                }
-                _ => {}
-            }
+        for (_, switch) in config.switch.clone().unwrap_or_default() {
+            let id = switch.get_object_id();
+            components.push(UbiComponent::Switch(UbiSwitch {
+                platform: "sensor".to_string(),
+                icon: switch.icon.clone(),
+                name: switch.name.clone(),
+                id: id.clone(),
+                device_class: None,
+                assumed_state: switch.command_state.is_none(),
+            }));
+            switches.insert(id.clone(), switch);
         }
 
         let mut lights: HashMap<String, ShellLightConfig> = HashMap::new();
-        for (_, any_light) in config.light.clone().unwrap_or_default() {
-            match any_light.extra {
-                LightKind::shell(light_config) => {
-                    let id = any_light.default.get_object_id();
-                    components.push(InternalComponent::Light(InternalLight {
-                        ha: UbiLight {
-                            platform: "light".to_string(),
-                            icon: any_light.default.icon.clone(),
-                            name: any_light.default.name.clone(),
-                            id: id.clone(),
-                            disabled_by_default: any_light
-                                .default
-                                .disabled_by_default
-                                .unwrap_or(true),
-                        },
-                    }));
-                    lights.insert(id.clone(), light_config);
-                }
-                _ => {}
-            }
+        for (_, light) in config.light.clone().unwrap_or_default() {
+            let id = light.get_object_id();
+            components.push(UbiComponent::Light(UbiLight {
+                platform: "light".to_string(),
+                icon: light.icon.clone(),
+                name: light.name.clone(),
+                id: id.clone(),
+                disabled_by_default: light.disabled_by_default.unwrap_or(true),
+            }));
+            lights.insert(id.clone(), light);
         }
 
         let mut numbers: HashMap<String, ShellNumberConfig> = HashMap::new();
-        for (_, any_number) in config.number.clone().unwrap_or_default() {
-            match any_number.extra {
-                NumberKind::shell(number_config) => {
-                    let id = any_number.default.get_object_id();
-                    components.push(InternalComponent::Number(InternalNumber {
-                        ha: UbiNumber {
-                            platform: "number".to_string(),
-                            icon: any_number.default.icon.clone(),
-                            name: any_number.default.name.clone(),
-                            id: id.clone(),
-                            min_value: any_number.default.min_value.unwrap_or(0.0),
-                            max_value: any_number.default.max_value.unwrap_or(100.0),
-                            step: any_number.default.step.unwrap_or(1.0),
-                            unit_of_measurement: any_number.default.unit_of_measurement.clone(),
-                            device_class: any_number.default.device_class.clone(),
-                            mode: 1, // NumberMode::Box
-                        },
-                    }));
-                    numbers.insert(id.clone(), number_config);
-                }
-                _ => {}
-            }
+        for (_, number) in config.number.clone().unwrap_or_default() {
+            let id = number.get_object_id();
+            components.push(UbiComponent::Number(UbiNumber {
+                platform: "number".to_string(),
+                icon: number.icon.clone(),
+                name: number.name.clone(),
+                id: id.clone(),
+                min_value: number.min_value.unwrap_or(0.0),
+                max_value: number.max_value.unwrap_or(100.0),
+                step: number.step.unwrap_or(1.0),
+                unit_of_measurement: number.unit_of_measurement.clone(),
+                device_class: number.device_class.clone(),
+                mode: 1, // NumberMode::Box
+            }));
+            numbers.insert(id.clone(), number);
         }
 
-        Ok(Default {
+        let mut text_sensors: HashMap<String, ShellTextSensorConfig> = HashMap::new();
+        for (_, text_sensor) in config.text_sensor.clone().unwrap_or_default() {
+            let id = text_sensor.get_object_id();
+            components.push(UbiComponent::TextSensor(UbiTextSensor {
+                platform: "text_sensor".to_string(),
+                icon: text_sensor.icon.clone(),
+                name: text_sensor.name.clone(),
+                id: id.clone(),
+                device_class: text_sensor.device_class.clone(),
+            }));
+            text_sensors.insert(id.clone(), text_sensor);
+        }
+
+        Ok(UbiHomePlatform {
             config: config.shell,
             components,
             binary_sensors,
@@ -277,10 +302,11 @@ impl Module for Default {
             switches,
             lights,
             numbers,
+            text_sensors,
         })
     }
 
-    fn components(&mut self) -> Vec<InternalComponent> {
+    fn components(&mut self) -> Vec<UbiComponent> {
         self.components.clone()
     }
 
@@ -297,6 +323,7 @@ impl Module for Default {
         let sensors = self.sensors.clone();
         let lights = self.lights.clone();
         let numbers = self.numbers.clone();
+        let text_sensors = self.text_sensors.clone();
         Box::pin(async move {
             let cloned_config = config.clone();
             let csender = sender.clone();
@@ -314,14 +341,13 @@ impl Module for Default {
                             debug!("SwitchStateChanged: {} {}", key, state);
                             if let Some(switch) = switches_clone.get(&key) {
                                 // ButtonKind::shell(shell_button) => {
-                                let command: String;
-                                if state {
+                                let command: String = if state {
                                     debug!("Turning on switch: {}", key);
-                                    command = switch.command_on.clone();
+                                    switch.command_on.clone()
                                 } else {
                                     debug!("Turning off switch: {}", key);
-                                    command = switch.command_off.clone();
-                                }
+                                    switch.command_off.clone()
+                                };
                                 debug!("Executing command: {}", command);
 
                                 let output = execute_command(
@@ -346,7 +372,7 @@ impl Module for Default {
                                 if let Some(command_state) = &switch.command_state {
                                     let output = execute_command(
                                         &cloned_config,
-                                        &command_state,
+                                        command_state,
                                         &cloned_config.timeout,
                                     )
                                     .await;
@@ -418,14 +444,13 @@ impl Module for Default {
                                 key, state, brightness, red, green, blue
                             );
                             if let Some(light) = lights_clone.get(&key) {
-                                let command: String;
-                                if state {
+                                let command: String = if state {
                                     debug!("Turning on light: {}", key);
-                                    command = light.command_on.clone();
+                                    light.command_on.clone()
                                 } else {
                                     debug!("Turning off light: {}", key);
-                                    command = light.command_off.clone();
-                                }
+                                    light.command_off.clone()
+                                };
                                 debug!("Executing command: {}", command);
 
                                 let output = execute_command(
@@ -480,7 +505,7 @@ impl Module for Default {
                                 if let Some(command_state) = &light.command_state {
                                     let output = execute_command(
                                         &cloned_config,
-                                        &command_state,
+                                        command_state,
                                         &cloned_config.timeout,
                                     )
                                     .await;
@@ -681,7 +706,7 @@ impl Module for Default {
                                     _ = cloned_sender.send(
                                         ChangedMessage::BinarySensorValueChange {
                                             key: key.clone(),
-                                            value: value.clone(),
+                                            value,
                                         },
                                     );
                                 }
@@ -815,6 +840,49 @@ impl Module for Default {
                     warn!("Number {} has no command_state", key);
                 }
             }
+
+            // Poll text sensor states with update intervals
+            for (key, text_sensor) in text_sensors {
+                let text_sensor = text_sensor.clone();
+                debug!("Text Sensor State monitor for: {:?}", key);
+
+                if let Some(duration) = text_sensor.update_interval {
+                    let cloned_config = config.clone();
+                    let cloned_sender = sender.clone();
+                    tokio::spawn(async move {
+                        let mut interval = time::interval(duration);
+                        debug!(
+                            "Text Sensor {} has update interval: {:?}",
+                            key,
+                            interval.period()
+                        );
+                        loop {
+                            let output = execute_command(
+                                &cloned_config,
+                                &text_sensor.command,
+                                &cloned_config.timeout,
+                            )
+                            .await;
+                            match output {
+                                Ok(output) => {
+                                    debug!("Text Sensor {} state: {}", key, &output);
+                                    _ = cloned_sender.send(ChangedMessage::TextSensorValueChange {
+                                        key: key.clone(),
+                                        value: output.trim().to_string(),
+                                    });
+                                }
+                                Err(e) => {
+                                    debug!("Error executing text sensor command: {}", e);
+                                }
+                            };
+
+                            interval.tick().await;
+                        }
+                    });
+                } else {
+                    debug!("Text Sensor {} has no update interval", key);
+                }
+            }
             Ok(())
         })
     }
@@ -874,7 +942,7 @@ number:
     command_set: "echo {{ value }}"
 "#;
 
-        let module = Default::new(&config.to_string());
+        let module = UbiHomePlatform::new(&config.to_string());
         assert!(
             module.is_ok(),
             "Shell module should parse number config successfully"
@@ -921,7 +989,7 @@ number:
     name: "Volume"
 "#;
 
-        let module = Default::new(&config.to_string());
+        let module = UbiHomePlatform::new(&config.to_string());
         assert!(
             module.is_ok(),
             "Shell module should parse minimal number config successfully"
@@ -946,6 +1014,87 @@ number:
         assert!(
             number.update_interval.is_none(),
             "Minimal number should have no update_interval"
+        );
+    }
+
+    #[test]
+    fn test_text_sensor_config_parsing() {
+        let config = r#"
+ubihome:
+  name: "Test Text Sensor Config"
+
+shell:
+  type: bash
+
+text_sensor:
+  - platform: shell
+    name: "Current User"
+    id: current_user
+    update_interval: 10s
+    command: "whoami"
+"#;
+
+        let module = UbiHomePlatform::new(&config.to_string());
+        assert!(
+            module.is_ok(),
+            "Shell module should parse text_sensor config successfully"
+        );
+
+        let module = module.unwrap();
+        assert_eq!(
+            module.text_sensors.len(),
+            1,
+            "Should have 1 text_sensor entity"
+        );
+        assert!(
+            module.text_sensors.contains_key("current_user"),
+            "Should contain 'current_user' text_sensor"
+        );
+
+        let text_sensor = module.text_sensors.get("current_user").unwrap();
+        assert_eq!(text_sensor.command, "whoami", "command should match");
+        assert!(
+            text_sensor.update_interval.is_some(),
+            "Text sensor should have update_interval"
+        );
+    }
+
+    #[test]
+    fn test_text_sensor_config_minimal() {
+        let config = r#"
+ubihome:
+  name: "Test Text Sensor Minimal"
+
+shell:
+
+text_sensor:
+  - platform: shell
+    name: "Hostname"
+    command: "hostname"
+"#;
+
+        let module = UbiHomePlatform::new(&config.to_string());
+        assert!(
+            module.is_ok(),
+            "Shell module should parse minimal text_sensor config successfully"
+        );
+
+        let module = module.unwrap();
+        assert_eq!(
+            module.text_sensors.len(),
+            1,
+            "Should have 1 text_sensor entity"
+        );
+        assert!(
+            module.text_sensors.contains_key("hostname"),
+            "Should contain 'hostname' text_sensor"
+        );
+
+        let text_sensor = module.text_sensors.get("hostname").unwrap();
+        assert_eq!(text_sensor.command, "hostname", "command should match");
+        assert!(
+            text_sensor.update_interval.is_none(),
+            "Minimal text_sensor should have no update_interval"
         );
     }
 }

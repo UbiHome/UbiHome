@@ -3,6 +3,7 @@ from unittest.mock import Mock
 
 import aioesphomeapi
 import pytest
+
 from mock_file import IOMock
 from utils import SHELL_TYPE, UbiHome
 
