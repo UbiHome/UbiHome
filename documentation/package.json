@@ -16,7 +16,7 @@
 		"astro": "^6.3.3",
 		"sharp": "^0.34.5",
 		"starlight-showcases": "^0.3.2",
-		"starlight-latest-version": "^0.7.0",
+		"starlight-latest-version": "file:vendor/starlight-latest-version",
 		"starlight-links-validator": "^0.24.0",
 		"starlight-sidebar-topics": "^0.7.1",
 		"starlight-site-graph": "^0.5.0",
