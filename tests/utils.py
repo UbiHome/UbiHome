@@ -47,6 +47,10 @@ def os_platform() -> Platform:
 
 OS_PLATFORM = os_platform()
 
+# Shell backend used by the test configs. Windows uses PowerShell; every other
+# platform (Linux CI, macOS) uses bash.
+SHELL_TYPE = "powershell" if OS_PLATFORM is Platform.WINDOWS else "bash"
+
 DEFAULT_CONFIG = """
 ubihome:
   name: new_awesome
@@ -204,22 +208,26 @@ class UbiHome:
 
         if self.port and self.wait_for_api:
             print("Waiting for server to start...")
-            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            try:
-                while True:
-                    await self._raise_if_stderr_task_failed()
-                    if self.process and self.process.returncode is not None:
-                        raise AssertionError(
-                            f"UbiHome exited before API startup (exit code: {self.process.returncode})"
-                        )
+            while True:
+                await self._raise_if_stderr_task_failed()
+                if self.process and self.process.returncode is not None:
+                    raise AssertionError(
+                        f"UbiHome exited before API startup (exit code: {self.process.returncode})"
+                    )
 
+                # Use a fresh socket per attempt: on macOS/BSD a blocking socket
+                # whose connect() failed with ECONNREFUSED is poisoned and every
+                # later connect() returns EINVAL, so a reused socket would never
+                # observe the port opening.
+                sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                try:
                     result = sock.connect_ex(("127.0.0.1", self.port))
-                    if result == 0:
-                        print("Port is open")
-                        break
-                    await asyncio.sleep(0.1)
-            finally:
-                sock.close()
+                finally:
+                    sock.close()
+                if result == 0:
+                    print("Port is open")
+                    break
+                await asyncio.sleep(0.1)
 
         return self
 

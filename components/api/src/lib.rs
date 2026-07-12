@@ -305,8 +305,16 @@ impl Module for UbiHomeDefault {
                 tokio::spawn({
                     async move {
                         debug!("Accepted request from {}", socket.peer_addr().unwrap());
-                        let (tx, mut rx) =
-                            server.start(socket).await.expect("Failed to start server");
+                        let (tx, mut rx) = match server.start(socket).await {
+                            Ok(handles) => handles,
+                            Err(err) => {
+                                // A client (or the test port probe) may connect and
+                                // disconnect without completing the handshake. Drop
+                                // the connection instead of crashing the worker.
+                                debug!("Failed to start API connection: {err}");
+                                return;
+                            }
+                        };
 
                         let tx_clone = tx.clone();
 

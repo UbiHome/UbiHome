@@ -13,7 +13,7 @@ from playwright.async_api import (
 from playwright.async_api import (
     TimeoutError as PlaywrightTimeoutError,
 )
-from utils import OS_PLATFORM, Platform, UbiHome
+from utils import SHELL_TYPE, UbiHome
 
 pytestmark = [pytest.mark.e2e, pytest.mark.timeout(30)]
 
@@ -111,7 +111,7 @@ class UbiHomeInstance(UbiHome):
         config_dict = {
             "api": {},
             "shell": {
-                "type": "bash" if OS_PLATFORM is Platform.LINUX else "powershell",
+                "type": SHELL_TYPE,
             },
             "ubihome": {
                 "name": self.device_name,
