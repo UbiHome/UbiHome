@@ -106,13 +106,15 @@ class UbiHome:
     _stderr_has_error: bool = False
 
     async def _raise_if_stderr_task_failed(self):
-        if not self._stderr_task or not self._stderr_task.done():
+        if not self._stderr_task or not self._stderr_task.done() or self._stderr_task.cancelled():
             return
         error = self._stderr_task.exception()
         if not error:
             return
+        # Clean up for all failure types, not just AssertionError, so the child
+        # process and temp config file are never leaked when we re-raise.
+        await self._cleanup()
         if isinstance(error, AssertionError):
-            await self._cleanup()
             raise error
         raise AssertionError("UbiHome stderr reader task failed") from error
 
