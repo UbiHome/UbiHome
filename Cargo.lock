@@ -354,6 +354,19 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1505bd5d3d116872e7271a6d4e16d81d0c8570876c8de68093a09ac269d8aac0"
 
 [[package]]
+name = "audio_thread_priority"
+version = "0.35.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7b1b4a0adbf971420cca66a75361a1190f34a6762d66361e5cde03dda35d1ed3"
+dependencies = [
+ "cfg-if",
+ "libc",
+ "log",
+ "mach2 0.4.3",
+ "windows-sys 0.61.2",
+]
+
+[[package]]
 name = "autocfg"
 version = "1.5.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -979,10 +992,13 @@ dependencies = [
 
 [[package]]
 name = "cpal"
-version = "0.18.0"
-source = "git+https://github.com/rustaudio/cpal?branch=fix%2Fpulseaudio-human-ids#fbc35de645a6d3614db86d264adac759c902ddd7"
+version = "0.18.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5f77b11176c37874be37e8d691c946e31b2b8c357abce9526f6a99eb469e1028"
 dependencies = [
  "alsa",
+ "alsa-sys",
+ "audio_thread_priority",
  "block2 0.6.2",
  "coreaudio-rs",
  "dasp_sample",
@@ -4410,8 +4426,9 @@ checksum = "8a7852d02fc848982e0c167ef163aaff9cd91dc640ba85e263cb1ce46fae51cd"
 
 [[package]]
 name = "sendspin"
-version = "0.2.0"
-source = "git+https://github.com/DanielHabenicht/fork.sendspin-rs?rev=a3cbe159243f261aa9cca03688524c506c3f4284#a3cbe159243f261aa9cca03688524c506c3f4284"
+version = "0.3.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d56fa98e44a4b7a601586a71da62f99cd6373df6ba0a32bd2235a7812de979df"
 dependencies = [
  "cpal",
  "crossbeam",
@@ -4421,9 +4438,9 @@ dependencies = [
  "parking_lot",
  "serde",
  "serde_json",
- "thiserror 1.0.69",
+ "thiserror 2.0.18",
  "tokio",
- "tokio-tungstenite",
+ "tokio-tungstenite 0.29.0",
  "typed-builder 0.23.2",
  "uuid",
 ]
@@ -5273,7 +5290,19 @@ dependencies = [
  "futures-util",
  "log",
  "tokio",
- "tungstenite",
+ "tungstenite 0.24.0",
+]
+
+[[package]]
+name = "tokio-tungstenite"
+version = "0.29.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8f72a05e828585856dacd553fba484c242c46e391fb0e58917c942ee9202915c"
+dependencies = [
+ "futures-util",
+ "log",
+ "tokio",
+ "tungstenite 0.29.0",
 ]
 
 [[package]]
@@ -5486,6 +5515,22 @@ dependencies = [
  "sha1",
  "thiserror 1.0.69",
  "utf-8",
+]
+
+[[package]]
+name = "tungstenite"
+version = "0.29.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6c01152af293afb9c7c2a57e4b559c5620b421f6d133261c60dd2d0cdb38e6b8"
+dependencies = [
+ "bytes",
+ "data-encoding",
+ "http",
+ "httparse",
+ "log",
+ "rand 0.9.4",
+ "sha1",
+ "thiserror 2.0.18",
 ]
 
 [[package]]
@@ -5765,7 +5810,7 @@ dependencies = [
  "serde",
  "serde-saphyr 0.0.26",
  "tokio",
- "tokio-tungstenite",
+ "tokio-tungstenite 0.24.0",
  "ubihome-core",
  "uuid",
 ]

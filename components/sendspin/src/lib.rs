@@ -3,7 +3,7 @@ use cpal::traits::{DeviceTrait, HostTrait};
 use cpal::Device;
 use log::{debug, error, info, trace};
 use sendspin::audio::decode::{Decoder, PcmDecoder, PcmEndian};
-use sendspin::audio::{AudioBuffer, AudioFormat, Codec, SyncedPlayer};
+use sendspin::audio::{AudioBuffer, AudioFormat, Codec, SyncedPlayer, SyncedPlayerConfig};
 use sendspin::protocol::messages::{
     AudioFormatSpec, ClientState, Message, PlayerCommandType, PlayerState, PlayerV1Support,
 };
@@ -12,7 +12,7 @@ use sendspin::ProtocolClientBuilder;
 use serde::{Deserialize, Deserializer};
 use std::collections::HashMap;
 use std::sync::Arc;
-use std::time::{Instant, SystemTime, UNIX_EPOCH};
+use std::time::{SystemTime, UNIX_EPOCH};
 use std::{future::Future, pin::Pin, str};
 use tokio::sync::broadcast::Receiver;
 use tokio::sync::broadcast::Sender;
@@ -230,6 +230,8 @@ impl Module for UbiHomePlatform {
                     muted: Some(false),
                     static_delay_ms: Some(0),
                     supported_commands: None,
+                    min_buffer_ms: None,
+                    required_lead_time_ms: None,
                 })
                 .build();
 
@@ -280,10 +282,12 @@ impl Module for UbiHomePlatform {
                             match SyncedPlayer::new(
                                 fmt,
                                 clock_sync,
-                                selected_device.clone(),
-                                100,
-                                false,
-                                buffer_size,
+                                SyncedPlayerConfig {
+                                    device: selected_device.clone(),
+                                    volume: 100,
+                                    muted: false,
+                                    buffer_size: buffer_size,
+                                },
                             ) {
                                 Ok(player) => {
                                     debug!("Synced audio output initialized");
@@ -467,6 +471,8 @@ impl Module for UbiHomePlatform {
                                                                     muted: Some(mute),
                                                                     static_delay_ms: None,
                                                                     supported_commands: None,
+                                                                    required_lead_time_ms: None,
+                                                                    min_buffer_ms: None
                                                                 }),
                                                             }
                                                         )).await.unwrap();
@@ -571,7 +577,6 @@ impl Module for UbiHomePlatform {
 
                                     let buffer = AudioBuffer {
                                         timestamp: chunk.timestamp,
-                                        play_at: Instant::now(),
                                         samples,
                                         format: fmt.clone(),
                                     };
