@@ -13,9 +13,14 @@ serde-saphyr = { version = "0.0.26", features = ["garde", "miette"] }
 duration-str = "0.16.1"
 uuid = "1.19.0"
 tokio-tungstenite = "0.24.0"
-cpal = { version = "0.18.0", features = ["pulseaudio", "pipewire"] }
 parking_lot = "0.12"
 # tokio-tungstenite = { version = "0.24.0", features = ["rustls-tls-native-roots"] }
 mdns-sd = "0.17.2"
 sendspin = "0.3.5"
 garde = { version = "0.22.1", features = ["serde"] }
+
+[target.'cfg(all(target_os = "linux", target_arch = "arm", target_env = "musl"))'.dependencies]
+cpal = { version = "0.18.0", features = ["pulseaudio"] }
+
+[target.'cfg(not(all(target_os = "linux", target_arch = "arm", target_env = "musl")))'.dependencies]
+cpal = { version = "0.18.0", features = ["pulseaudio", "pipewire"] }
