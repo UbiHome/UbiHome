@@ -286,7 +286,7 @@ impl Module for UbiHomePlatform {
                                     device: selected_device.clone(),
                                     volume: 100,
                                     muted: false,
-                                    buffer_size: buffer_size,
+                                    buffer_size,
                                 },
                             ) {
                                 Ok(player) => {

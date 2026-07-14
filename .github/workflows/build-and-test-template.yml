@@ -24,7 +24,7 @@ jobs:
 
       - name: Add extra packages (Linux)
         if: inputs.runs-on == 'ubuntu-24.04'
-        run: sudo apt install -y libdbus-1-dev pkg-config libasound2-dev libpipewire-0.3-dev
+        run: sudo apt install -y libdbus-1-dev pkg-config libasound2-dev libpipewire-0.3-dev libpipewire-0.3
 
       - name: Set up Rust
         if: inputs.runs-on == 'macOS-latest'
