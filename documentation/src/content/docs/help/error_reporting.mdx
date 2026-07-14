@@ -35,3 +35,10 @@ Set the `SENTRY` environment variable to report all errors without the need to a
 ```bash
 export SENTRY=https://d3a005bc1ad1d57da91ca66e971dd507@o197997.ingest.us.sentry.io/4511509123760128
 ```
+
+### Add to `systemd` service
+
+```
+[Service]
+Environment="SENTRY=https://d3a005bc1ad1d57da91ca66e971dd507@o197997.ingest.us.sentry.io/4511509123760128"
+```

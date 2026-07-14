@@ -2,8 +2,7 @@ import aioesphomeapi
 
 from mock_file import IOMock
 from utils import (
-    OS_PLATFORM,
-    Platform,
+    SHELL_TYPE,
     UbiHome,
     fnv1_hash_object_id,
 )
@@ -20,7 +19,7 @@ ubihome:
 api:
 
 shell:
-  type: {"bash" if OS_PLATFORM is Platform.LINUX else "powershell"}
+  type: {SHELL_TYPE}
 
 button:
  - platform: shell

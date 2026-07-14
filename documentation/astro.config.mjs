@@ -36,8 +36,7 @@ export default defineConfig({
 				alt: "UbiHome",
 			},
 			editLink: {
-				baseUrl:
-					"https://github.com/UbiHome/UbiHome/edit/main/documentation/src/content/docs/",
+				baseUrl: "https://github.com/UbiHome/UbiHome/edit/main/documentation/",
 			},
 			social: [
 				{
