@@ -1,9 +1,0 @@
----
-import fetchVersion from "../libs/utils";
-import pluginConfig from "virtual:starlight-latest-version-config";
-
-const version = await fetchVersion(pluginConfig);
----
-
-{version.versionAvailable && <span>{version.version}</span>}
-{!version.versionAvailable && <span>N/A</span>}

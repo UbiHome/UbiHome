@@ -32,7 +32,7 @@ export class UbiHome {
 		return (
 			dag
 				.container()
-				.from("node:22-slim")
+				.from("node:24-slim")
 				.withWorkdir("/docs")
 				.withMountedCache(
 					"/docs/node_modules",
@@ -249,7 +249,7 @@ export class UbiHome {
 		// return source;
 		return dag
 			.container()
-			.from("node:22-slim")
+			.from("node:24-slim")
 			.withExec(["npm", "install", "-g", "@biomejs/biome"])
 			.withMountedDirectory("/workspace", source)
 			.withWorkdir("/workspace")
