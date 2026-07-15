@@ -48,22 +48,28 @@ use ubihome_core::constants::is_readable_string_option;
 ///
 /// - `debug`: routine lifecycle events — the peer disconnected or never
 ///   completed a handshake (e.g. a port probe). Not a problem.
-/// - `error`: the application itself is at fault and an operator can fix it —
-///   a bad configuration or a background task that died unexpectedly.
-/// - `warn`: everything else is caused by the peer or the transport and the
-///   application cannot prevent it (wrong encryption key, protocol mismatch,
-///   malformed/undecodable frames, unexpected I/O). Worth noting, not our fault.
+/// - `warn`: the specific peer- or transport-caused problems we recognize and
+///   the application cannot prevent (wrong encryption key, protocol mismatch,
+///   malformed/undecodable frames). Worth noting, but not our fault.
+/// - `error`: everything else. Default to error so any unexpected fault is
+///   visible; downgrade to `warn` only for cases we have explicitly classified.
 fn log_api_error(context: &str, err: &Error) {
     match err {
         Error::Disconnected(_)
         | Error::Handshake(HandshakeError::NoData | HandshakeError::Aborted) => {
             debug!("{context}: {err}");
         }
-        Error::Config(_) | Error::TaskFailed => {
-            error!("{context}: {err}");
+        Error::Frame(_)
+        | Error::Handshake(
+            HandshakeError::InvalidMarker(_)
+            | HandshakeError::EncryptionProtocolMismatch(_)
+            | HandshakeError::MalformedFrame
+            | HandshakeError::MacFailure,
+        ) => {
+            warn!("{context}: {err}");
         }
         _ => {
-            warn!("{context}: {err}");
+            error!("{context}: {err}");
         }
     }
 }
