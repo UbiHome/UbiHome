@@ -1,28 +1,32 @@
 use esphome_native_api::esphomeapi::EspHomeApi;
 use esphome_native_api::hash::hash_fnv1;
 use esphome_native_api::parser::ProtoMessage;
-use esphome_native_api::proto::version_2025_12_1::BinarySensorStateResponse;
-use esphome_native_api::proto::version_2025_12_1::BluetoothLeAdvertisementResponse;
-use esphome_native_api::proto::version_2025_12_1::BluetoothServiceData;
-use esphome_native_api::proto::version_2025_12_1::EntityCategory;
-use esphome_native_api::proto::version_2025_12_1::LightStateResponse;
-use esphome_native_api::proto::version_2025_12_1::ListEntitiesBinarySensorResponse;
-use esphome_native_api::proto::version_2025_12_1::ListEntitiesButtonResponse;
-use esphome_native_api::proto::version_2025_12_1::ListEntitiesDoneResponse;
-use esphome_native_api::proto::version_2025_12_1::ListEntitiesLightResponse;
-use esphome_native_api::proto::version_2025_12_1::ListEntitiesNumberResponse;
-use esphome_native_api::proto::version_2025_12_1::ListEntitiesSensorResponse;
-use esphome_native_api::proto::version_2025_12_1::ListEntitiesSwitchResponse;
-use esphome_native_api::proto::version_2025_12_1::ListEntitiesTextSensorResponse;
-use esphome_native_api::proto::version_2025_12_1::NumberStateResponse;
-use esphome_native_api::proto::version_2025_12_1::SensorLastResetType;
-use esphome_native_api::proto::version_2025_12_1::SensorStateClass;
-use esphome_native_api::proto::version_2025_12_1::SensorStateResponse;
-use esphome_native_api::proto::version_2025_12_1::SubscribeLogsResponse;
-use esphome_native_api::proto::version_2025_12_1::SwitchStateResponse;
-use esphome_native_api::proto::version_2025_12_1::TextSensorStateResponse;
+use esphome_native_api::proto::BinarySensorStateResponse;
+use esphome_native_api::proto::BluetoothLeAdvertisementResponse;
+use esphome_native_api::proto::BluetoothServiceData;
+use esphome_native_api::proto::EntityCategory;
+use esphome_native_api::proto::LightStateResponse;
+use esphome_native_api::proto::ListEntitiesBinarySensorResponse;
+use esphome_native_api::proto::ListEntitiesButtonResponse;
+use esphome_native_api::proto::ListEntitiesDoneResponse;
+use esphome_native_api::proto::ListEntitiesLightResponse;
+use esphome_native_api::proto::ListEntitiesNumberResponse;
+use esphome_native_api::proto::ListEntitiesSensorResponse;
+use esphome_native_api::proto::ListEntitiesSwitchResponse;
+use esphome_native_api::proto::ListEntitiesTextSensorResponse;
+use esphome_native_api::proto::NumberStateResponse;
+use esphome_native_api::proto::SensorLastResetType;
+use esphome_native_api::proto::SensorStateClass;
+use esphome_native_api::proto::SensorStateResponse;
+use esphome_native_api::proto::SubscribeLogsResponse;
+use esphome_native_api::proto::SwitchStateResponse;
+use esphome_native_api::proto::TextSensorStateResponse;
+use esphome_native_api::Error;
+use esphome_native_api::HandshakeError;
 use log::debug;
+use log::error;
 use log::info;
+use log::warn;
 use serde::{Deserialize, Deserializer};
 use std::collections::HashMap;
 use std::net::SocketAddr;
@@ -39,6 +43,36 @@ use ubihome_core::{
 };
 
 use ubihome_core::constants::is_readable_string_option;
+
+/// Log an API connection error at a level that reflects who can act on it.
+///
+/// - `debug`: routine lifecycle events — the peer disconnected or never
+///   completed a handshake (e.g. a port probe). Not a problem.
+/// - `warn`: the specific peer- or transport-caused problems we recognize and
+///   the application cannot prevent (wrong encryption key, protocol mismatch,
+///   malformed/undecodable frames). Worth noting, but not our fault.
+/// - `error`: everything else. Default to error so any unexpected fault is
+///   visible; downgrade to `warn` only for cases we have explicitly classified.
+fn log_api_error(context: &str, err: &Error) {
+    match err {
+        Error::Disconnected(_)
+        | Error::Handshake(HandshakeError::NoData | HandshakeError::Aborted) => {
+            debug!("{context}: {err}");
+        }
+        Error::Frame(_)
+        | Error::Handshake(
+            HandshakeError::InvalidMarker(_)
+            | HandshakeError::EncryptionProtocolMismatch(_)
+            | HandshakeError::MalformedFrame
+            | HandshakeError::MacFailure,
+        ) => {
+            warn!("{context}: {err}");
+        }
+        _ => {
+            error!("{context}: {err}");
+        }
+    }
+}
 
 #[derive(Clone, Deserialize, Debug, Validate)]
 #[serde(deny_unknown_fields)]
@@ -98,7 +132,7 @@ impl Module for UbiHomePlatform {
         let ip = get_ip_address().unwrap();
         let mac = get_network_mac_address(ip).unwrap();
 
-        let server_base = EspHomeApi::builder()
+        let server_base = match EspHomeApi::builder()
             .api_version_major(1)
             .api_version_minor(42)
             .encryption_key_opt(
@@ -135,7 +169,13 @@ impl Module for UbiHomePlatform {
                     .clone()
                     .unwrap_or("".to_string()),
             )
-            .build();
+            .build()
+        {
+            Ok(server) => server,
+            Err(err) => {
+                return Box::pin(async move { Err(Box::new(err) as Box<dyn std::error::Error>) });
+            }
+        };
 
         let config = self.config.clone();
         // let mut api_components = self.components.();
@@ -322,61 +362,56 @@ impl Module for UbiHomePlatform {
                 tokio::spawn({
                     async move {
                         debug!("Accepted request from {}", socket.peer_addr().unwrap());
-                        let (tx, mut rx) =
-                            server.start(socket).await.expect("Failed to start server");
+                        let connection = match server.start(socket).await {
+                            Ok(connection) => connection,
+                            Err(err) => {
+                                log_api_error("Failed to start API connection", &err);
+                                return;
+                            }
+                        };
 
+                        let tx = connection.sender();
+                        let mut rx = connection.receiver();
                         let tx_clone = tx.clone();
 
                         // Send Messages
                         tokio::spawn(async move {
                             while let Ok(cmd) = receiver_clone.recv().await {
-                                match cmd {
+                                let message = match cmd {
                                     PublishedMessage::SensorValueChanged { key, value } => {
                                         let key = api_components_key_id_clone.get(&key).unwrap();
-                                        debug!("SensorValueChanged: {:?}", &value);
-
-                                        tx_clone
-                                            .send(ProtoMessage::SensorStateResponse(
-                                                SensorStateResponse {
-                                                    key: *key,
-                                                    device_id: 0,
-                                                    state: value,
-                                                    missing_state: false,
-                                                },
-                                            ))
-                                            .await
-                                            .unwrap();
+                                        debug!("SensorValueChanged: {:?}", value);
+                                        Some(ProtoMessage::SensorStateResponse(
+                                            SensorStateResponse {
+                                                key: *key,
+                                                device_id: 0,
+                                                state: value,
+                                                missing_state: false,
+                                            },
+                                        ))
                                     }
                                     PublishedMessage::BinarySensorValueChanged { key, value } => {
                                         let key = api_components_key_id_clone.get(&key).unwrap();
-                                        debug!("BinarySensorValueChanged: {:?}", &value);
-
-                                        tx_clone
-                                            .send(ProtoMessage::BinarySensorStateResponse(
-                                                BinarySensorStateResponse {
-                                                    key: *key,
-                                                    device_id: 0,
-                                                    state: value,
-                                                    missing_state: false,
-                                                },
-                                            ))
-                                            .await
-                                            .unwrap();
+                                        debug!("BinarySensorValueChanged: {:?}", value);
+                                        Some(ProtoMessage::BinarySensorStateResponse(
+                                            BinarySensorStateResponse {
+                                                key: *key,
+                                                device_id: 0,
+                                                state: value,
+                                                missing_state: false,
+                                            },
+                                        ))
                                     }
                                     PublishedMessage::SwitchStateChange { key, state } => {
                                         let key = api_components_key_id_clone.get(&key).unwrap();
-                                        debug!("SwitchStateChanged: {:?}", &state);
-
-                                        tx_clone
-                                            .send(ProtoMessage::SwitchStateResponse(
-                                                SwitchStateResponse {
-                                                    key: *key,
-                                                    device_id: 0,
-                                                    state,
-                                                },
-                                            ))
-                                            .await
-                                            .unwrap();
+                                        debug!("SwitchStateChanged: {:?}", state);
+                                        Some(ProtoMessage::SwitchStateResponse(
+                                            SwitchStateResponse {
+                                                key: *key,
+                                                device_id: 0,
+                                                state,
+                                            },
+                                        ))
                                     }
                                     PublishedMessage::LightStateChange {
                                         key,
@@ -387,66 +422,50 @@ impl Module for UbiHomePlatform {
                                         blue,
                                     } => {
                                         let key = api_components_key_id_clone.get(&key).unwrap();
-                                        debug!("LightStateChanged: state={:?}, brightness={:?}, rgb=({:?},{:?},{:?})", &state, &brightness, &red, &green, &blue);
-
-                                        tx_clone
-                                            .send(ProtoMessage::LightStateResponse(
-                                                LightStateResponse {
-                                                    key: *key,
-                                                    device_id: 0,
-                                                    state,
-                                                    brightness: brightness.unwrap_or(0.0),
-                                                    color_mode: 1, // RGB mode, could be made configurable
-                                                    color_brightness: brightness.unwrap_or(0.0),
-                                                    red: red.unwrap_or(0.0),
-                                                    green: green.unwrap_or(0.0),
-                                                    blue: blue.unwrap_or(0.0),
-                                                    white: 0.0, // Not currently supported
-                                                    color_temperature: 0.0, // Not currently supported
-                                                    cold_white: 0.0, // Not currently supported
-                                                    warm_white: 0.0, // Not currently supported
-                                                    effect: "".to_string(), // No effect currently
-                                                },
-                                            ))
-                                            .await
-                                            .unwrap();
+                                        debug!("LightStateChanged: state={:?}, brightness={:?}, rgb=({:?},{:?},{:?})", state, brightness, red, green, blue);
+                                        Some(ProtoMessage::LightStateResponse(LightStateResponse {
+                                            key: *key,
+                                            device_id: 0,
+                                            state,
+                                            brightness: brightness.unwrap_or(0.0),
+                                            color_mode: 1, // RGB mode, could be made configurable
+                                            color_brightness: brightness.unwrap_or(0.0),
+                                            red: red.unwrap_or(0.0),
+                                            green: green.unwrap_or(0.0),
+                                            blue: blue.unwrap_or(0.0),
+                                            white: 0.0, // Not currently supported
+                                            color_temperature: 0.0, // Not currently supported
+                                            cold_white: 0.0, // Not currently supported
+                                            warm_white: 0.0, // Not currently supported
+                                            effect: "".to_string(), // No effect currently
+                                        }))
                                     }
                                     PublishedMessage::NumberValueChanged { key, value } => {
-                                        if let Some(key) = api_components_key_id_clone.get(&key) {
-                                            debug!("NumberValueChanged: {:?}", &value);
-
-                                            tx_clone
-                                                .send(ProtoMessage::NumberStateResponse(
-                                                    NumberStateResponse {
-                                                        key: *key,
-                                                        device_id: 0,
-                                                        state: value,
-                                                        missing_state: false,
-                                                    },
-                                                ))
-                                                .await
-                                                .unwrap();
-                                        }
+                                        api_components_key_id_clone.get(&key).map(|key| {
+                                            debug!("NumberValueChanged: {:?}", value);
+                                            ProtoMessage::NumberStateResponse(NumberStateResponse {
+                                                key: *key,
+                                                device_id: 0,
+                                                state: value,
+                                                missing_state: false,
+                                            })
+                                        })
                                     }
                                     PublishedMessage::TextSensorValueChanged { key, value } => {
-                                        if let Some(key) = api_components_key_id_clone.get(&key) {
-                                            debug!("TextSensorValueChanged: {:?}", &value);
-
-                                            tx_clone
-                                                .send(ProtoMessage::TextSensorStateResponse(
-                                                    TextSensorStateResponse {
-                                                        key: *key,
-                                                        device_id: 0,
-                                                        state: value,
-                                                        missing_state: false,
-                                                    },
-                                                ))
-                                                .await
-                                                .unwrap();
-                                        }
+                                        api_components_key_id_clone.get(&key).map(|key| {
+                                            debug!("TextSensorValueChanged: {:?}", value);
+                                            ProtoMessage::TextSensorStateResponse(
+                                                TextSensorStateResponse {
+                                                    key: *key,
+                                                    device_id: 0,
+                                                    state: value,
+                                                    missing_state: false,
+                                                },
+                                            )
+                                        })
                                     }
                                     PublishedMessage::BluetoothProxyMessage(msg) => {
-                                        debug!("BluetoothProxyMessage: {:?}", &msg);
+                                        debug!("BluetoothProxyMessage: {:?}", msg);
                                         #[allow(deprecated)]
                                         let service_data: Vec<BluetoothServiceData> = msg
                                             .service_data
@@ -476,15 +495,17 @@ impl Module for UbiHomePlatform {
                                             service_data,
                                             manufacturer_data,
                                         };
-
-                                        tx_clone
-                                            .send(ProtoMessage::BluetoothLeAdvertisementResponse(
-                                                test,
-                                            ))
-                                            .await
-                                            .unwrap();
+                                        Some(ProtoMessage::BluetoothLeAdvertisementResponse(test))
                                     }
-                                    _ => {}
+                                    _ => None,
+                                };
+
+                                if let Some(message) = message {
+                                    // A send error means the client disconnected; stop
+                                    // forwarding state updates for this connection.
+                                    if tx_clone.send(message).await.is_err() {
+                                        break;
+                                    }
                                 }
                             }
                         });
@@ -702,8 +723,14 @@ impl Module for UbiHomePlatform {
                                     }
                                 }
                             }
-                            debug!("Connection closed or error");
                         });
+
+                        // A peer going away is the normal way a session ends;
+                        // anything else is classified by log_api_error.
+                        match connection.wait().await {
+                            Ok(()) => debug!("API connection closed"),
+                            Err(err) => log_api_error("API connection ended", &err),
+                        }
                     }
                 });
             }
@@ -713,7 +740,7 @@ impl Module for UbiHomePlatform {
 
 #[cfg(test)]
 mod tests {
-    use esphome_native_api::proto::version_2025_12_1::ListEntitiesLightResponse;
+    use esphome_native_api::proto::ListEntitiesLightResponse;
 
     use super::*;
 

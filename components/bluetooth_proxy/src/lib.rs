@@ -132,7 +132,7 @@ impl Module for UbiHomePlatform {
                                 service_uuids: services.iter().map(|s| s.to_string()).collect(),
                                 manufacturer_data: manufacturer_data
                                     .iter()
-                                    .map(|(k, v)| (k.to_string(), v.clone()))
+                                    .map(|(k, v)| (format!("{:x}", k), v.clone()))
                                     .collect(),
                             },
                         ))

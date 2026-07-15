@@ -47,6 +47,10 @@ Test it out:
 
 Have a look at the [examples](https://ubihome.github.io/examples/index.html) to get started.
 
+> If you run into an error and want to share it with me (without creating an issue) you can share it via sentry:
+> `ubihome run --sentry https://d3a005bc1ad1d57da91ca66e971dd507@o197997.ingest.us.sentry.io/4511509123760128`
+> By default no data is sent and sharing will always be opt-in.
+
 ### AI Disclaimer
 
-This project of course uses AI and encourages its usage. But the same conditions apply as with any contributions: Whoever contributes the code is responsible for it. Everything is reviewed and tested before being merged. 
+This project of course uses AI and encourages its usage. But the same conditions apply as with any contributions: Whoever contributes the code is responsible for it. Everything is reviewed and tested before being merged.

@@ -47,6 +47,10 @@ def os_platform() -> Platform:
 
 OS_PLATFORM = os_platform()
 
+# Shell backend used by the test configs. Windows uses PowerShell; every other
+# platform (Linux CI, macOS) uses bash.
+SHELL_TYPE = "powershell" if OS_PLATFORM is Platform.WINDOWS else "bash"
+
 DEFAULT_CONFIG = """
 ubihome:
   name: new_awesome
@@ -99,6 +103,57 @@ class UbiHome:
     stdout: str | None = None
     stderr: str | None = None
     port: int | None = None
+    _stderr_has_error: bool = False
+
+    async def _raise_if_stderr_task_failed(self):
+        if not self._stderr_task or not self._stderr_task.done() or self._stderr_task.cancelled():
+            return
+        error = self._stderr_task.exception()
+        if not error:
+            return
+        # Clean up for all failure types, not just AssertionError, so the child
+        # process and temp config file are never leaked when we re-raise.
+        await self._cleanup()
+        if isinstance(error, AssertionError):
+            raise error
+        raise AssertionError("UbiHome stderr reader task failed") from error
+
+    async def _cleanup(self):
+        try:
+            os.remove(self.configuration_file)
+        except FileNotFoundError:
+            pass
+        if self.process:
+            # Try to terminate gracefully
+            try:
+                self.process.terminate()
+            except ProcessLookupError:
+                pass
+            try:
+                await asyncio.wait_for(self.process.wait(), timeout=5)
+            except TimeoutError:
+                self.process.kill()
+                await self.process.wait()
+
+            # Cancel the stdout/stderr reading tasks
+            if self._stdout_task:
+                self._stdout_task.cancel()
+                try:
+                    await self._stdout_task
+                except asyncio.CancelledError:
+                    pass
+
+            if self._stderr_task:
+                self._stderr_task.cancel()
+                try:
+                    await self._stderr_task
+                except asyncio.CancelledError:
+                    pass
+            # Works on windows?!
+            if platform.system() == "Windows":
+                os.kill(self.process.pid, signal.CTRL_BREAK_EVENT)
+
+            # self.process = None
 
     def __init__(
         self,
@@ -107,7 +162,6 @@ class UbiHome:
         throw_on_error=True,
         wait_for_api=False,
         extra_logging=True,
-        # executable=None,
     ):
         self.arguments = arguments
         self.configuration_file = f"config{os.getpid()}.yaml"
@@ -162,63 +216,37 @@ class UbiHome:
                 stdout=asyncio.subprocess.PIPE,
             )
         else:
-            raise Exception(
-                f"{self.executable} does not exist. Please build UbiHome first."
-            )
+            raise Exception(f"{self.executable} does not exist. Please build UbiHome first.")
 
         self._stdout_task = asyncio.create_task(self._read_stdout())
         self._stderr_task = asyncio.create_task(self._read_stderr())
 
         if self.port and self.wait_for_api:
             print("Waiting for server to start...")
-            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             while True:
-                result = sock.connect_ex(("127.0.0.1", self.port))
+                await self._raise_if_stderr_task_failed()
+                if self.process and self.process.returncode is not None:
+                    raise AssertionError(f"UbiHome exited before API startup (exit code: {self.process.returncode})")
+
+                # Use a fresh socket per attempt: on macOS/BSD a blocking socket
+                # whose connect() failed with ECONNREFUSED is poisoned and every
+                # later connect() returns EINVAL, so a reused socket would never
+                # observe the port opening.
+                sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                try:
+                    result = sock.connect_ex(("127.0.0.1", self.port))
+                finally:
+                    sock.close()
                 if result == 0:
                     print("Port is open")
                     break
-                else:
-                    await asyncio.sleep(0.1)
-            sock.close()
+                await asyncio.sleep(0.1)
 
         return self
 
     async def __aexit__(self, exctype, value, tb):
-        try:
-            os.remove(self.configuration_file)
-        except OSError:
-            pass
-        if self.process:
-            # Try to terminate gracefully
-            try:
-                self.process.terminate()
-            except ProcessLookupError:
-                pass
-            try:
-                await asyncio.wait_for(self.process.wait(), timeout=5)
-            except TimeoutError:
-                self.process.kill()
-                await self.process.wait()
-
-            # Cancel the stdout/stderr reading tasks
-            if self._stdout_task:
-                self._stdout_task.cancel()
-                try:
-                    await self._stdout_task
-                except asyncio.CancelledError:
-                    pass
-
-            if self._stderr_task:
-                self._stderr_task.cancel()
-                try:
-                    await self._stderr_task
-                except asyncio.CancelledError:
-                    pass
-            # Works on windows?!
-            if platform.system() == "Windows":
-                os.kill(self.process.pid, signal.CTRL_BREAK_EVENT)
-
-            # self.process = None
+        await self._raise_if_stderr_task_failed()
+        await self._cleanup()
 
     async def _read_stdout(self):
         """Read and print stdout from the server process."""
@@ -237,6 +265,7 @@ class UbiHome:
     async def _read_stderr(self):
         """Read and print stderr from the server process."""
         self.stderr = ""
+        self._stderr_has_error = False
         while True:
             if not self.process or not self.process.stderr:
                 return
@@ -245,12 +274,19 @@ class UbiHome:
                 break
             message = line.decode("utf-8")
             self.stderr += message
-            print(message.rstrip())
+            if self.throw_on_error and message.rstrip():
+                self._stderr_has_error = True
+
+        if self.throw_on_error and self._stderr_has_error:
+            raise AssertionError(f"UbiHome wrote to stderr:\n{(self.stderr or '').rstrip()}")
 
 
-async def run_ubihome(*arguments, config=None, extra_logging=True) -> tuple[str, str]:
+async def run_ubihome(*arguments, config=None, throw_on_error=False, extra_logging=True) -> tuple[str, str]:
     async with UbiHome(
-        *arguments, config=config, extra_logging=extra_logging
+        *arguments,
+        config=config,
+        throw_on_error=throw_on_error,
+        extra_logging=extra_logging,
     ) as ubihome:
         await asyncio.sleep(1)
         return (ubihome.stdout or "", ubihome.stderr or "")
