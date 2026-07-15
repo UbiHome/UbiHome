@@ -32,6 +32,9 @@ pub enum ActionType {
 
     #[serde(rename = "switch.turn_off")]
     SwitchTurnOff(#[garde(ascii)] String),
+
+    #[serde(rename = "button.press")]
+    ButtonPress(#[garde(ascii)] String),
 }
 
 #[derive(Clone, Serialize, Deserialize, Debug, Validate)]

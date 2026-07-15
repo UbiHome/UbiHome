@@ -1,4 +1,10 @@
-# Online
+---
+title: 'Online'
+tags:
+  - linux
+  - macos
+  - windows
+---
 
 The online platform provides a binary sensor that reports whether the device can reach any of a list of connectivity targets. By default it queries four well-known DNS servers over UDP, which is lightweight and requires no persistent connection.
 
@@ -37,7 +43,7 @@ binary_sensor:
 | `update_interval` | duration              | `30s`                                | Poll interval                                      |
 | `timeout`         | duration              | `3s`                                 | Default connection/response timeout per target     |
 
-### Target options
+#### Target options
 
 Each entry in the `targets` list supports the following properties:
 
@@ -50,32 +56,14 @@ Each entry in the `targets` list supports the following properties:
 
 ### Binary sensor options (`binary_sensor`)
 
-| Property          | Type              | Default       | Description                                                     |
-| ----------------- | ----------------- | ------------- | --------------------------------------------------------------- |
-| `platform`        | string            | **Required**  | Must be `online`                                                |
-| `name`            | string            | **Required**  | Display name                                                    |
-| `targets`         | list of targets   | from `online` | Override the targets list for this sensor                       |
-| `update_interval` | duration          | from `online` | Override poll interval                                          |
-| `timeout`         | duration          | from `online` | Override default per-target timeout                             |
-| `icon`            | string            | `mdi:web`     | Home Assistant icon                                             |
-| `device_class`    | string            | `connectivity`| Home Assistant device class                                     |
+Set `platform: online` plus the shared [binary sensor](/features/entities/binary_sensor/) options.
 
-## Example: mixed UDP and TCP targets
+## Actions
 
-```yaml
-online:
-  timeout: 5s
+The binary sensor exposes the standard [triggers and actions](/features/components/actions/): `on_press` fires when connectivity is restored and `on_release` when it is lost.
 
-binary_sensor:
-  - platform: online
-    name: "Internet"
-    targets:
-      - host: 8.8.8.8
-        port: 53
-        protocol: udp
-      - host: example.com
-        port: 443
-        protocol: tcp
-        timeout: 10s
-```
+<!-- Backlinks to be displayed  -->
+<div style="display:none" aria-hidden="true">
+  <a href="/examples/reboot_on_internet_outage/">Reboot on internet outage</a>
+</div>
 

@@ -2,11 +2,39 @@
 title: 'Triggers and Actions'
 ---
 
-Different components can expose different triggers.
+Some components expose **triggers** that run a list of **actions** when something happens (for example a state change).
 
-Currently, trigger configuration is available on [Binary Sensor](/features/entities/binary_sensor/) via `on_press` and `on_release`.
+Currently triggers are available on the [Binary Sensor](/features/entities/binary_sensor/):
+
+- `on_press` — runs when the state changes to `true`.
+- `on_release` — runs when the state changes to `false`.
+
+Each trigger takes a `then` block listing the actions to run in order:
+
+```yaml
+binary_sensor:
+  - platform: ...
+    name: 'Motion'
+    filters:
+      # Debounce with a delayed_off/delayed_on filter so a trigger only
+      # fires once the state has held for the configured duration.
+      - delayed_off: 5s
+    on_press:
+      then:
+        - switch.turn_on: screen
+    on_release:
+      then:
+        - switch.turn_off: screen
+```
+
+See [Filters](/features/components/filters/) for the available debounce filters.
 
 ## Supported Actions
 
-- `switch.turn_on`
-- `switch.turn_off`
+| Action            | Argument    | Description                                             |
+| ----------------- | ----------- | ------------------------------------------------------ |
+| `switch.turn_on`  | switch `id` | Turns the referenced [switch](/features/entities/switch/) on.  |
+| `switch.turn_off` | switch `id` | Turns the referenced [switch](/features/entities/switch/) off. |
+| `button.press`    | button `id` | Presses the referenced [button](/features/entities/button/), running its platform action. |
+
+The argument is the `id` of the target entity, so make sure the switch or button you reference has an `id` set.

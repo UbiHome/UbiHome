@@ -15,17 +15,12 @@ use ubihome_core::template_binary_sensor;
 use ubihome_core::with_base_entity_properties;
 use ubihome_core::{config_template, ChangedMessage, Module, NoConfig, PublishedMessage};
 
-#[derive(Clone, Deserialize, Debug, PartialEq, Validate)]
+#[derive(Clone, Default, Deserialize, Debug, PartialEq, Validate)]
 #[serde(rename_all = "lowercase")]
 pub enum Protocol {
     Tcp,
+    #[default]
     Udp,
-}
-
-impl std::default::Default for Protocol {
-    fn default() -> Self {
-        Protocol::Udp
-    }
 }
 
 #[derive(Clone, Deserialize, Debug, Validate)]
@@ -94,31 +89,10 @@ fn default_timeout() -> Duration {
     Duration::from_secs(3)
 }
 
-#[derive(Clone, Deserialize, Debug, Validate)]
-#[garde(allow_unvalidated)]
-pub struct OnlineSensorConfig {
-    #[serde(default)]
-    #[garde(dive)]
-    pub targets: Option<Vec<TargetConfig>>,
-
-    #[serde(default)]
-    #[serde(deserialize_with = "deserialize_optional_duration")]
-    #[garde(skip)]
-    pub update_interval: Option<Duration>,
-
-    #[serde(default)]
-    #[serde(deserialize_with = "deserialize_optional_duration")]
-    #[garde(skip)]
-    pub timeout: Option<Duration>,
-}
-
 template_binary_sensor! {
 #[derive(Clone, Deserialize, Debug, Validate)]
 #[garde(allow_unvalidated)]
 pub struct OnlineBinarySensorConfig {
-    #[serde(flatten)]
-    #[garde(dive)]
-    pub base: OnlineSensorConfig,
 }
 }
 
@@ -184,20 +158,13 @@ impl Module for UbiHomePlatform {
                 filters: binary_sensor.filters.clone(),
             }));
 
-            let effective_timeout = binary_sensor.base.timeout.unwrap_or(global_timeout);
-            let source_targets = binary_sensor
-                .base
-                .targets
-                .as_ref()
-                .unwrap_or(global_targets);
-
-            let targets = source_targets
+            let targets = global_targets
                 .iter()
                 .map(|target| RuntimeTarget {
                     host: target.host.clone(),
                     port: target.port,
                     protocol: target.protocol.clone(),
-                    timeout: target.timeout.unwrap_or(effective_timeout),
+                    timeout: target.timeout.unwrap_or(global_timeout),
                 })
                 .collect();
 
@@ -205,10 +172,7 @@ impl Module for UbiHomePlatform {
                 id,
                 RuntimeBinarySensorConfig {
                     targets,
-                    update_interval: binary_sensor
-                        .base
-                        .update_interval
-                        .unwrap_or(config.online.update_interval),
+                    update_interval: config.online.update_interval,
                 },
             );
         }

@@ -95,6 +95,17 @@ From repo root:
    - Python: targeted `uv run pytest ...` when behavior is covered there.
 5. Summarize risks and what was/was not tested.
 
+## Documentation Guidelines
+Deduced from review feedback; apply to docs changes.
+- Full, end-to-end configuration examples belong in `documentation/src/content/docs/examples/<name>/index.md` (one dir + `index.md`), not inline in platform/component pages.
+- Platform/component pages should reference shared concept pages (e.g. Triggers and Actions, Binary Sensor entity) instead of duplicating their tables, option lists, or explanations.
+- Cross-references are surfaced via the hidden backlinks `<div>` at the bottom of a page — add relevant pages there (including shared concept pages), and don't also add inline "See the X example" prose.
+- Doc pages use frontmatter `title:` (plus `tags:` where relevant); do not add a top-level `# H1`. Section headings start at `##`, subsections at `###`, and nest deeper (`####`) for details only relevant under a parent section.
+- Be concise: cut prose that merely restates what a linked page already covers or what is shown just above/below it.
+- Only document platform-specific options on the platform page; link the entity/concept page for everything shared.
+- Fold short explanatory notes into the example itself (e.g. as YAML comments) rather than leaving them as separate standalone sentences.
+- When trimming prose, keep the useful links (e.g. to the Filters page) rather than dropping them with the sentence.
+
 ## Useful Paths
 - Root binary: `src/main.rs`
 - Runtime: `src/commands/run.rs`
