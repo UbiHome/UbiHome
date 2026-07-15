@@ -105,11 +105,25 @@ jobs:
           uv run --locked playwright install --with-deps
           uv run --locked pytest -vvv
 
+      - name: Generate Allure report
+        if: always()
+        run: |
+          npm install -g allure-commandline
+          allure generate tests/allure-results --single-file --clean -o tests/allure-report
+          mv tests/allure-report/index.html tests/allure-report/allure-report-${{ inputs.target }}.html
+
       - name: Archive artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         if: always()
         with:
           name: results-${{ inputs.target }}
           path: |
             tests/test-results
             tests/allure-results
+
+      - name: Upload Allure report
+        uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          path: tests/allure-report/allure-report-${{ inputs.target }}.html
+          archive: false
