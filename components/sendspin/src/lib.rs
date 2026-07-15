@@ -53,6 +53,57 @@ fn env_bool(key: &str) -> bool {
         .unwrap_or(false)
 }
 
+/// Enumerate the available audio hosts and pick the output device to use.
+///
+/// Enumeration runs fresh on every call, so devices that connect after
+/// startup (e.g. a Bluetooth speaker) are picked up. When `output_id` is set,
+/// the device with a matching id is selected; otherwise the first host's
+/// default output device is used.
+fn resolve_output_device(output_id: Option<&str>) -> Option<Device> {
+    let mut selected_device: Option<Device> = None;
+    let available_hosts = cpal::available_hosts();
+
+    for host_id in available_hosts {
+        let host = cpal::host_from_id(host_id).unwrap();
+        debug!("Host: {}", host_id.name());
+
+        if selected_device.is_none() {
+            selected_device = host.default_output_device();
+        }
+
+        let devices = host.devices().unwrap();
+        debug!("  Devices: ");
+        for device in devices {
+            let id = device
+                .id() // id()
+                .map_or("Unknown Id".to_string(), |id| id.to_string());
+            let description = device.description().unwrap(); // description
+            debug!("  {id} - {description}");
+
+            // Output configs
+            if let Ok(conf) = device.default_output_config() {
+                trace!("    Default output stream config:");
+                trace!("      {conf:?}");
+            }
+
+            if let Ok(configs) = device.supported_output_configs() {
+                trace!("    Supported output stream config:\n");
+                for conf in configs {
+                    trace!("      {conf:?}");
+                }
+            }
+
+            if let Some(output_id) = output_id {
+                if id == output_id {
+                    selected_device = Some(device)
+                }
+            }
+        }
+    }
+
+    selected_device
+}
+
 #[derive(Clone, Deserialize, Debug, Validate)]
 #[garde(allow_unvalidated)]
 pub struct SendspinConfig {
@@ -117,60 +168,16 @@ impl Module for UbiHomePlatform {
         let bit_depth = self.sendspin_config.bit_depth.unwrap_or(16);
         let sample_rate = self.sendspin_config.sample_rate.unwrap_or(48000);
         let buffer_size = self.sendspin_config.buffer_size;
+        // Device selection is deferred until playback starts (see PlayerCommand::Init)
+        // so devices connected after startup (e.g. Bluetooth) can be used.
+        let output_id = self.sendspin_config.output_id.clone();
 
-        let mut selected_device: Option<Device> = None;
-        // List Hosts
-        let available_hosts = cpal::available_hosts();
-
-        for host_id in available_hosts {
-            let host = cpal::host_from_id(host_id).unwrap();
-            debug!("Host: {}", host_id.name());
-
-            if selected_device.is_none() {
-                selected_device = host.default_output_device();
-            }
-
-            let devices = host.devices().unwrap();
-            debug!("  Devices: ");
-            for device in devices {
-                let id = device
-                    .id() // id()
-                    .map_or("Unknown Id".to_string(), |id| id.to_string());
-                let description = device.description().unwrap(); // description
-                debug!("  {id} - {description}");
-
-                // Output configs
-                if let Ok(conf) = device.default_output_config() {
-                    trace!("    Default output stream config:");
-                    trace!("      {conf:?}");
-                }
-
-                if let Ok(configs) = device.supported_output_configs() {
-                    trace!("    Supported output stream config:\n");
-                    for conf in configs {
-                        trace!("      {conf:?}");
-                    }
-                }
-
-                if let Some(output_id) = &self.config.sendspin.output_id {
-                    if output_id == &id {
-                        selected_device = Some(device)
-                    }
-                }
-            }
+        // Enumerate devices once at startup so users can discover output ids from
+        // the `Devices:` log lines. Only when debug logging is enabled, since the
+        // authoritative selection happens per playback below.
+        if log::log_enabled!(log::Level::Debug) {
+            resolve_output_device(output_id.as_deref());
         }
-
-        info!(
-            "Using Device: {} - {}",
-            selected_device
-                .clone()
-                .unwrap()
-                .id() // id
-                .map_or("Unknown Id".to_string(), |id| id.to_string()),
-            selected_device.clone().unwrap().id().unwrap() // description
-        );
-
-        // End List Hosts
 
         let server = if let Some(s) = self.sendspin_config.server.clone() {
             info!("Using configured Sendspin server at {}", s);
@@ -278,12 +285,23 @@ impl Module for UbiHomePlatform {
                 while let Ok(cmd) = player_rx.recv() {
                     match cmd {
                         PlayerCommand::Init(fmt, clock_sync) => {
-                            // Use selected_device_for_thread only once
+                            // Re-resolve the output device for each playback so that
+                            // devices connected after startup (e.g. Bluetooth) are used.
+                            let device = resolve_output_device(output_id.as_deref());
+                            match &device {
+                                Some(d) => info!(
+                                    "Using device: {}",
+                                    d.id().map_or("Unknown Id".to_string(), |id| id.to_string())
+                                ),
+                                None => info!(
+                                    "No output device resolved; falling back to system default"
+                                ),
+                            }
                             match SyncedPlayer::new(
                                 fmt,
                                 clock_sync,
                                 SyncedPlayerConfig {
-                                    device: selected_device.clone(),
+                                    device,
                                     volume: 100,
                                     muted: false,
                                     buffer_size,

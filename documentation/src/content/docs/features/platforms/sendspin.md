@@ -91,7 +91,14 @@ DEBUG [ubihome_sendspin]   alsa:hw:CARD=1,DEV=0 - alsa:hw:CARD=1,DEV=0
 DEBUG [ubihome_sendspin]   alsa:plughw:CARD=1,DEV=0 - alsa:plughw:CARD=1,DEV=0
 DEBUG [ubihome_sendspin]   alsa:hw:CARD=2,DEV=0 - alsa:hw:CARD=2,DEV=0
 DEBUG [ubihome_sendspin]   alsa:plughw:CARD=2,DEV=0 - alsa:plughw:CARD=2,DEV=0
-INFO [ubihome_sendspin] Using Device: alsa:hw:CARD=sndrpihifiberry,DEV=0 - alsa:hw:CARD=sndrpihifiberry,DEV=0
+```
+
+The output device is resolved each time playback starts (so devices connected after
+startup, such as Bluetooth speakers, can be used). When a stream begins, UbiHome logs
+the device it selected:
+
+```
+INFO [ubihome_sendspin] Using device: alsa:hw:CARD=sndrpihifiberry,DEV=0
 ```
 
 > You may also use `aplay -l` to list the available ALSA devices.
