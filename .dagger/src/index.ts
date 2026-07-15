@@ -147,6 +147,8 @@ export class UbiHome {
 				"libdbus-1-dev",
 				"pkg-config",
 				"libasound2-dev",
+				"libpipewire-0.3-dev",
+				"libclang-dev",
 			])
 			.withExec(["rustup", "component", "add", "rustfmt"])
 			.withExec(["rustup", "component", "add", "clippy"])
@@ -176,6 +178,7 @@ export class UbiHome {
 		source: Directory,
 	): Promise<string> {
 		return this.rustContainer(source)
+			.withMountedCache("target", dag.cacheVolume("rust-target"))
 			.withExec(["cargo", "fmt", "--all", "--", "--check"])
 			.withExec([
 				"cargo",
