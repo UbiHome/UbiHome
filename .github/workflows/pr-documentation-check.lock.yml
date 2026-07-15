@@ -50,11 +50,14 @@
 
 name: "PR Documentation Check"
 "on":
-  pull_request:
-    types:
-    - opened
-    - synchronize
-    - reopened
+  # Temporarily disabled while the Copilot agentic engine is failing (models API 403).
+  # Re-enable by restoring the pull_request trigger below (and in the .md source).
+  # pull_request:
+  #   types:
+  #   - opened
+  #   - synchronize
+  #   - reopened
+  workflow_dispatch:
 
 permissions: {}
 
