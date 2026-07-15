@@ -1,26 +1,26 @@
 use esphome_native_api::esphomeapi::EspHomeApi;
 use esphome_native_api::hash::hash_fnv1;
 use esphome_native_api::parser::ProtoMessage;
-use esphome_native_api::proto::version_2026_6_2::BinarySensorStateResponse;
-use esphome_native_api::proto::version_2026_6_2::BluetoothLeAdvertisementResponse;
-use esphome_native_api::proto::version_2026_6_2::BluetoothServiceData;
-use esphome_native_api::proto::version_2026_6_2::EntityCategory;
-use esphome_native_api::proto::version_2026_6_2::LightStateResponse;
-use esphome_native_api::proto::version_2026_6_2::ListEntitiesBinarySensorResponse;
-use esphome_native_api::proto::version_2026_6_2::ListEntitiesButtonResponse;
-use esphome_native_api::proto::version_2026_6_2::ListEntitiesDoneResponse;
-use esphome_native_api::proto::version_2026_6_2::ListEntitiesLightResponse;
-use esphome_native_api::proto::version_2026_6_2::ListEntitiesNumberResponse;
-use esphome_native_api::proto::version_2026_6_2::ListEntitiesSensorResponse;
-use esphome_native_api::proto::version_2026_6_2::ListEntitiesSwitchResponse;
-use esphome_native_api::proto::version_2026_6_2::ListEntitiesTextSensorResponse;
-use esphome_native_api::proto::version_2026_6_2::NumberStateResponse;
-use esphome_native_api::proto::version_2026_6_2::SensorLastResetType;
-use esphome_native_api::proto::version_2026_6_2::SensorStateClass;
-use esphome_native_api::proto::version_2026_6_2::SensorStateResponse;
-use esphome_native_api::proto::version_2026_6_2::SubscribeLogsResponse;
-use esphome_native_api::proto::version_2026_6_2::SwitchStateResponse;
-use esphome_native_api::proto::version_2026_6_2::TextSensorStateResponse;
+use esphome_native_api::proto::BinarySensorStateResponse;
+use esphome_native_api::proto::BluetoothLeAdvertisementResponse;
+use esphome_native_api::proto::BluetoothServiceData;
+use esphome_native_api::proto::EntityCategory;
+use esphome_native_api::proto::LightStateResponse;
+use esphome_native_api::proto::ListEntitiesBinarySensorResponse;
+use esphome_native_api::proto::ListEntitiesButtonResponse;
+use esphome_native_api::proto::ListEntitiesDoneResponse;
+use esphome_native_api::proto::ListEntitiesLightResponse;
+use esphome_native_api::proto::ListEntitiesNumberResponse;
+use esphome_native_api::proto::ListEntitiesSensorResponse;
+use esphome_native_api::proto::ListEntitiesSwitchResponse;
+use esphome_native_api::proto::ListEntitiesTextSensorResponse;
+use esphome_native_api::proto::NumberStateResponse;
+use esphome_native_api::proto::SensorLastResetType;
+use esphome_native_api::proto::SensorStateClass;
+use esphome_native_api::proto::SensorStateResponse;
+use esphome_native_api::proto::SubscribeLogsResponse;
+use esphome_native_api::proto::SwitchStateResponse;
+use esphome_native_api::proto::TextSensorStateResponse;
 use log::debug;
 use log::info;
 use serde::{Deserialize, Deserializer};
@@ -98,7 +98,7 @@ impl Module for UbiHomePlatform {
         let ip = get_ip_address().unwrap();
         let mac = get_network_mac_address(ip).unwrap();
 
-        let server_base = EspHomeApi::builder()
+        let server_base = match EspHomeApi::builder()
             .api_version_major(1)
             .api_version_minor(42)
             .encryption_key_opt(
@@ -135,7 +135,15 @@ impl Module for UbiHomePlatform {
                     .clone()
                     .unwrap_or("".to_string()),
             )
-            .build();
+            .build()
+        {
+            Ok(server) => server,
+            Err(err) => {
+                return Box::pin(async move {
+                    Err(Box::new(err) as Box<dyn std::error::Error>)
+                });
+            }
+        };
 
         let config = self.config.clone();
         // let mut api_components = self.components.();
@@ -322,8 +330,8 @@ impl Module for UbiHomePlatform {
                 tokio::spawn({
                     async move {
                         debug!("Accepted request from {}", socket.peer_addr().unwrap());
-                        let (tx, mut rx) = match server.start(socket).await {
-                            Ok(handles) => handles,
+                        let connection = match server.start(socket).await {
+                            Ok(connection) => connection,
                             Err(err) => {
                                 // A client (or the test port probe) may connect and
                                 // disconnect without completing the handshake. Drop
@@ -333,6 +341,8 @@ impl Module for UbiHomePlatform {
                             }
                         };
 
+                        let tx = connection.sender();
+                        let mut rx = connection.receiver();
                         let tx_clone = tx.clone();
 
                         // Send Messages
@@ -695,7 +705,7 @@ impl Module for UbiHomePlatform {
 
 #[cfg(test)]
 mod tests {
-    use esphome_native_api::proto::version_2026_6_2::ListEntitiesLightResponse;
+    use esphome_native_api::proto::ListEntitiesLightResponse;
 
     use super::*;
 
