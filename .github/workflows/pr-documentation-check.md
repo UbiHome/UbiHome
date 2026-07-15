@@ -5,8 +5,11 @@ description: |
   site updates are missing; stays silent otherwise.
 
 on:
-  pull_request:
-    types: [opened, synchronize, reopened]
+  # Temporarily disabled while the Copilot agentic engine is failing (models API 403).
+  # Re-enable by restoring the pull_request trigger below.
+  # pull_request:
+  #   types: [opened, synchronize, reopened]
+  workflow_dispatch:
 
 permissions:
   contents: read
