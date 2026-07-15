@@ -21,8 +21,12 @@ use esphome_native_api::proto::SensorStateResponse;
 use esphome_native_api::proto::SubscribeLogsResponse;
 use esphome_native_api::proto::SwitchStateResponse;
 use esphome_native_api::proto::TextSensorStateResponse;
+use esphome_native_api::Error;
+use esphome_native_api::HandshakeError;
 use log::debug;
+use log::error;
 use log::info;
+use log::warn;
 use serde::{Deserialize, Deserializer};
 use std::collections::HashMap;
 use std::net::SocketAddr;
@@ -39,6 +43,30 @@ use ubihome_core::{
 };
 
 use ubihome_core::constants::is_readable_string_option;
+
+/// Log an API connection error at a level that reflects who can act on it.
+///
+/// - `debug`: routine lifecycle events — the peer disconnected or never
+///   completed a handshake (e.g. a port probe). Not a problem.
+/// - `error`: the application itself is at fault and an operator can fix it —
+///   a bad configuration or a background task that died unexpectedly.
+/// - `warn`: everything else is caused by the peer or the transport and the
+///   application cannot prevent it (wrong encryption key, protocol mismatch,
+///   malformed/undecodable frames, unexpected I/O). Worth noting, not our fault.
+fn log_api_error(context: &str, err: &Error) {
+    match err {
+        Error::Disconnected(_)
+        | Error::Handshake(HandshakeError::NoData | HandshakeError::Aborted) => {
+            debug!("{context}: {err}");
+        }
+        Error::Config(_) | Error::TaskFailed => {
+            error!("{context}: {err}");
+        }
+        _ => {
+            warn!("{context}: {err}");
+        }
+    }
+}
 
 #[derive(Clone, Deserialize, Debug, Validate)]
 #[serde(deny_unknown_fields)]
@@ -139,9 +167,7 @@ impl Module for UbiHomePlatform {
         {
             Ok(server) => server,
             Err(err) => {
-                return Box::pin(async move {
-                    Err(Box::new(err) as Box<dyn std::error::Error>)
-                });
+                return Box::pin(async move { Err(Box::new(err) as Box<dyn std::error::Error>) });
             }
         };
 
@@ -333,10 +359,7 @@ impl Module for UbiHomePlatform {
                         let connection = match server.start(socket).await {
                             Ok(connection) => connection,
                             Err(err) => {
-                                // A client (or the test port probe) may connect and
-                                // disconnect without completing the handshake. Drop
-                                // the connection instead of crashing the worker.
-                                debug!("Failed to start API connection: {err}");
+                                log_api_error("Failed to start API connection", &err);
                                 return;
                             }
                         };
@@ -694,8 +717,14 @@ impl Module for UbiHomePlatform {
                                     }
                                 }
                             }
-                            debug!("Connection closed or error");
                         });
+
+                        // A peer going away is the normal way a session ends;
+                        // anything else is classified by log_api_error.
+                        match connection.wait().await {
+                            Ok(()) => debug!("API connection closed"),
+                            Err(err) => log_api_error("API connection ended", &err),
+                        }
                     }
                 });
             }
