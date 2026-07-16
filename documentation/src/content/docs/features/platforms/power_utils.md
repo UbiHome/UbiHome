@@ -39,4 +39,5 @@ Similar to ESPHome:
 <!-- Backlinks to be displayed  -->
 <div style="display:none" aria-hidden="true">
   <a href="/examples/stop_reboot/">Stop or reboot your system</a>
+  <a href="/examples/reboot_on_internet_outage/">Reboot on internet outage</a>
 </div>

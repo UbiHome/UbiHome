@@ -46,3 +46,41 @@ binary_sensor:
 
         sensor_mock.set_value("false")
         switch_mock.wait_for_mock_state("false")
+
+
+async def test_binary_sensor_button_press_action(io_mock_factory: IOMockFactory):
+    """
+    Test that the `button.press` action presses a button when a binary sensor
+    releases (e.g. to reboot the device after losing internet connectivity).
+    """
+
+    button_mock = io_mock_factory.create_mock()
+    sensor_mock = io_mock_factory.create_mock()
+
+    DEVICE_INFO_CONFIG = f"""
+ubihome:
+  name: test_device
+
+shell:
+
+button:
+  - platform: shell
+    name: "Test Button"
+    id: test_button
+    command: "echo pressed > {button_mock}"
+
+binary_sensor:
+  - platform: shell
+    name: "Test Binary Sensor"
+    update_interval: 2s
+    command: |-
+      cat {sensor_mock}
+    on_release:
+      then:
+        - button.press: "test_button"
+"""
+    sensor_mock.set_value("true")
+
+    async with UbiHome("run", config=DEVICE_INFO_CONFIG):
+        sensor_mock.set_value("false")
+        button_mock.wait_for_mock_state("pressed")

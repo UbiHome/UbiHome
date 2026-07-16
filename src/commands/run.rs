@@ -338,6 +338,13 @@ Remove the "{}:" entry from your configuration or install the cargo crate contai
                                                         debug!("Publishing command from action {:?}: {:?}", action.clone(), pcmd);
                                                         internal_tx_clone.send(pcmd).unwrap();
                                                     }
+                                                    ActionType::ButtonPress(key) => {
+                                                        let pcmd = PublishedMessage::ButtonPressed {
+                                                            key: key.clone(),
+                                                        };
+                                                        debug!("Publishing command from action {:?}: {:?}", action.clone(), pcmd);
+                                                        internal_tx_clone.send(pcmd).unwrap();
+                                                    }
                                                 }
                                             }
                                         }
@@ -357,6 +364,13 @@ Remove the "{}:" entry from your configuration or install the cargo crate contai
                                                         let pcmd = PublishedMessage::SwitchStateCommand {
                                                             key: key.clone(),
                                                             state: false,
+                                                        };
+                                                        debug!("Publishing command from action {:?}: {:?}", action.clone(), pcmd);
+                                                        internal_tx_clone.send(pcmd).unwrap();
+                                                    }
+                                                    ActionType::ButtonPress(key) => {
+                                                        let pcmd = PublishedMessage::ButtonPressed {
+                                                            key: key.clone(),
                                                         };
                                                         debug!("Publishing command from action {:?}: {:?}", action.clone(), pcmd);
                                                         internal_tx_clone.send(pcmd).unwrap();
