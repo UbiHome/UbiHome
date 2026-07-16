@@ -20,49 +20,66 @@ use ubihome_core::{config_template, ChangedMessage, Module, NoConfig, PublishedM
 pub enum Protocol {
     Tcp,
     #[default]
-    Udp,
+    Dns,
 }
+
+/// Standard DNS port; `dns` targets always use this.
+const DNS_PORT: u16 = 53;
 
 #[derive(Clone, Deserialize, Debug, Validate)]
 #[garde(allow_unvalidated)]
+#[serde(try_from = "TargetConfigInput")]
 pub struct TargetConfig {
     pub host: String,
+    #[garde(skip)]
     pub port: u16,
-    #[serde(default)]
     pub protocol: Protocol,
-    #[serde(default)]
-    #[serde(deserialize_with = "deserialize_optional_duration")]
     #[garde(skip)]
     pub timeout: Option<Duration>,
 }
 
+/// Raw form of [`TargetConfig`]. `port` is optional here and resolved during
+/// deserialization: `tcp` requires it, `dns` defaults to [`DNS_PORT`].
+#[derive(Deserialize)]
+struct TargetConfigInput {
+    host: String,
+    #[serde(default)]
+    port: Option<u16>,
+    #[serde(default)]
+    protocol: Protocol,
+    #[serde(default, deserialize_with = "deserialize_optional_duration")]
+    timeout: Option<Duration>,
+}
+
+impl TryFrom<TargetConfigInput> for TargetConfig {
+    type Error = String;
+
+    fn try_from(input: TargetConfigInput) -> Result<Self, Self::Error> {
+        let port = match input.protocol {
+            Protocol::Tcp => input
+                .port
+                .ok_or_else(|| "port is required for tcp targets".to_string())?,
+            Protocol::Dns => input.port.unwrap_or(DNS_PORT),
+        };
+        Ok(TargetConfig {
+            host: input.host,
+            port,
+            protocol: input.protocol,
+            timeout: input.timeout,
+        })
+    }
+}
+
 fn default_targets() -> Vec<TargetConfig> {
-    vec![
-        TargetConfig {
-            host: "8.8.8.8".to_string(),
-            port: 53,
-            protocol: Protocol::Udp,
+    ["8.8.8.8", "8.8.4.4", "1.1.1.1", "1.0.0.1"]
+        .into_iter()
+        .map(|host| TargetConfig {
+            host: host.to_string(),
+            port: DNS_PORT,
+            protocol: Protocol::Dns,
             timeout: None,
-        },
-        TargetConfig {
-            host: "8.8.4.4".to_string(),
-            port: 53,
-            protocol: Protocol::Udp,
-            timeout: None,
-        },
-        TargetConfig {
-            host: "1.1.1.1".to_string(),
-            port: 53,
-            protocol: Protocol::Udp,
-            timeout: None,
-        },
-        TargetConfig {
-            host: "1.0.0.1".to_string(),
-            port: 53,
-            protocol: Protocol::Udp,
-            timeout: None,
-        },
-    ]
+        })
+        .collect()
 }
 
 #[derive(Clone, Deserialize, Debug, Validate)]
@@ -227,7 +244,7 @@ async fn check_any_target(targets: &[RuntimeTarget]) -> bool {
     for target in targets {
         let reachable = match target.protocol {
             Protocol::Tcp => check_tcp(&target.host, target.port, target.timeout).await,
-            Protocol::Udp => check_udp_dns(&target.host, target.port, target.timeout).await,
+            Protocol::Dns => check_dns(&target.host, target.port, target.timeout).await,
         };
         if reachable {
             return true;
@@ -252,7 +269,7 @@ async fn check_tcp(host: &str, port: u16, timeout: Duration) -> bool {
     }
 }
 
-async fn check_udp_dns(host: &str, port: u16, timeout: Duration) -> bool {
+async fn check_dns(host: &str, port: u16, timeout: Duration) -> bool {
     let address = format!("{}:{}", host, port);
 
     let query: [u8; 17] = [
@@ -279,11 +296,11 @@ async fn check_udp_dns(host: &str, port: u16, timeout: Duration) -> bool {
     match time::timeout(timeout, inner).await {
         Ok(Some(())) => true,
         Ok(None) => {
-            debug!("Online UDP check failed for {}", address);
+            debug!("Online DNS check failed for {}", address);
             false
         }
         Err(_) => {
-            warn!("Online UDP check timed out for {}", address);
+            warn!("Online DNS check timed out for {}", address);
             false
         }
     }

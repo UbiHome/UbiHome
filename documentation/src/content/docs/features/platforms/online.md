@@ -6,7 +6,7 @@ tags:
   - windows
 ---
 
-The online platform provides a binary sensor that reports whether the device can reach any of a list of connectivity targets. By default it queries four well-known DNS servers over UDP, which is lightweight and requires no persistent connection.
+The online platform provides a binary sensor that reports whether the device can reach any of a list of connectivity targets. By default it queries four well-known DNS servers, which is lightweight and requires no persistent connection.
 
 ## Configuration
 
@@ -16,15 +16,10 @@ online:
   timeout: 3s
   # Defaults to the four DNS servers below; override to use your own targets.
   targets:
-    - host: 8.8.8.8
-      port: 53
-      protocol: udp   # "udp" (default) or "tcp"
+    - host: 8.8.8.8   # protocol defaults to "dns" (always port 53)
     - host: 8.8.4.4
-      port: 53
     - host: 1.1.1.1
-      port: 53
     - host: 1.0.0.1
-      port: 53
 
 binary_sensor:
   - platform: online
@@ -39,7 +34,7 @@ binary_sensor:
 
 | Property          | Type                  | Default                              | Description                                        |
 | ----------------- | --------------------- | ------------------------------------ | -------------------------------------------------- |
-| `targets`         | list of targets       | Google & Cloudflare DNS via UDP/53   | Connectivity targets (see Target options below)    |
+| `targets`         | list of targets       | Google & Cloudflare DNS on `:53`     | Connectivity targets (see Target options below)    |
 | `update_interval` | duration              | `30s`                                | Poll interval                                      |
 | `timeout`         | duration              | `3s`                                 | Default connection/response timeout per target     |
 
@@ -50,8 +45,8 @@ Each entry in the `targets` list supports the following properties:
 | Property   | Type   | Default    | Description                                                                         |
 | ---------- | ------ | ---------- | ----------------------------------------------------------------------------------- |
 | `host`     | string | **Required** | Hostname or IP address to check                                                   |
-| `port`     | number | **Required** | Port number                                                                        |
-| `protocol` | string | `udp`      | Transport protocol: `udp` sends a minimal DNS query; `tcp` opens a TCP connection  |
+| `protocol` | string | `dns`      | Probe type: `dns` sends a minimal DNS query (always port 53); `tcp` opens a TCP connection |
+| `port`     | number | —          | Port number. Required for `tcp`; optional for `dns` (defaults to 53)               |
 | `timeout`  | duration | from `online` | Per-target timeout override                                                    |
 
 ### Binary sensor options (`binary_sensor`)
