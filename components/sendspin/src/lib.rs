@@ -1,7 +1,7 @@
 use core::panic;
 use cpal::traits::{DeviceTrait, HostTrait};
 use cpal::Device;
-use log::{debug, error, info, trace};
+use log::{debug, error, info, trace, warn};
 use sendspin::audio::decode::{Decoder, PcmDecoder, PcmEndian};
 use sendspin::audio::{AudioBuffer, AudioFormat, Codec, SyncedPlayer, SyncedPlayerConfig};
 use sendspin::protocol::messages::{
@@ -35,8 +35,6 @@ enum PlayerCommand {
     SetVolume(u8),
     /// Mute or unmute the player
     SetMute(bool),
-    /// Shutdown the player thread
-    Shutdown,
 }
 
 fn env_u64(key: &str, default: u64) -> u64 {
@@ -219,54 +217,6 @@ impl Module for UbiHomePlatform {
         };
 
         Box::pin(async move {
-            let test = ProtocolClientBuilder::builder()
-                .client_id(id.clone())
-                .name(name.clone())
-                .player_v1_support(PlayerV1Support {
-                    supported_formats: vec![AudioFormatSpec {
-                        codec: "pcm".to_string(),
-                        channels: 2,
-                        sample_rate,
-                        bit_depth,
-                    }],
-                    buffer_capacity: 50 * 1024 * 1024, // 50 MB
-                    supported_commands: vec!["volume".to_string(), "mute".to_string()],
-                })
-                .initial_player_state(PlayerState {
-                    volume: Some(100),
-                    muted: Some(false),
-                    static_delay_ms: Some(0),
-                    supported_commands: None,
-                    min_buffer_ms: None,
-                    required_lead_time_ms: None,
-                })
-                .build();
-
-            let client = test.connect(&server).await.unwrap();
-            debug!("Connected!");
-            // info!("Connecting to {}...", server);
-            // let request = server.into_client_request().unwrap();
-            // let client = ProtocolClient::connect(request, hello).await.unwrap();
-            // info!("Connected!");
-
-            let conn = client.split();
-            let mut message_rx = conn.messages;
-            let mut audio_rx = conn.audio;
-            let clock_sync = conn.clock_sync;
-            let sender = conn.sender;
-            let _guard = conn.guard;
-
-            // Send immediate initial clock sync
-            // let client_transmitted = SystemTime::now()
-            //     .duration_since(UNIX_EPOCH)
-            //     .unwrap()
-            //     .as_micros() as i64;
-            // let time_msg = Message::ClientTime(ClientTime { client_transmitted });
-            // ws_tx.send_message(time_msg).await.unwrap();
-            info!("Sent initial client/time for clock sync");
-
-            info!("Waiting for stream to start...");
-
             // Configuration from environment variables
             let start_buffer_ms = env_u64("SS_PLAY_START_BUFFER_MS", 500);
             let log_lead = env_bool("SS_LOG_LEAD");
@@ -275,7 +225,9 @@ impl Module for UbiHomePlatform {
                 start_buffer_ms, log_lead
             );
 
-            // Create a channel for sending commands to the audio player thread
+            // Create a channel for sending commands to the audio player thread.
+            // The player thread outlives individual server connections, so it is
+            // created once, before the reconnect loop.
             let (player_tx, player_rx) = std::sync::mpsc::channel::<PlayerCommand>();
 
             // Spawn a dedicated thread for audio playback (SyncedPlayer is not Send)
@@ -344,280 +296,345 @@ impl Module for UbiHomePlatform {
                                 log::warn!("Player not initialized yet, cannot set mute");
                             }
                         }
-                        PlayerCommand::Shutdown => {
-                            break;
-                        }
                     }
                 }
                 debug!("Audio player thread exited");
             });
 
-            // Message handling variables
-            let mut decoder: Option<PcmDecoder> = None;
-            let mut audio_format: Option<AudioFormat> = None;
-            let mut endian_locked: Option<PcmEndian> = None; // Auto-detect on first chunk
-            let mut buffered_duration_us: u64 = 0; // Track buffered audio duration in microseconds
-            let mut playback_started = false; // Track if we've started playback
-            let mut first_chunk_logged = false; // Track if we've logged the first chunk
-            let mut player_initialized = false; // Track if player has been initialized
+            // Reconnect loop: a Sendspin connection can drop silently (server
+            // restart, network blip, idle timeout). Reconnect with exponential
+            // backoff instead of exiting the module, which would drop this player
+            // until UbiHome is restarted.
+            let initial_backoff = std::time::Duration::from_secs(1);
+            let max_backoff = std::time::Duration::from_secs(30);
+            let mut backoff = initial_backoff;
 
             loop {
-                // Process messages and audio chunks concurrently
-                tokio::select! {
-                    Some(msg) = message_rx.recv() => {
-                        match msg {
-                            Message::StreamStart(stream_start) => {
-                                if let Some(ref player_config) = stream_start.player {
-                                    debug!(
-                                        "Stream starting: codec='{}' {}Hz {}ch {}bit",
-                                        player_config.codec,
-                                        player_config.sample_rate,
-                                        player_config.channels,
-                                        player_config.bit_depth
-                                    );
+                info!("Connecting to Sendspin server at {}...", server);
+                let test = ProtocolClientBuilder::builder()
+                    .client_id(id.clone())
+                    .name(name.clone())
+                    .player_v1_support(PlayerV1Support {
+                        supported_formats: vec![AudioFormatSpec {
+                            codec: "pcm".to_string(),
+                            channels: 2,
+                            sample_rate,
+                            bit_depth,
+                        }],
+                        buffer_capacity: 50 * 1024 * 1024, // 50 MB
+                        supported_commands: vec!["volume".to_string(), "mute".to_string()],
+                    })
+                    .initial_player_state(PlayerState {
+                        volume: Some(100),
+                        muted: Some(false),
+                        static_delay_ms: Some(0),
+                        supported_commands: None,
+                        min_buffer_ms: None,
+                        required_lead_time_ms: None,
+                    })
+                    .build();
 
-                                    // Validate codec before proceeding
-                                    if player_config.codec != "pcm" {
-                                        error!("ERROR: Unsupported codec '{}' - only 'pcm' is supported!", player_config.codec);
-                                        error!("Server is sending compressed audio that we can't decode!");
-                                        continue;
-                                    }
+                let client = match test.connect(&server).await {
+                    Ok(client) => client,
+                    Err(e) => {
+                        error!(
+                            "Failed to connect to Sendspin server at {}: {}. Retrying in {:?}",
+                            server, e, backoff
+                        );
+                        tokio::time::sleep(backoff).await;
+                        backoff = (backoff * 2).min(max_backoff);
+                        continue;
+                    }
+                };
+                info!("Connected to Sendspin server at {}", server);
+                // Reset backoff after a successful connection so a brief blip
+                // reconnects quickly.
+                backoff = initial_backoff;
 
-                                    if player_config.bit_depth != 16 && player_config.bit_depth != 24 {
-                                        error!("ERROR: Unsupported bit depth {} - only 16 or 24-bit PCM supported!", player_config.bit_depth);
-                                        continue;
-                                    }
+                let conn = client.split();
+                let mut message_rx = conn.messages;
+                let mut audio_rx = conn.audio;
+                let clock_sync = conn.clock_sync;
+                let sender = conn.sender;
+                let _guard = conn.guard;
 
-                                    audio_format = Some(AudioFormat {
-                                        codec: Codec::Pcm,
-                                        sample_rate: player_config.sample_rate,
-                                        channels: player_config.channels,
-                                        bit_depth: player_config.bit_depth,
-                                        codec_header: None,
-                                    });
+                info!("Waiting for stream to start...");
 
-                                    // Decoder will be created on first chunk after auto-detecting endianness
-                                    decoder = None;
-                                    endian_locked = None;
-                                    buffered_duration_us = 0; // Reset on new stream
-                                    playback_started = false;
-                                    first_chunk_logged = false; // Reset for new stream
-                                    debug!("Waiting for first audio chunk to auto-detect endianness...");
-                                } else {
-                                    debug!("Received stream/start without player config");
-                                }
-                            }
-                            Message::ServerTime(server_time) => {
-                                // Get t4 (client receive time) in Unix microseconds
-                                let t4 = SystemTime::now()
-                                    .duration_since(UNIX_EPOCH)
-                                    .unwrap()
-                                    .as_micros() as i64;
+                // Clear any audio left buffered from a previous connection.
+                let _ = player_tx.send(PlayerCommand::Clear);
 
-                                // Update clock sync with all four timestamps
-                                let t1 = server_time.client_transmitted;
-                                let t2 = server_time.server_received;
-                                let t3 = server_time.server_transmitted;
+                // Message handling variables (reset for each connection)
+                let mut decoder: Option<PcmDecoder> = None;
+                let mut audio_format: Option<AudioFormat> = None;
+                let mut endian_locked: Option<PcmEndian> = None; // Auto-detect on first chunk
+                let mut buffered_duration_us: u64 = 0; // Track buffered audio duration in microseconds
+                let mut playback_started = false; // Track if we've started playback
+                let mut first_chunk_logged = false; // Track if we've logged the first chunk
+                let mut player_initialized = false; // Track if player has been initialized
 
-                                clock_sync.lock().update(t1, t2, t3, t4);
+                loop {
+                    // Process messages and audio chunks concurrently
+                    tokio::select! {
+                        Some(msg) = message_rx.recv() => {
+                            match msg {
+                                Message::StreamStart(stream_start) => {
+                                    if let Some(ref player_config) = stream_start.player {
+                                        debug!(
+                                            "Stream starting: codec='{}' {}Hz {}ch {}bit",
+                                            player_config.codec,
+                                            player_config.sample_rate,
+                                            player_config.channels,
+                                            player_config.bit_depth
+                                        );
 
-                                // Log sync quality
-                                let sync = clock_sync.lock();
-                                if let Some(rtt) = sync.rtt_micros() {
-                                    let quality = sync.quality();
-                                    debug!(
-                                        "Clock sync updated: RTT={:.2}ms, quality={:?}",
-                                        rtt as f64 / 1000.0,
-                                        quality
-                                    );
-                                }
-                            }
-                            Message::StreamEnd(stream_end) => {
-                                debug!("Stream ended: {:?}", stream_end.roles);
-                                let _ = player_tx.send(PlayerCommand::Clear);
-                                buffered_duration_us = 0;
-                                playback_started = false;
-                                first_chunk_logged = false;
-                                player_initialized = false;
-                            }
-                            Message::StreamClear(stream_clear) => {
-                                debug!("Stream cleared: {:?}", stream_clear.roles);
-                                let _ = player_tx.send(PlayerCommand::Clear);
-                                buffered_duration_us = 0;
-                                playback_started = false;
-                                first_chunk_logged = false;
-                                player_initialized = false;
-                            }
-                            Message::ServerCommand(cmd) => {
-                                // debug!("Received server command: {}", );
-                                // Set Volume
-                                if !player_initialized {
-                                    log::warn!("Received server command before player initialized: {:?}", cmd);
-                                    continue;
-                                }
-                                match cmd.player {
-                                    None => {
-                                        log::warn!("Received server command without player field: {:?}", cmd);
-                                        continue;
-                                    }
-                                    Some(player) => {
-                                        match player.command {
-                                            PlayerCommandType::Volume => {
-                                                match player.volume {
-                                                    None => {
-                                                        log::warn!("Received server command without volume field");
-                                                    }
-                                                    Some(vol) => {
-                                                        info!("Setting player volume to {}", vol);
-                                                        let _ = player_tx.send(PlayerCommand::SetVolume(vol));
-                                                    }
-                                                }
-                                            }
-                                            PlayerCommandType::Mute => {
-                                                match player.mute {
-                                                    None => {
-                                                        log::warn!("Received server command without muted field");
-                                                    }
-                                                    Some(mute) => {
-                                                        log::info!("Received mute command: {}", mute);
-                                                        let _ = player_tx.send(PlayerCommand::SetMute(mute));
-                                                        sender.send_message(Message::ClientState(
-                                                            ClientState {
-                                                                state: None,
-                                                                player: Some(PlayerState {
-                                                                    volume: None,
-                                                                    muted: Some(mute),
-                                                                    static_delay_ms: None,
-                                                                    supported_commands: None,
-                                                                    required_lead_time_ms: None,
-                                                                    min_buffer_ms: None
-                                                                }),
-                                                            }
-                                                        )).await.unwrap();
-                                                    }
-                                                }
-                                            }
-                                            _ => {
-                                                debug!("Received unsupported server command: {:?}", player.command);
-                                                continue;
-                                            }
+                                        // Validate codec before proceeding
+                                        if player_config.codec != "pcm" {
+                                            error!("ERROR: Unsupported codec '{}' - only 'pcm' is supported!", player_config.codec);
+                                            error!("Server is sending compressed audio that we can't decode!");
+                                            continue;
                                         }
 
+                                        if player_config.bit_depth != 16 && player_config.bit_depth != 24 {
+                                            error!("ERROR: Unsupported bit depth {} - only 16 or 24-bit PCM supported!", player_config.bit_depth);
+                                            continue;
+                                        }
+
+                                        audio_format = Some(AudioFormat {
+                                            codec: Codec::Pcm,
+                                            sample_rate: player_config.sample_rate,
+                                            channels: player_config.channels,
+                                            bit_depth: player_config.bit_depth,
+                                            codec_header: None,
+                                        });
+
+                                        // Decoder will be created on first chunk after auto-detecting endianness
+                                        decoder = None;
+                                        endian_locked = None;
+                                        buffered_duration_us = 0; // Reset on new stream
+                                        playback_started = false;
+                                        first_chunk_logged = false; // Reset for new stream
+                                        debug!("Waiting for first audio chunk to auto-detect endianness...");
+                                    } else {
+                                        debug!("Received stream/start without player config");
                                     }
                                 }
-                            }
-                            _ => {
-                                debug!("Received message: {:?}", msg);
-                            }
-                        }
-                    }
-                    Some(chunk) = audio_rx.recv() => {
-                        // Log first chunk bytes for diagnostics
-                        if !first_chunk_logged {
-                            let preview_len = chunk.data.len().min(32);
-                            let hex_string = chunk.data[..preview_len]
-                                .iter()
-                                .map(|b| format!("{:02X}", b))
-                                .collect::<Vec<_>>()
-                                .join(" ");
-                            debug!("First {} bytes (hex): {}", preview_len, hex_string);
-                            first_chunk_logged = true;
-                        }
+                                Message::ServerTime(server_time) => {
+                                    // Get t4 (client receive time) in Unix microseconds
+                                    let t4 = SystemTime::now()
+                                        .duration_since(UNIX_EPOCH)
+                                        .unwrap()
+                                        .as_micros() as i64;
 
-                        if let Some(ref fmt) = audio_format {
-                            // Frame sanity check
-                            let bytes_per_sample = match fmt.bit_depth {
-                                16 => 2,
-                                24 => 3,
-                                _ => {
-                                    error!("Unsupported bit depth: {}", fmt.bit_depth);
-                                    continue;
-                                }
-                            } as usize;
-                            let frame_size = bytes_per_sample * fmt.channels as usize;
+                                    // Update clock sync with all four timestamps
+                                    let t1 = server_time.client_transmitted;
+                                    let t2 = server_time.server_received;
+                                    let t3 = server_time.server_transmitted;
 
-                            if chunk.data.len() % frame_size != 0 {
-                                error!(
-                                    "BAD FRAME: {} bytes not multiple of frame size {} ({}-bit, {}ch)",
-                                    chunk.data.len(), frame_size, fmt.bit_depth, fmt.channels
-                                );
-                                continue; // Don't decode garbage
-                            }
+                                    clock_sync.lock().update(t1, t2, t3, t4);
 
-                            // One-time endianness setup on first chunk
-                            // Per spec: macOS and most systems use Little-Endian PCM
-                            // Only use Big-Endian if explicitly signaled by server
-                            if endian_locked.is_none() {
-                                // Default to Little-Endian (standard for macOS/Windows/Linux)
-                                let endian = PcmEndian::Little;
-                                endian_locked = Some(endian);
-                                decoder = Some(PcmDecoder::with_endian(fmt.bit_depth, endian));
-                                debug!("Using Little-Endian PCM (standard for modern systems)");
-                            }
-                        }
-
-                        if let (Some(ref dec), Some(ref fmt)) = (&decoder, &audio_format) {
-                            match dec.decode(&chunk.data) {
-                                Ok(samples) => {
-                                    // Calculate chunk duration in microseconds
-                                    // samples.len() includes all channels
-                                    let frames = samples.len() / fmt.channels as usize;
-                                    let duration_micros = (frames as u64 * 1_000_000) / fmt.sample_rate as u64;
-                                    // Track buffered duration
-                                    buffered_duration_us += duration_micros;
-
-                                    // Check if we've buffered enough to start playback
-                                    if !playback_started && buffered_duration_us >= start_buffer_ms * 1000 {
-                                        playback_started = true;
+                                    // Log sync quality
+                                    let sync = clock_sync.lock();
+                                    if let Some(rtt) = sync.rtt_micros() {
+                                        let quality = sync.quality();
                                         debug!(
-                                            "Prebuffering complete ({:.1}ms buffered), starting playback!",
-                                            buffered_duration_us as f64 / 1000.0
+                                            "Clock sync updated: RTT={:.2}ms, quality={:?}",
+                                            rtt as f64 / 1000.0,
+                                            quality
                                         );
                                     }
-
-                                    // Track and log lead time
-                                    if log_lead {
-                                        trace!(
-                                            "Enqueued chunk ts={} buffered={:.1}ms len={} bytes",
-                                            chunk.timestamp,
-                                            buffered_duration_us as f64 / 1000.0,
-                                            chunk.data.len()
-                                        );
-                                    }
-
-                                    if !player_initialized {
-                                        let _ = player_tx.send(PlayerCommand::Init(
-                                            fmt.clone(),
-                                            Arc::clone(&clock_sync),
-                                        ));
-                                        player_initialized = true;
-                                    }
-
-                                    let buffer = AudioBuffer {
-                                        timestamp: chunk.timestamp,
-                                        samples,
-                                        format: fmt.clone(),
-                                    };
-                                    let _ = player_tx.send(PlayerCommand::Enqueue(buffer));
                                 }
-                                Err(e) => {
-                                    error!("Decode error: {}", e);
+                                Message::StreamEnd(stream_end) => {
+                                    debug!("Stream ended: {:?}", stream_end.roles);
+                                    let _ = player_tx.send(PlayerCommand::Clear);
+                                    buffered_duration_us = 0;
+                                    playback_started = false;
+                                    first_chunk_logged = false;
+                                    player_initialized = false;
+                                }
+                                Message::StreamClear(stream_clear) => {
+                                    debug!("Stream cleared: {:?}", stream_clear.roles);
+                                    let _ = player_tx.send(PlayerCommand::Clear);
+                                    buffered_duration_us = 0;
+                                    playback_started = false;
+                                    first_chunk_logged = false;
+                                    player_initialized = false;
+                                }
+                                Message::ServerCommand(cmd) => {
+                                    // debug!("Received server command: {}", );
+                                    // Set Volume
+                                    if !player_initialized {
+                                        log::warn!("Received server command before player initialized: {:?}", cmd);
+                                        continue;
+                                    }
+                                    match cmd.player {
+                                        None => {
+                                            log::warn!("Received server command without player field: {:?}", cmd);
+                                            continue;
+                                        }
+                                        Some(player) => {
+                                            match player.command {
+                                                PlayerCommandType::Volume => {
+                                                    match player.volume {
+                                                        None => {
+                                                            log::warn!("Received server command without volume field");
+                                                        }
+                                                        Some(vol) => {
+                                                            info!("Setting player volume to {}", vol);
+                                                            let _ = player_tx.send(PlayerCommand::SetVolume(vol));
+                                                        }
+                                                    }
+                                                }
+                                                PlayerCommandType::Mute => {
+                                                    match player.mute {
+                                                        None => {
+                                                            log::warn!("Received server command without muted field");
+                                                        }
+                                                        Some(mute) => {
+                                                            log::info!("Received mute command: {}", mute);
+                                                            let _ = player_tx.send(PlayerCommand::SetMute(mute));
+                                                            if let Err(e) = sender.send_message(Message::ClientState(
+                                                                ClientState {
+                                                                    state: None,
+                                                                    player: Some(PlayerState {
+                                                                        volume: None,
+                                                                        muted: Some(mute),
+                                                                        static_delay_ms: None,
+                                                                        supported_commands: None,
+                                                                        required_lead_time_ms: None,
+                                                                        min_buffer_ms: None
+                                                                    }),
+                                                                }
+                                                            )).await {
+                                                                warn!("Failed to send mute state to server: {}", e);
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                                _ => {
+                                                    debug!("Received unsupported server command: {:?}", player.command);
+                                                    continue;
+                                                }
+                                            }
+
+                                        }
+                                    }
+                                }
+                                _ => {
+                                    debug!("Received message: {:?}", msg);
                                 }
                             }
                         }
-                    }
-                    else => {
-                        debug!("Message and audio channels closed, exiting");
-                        // Both channels closed
-                        break;
+                        Some(chunk) = audio_rx.recv() => {
+                            // Log first chunk bytes for diagnostics
+                            if !first_chunk_logged {
+                                let preview_len = chunk.data.len().min(32);
+                                let hex_string = chunk.data[..preview_len]
+                                    .iter()
+                                    .map(|b| format!("{:02X}", b))
+                                    .collect::<Vec<_>>()
+                                    .join(" ");
+                                debug!("First {} bytes (hex): {}", preview_len, hex_string);
+                                first_chunk_logged = true;
+                            }
+
+                            if let Some(ref fmt) = audio_format {
+                                // Frame sanity check
+                                let bytes_per_sample = match fmt.bit_depth {
+                                    16 => 2,
+                                    24 => 3,
+                                    _ => {
+                                        error!("Unsupported bit depth: {}", fmt.bit_depth);
+                                        continue;
+                                    }
+                                } as usize;
+                                let frame_size = bytes_per_sample * fmt.channels as usize;
+
+                                if chunk.data.len() % frame_size != 0 {
+                                    error!(
+                                        "BAD FRAME: {} bytes not multiple of frame size {} ({}-bit, {}ch)",
+                                        chunk.data.len(), frame_size, fmt.bit_depth, fmt.channels
+                                    );
+                                    continue; // Don't decode garbage
+                                }
+
+                                // One-time endianness setup on first chunk
+                                // Per spec: macOS and most systems use Little-Endian PCM
+                                // Only use Big-Endian if explicitly signaled by server
+                                if endian_locked.is_none() {
+                                    // Default to Little-Endian (standard for macOS/Windows/Linux)
+                                    let endian = PcmEndian::Little;
+                                    endian_locked = Some(endian);
+                                    decoder = Some(PcmDecoder::with_endian(fmt.bit_depth, endian));
+                                    debug!("Using Little-Endian PCM (standard for modern systems)");
+                                }
+                            }
+
+                            if let (Some(ref dec), Some(ref fmt)) = (&decoder, &audio_format) {
+                                match dec.decode(&chunk.data) {
+                                    Ok(samples) => {
+                                        // Calculate chunk duration in microseconds
+                                        // samples.len() includes all channels
+                                        let frames = samples.len() / fmt.channels as usize;
+                                        let duration_micros = (frames as u64 * 1_000_000) / fmt.sample_rate as u64;
+                                        // Track buffered duration
+                                        buffered_duration_us += duration_micros;
+
+                                        // Check if we've buffered enough to start playback
+                                        if !playback_started && buffered_duration_us >= start_buffer_ms * 1000 {
+                                            playback_started = true;
+                                            debug!(
+                                                "Prebuffering complete ({:.1}ms buffered), starting playback!",
+                                                buffered_duration_us as f64 / 1000.0
+                                            );
+                                        }
+
+                                        // Track and log lead time
+                                        if log_lead {
+                                            trace!(
+                                                "Enqueued chunk ts={} buffered={:.1}ms len={} bytes",
+                                                chunk.timestamp,
+                                                buffered_duration_us as f64 / 1000.0,
+                                                chunk.data.len()
+                                            );
+                                        }
+
+                                        if !player_initialized {
+                                            let _ = player_tx.send(PlayerCommand::Init(
+                                                fmt.clone(),
+                                                Arc::clone(&clock_sync),
+                                            ));
+                                            player_initialized = true;
+                                        }
+
+                                        let buffer = AudioBuffer {
+                                            timestamp: chunk.timestamp,
+                                            samples,
+                                            format: fmt.clone(),
+                                        };
+                                        let _ = player_tx.send(PlayerCommand::Enqueue(buffer));
+                                    }
+                                    Err(e) => {
+                                        error!("Decode error: {}", e);
+                                    }
+                                }
+                            }
+                        }
+                        else => {
+                            debug!("Message and audio channels closed, exiting");
+                            // Both channels closed
+                            break;
+                        }
                     }
                 }
+
+                warn!(
+                    "Sendspin connection to {} closed; reconnecting in {:?}",
+                    server, backoff
+                );
+                let _ = player_tx.send(PlayerCommand::Clear);
+                tokio::time::sleep(backoff).await;
+                backoff = (backoff * 2).min(max_backoff);
             }
-
-            // Shutdown the player thread
-            let _ = player_tx.send(PlayerCommand::Shutdown);
-
-            Ok(())
         })
     }
 }

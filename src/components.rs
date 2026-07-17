@@ -83,7 +83,8 @@ pub(crate) fn initialize_platforms(
     Ok(all_components)
 }
 
-pub(crate) async fn run_platforms(
+pub(crate) fn run_platforms(
+    tasks: &mut tokio::task::JoinSet<()>,
     modules: Vec<Box<dyn Module>>,
     sender: Sender<ChangedMessage>,
     receiver: Receiver<PublishedMessage>,
@@ -91,22 +92,91 @@ pub(crate) async fn run_platforms(
     for module in modules {
         let tx = sender.clone();
         let rx = receiver.resubscribe();
-        tokio::spawn({
-            async move {
-                module.run(tx, rx).await.unwrap();
-            }
+        tasks.spawn(async move {
+            // A module returning Ok(()) is a normal, intentional exit and stays
+            // silent. An Err is a real failure: unwrap panics, which is reported to
+            // Sentry by the panic integration. Tasks are collected in a JoinSet so
+            // the caller observes the panic (instead of it being swallowed by this
+            // task) and shuts the application down.
+            module.run(tx, rx).await.unwrap();
         });
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::Platform;
+    use super::*;
+    use ubihome_core::ModuleRunFuture;
 
     #[test]
     fn test_reserved_platform_names_are_rejected() {
         let result = Platform::from_str("button");
         assert!(result.is_err());
         assert!(result.unwrap_err().contains("Reserved platform name"));
+    }
+
+    /// Minimal module whose `run` either exits normally or returns an error,
+    /// used to exercise how `run_platforms` supervises module tasks.
+    struct MockModule {
+        should_err: bool,
+    }
+
+    impl Module for MockModule {
+        fn new(_config_string: &str, _config_path: &str) -> Result<Self, String> {
+            Ok(MockModule { should_err: false })
+        }
+
+        fn components(&mut self) -> Vec<UbiComponent> {
+            Vec::new()
+        }
+
+        fn run(
+            &self,
+            _sender: Sender<ChangedMessage>,
+            _receiver: Receiver<PublishedMessage>,
+        ) -> ModuleRunFuture {
+            let should_err = self.should_err;
+            Box::pin(async move {
+                if should_err {
+                    Err("mock module failure".into())
+                } else {
+                    Ok(())
+                }
+            })
+        }
+    }
+
+    fn spawn_mock(should_err: bool) -> tokio::task::JoinSet<()> {
+        let (changed_tx, _changed_rx) = tokio::sync::broadcast::channel::<ChangedMessage>(16);
+        let (_published_tx, published_rx) = tokio::sync::broadcast::channel::<PublishedMessage>(16);
+        let mut tasks = tokio::task::JoinSet::new();
+        let modules: Vec<Box<dyn Module>> = vec![Box::new(MockModule { should_err })];
+        run_platforms(&mut tasks, modules, changed_tx, published_rx);
+        tasks
+    }
+
+    /// A module returning Ok(()) is an intentional exit: the task completes
+    /// normally so the supervisor leaves the application running.
+    #[tokio::test]
+    async fn run_platforms_normal_exit_completes_cleanly() {
+        let mut tasks = spawn_mock(false);
+        let joined = tasks.join_next().await.expect("one task was spawned");
+        assert!(
+            joined.is_ok(),
+            "a module returning Ok(()) must not panic its task"
+        );
+    }
+
+    /// A module returning Err is a real failure: unwrap panics, which the
+    /// supervisor observes (via a JoinError) to trigger application shutdown.
+    #[tokio::test]
+    async fn run_platforms_erroring_module_panics_task() {
+        let mut tasks = spawn_mock(true);
+        let joined = tasks.join_next().await.expect("one task was spawned");
+        let join_error = joined.expect_err("a module returning Err must panic its task");
+        assert!(
+            join_error.is_panic(),
+            "the failure must surface as a panic, not a cancellation"
+        );
     }
 }

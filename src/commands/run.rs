@@ -9,7 +9,7 @@ use ubihome_core::internal::sensors::UbiComponent;
 use ubihome_core::{ChangedMessage, PublishedMessage};
 
 use futures_signals::signal::{Mutable, SignalExt};
-use log::{debug, trace, warn};
+use log::{debug, error, trace, warn};
 use std::collections::{BTreeSet, HashMap};
 use std::fs;
 use std::path::Path;
@@ -167,6 +167,12 @@ Remove the "{}:" entry from your configuration or install the cargo crate contai
         let (internal_tx, modules_rx) = broadcast::channel::<PublishedMessage>(16);
         let (modules_tx, mut internal_rx) = broadcast::channel::<ChangedMessage>(16);
 
+        // Supervise every long-running task (sensor/binary-sensor signal handlers,
+        // the internal command router, and the platform modules) in one JoinSet so
+        // a panic in any of them brings the application down instead of being
+        // silently swallowed by a detached task.
+        let mut supervised_tasks: tokio::task::JoinSet<()> = tokio::task::JoinSet::new();
+
         // Double Option Workaround for https://github.com/Pauan/rust-signals/issues/75
         let mut signal_map_binary_sensor: HashMap<String, Mutable<Option<Option<bool>>>> = HashMap::new();
         let mut signal_map_sensor: HashMap<String, Mutable<Option<Option<f32>>>> = HashMap::new();
@@ -183,7 +189,7 @@ Remove the "{}:" entry from your configuration or install the cargo crate contai
                     let internal_tx_clone = internal_tx.clone();
 
                     let mutable_clone = mutable.clone();
-                    tokio::spawn(async move {
+                    supervised_tasks.spawn(async move {
                         // println!("Filters: {:?}", binary_sensor.filters);
 
                         let mut signal = mutable_clone.signal_cloned().boxed();
@@ -248,7 +254,7 @@ Remove the "{}:" entry from your configuration or install the cargo crate contai
                     let internal_tx_clone = internal_tx.clone();
 
                     let mutable_clone = mutable.clone();
-                    tokio::spawn(async move {
+                    supervised_tasks.spawn(async move {
                         // println!("Filters: {:?}", binary_sensor.filters);
 
                         let mut signal = mutable_clone.signal().boxed();
@@ -410,7 +416,7 @@ Remove the "{}:" entry from your configuration or install the cargo crate contai
         }
 
         let internal_tx_clone = internal_tx.clone();
-        tokio::spawn({
+        supervised_tasks.spawn({
             async move {
                 while let Ok(cmd) = internal_rx.recv().await {
                     debug!("Received command: {:?}", cmd);
@@ -464,7 +470,12 @@ Remove the "{}:" entry from your configuration or install the cargo crate contai
             }
         });
 
-        run_platforms(configured_platforms, modules_tx.clone(), modules_rx).await;
+        run_platforms(
+            &mut supervised_tasks,
+            configured_platforms,
+            modules_tx.clone(),
+            modules_rx,
+        );
 
         println!("Platforms: {:?}", initialized_platforms);
         internal_tx
@@ -507,6 +518,31 @@ Remove the "{}:" entry from your configuration or install the cargo crate contai
         #[cfg(not(unix))]
         let terminate = std::future::pending::<()>();
 
+        // Supervise every task in the set: a task returning normally (e.g. a module
+        // whose run() returned Ok(())) is an intentional exit and is ignored, but a
+        // task that panics (e.g. a module's run() returned Err via unwrap) is a real
+        // failure that must bring the whole application down gracefully.
+        let task_supervisor = async {
+            loop {
+                match supervised_tasks.join_next().await {
+                    // Task exited normally; keep supervising the rest.
+                    Some(Ok(())) => continue,
+                    // Task panicked. Sentry already captured it via the panic
+                    // integration; flush before we shut down so the event is sent.
+                    Some(Err(join_error)) => {
+                        error!("Task terminated abnormally: {}. Shutting down.", join_error);
+                        if let Some(client) = sentry::Hub::current().client() {
+                            client.flush(Some(Duration::from_secs(2)));
+                        }
+                        break;
+                    }
+                    // All tasks have exited normally; nothing left to supervise, so
+                    // keep waiting for a shutdown signal instead of exiting.
+                    None => std::future::pending::<()>().await,
+                }
+            }
+        };
+
         if let Some(some_shutdown_signal) = shutdown_signal {
             let shutdown_event = async {
                 loop {
@@ -524,11 +560,13 @@ Remove the "{}:" entry from your configuration or install the cargo crate contai
                 _ = ctrl_c => {},
                 _ = terminate => {},
                 _ = shutdown_event => {},
+                _ = task_supervisor => {},
             }
         } else {
             tokio::select! {
                 _ = ctrl_c => {},
                 _ = terminate => {},
+                _ = task_supervisor => {},
             }
         }
     });
