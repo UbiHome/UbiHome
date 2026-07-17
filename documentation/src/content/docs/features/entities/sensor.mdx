@@ -4,9 +4,11 @@ sidebar:
   order: 1
 ---
 
+import SupportedPlatforms from '../../../../components/SupportedPlatforms.astro';
+
 ```yaml title="Base Example"
 sensor:
-  - platform: ... # [!code highlight]
+  - platform: ... # See supported platforms at the end of this page
     name: 'My Sensor'
     id: ram_usage
     icon: mdi:memory
@@ -22,7 +24,7 @@ Each platform requires additional properties not shown above. Check the [Platfor
 
 ## Attributes
 
-Common attributes are documented in [Common Component Properties](/features/components/base/).
+Common attributes are documented in [Common Component Properties](/features/components/common_properties/).
 
 | Property              | Description                                                  | Example       |
 | --------------------- | ------------------------------------------------------------ | ------------- |
@@ -37,22 +39,14 @@ Common attributes are documented in [Common Component Properties](/features/comp
 | ---------------------------------------------- | ----------------------------------------------------------------- |
 | [`round`](/features/components/filters/#round) | Rounds numeric sensor values to the configured decimal precision. |
 
-## Supported Platforms
-
-| Platform                                        | Notes                                                             |
-| ----------------------------------------------- | ----------------------------------------------------------------- |
-| [Shell](/features/platforms/shell/)             | Reads sensor values from command output.                          |
-| [BME280](/features/platforms/bme280/)           | Exposes temperature, pressure, and humidity as sensor components. |
-| [Illuminance](/features/platforms/illuminance/) | Exposes ambient light as a sensor component.                      |
-
-For platform-specific configuration options, use the linked platform pages.
-
+<SupportedPlatforms />
 
 Similar to ESPHome: [Sensor](https://esphome.io/components/sensor/)
 
-<!-- Backlinks to be displayed  -->
-<div style="display:none" aria-hidden="true">
-  <a href="/examples/system_ressources/">Monitor system resources</a>
-  <a href="/examples/measure_temperature/">Measure Temperature, Humidity and Pressure with BME280</a>
-  <a href="/examples/illuminance/">Report your laptop's ambient light sensor</a>
+{/* Backlinks to be displayed */}
+
+<div style='display:none' aria-hidden='true'>
+  <a href='/examples/system_ressources/'>Monitor system resources</a>
+  <a href='/examples/measure_temperature/'>Measure Temperature, Humidity and Pressure with BME280</a>
+  <a href='/examples/illuminance/'>Report your laptop's ambient light sensor</a>
 </div>

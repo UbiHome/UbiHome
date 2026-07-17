@@ -4,9 +4,11 @@ sidebar:
   order: 1
 ---
 
+import SupportedPlatforms from '../../../../components/SupportedPlatforms.astro';
+
 ```yaml title="Base Example"
 text_sensor:
-  - platform: ... # [!code highlight]
+  - platform: ... # See supported platforms at the end of this page
     name: 'Host Name'
     id: host_name
     icon: mdi:identifier
@@ -14,6 +16,8 @@ text_sensor:
 ```
 
 Text sensors publish string values instead of numeric values.
+
+<SupportedPlatforms />
 
 Similar to ESPHome:
 

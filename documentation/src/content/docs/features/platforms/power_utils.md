@@ -1,5 +1,6 @@
 ---
 title: 'Power Utilities'
+description: 'Shutdown, reboot, logout, hibernate or sleep the device'
 tags:
   - linux
   - macos
@@ -38,6 +39,7 @@ Similar to ESPHome:
 
 <!-- Backlinks to be displayed  -->
 <div style="display:none" aria-hidden="true">
+  <a href="/features/entities/button/">Button</a>
   <a href="/examples/stop_reboot/">Stop or reboot your system</a>
-  <a href="/examples/reboot_on_internet_outage/">Reboot on internet outage</a>
+  <a href="/examples/reboot_on_connectivity_loss/">Reboot on internet outage</a>
 </div>

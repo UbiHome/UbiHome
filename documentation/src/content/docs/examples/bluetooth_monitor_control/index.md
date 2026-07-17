@@ -5,7 +5,7 @@ description: 'Use Bluetooth state to monitor or control attached devices.'
 
 ## Linux
 
-## Bluetoothctl
+### Bluetoothctl
 
 ```yaml
 shell:
@@ -31,7 +31,7 @@ binary_sensor:
       fi
 ```
 
-## Hcitool
+### Hcitool
 
 ```yaml
 shell:

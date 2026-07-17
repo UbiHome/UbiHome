@@ -1,14 +1,14 @@
 ---
 title: 'Sendspin - Music Streaming'
+description: 'Stream music via Sendspin, e.g. Music Assistant'
 sidebar:
   badge:
     text: Experimental
     variant: caution
-tags: 
+tags:
   - windows
   - linux
   - macos
-
 ---
 
 UbiHome can be used as a client for [Sendspin](https://www.sendspin-audio.com/), e.g. for [Music Assistant](https://www.music-assistant.io/) which natively integrates with Home Assistant.
@@ -32,7 +32,6 @@ sendspin:
 On Linux you may need to specify the output device name manually, as UbiHome may detect the default device incorrectly.
 To find the device name enable debug logging for UbiHome and look for the line `Devices:` in the logs.
 
-
 ## Features
 
 - Play/pause/stop
@@ -43,18 +42,17 @@ To find the device name enable debug logging for UbiHome and look for the line `
 - ALSA (Linux)
 - PulseAudio (Linux)
 
-
 ## Setup
 
 ### How to find the server address?
 
-By default UbiHome will try to discover the Sendspin server using mDNS. 
+By default UbiHome will try to discover the Sendspin server using mDNS.
 If this does not work you can specify the address manually in the configuration (e.g. `ws://192.168.178.123:8927/sendspin`).
 
 ### How to find the output device id?
 
 Depending on the platform and audio backend, UbiHome may not be able to automatically detect the correct output device.
-In this case you can specify the output device name manually in the configuration. 
+In this case you can specify the output device name manually in the configuration.
 
 #### ALSA (Linux)
 
@@ -66,7 +64,7 @@ logger:
     ubihome_sendspin: debug
 ```
 
-and look for the line `Devices:` in the logs. Example: 
+and look for the line `Devices:` in the logs. Example:
 
 ```
 DEBUG [ubihome_sendspin] Host: ALSA

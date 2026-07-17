@@ -113,6 +113,10 @@ export default defineConfig({
 									label: "Platforms",
 									items: [
 										{
+											label: "Connectivity and Platforms",
+											link: "/features/platforms/",
+										},
+										{
 											label: "Connectivity",
 											items: [
 												{

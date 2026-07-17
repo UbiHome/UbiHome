@@ -4,9 +4,11 @@ sidebar:
   order: 1
 ---
 
+import SupportedPlatforms from '../../../../components/SupportedPlatforms.astro';
+
 ```yaml title="Base Example"
 switch:
-  - platform: ... # [!code highlight]
+  - platform: ... # See supported platforms at the end of this page
     name: 'My Switch'
 ```
 
@@ -16,7 +18,7 @@ Each platform requires additional properties not shown above. Check the [Platfor
 
 ## Attributes
 
-Common attributes are documented in [Common Component Properties](/features/components/base/).
+Common attributes are documented in [Common Component Properties](/features/components/common_properties/).
 
 | Property       | Description                           | Example  |
 | -------------- | ------------------------------------- | -------- |
@@ -28,18 +30,13 @@ Common attributes are documented in [Common Component Properties](/features/comp
 | -------- | ------------------------------------------ |
 | _(none)_ | Switch does not currently support filters. |
 
-## Supported Platforms
+<SupportedPlatforms />
 
-| Platform                            | Notes                                                                            |
-| ----------------------------------- | -------------------------------------------------------------------------------- |
-| [Shell](/features/platforms/shell/) | Uses `command_on` and `command_off`; optional `command_state` for state polling. |
+{/* Backlinks to be displayed */}
 
-For platform-specific configuration options, use the linked platform pages.
-
-<!-- Backlinks to be displayed  -->
-<div style="display:none" aria-hidden="true">
-  <a href="/examples/screen_on_off/">Turn Raspberry screen on or off</a>
-  <a href="/examples/automatic_screen_power_control/">Automatic Screen Power Control</a>
+<div style='display:none' aria-hidden='true'>
+  <a href='/examples/screen_on_off/'>Turn Raspberry screen on or off</a>
+  <a href='/examples/automatic_screen_power_control/'>Automatic Screen Power Control</a>
 </div>
 
 ## Shell Platform Notes

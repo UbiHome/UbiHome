@@ -4,9 +4,11 @@ sidebar:
   order: 1
 ---
 
+import SupportedPlatforms from '../../../../components/SupportedPlatforms.astro';
+
 ```yaml title="Base Example"
 number:
-  - platform: ... # [!code highlight]
+  - platform: ... # See supported platforms at the end of this page
     name: 'Display Brightness'
     id: display_brightness
     icon: mdi:brightness-6
@@ -24,7 +26,7 @@ Each platform requires additional properties not shown above. Check the [Platfor
 
 ## Attributes
 
-Common attributes are documented in [Common Component Properties](/features/components/base/).
+Common attributes are documented in [Common Component Properties](/features/components/common_properties/).
 
 | Property              | Description                                   | Example       |
 | --------------------- | --------------------------------------------- | ------------- |
@@ -41,12 +43,6 @@ Common attributes are documented in [Common Component Properties](/features/comp
 | -------- | ------------------------------------------ |
 | _(none)_ | Number does not currently support filters. |
 
-## Supported Platforms
-
-| Platform                            | Notes                                                        |
-| ----------------------------------- | ------------------------------------------------------------ |
-| [Shell](/features/platforms/shell/) | Uses `command_state` for reads and `command_set` for writes. |
-
-For platform-specific configuration options, use the linked platform pages.
+<SupportedPlatforms />
 
 Similar to ESPHome: [Number](https://esphome.io/components/number/)

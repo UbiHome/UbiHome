@@ -1,5 +1,6 @@
 ---
 title: 'Shell'
+description: 'Execute any command to retrieve data or on trigger'
 tags:
   - linux
   - macos
@@ -33,6 +34,19 @@ sensor:
     command: |-
       free | grep Mem | awk '{print $3/$2 * 100.0}'
 ```
+
+### Binary Sensor
+
+```yaml
+binary_sensor:
+  - platform: shell
+    name: 'Door Open'
+    update_interval: 30s
+    command: |-
+      if [ -f /tmp/door_open ]; then echo true; else echo false; fi
+```
+
+The command output must be `true` or `false` (case-insensitive).
 
 ### Switch
 
@@ -78,8 +92,23 @@ text_sensor:
     command: 'hostname'
 ```
 
+### Button
+
+```yaml
+button:
+  - platform: shell
+    name: 'Open Chrome'
+    command: 'xdg-open https://example.com'
+```
+
 <!-- Backlinks to be displayed  -->
 <div style="display:none" aria-hidden="true">
+  <a href="/features/entities/sensor/">Sensor</a>
+  <a href="/features/entities/binary_sensor/">Binary Sensor</a>
+  <a href="/features/entities/switch/">Switch</a>
+  <a href="/features/entities/number/">Number</a>
+  <a href="/features/entities/text_sensor/">Text Sensor</a>
+  <a href="/features/entities/button/">Button</a>
   <a href="/examples/open_chrome_tab/">Open a new tab in chrome</a>
   <a href="/examples/display_notification/">Display a Notification</a>
   <a href="/examples/system_ressources/">Monitor system resources</a>
@@ -87,4 +116,3 @@ text_sensor:
   <a href="/examples/automatic_screen_power_control/">Automatic Screen Power Control</a>
   <a href="/examples/bluetooth_monitor_control/">Monitor and control Bluetooth devices</a>
 </div>
-
