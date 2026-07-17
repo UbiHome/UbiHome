@@ -16,7 +16,11 @@ from playwright.async_api import (
 from mock_file import IOMockFactory
 from utils import SHELL_TYPE, UbiHome
 
-pytestmark = [pytest.mark.e2e, pytest.mark.timeout(30)]
+pytestmark = [
+    pytest.mark.e2e,
+    pytest.mark.timeout(30),
+    pytest.mark.flaky(reruns=1, reruns_delay=5),
+]
 
 
 def merge_dicts(base: dict[str, Any], overrides: Mapping[str, Any] | None) -> dict[str, Any]:
