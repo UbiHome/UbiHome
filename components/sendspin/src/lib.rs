@@ -111,6 +111,13 @@ pub struct SendspinConfig {
     pub output_id: Option<String>,
     pub bit_depth: Option<u8>,
     pub sample_rate: Option<u32>,
+    /// Default playback volume (0-100) applied when the player is initialized.
+    /// The server can still change it at runtime via volume commands. Default: 100.
+    #[garde(range(min = 0, max = 100))]
+    pub volume: Option<u8>,
+    /// Whether the player starts muted. The server can still change it at
+    /// runtime via mute commands. Default: false.
+    pub muted: Option<bool>,
     /// ALSA buffer size in frames. Increase this on slow hardware (e.g. Raspberry Pi Zero W)
     /// to prevent buffer underruns ("Broken pipe" errors). At 48 kHz stereo,
     /// 4096 frames ≈ 85 ms. Default: system default (typically 512-1024 frames).
@@ -166,6 +173,8 @@ impl Module for UbiHomePlatform {
         let bit_depth = self.sendspin_config.bit_depth.unwrap_or(16);
         let sample_rate = self.sendspin_config.sample_rate.unwrap_or(48000);
         let buffer_size = self.sendspin_config.buffer_size;
+        let volume = self.sendspin_config.volume.unwrap_or(100);
+        let muted = self.sendspin_config.muted.unwrap_or(false);
         // Device selection is deferred until playback starts (see PlayerCommand::Init)
         // so devices connected after startup (e.g. Bluetooth) can be used.
         let output_id = self.sendspin_config.output_id.clone();
@@ -254,8 +263,8 @@ impl Module for UbiHomePlatform {
                                 clock_sync,
                                 SyncedPlayerConfig {
                                     device,
-                                    volume: 100,
-                                    muted: false,
+                                    volume,
+                                    muted,
                                     buffer_size,
                                 },
                             ) {
@@ -333,8 +342,8 @@ impl Module for UbiHomePlatform {
                         supported_commands: vec!["volume".to_string(), "mute".to_string()],
                     })
                     .initial_player_state(PlayerState {
-                        volume: Some(100),
-                        muted: Some(false),
+                        volume: Some(volume),
+                        muted: Some(muted),
                         static_delay_ms: Some(0),
                         supported_commands: None,
                         min_buffer_ms: None,
