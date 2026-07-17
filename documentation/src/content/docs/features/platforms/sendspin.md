@@ -23,6 +23,10 @@ sendspin:
   # client_id:
   # Optional: ID of the output device (defaults to first device found)
   # output_id:
+  # Optional: Default playback volume 0-100, applied on init (default: 100)
+  # volume: 100
+  # Optional: Start muted (default: false)
+  # muted: false
 ```
 
 On Linux you may need to specify the output device name manually, as UbiHome may detect the default device incorrectly.
