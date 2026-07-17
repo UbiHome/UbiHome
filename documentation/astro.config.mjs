@@ -157,7 +157,7 @@ export default defineConfig({
 		}),
 		umami({
 			endpointUrl: "https://analytics.aquiver.de/",
-			id: "94db1cb1-74f4-4a40-ad6c-962362670409",
+			id: "47376340-dcba-422e-b906-a453eea1ede1",
 		}),
 	],
 	// redirects: {
