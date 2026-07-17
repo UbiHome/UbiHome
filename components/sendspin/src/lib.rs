@@ -307,7 +307,15 @@ impl Module for UbiHomePlatform {
             // until UbiHome is restarted.
             let initial_backoff = std::time::Duration::from_secs(1);
             let max_backoff = std::time::Duration::from_secs(30);
+            // A connection must stay up at least this long to be treated as stable.
+            // Connections that drop sooner keep escalating the backoff, so a server
+            // that accepts the connection and then drops the session immediately is
+            // not reconnected roughly once per second.
+            let stable_connection = std::time::Duration::from_secs(10);
             let mut backoff = initial_backoff;
+            // Whether a player has ever been initialized. Used to avoid clearing a
+            // player that does not exist yet (e.g. on the very first connection).
+            let mut player_ever_initialized = false;
 
             loop {
                 info!("Connecting to Sendspin server at {}...", server);
@@ -347,9 +355,7 @@ impl Module for UbiHomePlatform {
                     }
                 };
                 info!("Connected to Sendspin server at {}", server);
-                // Reset backoff after a successful connection so a brief blip
-                // reconnects quickly.
-                backoff = initial_backoff;
+                let connected_at = std::time::Instant::now();
 
                 let conn = client.split();
                 let mut message_rx = conn.messages;
@@ -360,8 +366,11 @@ impl Module for UbiHomePlatform {
 
                 info!("Waiting for stream to start...");
 
-                // Clear any audio left buffered from a previous connection.
-                let _ = player_tx.send(PlayerCommand::Clear);
+                // Clear any audio left buffered from a previous connection. Skip it
+                // until a player exists, otherwise this warns on every startup.
+                if player_ever_initialized {
+                    let _ = player_tx.send(PlayerCommand::Clear);
+                }
 
                 // Message handling variables (reset for each connection)
                 let mut decoder: Option<PcmDecoder> = None;
@@ -604,6 +613,7 @@ impl Module for UbiHomePlatform {
                                                 Arc::clone(&clock_sync),
                                             ));
                                             player_initialized = true;
+                                            player_ever_initialized = true;
                                         }
 
                                         let buffer = AudioBuffer {
@@ -627,11 +637,19 @@ impl Module for UbiHomePlatform {
                     }
                 }
 
+                // Reset the backoff only if the connection stayed up long enough to
+                // be considered stable, so a brief blip reconnects quickly while a
+                // connection that drops immediately keeps backing off.
+                if connected_at.elapsed() >= stable_connection {
+                    backoff = initial_backoff;
+                }
                 warn!(
                     "Sendspin connection to {} closed; reconnecting in {:?}",
                     server, backoff
                 );
-                let _ = player_tx.send(PlayerCommand::Clear);
+                if player_ever_initialized {
+                    let _ = player_tx.send(PlayerCommand::Clear);
+                }
                 tokio::time::sleep(backoff).await;
                 backoff = (backoff * 2).min(max_backoff);
             }
