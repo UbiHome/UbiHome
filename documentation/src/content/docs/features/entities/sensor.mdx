@@ -18,8 +18,9 @@ sensor:
     accuracy_decimals: 2
 ```
 
-:::note[Platform-specific properties]
-Each platform requires additional properties not shown above. Check the [Platforms documentation](/features/) and the page for your chosen platform for the full list of required and optional options.
+:::note[Platform-specific attributes]
+Each platform may require additional attributes not shown above.
+Check the [page of the platform](/features/platforms/#platforms) for the full list of required and optional options.
 :::
 
 ## Attributes
@@ -33,11 +34,15 @@ Common attributes are documented in [Common Component Properties](/features/comp
 | `unit_of_measurement` | Unit shown in user interfaces (for example `%`, `°C`, `Pa`). | `%`           |
 | `accuracy_decimals`   | Number of decimals reported for the sensor value.            | `2`           |
 
-## Supported Filters
+### Triggers
 
-| Filter                                         | Description                                                       |
-| ---------------------------------------------- | ----------------------------------------------------------------- |
-| [`round`](/features/components/filters/#round) | Rounds numeric sensor values to the configured decimal precision. |
+See [Triggers and Actions](/features/components/actions/) for how triggers work.
+
+| Property | Description                                  | Example |
+| -------- | --------------------------------------------- | ------- |
+| _(none)_ | Sensor currently has no additional triggers. | _(n/a)_ |
+
+Supported filters are documented in [Filters](/features/components/filters/).
 
 <SupportedPlatforms />
 

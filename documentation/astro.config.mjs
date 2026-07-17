@@ -7,6 +7,7 @@ import starlightLinksValidator from "starlight-links-validator";
 import starlightSidebarTopics from "starlight-sidebar-topics";
 import starlightSiteGraph from "starlight-site-graph";
 import starlightTagsPlugin from "starlight-tags";
+import umami from "@yeskunall/astro-umami";
 
 // Generate examples sidebar items by reading the examples directory
 function getExamplesItems() {
@@ -153,6 +154,10 @@ export default defineConfig({
 					exclude: ["/tags/", "/tags/**"],
 				}),
 			],
+		}),
+		umami({
+			endpointUrl: "https://analytics.aquiver.de/",
+			id: "94db1cb1-74f4-4a40-ad6c-962362670409",
 		}),
 	],
 	// redirects: {

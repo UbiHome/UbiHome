@@ -12,8 +12,9 @@ switch:
     name: 'My Switch'
 ```
 
-:::note[Platform-specific properties]
-Each platform requires additional properties not shown above. Check the [Platforms documentation](/features/) and the page for your chosen platform for the full list of required and optional options.
+:::note[Platform-specific attributes]
+Each platform may require additional attributes not shown above.
+Check the [page of the platform](/features/platforms/#platforms) for the full list of required and optional options.
 :::
 
 ## Attributes
@@ -24,13 +25,19 @@ Common attributes are documented in [Common Component Properties](/features/comp
 | -------------- | ------------------------------------- | -------- |
 | `device_class` | Home Assistant switch classification. | `outlet` |
 
-## Supported Filters
+### Triggers
 
-| Filter   | Description                                |
-| -------- | ------------------------------------------ |
-| _(none)_ | Switch does not currently support filters. |
+See [Triggers and Actions](/features/components/actions/) for how triggers work.
+
+| Property | Description                                  | Example |
+| -------- | --------------------------------------------- | ------- |
+| _(none)_ | Switch currently has no additional triggers. | _(n/a)_ |
+
+Supported filters are documented in [Filters](/features/components/filters/).
 
 <SupportedPlatforms />
+
+Similar to ESPHome: [Switch](https://esphome.io/components/switch/index.html)
 
 {/* Backlinks to be displayed */}
 
@@ -38,11 +45,3 @@ Common attributes are documented in [Common Component Properties](/features/comp
   <a href='/examples/screen_on_off/'>Turn Raspberry screen on or off</a>
   <a href='/examples/automatic_screen_power_control/'>Automatic Screen Power Control</a>
 </div>
-
-## Shell Platform Notes
-
-For full shell switch setup, see [Shell platform documentation](/features/platforms/shell/#switch).
-
-When using `command_state`, the command output must resolve to `true` or `false`.
-
-Similar to ESPHome: [Switch](https://esphome.io/components/switch/index.html)
