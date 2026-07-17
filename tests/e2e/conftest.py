@@ -1,4 +1,5 @@
 import json
+import re
 import time
 import urllib.parse
 from collections.abc import AsyncGenerator, Generator
@@ -134,7 +135,10 @@ async def ha_page(
     await page.get_by_role("textbox", name="Username").fill(home_assistant_runtime.username)
     await page.get_by_role("textbox", name="Password").fill(home_assistant_runtime.password)
     await page.get_by_role("textbox", name="Password").press("Enter")
-    await page.wait_for_url("**/home/overview", timeout=60000)
+    # Home Assistant redirects to its default dashboard, whose view path varies
+    # (e.g. "/home/overview" or the by-index "/home/0") depending on how far
+    # dashboard generation has progressed, so match any dashboard landing URL.
+    await page.wait_for_url(re.compile(r"/(home|lovelace)(/|$)"), timeout=60000)
 
     try:
         yield page
