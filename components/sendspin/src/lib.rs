@@ -630,8 +630,9 @@ impl Module for UbiHomePlatform {
                             }
                         }
                         else => {
-                            debug!("Message and audio channels closed, exiting");
-                            // Both channels closed
+                            // Both channels closed: the connection dropped, so
+                            // leave the inner loop to reconnect.
+                            debug!("Message and audio channels closed; reconnecting");
                             break;
                         }
                     }
