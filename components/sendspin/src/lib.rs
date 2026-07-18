@@ -499,6 +499,21 @@ impl Module for UbiHomePlatform {
                                                         Some(vol) => {
                                                             info!("Setting player volume to {}", vol);
                                                             let _ = player_tx.send(PlayerCommand::SetVolume(vol));
+                                                            if let Err(e) = sender.send_message(Message::ClientState(
+                                                                ClientState {
+                                                                    state: None,
+                                                                    player: Some(PlayerState {
+                                                                        volume: Some(vol),
+                                                                        muted: None,
+                                                                        static_delay_ms: None,
+                                                                        supported_commands: None,
+                                                                        required_lead_time_ms: None,
+                                                                        min_buffer_ms: None
+                                                                    }),
+                                                                }
+                                                            )).await {
+                                                                warn!("Failed to send volume state to server: {}", e);
+                                                            }
                                                         }
                                                     }
                                                 }
