@@ -8,6 +8,7 @@ description = "Core package"
 [features]
 ip = ["dep:getifs"]
 validation = ["serde-saphyr"]
+self_update = ["dep:self-replace"]
 
 [dependencies]
 log = "0.4"
@@ -23,3 +24,4 @@ serde-saphyr = { version = "0.0.26", features = [
   "garde",
   "miette",
 ], optional = true }
+self-replace = { version = "1.5.0", optional = true }

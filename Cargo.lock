@@ -5633,7 +5633,6 @@ dependencies = [
  "reqwest 0.12.28",
  "rumqttc",
  "rust-embed",
- "self-replace",
  "sentry",
  "serde",
  "serde-saphyr 0.0.23",
@@ -5648,6 +5647,7 @@ dependencies = [
  "ubihome-mdns",
  "ubihome-mqtt",
  "ubihome-online",
+ "ubihome-ota",
  "ubihome-power_utils",
  "ubihome-sendspin",
  "ubihome-shell",
@@ -5713,6 +5713,7 @@ dependencies = [
  "getifs",
  "log",
  "regex",
+ "self-replace",
  "serde",
  "serde-saphyr 0.0.26",
  "serde-value",
@@ -5806,6 +5807,27 @@ dependencies = [
  "serde",
  "serde_yaml",
  "tokio",
+ "ubihome-core",
+]
+
+[[package]]
+name = "ubihome-ota"
+version = "0.1.0"
+dependencies = [
+ "axum",
+ "current_platform",
+ "duration-str",
+ "garde",
+ "hex",
+ "log",
+ "rand 0.8.6",
+ "serde",
+ "serde-saphyr 0.0.26",
+ "serde_json",
+ "sha2",
+ "subtle",
+ "tokio",
+ "tower-http",
  "ubihome-core",
 ]
 
