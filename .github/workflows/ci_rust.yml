@@ -20,30 +20,37 @@ jobs:
           - target: x86_64-unknown-linux-gnu
             runs-on: ubuntu-24.04
             fileending: ''
+            release_file_name: ubihome-linux-x86_64
 
           - target: arm-unknown-linux-musleabi
             runs-on: ubuntu-24.04
             fileending: ''
+            release_file_name: ubihome-linux-arm
 
           - target: x86_64-apple-darwin
             runs-on: macos-26-intel
             fileending: ''
+            release_file_name: ubihome-macos-x86_64
 
           - target: aarch64-apple-darwin
             runs-on: macos-26
             fileending: ''
+            release_file_name: ubihome-macos-aarch64
 
           - target: x86_64-pc-windows-msvc
             runs-on: windows-latest
             fileending: '.exe'
+            release_file_name: ubihome-windows-x86_64.exe
 
           - target: armv7-unknown-linux-musleabi
             runs-on: ubuntu-24.04
             fileending: ''
+            release_file_name: ubihome-linux-armv7
     uses: ./.github/workflows/build-and-test-template.yml
     with:
       runs-on: ${{ matrix.runs-on }}
       target: ${{ matrix.target }}
       fileending: ${{ matrix.fileending }}
+      release-file-name: ${{ matrix.release_file_name }}
     # If you might want to use a secret in the build or test job then you would need to pass secrets, inherit disables secret isolation
     secrets: inherit

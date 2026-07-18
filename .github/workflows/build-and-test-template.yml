@@ -12,9 +12,15 @@ on:
       fileending:
         type: string
         required: true
+      release-file-name:
+        type: string
+        required: true
 jobs:
   build:
     runs-on: ${{ inputs.runs-on }}
+    env:
+      # Picked up by build.rs to embed "pr-<number>" as the version for PR builds.
+      UBIHOME_PR_NUMBER: ${{ github.event.pull_request.number }}
     steps:
       - uses: actions/checkout@v4
 
@@ -69,13 +75,16 @@ jobs:
       #     # Add "--locked" again when release please is not updating all Cargo.toml files
       #     args: ''
 
-      # Save executable
+      # Save executable as an unzipped, single-file artifact (downloadable directly,
+      # and fetchable by `ubihome update --pr <number>`).
+      - name: Rename binary for artifact upload
+        run: cp target/${{ inputs.target }}/release/ubihome${{ inputs.fileending }} target/${{ inputs.target }}/release/${{ inputs.release-file-name }}
+
       - name: Archive artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
-          name: release-${{ inputs.target }}
-          path: |
-            target/${{ inputs.target }}/release/ubihome${{ inputs.fileending }}
+          path: target/${{ inputs.target }}/release/${{ inputs.release-file-name }}
+          archive: false
 
   test:
     runs-on: ${{ inputs.runs-on }}
@@ -84,10 +93,12 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: Download Artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7
         with:
-          name: release-${{ inputs.target }}
+          name: ${{ inputs.release-file-name }}
           path: tests/
+      - name: Rename downloaded binary
+        run: mv tests/${{ inputs.release-file-name }} tests/ubihome
       - uses: actions/setup-python@v5
         with:
           python-version: 3.14
