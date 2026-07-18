@@ -1,4 +1,4 @@
-use std::{cmp::min, env};
+use std::cmp::min;
 
 use inquire::Confirm;
 use log::debug;
@@ -176,18 +176,10 @@ pub(crate) fn update(include_pre_release: bool) -> Result<(), String> {
         }
 
         pb.finish_with_message(format!("Downloaded {}", download_file_name));
-        match env::current_exe() {
-            Ok(exe_path) => {
-                let mut new_exe_path = exe_path.clone();
-                new_exe_path.set_file_name(format!("new_{}", new_exe_path.file_name().unwrap_or_default().to_string_lossy()));
-                std::fs::write(&new_exe_path, body_data).expect("Failed to create temporary file");
-
-                print!("Updating {}. ", exe_path.display());
-                self_replace::self_replace(&new_exe_path).unwrap();
-                std::fs::remove_file(&new_exe_path).unwrap();
-                println!("Updated!");
-            }
-            Err(e) => println!("failed to get current exe path: {e}"),
+        println!("Updating...");
+        match ubihome_core::features::self_update::apply_new_binary(&body_data) {
+            Ok(()) => println!("Updated!"),
+            Err(e) => return Err(format!("Failed to apply update: {e}")),
         };
         Ok(())
 

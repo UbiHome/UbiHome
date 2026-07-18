@@ -13,12 +13,13 @@ serde = { version = "1.0", features = ["derive"] }
 ubihome-api = { path = "components/api" }
 ubihome-bluetooth_proxy = { path = "components/bluetooth_proxy" }
 ubihome-bme280 = { path = "components/bme280" }
-ubihome-core = { path = "components/core" }
+ubihome-core = { path = "components/core", features = ["self_update"] }
 ubihome-gpio = { path = "components/gpio" }
 ubihome-illuminance = { path = "components/illuminance" }
 ubihome-online = { path = "components/online" }
 ubihome-mdns = { path = "components/mdns" }
 ubihome-mqtt = { path = "components/mqtt" }
+ubihome-ota = { path = "components/ota" }
 ubihome-power_utils = { path = "components/power_utils" }
 ubihome-sendspin = { path = "components/sendspin" }
 ubihome-shell = { path = "components/shell" }
@@ -33,7 +34,6 @@ reqwest = { version = "0.12.15", features = [
     "rustls-tls",
     "stream",
 ], default-features = false }
-self-replace = "1.5.0"
 current_platform = "0.2.0"
 indicatif = "0.17.8"
 futures-util = "0.3.31"
@@ -78,6 +78,7 @@ members = [
     "components/online",
     "components/mdns",
     "components/mqtt",
+    "components/ota",
     "components/power_utils",
     "components/sendspin",
     "components/shell",
