@@ -25,8 +25,13 @@ pub async fn install(location: &str) -> Result<(), Box<dyn std::error::Error>> {
     fs::copy(config_file_path, &new_config_file_path).expect("Unable to copy file");
 
     use std::ffi::OsString;
+    use std::time::Duration;
     use windows_service::{
-        service::{ServiceAccess, ServiceErrorControl, ServiceInfo, ServiceStartType, ServiceType},
+        service::{
+            ServiceAccess, ServiceAction, ServiceActionType, ServiceErrorControl,
+            ServiceFailureActions, ServiceFailureResetPeriod, ServiceInfo, ServiceStartType,
+            ServiceType,
+        },
         service_manager::{ServiceManager, ServiceManagerAccess},
     };
 
@@ -53,19 +58,49 @@ pub async fn install(location: &str) -> Result<(), Box<dyn std::error::Error>> {
         account_password: None,
     };
 
-    if let Ok(service) =
+    let service = if let Ok(service) =
         service_manager.open_service(constants::SERVICE_NAME, ServiceAccess::CHANGE_CONFIG)
     {
         debug!("Service already exists, updating...");
         service.set_description(constants::SERVICE_DESCRIPTION)?;
         service.change_config(&service_info)?;
         println!(" - Service updated.");
+        service
     } else {
         let service =
             service_manager.create_service(&service_info, ServiceAccess::CHANGE_CONFIG)?;
         service.set_description(constants::SERVICE_DESCRIPTION)?;
         println!(" - Created Windows Service");
-    }
+        service
+    };
+
+    // Ensure the SCM restarts the service if the process exits unexpectedly - notably,
+    // after an OTA update (see components/ota) swaps the binary and intentionally exits
+    // so the new build gets picked up. Without this, a plain exit would just leave the
+    // service stopped, unlike the Linux systemd unit (Restart=always).
+    service.update_failure_actions(ServiceFailureActions {
+        reset_period: ServiceFailureResetPeriod::After(Duration::from_secs(86400)),
+        reboot_msg: None,
+        command: None,
+        actions: Some(vec![
+            ServiceAction {
+                action_type: ServiceActionType::Restart,
+                delay: Duration::from_secs(5),
+            },
+            ServiceAction {
+                action_type: ServiceActionType::Restart,
+                delay: Duration::from_secs(5),
+            },
+            ServiceAction {
+                action_type: ServiceActionType::Restart,
+                delay: Duration::from_secs(5),
+            },
+        ]),
+    })?;
+    // The SCM only applies failure actions to genuine crashes by default; this flag makes
+    // it also apply them to a clean exit (code 0), which is how the OTA component and any
+    // manual process exit terminate.
+    service.set_failure_actions_on_non_crash_failures(true)?;
 
     println!(" - TODO: Create Readme...");
 
