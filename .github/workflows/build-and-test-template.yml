@@ -93,7 +93,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: Download Artifact
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@v8
         with:
           name: ${{ inputs.release-file-name }}
           path: tests/
