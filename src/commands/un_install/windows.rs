@@ -74,10 +74,7 @@ pub async fn install(location: &str) -> Result<(), Box<dyn std::error::Error>> {
         service
     };
 
-    // Ensure the SCM restarts the service if the process exits unexpectedly - notably,
-    // after an OTA update (see components/ota) swaps the binary and intentionally exits
-    // so the new build gets picked up. Without this, a plain exit would just leave the
-    // service stopped, unlike the Linux systemd unit (Restart=always).
+    // Ensure the SCM restarts the service if the process exits unexpectedly or expected
     service.update_failure_actions(ServiceFailureActions {
         reset_period: ServiceFailureResetPeriod::After(Duration::from_secs(86400)),
         reboot_msg: None,
@@ -98,8 +95,7 @@ pub async fn install(location: &str) -> Result<(), Box<dyn std::error::Error>> {
         ]),
     })?;
     // The SCM only applies failure actions to genuine crashes by default; this flag makes
-    // it also apply them to a clean exit (code 0), which is how the OTA component and any
-    // manual process exit terminate.
+    // it also apply them to a clean exit (code 0)
     service.set_failure_actions_on_non_crash_failures(true)?;
 
     println!(" - TODO: Create Readme...");
