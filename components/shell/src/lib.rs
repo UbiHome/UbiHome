@@ -956,7 +956,7 @@ number:
     command_set: "echo {{ value }}"
 "#;
 
-        let module = UbiHomePlatform::new(&config.to_string());
+        let module = UbiHomePlatform::new(config, "test.yaml");
         assert!(
             module.is_ok(),
             "Shell module should parse number config successfully"
@@ -1003,7 +1003,7 @@ number:
     name: "Volume"
 "#;
 
-        let module = UbiHomePlatform::new(&config.to_string());
+        let module = UbiHomePlatform::new(config, "test.yaml");
         assert!(
             module.is_ok(),
             "Shell module should parse minimal number config successfully"
@@ -1048,7 +1048,7 @@ text_sensor:
     command: "whoami"
 "#;
 
-        let module = UbiHomePlatform::new(&config.to_string());
+        let module = UbiHomePlatform::new(config, "test.yaml");
         assert!(
             module.is_ok(),
             "Shell module should parse text_sensor config successfully"
@@ -1087,7 +1087,7 @@ text_sensor:
     command: "hostname"
 "#;
 
-        let module = UbiHomePlatform::new(&config.to_string());
+        let module = UbiHomePlatform::new(config, "test.yaml");
         assert!(
             module.is_ok(),
             "Shell module should parse minimal text_sensor config successfully"
@@ -1109,6 +1109,92 @@ text_sensor:
         assert!(
             text_sensor.update_interval.is_none(),
             "Minimal text_sensor should have no update_interval"
+        );
+    }
+
+    const INTERNAL_BASE: &str = r#"
+ubihome:
+  name: "Test Device"
+
+shell:
+  type: bash
+"#;
+
+    fn parse_binary_sensor(entry: &str) -> Result<UbiHomePlatform, String> {
+        let config = format!("{INTERNAL_BASE}\nbinary_sensor:\n  - platform: shell\n{entry}");
+        UbiHomePlatform::new(&config, "test.yaml")
+    }
+
+    #[test]
+    fn component_with_only_id_is_internal() {
+        let mut module = parse_binary_sensor("    id: hidden_switch\n    command: \"echo ON\"\n")
+            .expect("config with only an id should be valid");
+        let components = module.components();
+        assert_eq!(components.len(), 1);
+        assert!(
+            components[0].is_internal(),
+            "a component with only an id must be internal"
+        );
+    }
+
+    #[test]
+    fn component_with_name_is_not_internal() {
+        let mut module =
+            parse_binary_sensor("    name: \"Front Door\"\n    command: \"echo ON\"\n")
+                .expect("config with a name should be valid");
+        let components = module.components();
+        assert_eq!(components.len(), 1);
+        assert!(
+            !components[0].is_internal(),
+            "a component with a name must not be internal"
+        );
+    }
+
+    #[test]
+    fn component_with_name_and_id_is_not_internal() {
+        let mut module = parse_binary_sensor(
+            "    name: \"Front Door\"\n    id: front_door\n    command: \"echo ON\"\n",
+        )
+        .expect("config with name and id should be valid");
+        let components = module.components();
+        assert_eq!(components.len(), 1);
+        assert!(!components[0].is_internal());
+    }
+
+    #[test]
+    fn component_without_name_or_id_is_rejected() {
+        let result = parse_binary_sensor("    command: \"echo ON\"\n");
+        assert!(
+            result.is_err(),
+            "a component with neither name nor id must be rejected"
+        );
+    }
+
+    #[test]
+    fn explicit_internal_true_overrides_named_default() {
+        let mut module = parse_binary_sensor(
+            "    name: \"Front Door\"\n    internal: true\n    command: \"echo ON\"\n",
+        )
+        .expect("config should be valid");
+        let components = module.components();
+        assert_eq!(components.len(), 1);
+        assert!(
+            components[0].is_internal(),
+            "internal: true must override the named (non-internal) default"
+        );
+    }
+
+    #[test]
+    fn explicit_internal_false_overrides_id_only_default() {
+        let mut module = parse_binary_sensor(
+            "    id: hidden_switch\n    internal: false\n    command: \"echo ON\"\n",
+        )
+        .expect("config should be valid");
+        let components = module.components();
+        assert_eq!(components.len(), 1);
+        assert!(
+            !components[0].is_internal(),
+            "internal: false must override the id-only (internal) default"
         );
     }
 }
