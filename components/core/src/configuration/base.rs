@@ -40,6 +40,12 @@ macro_rules! with_base_entity_properties {
             #[garde(ascii)]
             pub device_class: Option<String>,
 
+            /// Explicitly mark the component as internal or not. When set, this
+            /// overrides the default behaviour (a component with only an `id`
+            /// and no `name` is internal).
+            #[garde(skip)]
+            pub internal: Option<bool>,
+
 
             $(
                 $(#[$field_meta])*
@@ -54,11 +60,13 @@ macro_rules! with_base_entity_properties {
             pub fn is_configured(&self) -> bool {
                 true
             }
-            /// A component that only supplies an `id` (and no `name`) is
-            /// treated as internal: it participates in internal wiring but is
+            /// Whether the component is internal, i.e. wired up internally but
             /// not exposed to connectivity components (api, mqtt, http).
+            ///
+            /// Defaults to true when the component supplies only an `id` and no
+            /// `name`. An explicit `internal` attribute overrides this default.
             pub fn is_internal(&self) -> bool {
-                self.name.is_none()
+                self.internal.unwrap_or_else(|| self.name.is_none())
             }
             /// Validate that at least one of `name` / `id` is provided.
             pub fn validate_identity(&self) -> Result<(), String> {

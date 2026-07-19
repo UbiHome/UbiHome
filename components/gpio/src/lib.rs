@@ -506,4 +506,32 @@ switch:
             "GPIO module should reject a pin number outside the valid GPIO range"
         );
     }
+
+    #[test]
+    fn explicit_internal_true_overrides_named_default() {
+        let config = format!(
+            "{BASE}\nbinary_sensor:\n  - platform: gpio\n    name: \"Front Door\"\n    internal: true\n    pin: 17\n"
+        );
+        let mut module = parse(&config).expect("config should be valid");
+        let components = module.components();
+        assert_eq!(components.len(), 1);
+        assert!(
+            components[0].is_internal(),
+            "internal: true must override the named (non-internal) default"
+        );
+    }
+
+    #[test]
+    fn explicit_internal_false_overrides_id_only_default() {
+        let config = format!(
+            "{BASE}\nbinary_sensor:\n  - platform: gpio\n    id: hidden_switch\n    internal: false\n    pin: 17\n"
+        );
+        let mut module = parse(&config).expect("config should be valid");
+        let components = module.components();
+        assert_eq!(components.len(), 1);
+        assert!(
+            !components[0].is_internal(),
+            "internal: false must override the id-only (internal) default"
+        );
+    }
 }

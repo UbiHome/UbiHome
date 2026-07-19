@@ -106,6 +106,7 @@ impl Module for UbiHomePlatform {
                     accuracy_decimals: None,
                     device_class: None,
                     unit_of_measurement: None,
+                    internal: None,
                     filters: None,
                     platform: "bme280".to_string(),
                 });
@@ -153,6 +154,7 @@ impl Module for UbiHomePlatform {
                 accuracy_decimals: None,
                 device_class: None,
                 unit_of_measurement: None,
+                internal: None,
                 filters: None,
                 platform: "bme280".to_string(),
             });
@@ -200,6 +202,7 @@ impl Module for UbiHomePlatform {
                 accuracy_decimals: None,
                 device_class: None,
                 unit_of_measurement: None,
+                internal: None,
                 filters: None,
                 platform: "bme280".to_string(),
             });
