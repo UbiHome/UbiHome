@@ -5,8 +5,7 @@ use std::{future::Future, pin::Pin, str};
 use tokio::sync::broadcast::{Receiver, Sender};
 use ubihome_core::internal::sensors::UbiComponent;
 use ubihome_core::{
-    config_template, internal::sensors::UbiBinarySensor, ChangedMessage, Module, NoConfig,
-    PublishedMessage,
+    config_template, state::StateStore, ChangedMessage, Module, NoConfig, PublishedMessage,
 };
 
 #[derive(Clone, Deserialize, Debug, Validate)]
@@ -43,41 +42,19 @@ impl Module for UbiHomePlatform {
     }
 
     fn components(&mut self) -> Vec<UbiComponent> {
-        let mut components: Vec<UbiComponent> = Vec::new();
-
-        for (_, any_sensor) in self.config.binary_sensor.clone().unwrap_or_default() {
-            match any_sensor.extra {
-                BinarySensorKind::evdev(_) => {
-                    let object_id = format!(
-                        "{}_{}",
-                        self.config.ubihome.name,
-                        &any_sensor.default.name.clone()
-                    );
-                    let id = &any_sensor.default.id.clone().unwrap_or(object_id.clone());
-                    components.push(UbiComponent::BinarySensor(UbiBinarySensor {
-                        platform: "sensor".to_string(),
-                        icon: any_sensor.default.icon.clone(),
-                        device_class: any_sensor.default.device_class.clone(),
-                        name: any_sensor.default.name.clone(),
-                        id: object_id.clone(),
-                        on_press: any_sensor.default.on_press.clone(),
-                        on_release: any_sensor.default.on_release.clone(),
-                        filters: any_sensor.default.filters.clone(),
-                    }));
-                }
-                _ => {}
-            }
-        }
-        components
+        // TODO: Add events? binary_sensor is currently wired to NoConfig
+        // (see config_template! below), so there is no evdev-specific config
+        // to build entities from yet.
+        Vec::new()
     }
 
     fn run(
         &self,
-        sender: Sender<ChangedMessage>,
+        _sender: Sender<ChangedMessage>,
         _: Receiver<PublishedMessage>,
+        _state: StateStore,
     ) -> Pin<Box<dyn Future<Output = Result<(), Box<dyn std::error::Error>>> + Send + 'static>>
     {
-        let config = self.config.clone();
         Box::pin(async move {
             #[cfg(any(target_os = "macos", target_os = "windows"))]
             {
@@ -94,29 +71,9 @@ impl Module for UbiHomePlatform {
                 //     println!(":(");
                 // }
 
-                if let Some(binary_sensors) = config.binary_sensor.clone() {
-                    for (key, binary_sensor) in binary_sensors {
-                        let cloned_sender = sender.clone();
-                        match binary_sensor.extra {
-                            BinarySensorKind::evdev(gpio_config) => {
-                                debug!("BinarySensor {} is of type evdev", key);
-
-                                // tokio::spawn(async move {
-                                //     let duration = gpio_config
-                                //         .update_interval
-                                //         .unwrap_or(Duration::from_secs(30));
-                                //     let mut interval = time::interval(duration);
-
-                                //     loop {
-                                //         interval.tick().await;
-
-                                //     }
-                                // });
-                            }
-                            _ => {}
-                        }
-                    }
-                }
+                // TODO: Add events? binary_sensor is currently wired to
+                // NoConfig (see config_template! below), so there is no
+                // evdev-specific config to read here yet.
             }
             Ok(())
         })

@@ -6,6 +6,7 @@ use tokio::sync::broadcast::{Receiver, Sender};
 use ubihome_core::constants::is_id_string_option;
 use ubihome_core::constants::is_readable_string;
 use ubihome_core::internal::sensors::UbiComponent;
+use ubihome_core::state::StateStore;
 use ubihome_core::template_button;
 use ubihome_core::with_base_entity_properties;
 use ubihome_core::{
@@ -124,6 +125,7 @@ impl Module for UbiHomePlatform {
         &self,
         _: Sender<ChangedMessage>,
         mut receiver: Receiver<PublishedMessage>,
+        _state: StateStore,
     ) -> Pin<Box<dyn Future<Output = Result<(), Box<dyn std::error::Error>>> + Send + 'static>>
     {
         let buttons = self.buttons.clone();

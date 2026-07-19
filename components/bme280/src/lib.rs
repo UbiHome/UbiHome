@@ -6,6 +6,7 @@ use ubihome_core::{
     config_template,
     constants::{is_id_string_option, is_readable_string},
     internal::sensors::{UbiComponent, UbiSensor},
+    state::StateStore,
     template_sensor, with_base_entity_properties, ChangedMessage, Module, NoConfig,
     PublishedMessage,
 };
@@ -254,6 +255,7 @@ impl Module for UbiHomePlatform {
         &self,
         sender: Sender<ChangedMessage>,
         _: Receiver<PublishedMessage>,
+        _state: StateStore,
     ) -> Pin<Box<dyn Future<Output = Result<(), Box<dyn std::error::Error>>> + Send + 'static>>
     {
         // let mqtt_config = self.mqtt_config.clone();

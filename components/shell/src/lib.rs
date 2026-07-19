@@ -16,6 +16,7 @@ use ubihome_core::template_text_sensor;
 use ubihome_core::{
     config_template,
     internal::sensors::{UbiBinarySensor, UbiButton, UbiSensor},
+    state::StateStore,
     ChangedMessage, Module, PublishedMessage,
 };
 
@@ -313,6 +314,7 @@ impl Module for UbiHomePlatform {
         &self,
         sender: Sender<ChangedMessage>,
         mut receiver: Receiver<PublishedMessage>,
+        _state: StateStore,
     ) -> Pin<Box<dyn Future<Output = Result<(), Box<dyn std::error::Error>>> + Send + 'static>>
     {
         let config = self.config.clone();
@@ -950,7 +952,7 @@ number:
     command_set: "echo {{ value }}"
 "#;
 
-        let module = UbiHomePlatform::new(&config.to_string());
+        let module = UbiHomePlatform::new(&config.to_string(), "config.yml");
         assert!(
             module.is_ok(),
             "Shell module should parse number config successfully"
@@ -997,7 +999,7 @@ number:
     name: "Volume"
 "#;
 
-        let module = UbiHomePlatform::new(&config.to_string());
+        let module = UbiHomePlatform::new(&config.to_string(), "config.yml");
         assert!(
             module.is_ok(),
             "Shell module should parse minimal number config successfully"
@@ -1042,7 +1044,7 @@ text_sensor:
     command: "whoami"
 "#;
 
-        let module = UbiHomePlatform::new(&config.to_string());
+        let module = UbiHomePlatform::new(&config.to_string(), "config.yml");
         assert!(
             module.is_ok(),
             "Shell module should parse text_sensor config successfully"
@@ -1081,7 +1083,7 @@ text_sensor:
     command: "hostname"
 "#;
 
-        let module = UbiHomePlatform::new(&config.to_string());
+        let module = UbiHomePlatform::new(&config.to_string(), "config.yml");
         assert!(
             module.is_ok(),
             "Shell module should parse minimal text_sensor config successfully"

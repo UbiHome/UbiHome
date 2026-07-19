@@ -6,6 +6,7 @@ use tokio::sync::broadcast::{Receiver, Sender};
 use ubihome_core::constants::is_id_string_option;
 use ubihome_core::constants::is_readable_string;
 use ubihome_core::internal::sensors::{UbiComponent, UbiSwitch};
+use ubihome_core::state::StateStore;
 use ubihome_core::template_binary_sensor;
 use ubihome_core::template_switch;
 use ubihome_core::with_base_entity_properties;
@@ -188,6 +189,7 @@ impl Module for UbiHomePlatform {
         &self,
         #[allow(unused_variables)] sender: Sender<ChangedMessage>,
         #[allow(unused_variables, unused_mut)] mut receiver: Receiver<PublishedMessage>,
+        #[allow(unused_variables)] state: StateStore,
     ) -> Pin<Box<dyn Future<Output = Result<(), Box<dyn std::error::Error>>> + Send + 'static>>
     {
         #[allow(unused_variables)]

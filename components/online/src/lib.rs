@@ -13,6 +13,7 @@ use ubihome_core::constants::{is_id_string_option, is_readable_string};
 use ubihome_core::internal::sensors::{UbiBinarySensor, UbiComponent};
 use ubihome_core::template_binary_sensor;
 use ubihome_core::with_base_entity_properties;
+use ubihome_core::state::StateStore;
 use ubihome_core::{config_template, ChangedMessage, Module, NoConfig, PublishedMessage};
 
 #[derive(Clone, Default, Deserialize, Debug, PartialEq, Validate)]
@@ -208,6 +209,7 @@ impl Module for UbiHomePlatform {
         &self,
         sender: Sender<ChangedMessage>,
         _receiver: Receiver<PublishedMessage>,
+        _state: StateStore,
     ) -> Pin<Box<dyn Future<Output = Result<(), Box<dyn std::error::Error>>> + Send + 'static>>
     {
         let binary_sensors = self.binary_sensors.clone();

@@ -39,7 +39,10 @@ use ubihome_core::features::ip::get_ip_address;
 use ubihome_core::features::ip::get_network_mac_address;
 use ubihome_core::NoConfig;
 use ubihome_core::{
-    config_template, internal::sensors::UbiComponent, ChangedMessage, Module, PublishedMessage,
+    config_template,
+    internal::sensors::UbiComponent,
+    state::{EntityState, StateStore},
+    ChangedMessage, Module, PublishedMessage,
 };
 
 use ubihome_core::constants::is_readable_string_option;
@@ -126,7 +129,8 @@ impl Module for UbiHomePlatform {
     fn run(
         &self,
         sender: Sender<ChangedMessage>,
-        mut receiver: Receiver<PublishedMessage>,
+        receiver: Receiver<PublishedMessage>,
+        state: StateStore,
     ) -> Pin<Box<dyn Future<Output = Result<(), Box<dyn std::error::Error>>> + Send + 'static>>
     {
         let ip = get_ip_address().unwrap();
@@ -184,7 +188,8 @@ impl Module for UbiHomePlatform {
         info!("Starting API with config: {:?}", config.api);
 
         Box::pin(async move {
-            if let Ok(PublishedMessage::Components { components }) = receiver.recv().await {
+            {
+                let components = state.components().to_vec();
                 for component in components {
                     match component {
                         UbiComponent::Switch(switch_entity) => {
@@ -357,8 +362,10 @@ impl Module for UbiHomePlatform {
                 let server = server_base.clone();
                 let mut receiver_clone = receiver.resubscribe();
                 let api_components_key_id_clone = api_components_key_id.clone();
+                let api_components_key_id_clone_for_subscribe = api_components_key_id.clone();
                 let api_components_clone = api_components_by_key.clone();
                 let cloned_sender = sender.clone();
+                let state_clone = state.clone();
                 tokio::spawn({
                     async move {
                         debug!("Accepted request from {}", socket.peer_addr().unwrap());
@@ -592,6 +599,92 @@ impl Module for UbiHomePlatform {
                                             "SubscribeStatesRequest: {:?}",
                                             subscribe_states_request
                                         );
+                                        for (entity_key, entity_state) in state_clone.snapshot() {
+                                            let Some(key) = api_components_key_id_clone_for_subscribe
+                                                .get(&entity_key)
+                                            else {
+                                                continue;
+                                            };
+                                            let message = match entity_state {
+                                                EntityState::Switch(state) => {
+                                                    ProtoMessage::SwitchStateResponse(
+                                                        SwitchStateResponse {
+                                                            key: *key,
+                                                            device_id: 0,
+                                                            state,
+                                                        },
+                                                    )
+                                                }
+                                                EntityState::BinarySensor(state) => {
+                                                    ProtoMessage::BinarySensorStateResponse(
+                                                        BinarySensorStateResponse {
+                                                            key: *key,
+                                                            device_id: 0,
+                                                            state,
+                                                            missing_state: false,
+                                                        },
+                                                    )
+                                                }
+                                                EntityState::Sensor(state) => {
+                                                    ProtoMessage::SensorStateResponse(
+                                                        SensorStateResponse {
+                                                            key: *key,
+                                                            device_id: 0,
+                                                            state,
+                                                            missing_state: false,
+                                                        },
+                                                    )
+                                                }
+                                                EntityState::Number(state) => {
+                                                    ProtoMessage::NumberStateResponse(
+                                                        NumberStateResponse {
+                                                            key: *key,
+                                                            device_id: 0,
+                                                            state,
+                                                            missing_state: false,
+                                                        },
+                                                    )
+                                                }
+                                                EntityState::TextSensor(state) => {
+                                                    ProtoMessage::TextSensorStateResponse(
+                                                        TextSensorStateResponse {
+                                                            key: *key,
+                                                            device_id: 0,
+                                                            state,
+                                                            missing_state: false,
+                                                        },
+                                                    )
+                                                }
+                                                EntityState::Light {
+                                                    state,
+                                                    brightness,
+                                                    red,
+                                                    green,
+                                                    blue,
+                                                } => ProtoMessage::LightStateResponse(
+                                                    LightStateResponse {
+                                                        key: *key,
+                                                        device_id: 0,
+                                                        state,
+                                                        brightness: brightness.unwrap_or(0.0),
+                                                        color_mode: 1,
+                                                        color_brightness: brightness
+                                                            .unwrap_or(0.0),
+                                                        red: red.unwrap_or(0.0),
+                                                        green: green.unwrap_or(0.0),
+                                                        blue: blue.unwrap_or(0.0),
+                                                        white: 0.0,
+                                                        color_temperature: 0.0,
+                                                        cold_white: 0.0,
+                                                        warm_white: 0.0,
+                                                        effect: "".to_string(),
+                                                    },
+                                                ),
+                                            };
+                                            if tx.send(message).await.is_err() {
+                                                break;
+                                            }
+                                        }
                                     }
                                     ProtoMessage::SubscribeHomeassistantServicesRequest(
                                         request,
@@ -740,8 +833,6 @@ impl Module for UbiHomePlatform {
 
 #[cfg(test)]
 mod tests {
-    use esphome_native_api::proto::ListEntitiesLightResponse;
-
     use super::*;
 
     #[test]
@@ -757,7 +848,7 @@ api:
 
 "#;
 
-        let api_module = UbiHomePlatform::new(&config.to_string());
+        let api_module = UbiHomePlatform::new(&config.to_string(), "config.yml");
         assert!(api_module.is_ok(), "API module should parse successfully");
 
         let module = api_module.unwrap();
@@ -780,7 +871,7 @@ ubihome:
 api: {}
 "#;
 
-        let api_module = UbiHomePlatform::new(&config.to_string());
+        let api_module = UbiHomePlatform::new(&config.to_string(), "config.yml");
         assert!(api_module.is_ok(), "API module should parse successfully");
 
         let module = api_module.unwrap();
