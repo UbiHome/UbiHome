@@ -15,7 +15,7 @@ pub async fn install(location: &str) {
     use crate::constants::SERVICE_DESCRIPTION;
 
     // TODO: Run update logic if already installed (e.g. stop service before copy)
-    println!("Installing UbiHome to {}", location);
+    println!("Installing UbiHome:");
     println!(" - Creating Folder at {}", location);
     fs::create_dir_all(location).expect("Unable to create directory");
 
@@ -75,6 +75,14 @@ WantedBy=multi-user.target",
     execute_command(format!("systemctl enable {}", service_file).as_str()).await;
     println!("  - Starting Service");
     execute_command(format!("systemctl start {}", service_file).as_str()).await;
+
+    let config_path = Path::new(location).join("config.yaml");
+    if crate::DEFAULT_CONFIG.is_none() && !config_path.exists() {
+        println!(
+            "WARNING: No embedded default configuration and no config.yaml found. The service will fail to start until you place a config.yaml at {}",
+            config_path.display()
+        );
+    }
 
     println!("Successfully installed and started!");
     println!("Query the status via `systemctl status {}`", service_file);

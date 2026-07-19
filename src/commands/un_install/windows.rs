@@ -38,7 +38,7 @@ fn get_service() -> windows_service::Result<(ServiceManager, Service)> {
 }
 
 pub async fn install(location: &str) -> Result<(), Box<dyn std::error::Error>> {
-    println!("Installing UbiHome to {}", location);
+    println!("Installing UbiHome:");
     println!(" - Creating Folder at {}", location);
     fs::create_dir_all(location).expect("Unable to create directory");
 
@@ -137,6 +137,14 @@ pub async fn install(location: &str) -> Result<(), Box<dyn std::error::Error>> {
     } else {
         service.start::<&OsStr>(&[])?;
         println!(" - Service started.");
+    }
+
+    let config_path = Path::new(location).join("config.yaml");
+    if crate::DEFAULT_CONFIG.is_none() && !config_path.exists() {
+        println!(
+            "WARNING: No embedded default configuration and no config.yaml found. The service will fail to start until you place a config.yaml at {}",
+            config_path.display()
+        );
     }
 
     Ok(())
