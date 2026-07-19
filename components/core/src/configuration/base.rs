@@ -211,11 +211,6 @@ macro_rules! template_switch {
                 $vis struct $name {
                     // #[garde(dive)]
                     // pub filters: Option<Vec<BinarySensorFilter>>,
-                    pub unit_of_measurement: Option<String>,
-                    pub state_class: Option<String>,
-                    pub min_value: Option<f32>,
-                    pub max_value: Option<f32>,
-                    pub step: Option<f32>,
 
                     $(
                         $(#[$field_meta])*

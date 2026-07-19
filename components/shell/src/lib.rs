@@ -91,7 +91,6 @@ template_button! {
 template_switch! {
 
     #[derive(Clone, Deserialize, Debug, Validate)]
-    #[garde(allow_unvalidated)]
     pub struct ShellSwitchConfig {
         #[garde(length(min = 1))]
         pub command_on: String,

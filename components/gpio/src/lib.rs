@@ -21,22 +21,25 @@ pub enum GpioDevice {
 }
 
 #[derive(Clone, Deserialize, Debug, Validate)]
-#[garde(allow_unvalidated)]
 pub struct GpioConfig {
+    #[garde(dive)]
     pub device: GpioDevice,
 }
 
+// Highest GPIO line count across supported models (BCM2711 on the Pi 4/400
+// exposes lines 0-57); keeps typos (e.g. a physical header pin number) from
+// silently reaching rppal, which otherwise only fails at pin-acquisition time.
 #[derive(Clone, Deserialize, Debug, Validate)]
-#[garde(allow_unvalidated)]
 pub struct GpioSensorConfig {
+    #[garde(range(min = 0, max = 57))]
     pub pin: u8, // TODO: Use GPIO types or library
+    #[garde(skip)]
     pub pull_up: Option<bool>,
 }
 
 template_binary_sensor! {
 
 #[derive(Clone, Deserialize, Debug, Validate)]
-#[garde(allow_unvalidated)]
 pub struct GpioBinarySensorConfig {
     #[serde(flatten)]
     #[garde(dive)]
@@ -77,17 +80,18 @@ impl GpioRestoreMode {
 }
 
 #[derive(Clone, Deserialize, Debug, Validate)]
-#[garde(allow_unvalidated)]
 pub struct GpioOutputConfig {
+    #[garde(range(min = 0, max = 57))]
     pub pin: u8, // TODO: Use GPIO types or library
+    #[garde(skip)]
     pub inverted: Option<bool>,
+    #[garde(dive)]
     pub restore_mode: Option<GpioRestoreMode>,
 }
 
 template_switch! {
 
 #[derive(Clone, Deserialize, Debug, Validate)]
-#[garde(allow_unvalidated)]
 pub struct GpioSwitchConfig {
     #[serde(flatten)]
     #[garde(dive)]
@@ -477,6 +481,28 @@ switch:
         assert_eq!(
             switch.restore_mode, None,
             "restore_mode should default to None"
+        );
+    }
+
+    #[test]
+    fn test_switch_config_rejects_out_of_range_pin() {
+        let config = r#"
+ubihome:
+  name: "Test Switch Invalid Pin"
+
+gpio:
+  device: raspberryPi
+
+switch:
+  - platform: gpio
+    name: "Relay"
+    pin: 200
+"#;
+
+        let module = UbiHomePlatform::new(config, "config.yml");
+        assert!(
+            module.is_err(),
+            "GPIO module should reject a pin number outside the valid GPIO range"
         );
     }
 }
