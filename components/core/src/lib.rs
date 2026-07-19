@@ -9,6 +9,8 @@ pub mod utils;
 #[cfg(feature = "validation")]
 pub mod validation;
 pub extern crate serde_value;
+#[doc(hidden)]
+pub use paste;
 
 use garde::Validate;
 use internal::sensors::UbiComponent;

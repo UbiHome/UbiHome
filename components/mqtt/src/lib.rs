@@ -114,6 +114,11 @@ impl Module for UbiHomePlatform {
                     let mut topics: Vec<String> = vec![];
 
                     for component in components {
+                        // Internal components (configured with an
+                        // id but no name) are not exposed over MQTT.
+                        if component.is_internal() {
+                          continue;
+                        }
                         match component {
                             // TODO: Use object_id generator
                             // let id = sensor.unique_id.unwrap_or(format!(
