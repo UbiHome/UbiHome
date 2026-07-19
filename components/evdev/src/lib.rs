@@ -29,6 +29,9 @@ config_template!(
 
 #[derive(Clone, Debug)]
 pub struct UbiHomePlatform {
+    // Reserved for when binary_sensor gets its own evdev config extension
+    // (see the TODO on config_template! below) instead of NoConfig.
+    #[allow(dead_code)]
     config: CoreConfig,
 }
 
@@ -38,7 +41,7 @@ impl Module for UbiHomePlatform {
             ubihome_core::validation::validate_config::<CoreConfig>(config_string, config_path)?;
 
         info!("Evdev config: {:?}", config);
-        Ok(UbiHomePlatform { config: config })
+        Ok(UbiHomePlatform { config })
     }
 
     fn components(&mut self) -> Vec<UbiComponent> {
@@ -75,7 +78,10 @@ impl Module for UbiHomePlatform {
                 // NoConfig (see config_template! below), so there is no
                 // evdev-specific config to read here yet.
             }
-            Ok(())
+            #[cfg(target_os = "linux")]
+            {
+                Ok(())
+            }
         })
     }
 }

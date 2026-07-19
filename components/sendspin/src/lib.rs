@@ -17,8 +17,8 @@ use std::{future::Future, pin::Pin, str};
 use tokio::sync::broadcast::Receiver;
 use tokio::sync::broadcast::Sender;
 use ubihome_core::internal::sensors::UbiComponent;
-use ubihome_core::NoConfig;
 use ubihome_core::state::StateStore;
+use ubihome_core::NoConfig;
 use ubihome_core::{config_template, ChangedMessage, Module, PublishedMessage};
 
 /// Type alias for the clock sync reference

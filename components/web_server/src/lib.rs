@@ -26,8 +26,8 @@ use serde::Deserializer;
 use std::collections::HashMap;
 use std::{future::Future, pin::Pin, str};
 use tokio::sync::broadcast::{Receiver, Sender};
-use ubihome_core::NoConfig;
 use ubihome_core::state::StateStore;
+use ubihome_core::NoConfig;
 use ubihome_core::{config_template, ChangedMessage, Module, PublishedMessage};
 
 #[derive(Clone, Deserialize, Debug, Validate)]

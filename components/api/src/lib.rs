@@ -600,8 +600,9 @@ impl Module for UbiHomePlatform {
                                             subscribe_states_request
                                         );
                                         for (entity_key, entity_state) in state_clone.snapshot() {
-                                            let Some(key) = api_components_key_id_clone_for_subscribe
-                                                .get(&entity_key)
+                                            let Some(key) =
+                                                api_components_key_id_clone_for_subscribe
+                                                    .get(&entity_key)
                                             else {
                                                 continue;
                                             };
@@ -668,8 +669,7 @@ impl Module for UbiHomePlatform {
                                                         state,
                                                         brightness: brightness.unwrap_or(0.0),
                                                         color_mode: 1,
-                                                        color_brightness: brightness
-                                                            .unwrap_or(0.0),
+                                                        color_brightness: brightness.unwrap_or(0.0),
                                                         red: red.unwrap_or(0.0),
                                                         green: green.unwrap_or(0.0),
                                                         blue: blue.unwrap_or(0.0),
@@ -848,7 +848,7 @@ api:
 
 "#;
 
-        let api_module = UbiHomePlatform::new(&config.to_string(), "config.yml");
+        let api_module = UbiHomePlatform::new(config, "config.yml");
         assert!(api_module.is_ok(), "API module should parse successfully");
 
         let module = api_module.unwrap();
@@ -871,7 +871,7 @@ ubihome:
 api: {}
 "#;
 
-        let api_module = UbiHomePlatform::new(&config.to_string(), "config.yml");
+        let api_module = UbiHomePlatform::new(config, "config.yml");
         assert!(api_module.is_ok(), "API module should parse successfully");
 
         let module = api_module.unwrap();
