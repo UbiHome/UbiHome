@@ -114,9 +114,7 @@ pub async fn uninstall(location: &str) {
         return;
     }
 
-    println!("Uninstalling UbiHome at {}", location);
-    println!(" - Remove Folder at {}", location);
-    fs::remove_dir(location).unwrap();
+    println!("Uninstalling UbiHome:");
 
     println!("- Removing Systemd Service");
     let service_file = service_file();
@@ -126,5 +124,9 @@ pub async fn uninstall(location: &str) {
     fs::remove_file(systemd_file_path).expect("Unable to remove file");
 
     execute_command("systemctl daemon-reload").await;
-    println!("TODO: remove log files?");
+
+    println!(" - Remove Folder at {}", location);
+    fs::remove_dir(location).unwrap();
+
+    println!("Successfully uninstalled UbiHome.");
 }

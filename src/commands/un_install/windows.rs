@@ -146,12 +146,13 @@ pub async fn install(location: &str) -> Result<(), Box<dyn std::error::Error>> {
             config_path.display()
         );
     }
+    println!("Successfully installed and started!");
 
     Ok(())
 }
 
 pub async fn uninstall(location: &str) -> Result<(), Box<dyn std::error::Error>> {
-    println!("Uninstalling UbiHome to");
+    println!("Uninstalling UbiHome:");
 
     if let Ok((service_manager, service)) = get_service() {
         print!(" - Removing Service... ");
@@ -171,24 +172,30 @@ pub async fn uninstall(location: &str) -> Result<(), Box<dyn std::error::Error>>
         // To check if the service is deleted from the database, we have to poll it ourselves.
         let start = Instant::now();
         let timeout = Duration::from_secs(5);
+        let mut deleted = false;
         while start.elapsed() < timeout {
             if let Err(windows_service::Error::Winapi(e)) =
                 service_manager.open_service(constants::SERVICE_NAME, ServiceAccess::QUERY_STATUS)
             {
                 if e.raw_os_error() == Some(ERROR_SERVICE_DOES_NOT_EXIST as i32) {
-                    println!("service is deleted.");
+                    println!("service deleted");
+                    deleted = true;
                     break;
                 }
             }
             sleep(Duration::from_secs(1));
         }
-        println!("service is marked for deletion.");
+        if !deleted {
+            println!("service is marked for deletion");
+        }
     } else {
         println!(" - Service already removed");
     }
 
     println!(" - Deleting Folder and contents at {}", location);
     fs::remove_dir_all(location).expect("Unable to delete directory");
+
+    println!("Successfully uninstalled UbiHome.");
 
     Ok(())
 }
