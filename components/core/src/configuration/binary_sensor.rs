@@ -35,6 +35,11 @@ pub enum ActionType {
 
     #[serde(rename = "button.press")]
     ButtonPress(#[garde(ascii)] String),
+
+    /// Pauses the action list for the configured duration before running the
+    /// next action.
+    #[serde(rename = "delay", deserialize_with = "deserialize_duration")]
+    Delay(#[garde(skip)] Duration),
 }
 
 #[derive(Clone, Serialize, Deserialize, Debug, Validate)]
