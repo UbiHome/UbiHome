@@ -9,7 +9,6 @@ use tokio::{
     sync::broadcast::{Receiver, Sender},
     time,
 };
-use ubihome_core::constants::{is_id_string_option, is_readable_string};
 use ubihome_core::internal::sensors::{UbiBinarySensor, UbiComponent};
 use ubihome_core::template_binary_sensor;
 use ubihome_core::with_base_entity_properties;
@@ -168,7 +167,8 @@ impl Module for UbiHomePlatform {
                     .device_class
                     .clone()
                     .or_else(|| Some("connectivity".to_string())),
-                name: binary_sensor.name.clone(),
+                name: binary_sensor.name.clone().unwrap_or_default(),
+                internal: binary_sensor.internal,
                 id: id.clone(),
                 on_press: binary_sensor.on_press.clone(),
                 on_release: binary_sensor.on_release.clone(),

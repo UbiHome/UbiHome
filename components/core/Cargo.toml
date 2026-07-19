@@ -17,9 +17,13 @@ duration-str = "0.16.1"
 tokio = { version = "1", features = ["full"] }
 convert_case = "0.8.0"
 garde = { version = "0.22.1", features = ["serde", "regex", "derive"] }
+paste = "1.0"
 regex = "1.12.2"
 getifs = { version = "0.4", optional = true }
 serde-saphyr = { version = "0.0.26", features = [
   "garde",
   "miette",
 ], optional = true }
+
+[dev-dependencies]
+serde_json = "1.0"

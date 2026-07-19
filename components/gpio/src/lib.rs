@@ -3,8 +3,6 @@ use serde::{Deserialize, Deserializer};
 use std::collections::HashMap;
 use std::{future::Future, pin::Pin, str};
 use tokio::sync::broadcast::{Receiver, Sender};
-use ubihome_core::constants::is_id_string_option;
-use ubihome_core::constants::is_readable_string;
 use ubihome_core::internal::sensors::{UbiComponent, UbiSwitch};
 use ubihome_core::template_binary_sensor;
 use ubihome_core::template_switch;
@@ -133,7 +131,8 @@ impl Module for UbiHomePlatform {
                 platform: "sensor".to_string(),
                 icon: binary_sensor.icon.clone(),
                 device_class: binary_sensor.device_class.clone(),
-                name: binary_sensor.name.clone(),
+                name: binary_sensor.name.clone().unwrap_or_default(),
+                internal: binary_sensor.internal,
                 id: id.clone(),
                 on_press: binary_sensor.on_press.clone(),
                 on_release: binary_sensor.on_release.clone(),
@@ -155,7 +154,8 @@ impl Module for UbiHomePlatform {
                 platform: "sensor".to_string(),
                 icon: switch.icon.clone(),
                 device_class: switch.device_class.clone(),
-                name: switch.name.clone(),
+                name: switch.name.clone().unwrap_or_default(),
+                internal: switch.internal,
                 id: id.clone(),
                 assumed_state: false,
             }));
