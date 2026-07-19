@@ -1,0 +1,158 @@
+//! Builtin components that are compiled directly into the main binary instead
+//! of living in a `ubihome-*` platform crate.
+//!
+//! Template switches and globals are handled here because they are tightly
+//! integrated with the central runtime: their automations reference entities
+//! (switches, buttons) and globals that belong to *other* platforms, and those
+//! cross-cutting references are only resolvable on the central message bus in
+//! [`crate::commands::run`]. A standalone platform crate only sees its own
+//! entities, so it could not drive them. See `documentation` for the rationale.
+
+pub mod globals;
+pub mod template_switch;
+
+use std::collections::HashMap;
+
+use garde::Validate;
+use serde::de::IntoDeserializer;
+use serde::Deserialize;
+use tokio::sync::broadcast::{Receiver, Sender};
+use tokio::task::JoinSet;
+use ubihome_core::configuration::automation::{Action, ActionType};
+use ubihome_core::serde_value::Value;
+use ubihome_core::PublishedMessage;
+
+pub use globals::{GlobalConfig, Globals};
+pub use template_switch::TemplateSwitchConfig;
+
+/// The switch platform name handled by the builtin template switch.
+pub const TEMPLATE_PLATFORM: &str = "template";
+/// Top-level config sections handled directly by the main binary (i.e. not
+/// loaded as dynamic platform crates).
+pub const BUILTIN_SECTIONS: &[&str] = &["globals"];
+
+#[derive(Debug, Deserialize, Validate)]
+#[garde(allow_unvalidated)]
+struct BuiltinRoot {
+    #[serde(default)]
+    #[garde(skip)]
+    switch: Vec<Value>,
+
+    #[serde(default)]
+    #[garde(dive)]
+    globals: Vec<GlobalConfig>,
+}
+
+/// The parsed builtin configuration.
+#[derive(Debug, Default)]
+pub struct BuiltinConfig {
+    pub template_switches: Vec<TemplateSwitchConfig>,
+    pub globals: Vec<GlobalConfig>,
+}
+
+fn platform_of(value: &Value) -> Option<&str> {
+    if let Value::Map(entries) = value {
+        for (key, val) in entries {
+            if let (Value::String(k), Value::String(v)) = (key, val) {
+                if k == "platform" {
+                    return Some(v.as_str());
+                }
+            }
+        }
+    }
+    None
+}
+
+/// Parse the template switches and globals out of the raw configuration.
+pub fn parse(config_string: &str, config_path: &str) -> Result<BuiltinConfig, String> {
+    let root =
+        ubihome_core::validation::validate_config::<BuiltinRoot>(config_string, config_path)?;
+
+    let mut template_switches = Vec::new();
+    for raw in root.switch {
+        if platform_of(&raw) != Some(TEMPLATE_PLATFORM) {
+            continue;
+        }
+        let switch = TemplateSwitchConfig::deserialize(raw.into_deserializer())
+            .map_err(|e| format!("Invalid template switch configuration: {}", e))?;
+        switch
+            .validate_with(&())
+            .map_err(|e| format!("Invalid template switch '{}': {}", switch.name, e))?;
+        template_switches.push(switch);
+    }
+
+    Ok(BuiltinConfig {
+        template_switches,
+        globals: root.globals,
+    })
+}
+
+/// Execute a list of automation actions by publishing the corresponding
+/// messages onto the internal bus. Shared by every trigger site (binary sensor
+/// `on_press`/`on_release`, template switch `turn_on_action`/`turn_off_action`).
+pub fn execute_actions(actions: &[Action], tx: &Sender<PublishedMessage>, globals: &Globals) {
+    for action in actions {
+        match &action.action {
+            ActionType::SwitchTurnOn(key) => {
+                let _ = tx.send(PublishedMessage::SwitchStateCommand {
+                    key: key.clone(),
+                    state: true,
+                });
+            }
+            ActionType::SwitchTurnOff(key) => {
+                let _ = tx.send(PublishedMessage::SwitchStateCommand {
+                    key: key.clone(),
+                    state: false,
+                });
+            }
+            ActionType::ButtonPress(key) => {
+                let _ = tx.send(PublishedMessage::ButtonPressed { key: key.clone() });
+            }
+            ActionType::GlobalsSet { id, value } => {
+                globals.set(id, value);
+            }
+        }
+    }
+}
+
+/// Spawn the runtime handler for template switches. It listens for
+/// [`PublishedMessage::SwitchStateCommand`] targeting a template switch, runs
+/// the matching `turn_on_action`/`turn_off_action`, and (when `optimistic`)
+/// publishes the new state back onto the bus so connected front-ends update.
+pub fn spawn_template_switches(
+    tasks: &mut JoinSet<()>,
+    switches: Vec<TemplateSwitchConfig>,
+    tx: Sender<PublishedMessage>,
+    globals: Globals,
+) {
+    if switches.is_empty() {
+        return;
+    }
+    let switches: HashMap<String, TemplateSwitchConfig> = switches
+        .into_iter()
+        .map(|s| (s.get_object_id(), s))
+        .collect();
+    let mut receiver: Receiver<PublishedMessage> = tx.subscribe();
+    tasks.spawn(async move {
+        while let Ok(msg) = receiver.recv().await {
+            if let PublishedMessage::SwitchStateCommand { key, state } = msg {
+                if let Some(switch) = switches.get(&key) {
+                    let actions = if state {
+                        switch.turn_on_action.as_deref()
+                    } else {
+                        switch.turn_off_action.as_deref()
+                    };
+                    if let Some(actions) = actions {
+                        execute_actions(actions, &tx, &globals);
+                    }
+                    if switch.optimistic {
+                        let _ = tx.send(PublishedMessage::SwitchStateChange {
+                            key: key.clone(),
+                            state,
+                        });
+                    }
+                }
+            }
+        }
+    });
+}

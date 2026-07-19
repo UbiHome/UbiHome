@@ -1,3 +1,4 @@
+mod builtins;
 mod components;
 mod config;
 mod constants;
