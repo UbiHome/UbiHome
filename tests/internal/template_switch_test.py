@@ -105,6 +105,42 @@ switch:
     assert "Configuration is valid." in output
 
 
+async def test_template_switch_globals_get_lambda_validate():
+    """
+    A template switch can read its state from a global with a `globals.get`
+    lambda (written in YAML, no code).
+    """
+
+    config = """
+ubihome:
+  name: test_device
+
+globals:
+  - id: relay_state
+    type: bool
+    initial_value: "false"
+
+switch:
+  - platform: template
+    name: "Relay"
+    id: relay
+    lambda:
+      globals.get: relay_state
+    turn_on_action:
+      - globals.set:
+          id: relay_state
+          value: "true"
+    turn_off_action:
+      - globals.set:
+          id: relay_state
+          value: "false"
+"""
+    output, error = await run_ubihome("validate", config=config, extra_logging=False)
+
+    assert not error, f"Unexpected error: {error}"
+    assert "Configuration is valid." in output
+
+
 async def test_globals_invalid_type_rejected():
     """An unknown `globals` type is a configuration error."""
 

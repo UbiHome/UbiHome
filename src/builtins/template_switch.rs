@@ -3,6 +3,15 @@ use serde::Deserialize;
 use ubihome_core::configuration::automation::Action;
 use ubihome_core::utils::format_id;
 
+/// A YAML-expressed state source for a template switch `lambda`. This avoids
+/// C++ lambdas: the switch state is read directly from a global.
+#[derive(Clone, Debug, Deserialize, Validate)]
+pub enum LambdaExpr {
+    /// Report the switch state from a `bool` [`globals`] variable.
+    #[serde(rename = "globals.get")]
+    GlobalsGet(#[garde(ascii)] String),
+}
+
 /// Configuration of a `switch` entry with `platform: template`.
 ///
 /// Mirrors a subset of the ESPHome template switch
@@ -43,6 +52,13 @@ pub struct TemplateSwitchConfig {
     #[garde(skip)]
     pub assumed_state: Option<bool>,
 
+    /// Optional YAML "lambda" that sources the switch state from a global,
+    /// e.g. `lambda: { globals.get: my_flag }`. When set, the reported state
+    /// tracks that global instead of the optimistic command state.
+    #[serde(default)]
+    #[garde(dive)]
+    pub lambda: Option<LambdaExpr>,
+
     /// Actions run when the switch is turned on.
     #[serde(default)]
     #[garde(dive)]
@@ -63,8 +79,19 @@ impl TemplateSwitchConfig {
         format_id(&self.id, &self.name)
     }
 
-    /// Whether Home Assistant should treat the switch state as assumed.
+    /// Whether Home Assistant should treat the switch state as assumed. A
+    /// `globals.get` lambda makes the state known, so it is not assumed.
     pub fn is_assumed_state(&self) -> bool {
-        self.assumed_state.unwrap_or(self.optimistic)
+        self.assumed_state
+            .unwrap_or(self.optimistic && self.lambda.is_none())
+    }
+
+    /// The id of the global this switch reads its state from, if a
+    /// `globals.get` lambda is configured.
+    pub fn state_global(&self) -> Option<&str> {
+        match &self.lambda {
+            Some(LambdaExpr::GlobalsGet(id)) => Some(id.as_str()),
+            None => None,
+        }
     }
 }

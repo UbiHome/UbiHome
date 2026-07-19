@@ -7,7 +7,9 @@ A [template](/features/platforms/template/) switch turns a binary sensor input
 into on/off automations. Here a [shell](/features/platforms/shell/) binary
 sensor toggles the template switch, whose `turn_on_action` / `turn_off_action`
 run shell commands (via [button](/features/entities/button/) presses) and track
-state in a [global](/features/components/globals/).
+state in a [global](/features/components/globals/). The switch's `lambda` reads
+that global back with `globals.get`, so its reported state always reflects the
+global.
 
 ```yaml
 ubihome:
@@ -24,7 +26,8 @@ switch:
   - platform: template
     name: 'Desk Light'
     id: desk_light
-    optimistic: true
+    lambda:
+      globals.get: light_on
     turn_on_action:
       - button.press: turn_light_on
       - globals.set:

@@ -133,23 +133,66 @@ pub fn spawn_template_switches(
         .map(|s| (s.get_object_id(), s))
         .collect();
     let mut receiver: Receiver<PublishedMessage> = tx.subscribe();
+    let mut global_changes = globals.subscribe();
     tasks.spawn(async move {
-        while let Ok(msg) = receiver.recv().await {
-            if let PublishedMessage::SwitchStateCommand { key, state } = msg {
-                if let Some(switch) = switches.get(&key) {
-                    let actions = if state {
-                        switch.turn_on_action.as_deref()
-                    } else {
-                        switch.turn_off_action.as_deref()
-                    };
-                    if let Some(actions) = actions {
-                        execute_actions(actions, &tx, &globals);
+        // Publish the initial state of switches whose `lambda` reads a global.
+        for (key, switch) in &switches {
+            if let Some(id) = switch.state_global() {
+                if let Some(state) = globals.get_bool(id) {
+                    log::debug!("template switch '{}' initial state from global '{}': {}", key, id, state);
+                    let _ = tx.send(PublishedMessage::SwitchStateChange {
+                        key: key.clone(),
+                        state,
+                    });
+                }
+            }
+        }
+
+        loop {
+            tokio::select! {
+                msg = receiver.recv() => {
+                    match msg {
+                        Ok(PublishedMessage::SwitchStateCommand { key, state }) => {
+                            if let Some(switch) = switches.get(&key) {
+                                let actions = if state {
+                                    switch.turn_on_action.as_deref()
+                                } else {
+                                    switch.turn_off_action.as_deref()
+                                };
+                                if let Some(actions) = actions {
+                                    execute_actions(actions, &tx, &globals);
+                                }
+                                // With a `globals.get` lambda the state follows the
+                                // global (published via the change notification
+                                // below), so only optimistic switches without a
+                                // lambda echo the command.
+                                if switch.optimistic && switch.state_global().is_none() {
+                                    let _ = tx.send(PublishedMessage::SwitchStateChange {
+                                        key,
+                                        state,
+                                    });
+                                }
+                            }
+                        }
+                        // Ignore other messages; stop only when the bus closes.
+                        Ok(_) => {}
+                        Err(_) => break,
                     }
-                    if switch.optimistic {
-                        let _ = tx.send(PublishedMessage::SwitchStateChange {
-                            key: key.clone(),
-                            state,
-                        });
+                }
+                changed = global_changes.recv() => {
+                    // A lagged receiver just misses an update; keep going.
+                    if let Ok(id) = changed {
+                        for (key, switch) in &switches {
+                            if switch.state_global() == Some(id.as_str()) {
+                                if let Some(state) = globals.get_bool(&id) {
+                                    log::debug!("template switch '{}' state from global '{}': {}", key, id, state);
+                                    let _ = tx.send(PublishedMessage::SwitchStateChange {
+                                        key: key.clone(),
+                                        state,
+                                    });
+                                }
+                            }
+                        }
                     }
                 }
             }

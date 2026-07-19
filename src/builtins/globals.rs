@@ -3,6 +3,7 @@ use std::sync::{Arc, Mutex};
 
 use garde::Validate;
 use serde::Deserialize;
+use tokio::sync::broadcast;
 
 /// Supported global variable types.
 ///
@@ -81,11 +82,15 @@ pub fn validate_value(value_type: &GlobalType, value: &str) -> Result<(), String
 }
 
 /// Shared runtime store for global variables. Cloned into every task that can
-/// execute a `globals.set` action.
-#[derive(Clone, Default)]
+/// execute a `globals.set` action or read a global (e.g. a template switch
+/// whose `lambda` is `globals.get`).
+#[derive(Clone)]
 pub struct Globals {
     values: Arc<Mutex<HashMap<String, String>>>,
     types: Arc<HashMap<String, GlobalType>>,
+    /// Broadcasts the id of a global whenever its value changes, so readers
+    /// (like template switch `globals.get` lambdas) can update live.
+    changes: broadcast::Sender<String>,
 }
 
 impl Globals {
@@ -96,9 +101,11 @@ impl Globals {
             values.insert(config.id.clone(), config.initial());
             types.insert(config.id.clone(), config.value_type.clone());
         }
+        let (changes, _) = broadcast::channel(64);
         Globals {
             values: Arc::new(Mutex::new(values)),
             types: Arc::new(types),
+            changes,
         }
     }
 
@@ -113,14 +120,34 @@ impl Globals {
             log::warn!("globals.set: invalid value for global '{}': {}", id, e);
             return;
         }
-        let mut values = self.values.lock().unwrap();
-        log::debug!("globals.set: {} = {}", id, value);
-        values.insert(id.to_string(), value.to_string());
+        {
+            let mut values = self.values.lock().unwrap();
+            log::debug!("globals.set: {} = {}", id, value);
+            values.insert(id.to_string(), value.to_string());
+        }
+        // Notify readers; an error just means nobody is currently subscribed.
+        let _ = self.changes.send(id.to_string());
     }
 
     /// Current value of a global, if it exists.
     #[allow(dead_code)]
     pub fn get(&self, id: &str) -> Option<String> {
         self.values.lock().unwrap().get(id).cloned()
+    }
+
+    /// Current value of a global interpreted as a boolean (`globals.get` on a
+    /// `bool` global). Returns `None` for unknown ids or non-boolean values.
+    pub fn get_bool(&self, id: &str) -> Option<bool> {
+        match self.get(id)?.trim().to_lowercase().as_str() {
+            "true" => Some(true),
+            "false" => Some(false),
+            _ => None,
+        }
+    }
+
+    /// Subscribe to global-change notifications (yields the id of each changed
+    /// global).
+    pub fn subscribe(&self) -> broadcast::Receiver<String> {
+        self.changes.subscribe()
     }
 }

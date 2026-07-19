@@ -23,8 +23,21 @@ globals:
 | `initial_value` | Value the global starts with. Defaults per type.        | `'false'` |
 | `restore_value` | Accepted for compatibility; persistence is not implemented yet. | `false` |
 
-Lambdas are not supported yet, so globals are written via the `globals.set`
-[action](/features/components/actions/) and cannot be read back in expressions.
+Globals are written via the `globals.set` [action](/features/components/actions/).
+A `bool` global can also be read as the state of a
+[template switch](/features/platforms/template/) using a `globals.get` lambda —
+written in YAML, not code:
+
+```yaml
+switch:
+  - platform: template
+    name: 'Relay'
+    lambda:
+      globals.get: door_open
+```
+
+C++ lambdas are not supported, so globals cannot yet be read back in arbitrary
+expressions.
 
 Similar to ESPHome: [Globals](https://esphome.io/components/globals/)
 
