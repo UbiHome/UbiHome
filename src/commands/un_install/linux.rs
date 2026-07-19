@@ -19,9 +19,28 @@ pub async fn install(location: &str) {
     println!(" - Creating Folder at {}", location);
     fs::create_dir_all(location).expect("Unable to create directory");
 
+    let current_exe = env::current_exe().unwrap();
     let new_path = Path::new(location).join("ubihome");
-    println!(" - Copying Binary to {}", new_path.display());
-    fs::copy(env::current_exe().unwrap(), new_path).expect("Unable to copy file");
+
+    // Compare against the canonicalized target directory (not `new_path` itself) so this
+    // also works when no binary exists at the target location yet. Overwriting the binary
+    // that is currently executing fails with "Text file busy" on Linux/macOS.
+    let already_in_place = new_path
+        .parent()
+        .and_then(|dir| dir.canonicalize().ok())
+        .map(|dir| dir.join("ubihome"))
+        .and_then(|target| current_exe.canonicalize().ok().map(|exe| exe == target))
+        .unwrap_or(false);
+
+    if already_in_place {
+        println!(
+            " - Binary is already at {}, skipping copy",
+            new_path.display()
+        );
+    } else {
+        println!(" - Copying Binary to {}", new_path.display());
+        fs::copy(&current_exe, &new_path).expect("Unable to copy file");
+    }
 
     let service_file = service_file();
 

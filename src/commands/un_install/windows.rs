@@ -1,5 +1,4 @@
-use std::{env, fs, path::Path};
-use std::ffi::OsStr;
+use std::{env, ffi::OsStr, fs, path::Path};
 
 use log::debug;
 
@@ -10,20 +9,44 @@ pub async fn install(location: &str) -> Result<(), Box<dyn std::error::Error>> {
     println!(" - Creating Folder at {}", location);
     fs::create_dir_all(location).expect("Unable to create directory");
 
+    let current_exe = env::current_exe().unwrap();
     let new_path = Path::new(location).join("ubihome.exe");
-    // TODO: Error if executed in the same location
-    println!(" - Copying Binary to {}", new_path.display());
-    fs::copy(env::current_exe().unwrap(), &new_path).expect("Unable to copy file");
+
+    // Compare against the canonicalized target directory (not `new_path` itself) so this
+    // also works when no binary exists at the target location yet.
+    let already_in_place = new_path
+        .parent()
+        .and_then(|dir| dir.canonicalize().ok())
+        .map(|dir| dir.join("ubihome.exe"))
+        .and_then(|target| current_exe.canonicalize().ok().map(|exe| exe == target))
+        .unwrap_or(false);
+
+    if already_in_place {
+        println!(
+            " - Binary is already at {}, skipping copy",
+            new_path.display()
+        );
+    } else {
+        println!(" - Copying Binary to {}", new_path.display());
+        fs::copy(&current_exe, &new_path).expect("Unable to copy file");
+    }
 
     let current_dir = env::current_dir().unwrap().to_string_lossy().to_string();
     let config_file_path = Path::new(&current_dir).join("config.yaml");
     let new_config_file_path = Path::new(location).join("config.yaml");
 
-    println!(
-        " - Copying config.yml to {}",
-        new_config_file_path.display()
-    );
-    fs::copy(config_file_path, &new_config_file_path).expect("Unable to copy file");
+    if config_file_path.exists() {
+        println!(
+            " - Copying config.yml to {}",
+            new_config_file_path.display()
+        );
+        fs::copy(config_file_path, &new_config_file_path).expect("Unable to copy file");
+    } else {
+        println!(
+            " - No config.yml found at {} Please supply your own.",
+            config_file_path.display()
+        );
+    }
 
     use std::ffi::OsString;
     use std::time::Duration;
@@ -31,7 +54,7 @@ pub async fn install(location: &str) -> Result<(), Box<dyn std::error::Error>> {
         service::{
             ServiceAccess, ServiceAction, ServiceActionType, ServiceErrorControl,
             ServiceFailureActions, ServiceFailureResetPeriod, ServiceInfo, ServiceStartType,
-            ServiceType,
+            ServiceState, ServiceType,
         },
         service_manager::{ServiceManager, ServiceManagerAccess},
     };
@@ -59,8 +82,11 @@ pub async fn install(location: &str) -> Result<(), Box<dyn std::error::Error>> {
         account_password: None,
     };
 
+    let service_access =
+        ServiceAccess::START | ServiceAccess::CHANGE_CONFIG | ServiceAccess::QUERY_STATUS;
+
     let service = if let Ok(service) =
-        service_manager.open_service(constants::SERVICE_NAME, ServiceAccess::START | ServiceAccess::CHANGE_CONFIG)
+        service_manager.open_service(constants::SERVICE_NAME, service_access)
     {
         debug!("Service already exists, updating...");
         service.set_description(constants::SERVICE_DESCRIPTION)?;
@@ -68,8 +94,7 @@ pub async fn install(location: &str) -> Result<(), Box<dyn std::error::Error>> {
         println!(" - Service updated.");
         service
     } else {
-        let service =
-            service_manager.create_service(&service_info, ServiceAccess::START | ServiceAccess::CHANGE_CONFIG)?;
+        let service = service_manager.create_service(&service_info, service_access)?;
         service.set_description(constants::SERVICE_DESCRIPTION)?;
         println!(" - Created Windows Service");
         service
@@ -98,7 +123,13 @@ pub async fn install(location: &str) -> Result<(), Box<dyn std::error::Error>> {
     // The SCM only applies failure actions to genuine crashes by default; this flag makes
     // it also apply them to a clean exit (code 0)
     service.set_failure_actions_on_non_crash_failures(true)?;
-service.start(&[OsStr::new("Started after intallation.")])?;
+
+    if service.query_status()?.current_state == ServiceState::Running {
+        println!(" - Service is already running.");
+    } else {
+        service.start::<&OsStr>(&[])?;
+        println!(" - Service started.");
+    }
 
     println!(" - TODO: Create Readme...");
 
