@@ -31,23 +31,6 @@ pub async fn install(location: &str) -> Result<(), Box<dyn std::error::Error>> {
         fs::copy(&current_exe, &new_path).expect("Unable to copy file");
     }
 
-    let current_dir = env::current_dir().unwrap().to_string_lossy().to_string();
-    let config_file_path = Path::new(&current_dir).join("config.yaml");
-    let new_config_file_path = Path::new(location).join("config.yaml");
-
-    if config_file_path.exists() {
-        println!(
-            " - Copying config.yml to {}",
-            new_config_file_path.display()
-        );
-        fs::copy(config_file_path, &new_config_file_path).expect("Unable to copy file");
-    } else {
-        println!(
-            " - No config.yml found at {} Please supply your own.",
-            config_file_path.display()
-        );
-    }
-
     use std::ffi::OsString;
     use std::time::Duration;
     use windows_service::{
