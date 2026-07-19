@@ -59,7 +59,7 @@ pub async fn install(location: &str) -> Result<(), Box<dyn std::error::Error>> {
     };
 
     let service = if let Ok(service) =
-        service_manager.open_service(constants::SERVICE_NAME, ServiceAccess::CHANGE_CONFIG)
+        service_manager.open_service(constants::SERVICE_NAME, ServiceAccess::START | ServiceAccess::CHANGE_CONFIG)
     {
         debug!("Service already exists, updating...");
         service.set_description(constants::SERVICE_DESCRIPTION)?;
@@ -68,7 +68,7 @@ pub async fn install(location: &str) -> Result<(), Box<dyn std::error::Error>> {
         service
     } else {
         let service =
-            service_manager.create_service(&service_info, ServiceAccess::CHANGE_CONFIG)?;
+            service_manager.create_service(&service_info, ServiceAccess::START | ServiceAccess::CHANGE_CONFIG)?;
         service.set_description(constants::SERVICE_DESCRIPTION)?;
         println!(" - Created Windows Service");
         service
@@ -97,6 +97,7 @@ pub async fn install(location: &str) -> Result<(), Box<dyn std::error::Error>> {
     // The SCM only applies failure actions to genuine crashes by default; this flag makes
     // it also apply them to a clean exit (code 0)
     service.set_failure_actions_on_non_crash_failures(true)?;
+service.start(&[OsStr::new("Started after intallation.")])?;
 
     println!(" - TODO: Create Readme...");
 
