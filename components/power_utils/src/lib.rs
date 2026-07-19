@@ -3,7 +3,6 @@ use serde::{Deserialize, Deserializer};
 use std::collections::HashMap;
 use std::{future::Future, pin::Pin, str};
 use tokio::sync::broadcast::{Receiver, Sender};
-use ubihome_core::constants::is_id_string_option;
 use ubihome_core::internal::sensors::UbiComponent;
 use ubihome_core::template_button;
 use ubihome_core::with_base_entity_properties;
@@ -73,7 +72,7 @@ impl Module for UbiHomePlatform {
         let mut buttons: HashMap<String, PowerAction> = HashMap::new();
         for (_, button) in config.button.clone().unwrap_or_default() {
             let id = button.get_object_id();
-            let name = button.name.clone().unwrap_or_default();
+            let name = button.identity.name.clone().unwrap_or_default();
             let internal = button.is_internal();
             let button_component = match button.action {
                 PowerAction::Reboot => UbiButton {

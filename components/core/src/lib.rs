@@ -173,9 +173,6 @@ impl NoConfig {
     pub fn get_object_id(&self) -> String {
         unimplemented!();
     }
-    pub fn validate_identity(&self) -> Result<(), String> {
-        Ok(())
-    }
 }
 
 #[derive(Clone, Deserialize, Debug, Validate)]

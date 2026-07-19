@@ -58,9 +58,6 @@ macro_rules! template_mapper {
                         if item.is_configured() == false {
                             continue;
                         }
-                        if let Err(err) = item.validate_identity() {
-                            return Err(serde::de::Error::custom(err));
-                        }
                         if item.platform.as_str() == stringify!($component_name) {
                             let key = item.get_object_id();
                             match map.entry(key) {

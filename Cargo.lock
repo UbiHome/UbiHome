@@ -5716,6 +5716,7 @@ dependencies = [
  "serde",
  "serde-saphyr 0.0.26",
  "serde-value",
+ "serde_json",
  "tokio",
 ]
 

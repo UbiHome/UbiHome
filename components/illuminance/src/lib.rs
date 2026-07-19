@@ -7,7 +7,6 @@ use tokio::{
     sync::broadcast::{Receiver, Sender},
     time,
 };
-use ubihome_core::constants::is_id_string_option;
 use ubihome_core::internal::sensors::UbiComponent;
 use ubihome_core::template_sensor;
 use ubihome_core::with_base_entity_properties;
@@ -86,7 +85,7 @@ impl Module for UbiHomePlatform {
                         .clone()
                         .or_else(|| Some("lx".to_string())),
                     accuracy_decimals: sensor.accuracy_decimals,
-                    name: sensor.name.clone().unwrap_or_default(),
+                    name: sensor.identity.name.clone().unwrap_or_default(),
                     internal: sensor.is_internal(),
                     id: id.clone(),
                     filters: sensor.filters.clone(),

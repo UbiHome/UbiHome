@@ -4,7 +4,7 @@ use std::{collections::HashMap, future::Future, pin::Pin, str, time::Duration};
 use tokio::sync::broadcast::{Receiver, Sender};
 use ubihome_core::{
     config_template,
-    constants::is_id_string_option,
+    configuration::base::ComponentIdentity,
     internal::sensors::{UbiComponent, UbiSensor},
     template_sensor, with_base_entity_properties, ChangedMessage, Module, NoConfig,
     PublishedMessage,
@@ -45,9 +45,6 @@ impl BME280SensorConfig {
     }
     pub fn is_configured(&self) -> bool {
         true
-    }
-    pub fn validate_identity(&self) -> Result<(), String> {
-        Ok(())
     }
 }
 
@@ -99,8 +96,10 @@ impl Module for UbiHomePlatform {
                 .temperature
                 .clone()
                 .unwrap_or(SpecificSensorConfig {
-                    id: None,
-                    name: Some("Temperature".to_string()),
+                    identity: ComponentIdentity {
+                        id: None,
+                        name: Some("Temperature".to_string()),
+                    },
                     icon: None,
                     state_class: None,
                     accuracy_decimals: None,
@@ -111,7 +110,7 @@ impl Module for UbiHomePlatform {
                     platform: "bme280".to_string(),
                 });
             let object_id = temperature.get_object_id();
-            let id = temperature.id.clone().unwrap_or(object_id.clone());
+            let id = temperature.identity.id.clone().unwrap_or(object_id.clone());
             sensor_entries.insert(Measurement::Temperature, id.clone());
             components.push(UbiComponent::Sensor(UbiSensor {
                 platform: "sensor".to_string(),
@@ -141,14 +140,16 @@ impl Module for UbiHomePlatform {
                         .unwrap_or("°C".to_string()),
                 ),
                 accuracy_decimals: None,
-                name: temperature.name.clone().unwrap_or_default(),
+                name: temperature.identity.name.clone().unwrap_or_default(),
                 internal: temperature.is_internal(),
                 id: object_id.clone(),
                 filters: temperature.filters.clone(),
             }));
             let pressure = n_sensor.pressure.clone().unwrap_or(SpecificSensorConfig {
-                id: None,
-                name: Some("Pressure".to_string()),
+                identity: ComponentIdentity {
+                    id: None,
+                    name: Some("Pressure".to_string()),
+                },
                 icon: None,
                 state_class: None,
                 accuracy_decimals: None,
@@ -159,7 +160,7 @@ impl Module for UbiHomePlatform {
                 platform: "bme280".to_string(),
             });
             let object_id = pressure.get_object_id();
-            let id = pressure.id.clone().unwrap_or(object_id.clone());
+            let id = pressure.identity.id.clone().unwrap_or(object_id.clone());
             sensor_entries.insert(Measurement::Pressure, id.clone());
             components.push(UbiComponent::Sensor(UbiSensor {
                 platform: "sensor".to_string(),
@@ -189,14 +190,16 @@ impl Module for UbiHomePlatform {
                         .unwrap_or("Pa".to_string()),
                 ),
                 accuracy_decimals: None,
-                name: pressure.name.clone().unwrap_or_default(),
+                name: pressure.identity.name.clone().unwrap_or_default(),
                 internal: pressure.is_internal(),
                 id: id.clone(),
                 filters: pressure.filters.clone(),
             }));
             let humidity = n_sensor.humidity.clone().unwrap_or(SpecificSensorConfig {
-                id: None,
-                name: Some("Humidity".to_string()),
+                identity: ComponentIdentity {
+                    id: None,
+                    name: Some("Humidity".to_string()),
+                },
                 icon: None,
                 state_class: None,
                 accuracy_decimals: None,
@@ -207,7 +210,7 @@ impl Module for UbiHomePlatform {
                 platform: "bme280".to_string(),
             });
             let object_id = humidity.get_object_id();
-            let id = humidity.id.clone().unwrap_or(object_id.clone());
+            let id = humidity.identity.id.clone().unwrap_or(object_id.clone());
             sensor_entries.insert(Measurement::Humidity, id.clone());
             components.push(UbiComponent::Sensor(UbiSensor {
                 platform: "sensor".to_string(),
@@ -236,7 +239,7 @@ impl Module for UbiHomePlatform {
                         .unwrap_or("%".to_string()),
                 ),
                 accuracy_decimals: None,
-                name: humidity.name.clone().unwrap_or_default(),
+                name: humidity.identity.name.clone().unwrap_or_default(),
                 internal: humidity.is_internal(),
                 id: id.clone(),
                 filters: humidity.filters.clone(),
