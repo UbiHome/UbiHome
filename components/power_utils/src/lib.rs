@@ -72,8 +72,8 @@ impl Module for UbiHomePlatform {
         let mut buttons: HashMap<String, PowerAction> = HashMap::new();
         for (_, button) in config.button.clone().unwrap_or_default() {
             let id = button.get_object_id();
-            let name = button.identity.name.clone().unwrap_or_default();
-            let internal = button.is_internal();
+            let name = button.name.clone().unwrap_or_default();
+            let internal = button.internal;
             let button_component = match button.action {
                 PowerAction::Reboot => UbiButton {
                     platform: "sensor".to_string(),

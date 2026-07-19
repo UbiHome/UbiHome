@@ -5712,6 +5712,7 @@ dependencies = [
  "garde",
  "getifs",
  "log",
+ "paste",
  "regex",
  "serde",
  "serde-saphyr 0.0.26",

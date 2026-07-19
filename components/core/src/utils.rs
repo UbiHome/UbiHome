@@ -1,20 +1,13 @@
 use convert_case::Case;
 use convert_case::Casing;
 
-/// Resolve the object id for a component.
-///
-/// A component must supply at least one of `id` / `name` (enforced during
-/// validation). When an explicit `id` is given it always wins; otherwise the
-/// `name` is normalized into snake_case. If neither is present (should not
-/// happen for a validated component) an empty string is returned.
+/// Resolve the object id for a component: an explicit `id` wins, otherwise the
+/// `name` is normalized into snake_case. At least one of them is guaranteed by
+/// validation, so the absence of both is a bug rather than user error.
 pub fn format_id(id: &Option<String>, name: &Option<String>) -> String {
-    match id {
-        Some(id) => id.clone(),
-        None => name
-            .as_ref()
-            .map(|name| name.to_case(Case::Snake))
-            .unwrap_or_default(),
-    }
+    id.clone()
+        .or_else(|| name.as_ref().map(|name| name.to_case(Case::Snake)))
+        .expect("component must have a name or id")
 }
 
 #[cfg(test)]

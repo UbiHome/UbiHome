@@ -85,8 +85,8 @@ impl Module for UbiHomePlatform {
                         .clone()
                         .or_else(|| Some("lx".to_string())),
                     accuracy_decimals: sensor.accuracy_decimals,
-                    name: sensor.identity.name.clone().unwrap_or_default(),
-                    internal: sensor.is_internal(),
+                    name: sensor.name.clone().unwrap_or_default(),
+                    internal: sensor.internal,
                     id: id.clone(),
                     filters: sensor.filters.clone(),
                 }));

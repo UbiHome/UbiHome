@@ -1,54 +1,19 @@
-use garde::Validate;
-use serde::Deserialize;
-
-use crate::constants::{is_id_string_option, is_readable_string_option};
-
-/// The `name` / `id` pair shared by every component.
+/// Macro to add base entity properties (id, name, internal, platform) to a
+/// struct.
 ///
-/// Deserialized through [`ComponentIdentityShadow`] via `#[serde(try_from)]` so
-/// the "at least one of `name` / `id`" rule is enforced as part of normal serde
-/// deserialization (rather than a separate validation pass). Flattened into
-/// every component config by [`with_base_entity_properties!`].
-#[derive(Clone, Debug, Deserialize, Validate)]
-#[serde(try_from = "ComponentIdentityShadow")]
-pub struct ComponentIdentity {
-    #[garde(custom(is_id_string_option), length(min = 3, max = 100))]
-    pub id: Option<String>,
-
-    #[garde(custom(is_readable_string_option), length(min = 3, max = 100))]
-    pub name: Option<String>,
-}
-
-/// Raw, unvalidated counterpart of [`ComponentIdentity`]. Deserializes `name` /
-/// `id` without the cross-field requirement; the `TryFrom` impl enforces it.
-#[derive(Clone, Debug, Deserialize)]
-struct ComponentIdentityShadow {
-    #[serde(default)]
-    pub id: Option<String>,
-    #[serde(default)]
-    pub name: Option<String>,
-}
-
-impl TryFrom<ComponentIdentityShadow> for ComponentIdentity {
-    type Error = String;
-
-    fn try_from(shadow: ComponentIdentityShadow) -> Result<Self, Self::Error> {
-        if shadow.id.is_none() && shadow.name.is_none() {
-            return Err("Either 'name' or 'id' must be provided for the component".to_string());
-        }
-        Ok(ComponentIdentity {
-            id: shadow.id,
-            name: shadow.name,
-        })
-    }
-}
-
-/// Macro to add base entity properties (id, name, platform) to a struct.
+/// Deserialization goes through a private shadow struct (via
+/// `#[serde(try_from)]`), so that as part of normal deserialization:
+/// - at least one of `name` / `id` must be given, and
+/// - `internal` is resolved to a concrete `bool` — the user's `internal`
+///   attribute if set, otherwise `true` when only an `id` was provided.
+///
+/// Components keep plain `name` / `id` / `internal` fields (no `#[serde(flatten)]`),
+/// and `deny_unknown_fields` still rejects typo'd keys.
 ///
 /// # Example
 /// ```ignore
 /// with_base_entity_properties! {
-///     #[derive(Clone, Debug, Deserialize, Validate)]
+///     #[derive(Clone, Deserialize, Debug, Validate)]
 ///     pub struct MyEntity {
 ///         // additional fields here
 ///         pub my_field: String,
@@ -66,51 +31,90 @@ macro_rules! with_base_entity_properties {
             ),* $(,)?
         }
     ) => {
-        $(#[$meta])*
-        #[serde(deny_unknown_fields)]
-        $vis struct $name {
-            // `name` / `id` (with the "at least one required" rule enforced by
-            // serde during deserialization) are flattened in from a shared type.
-            #[serde(flatten)]
-            #[garde(dive)]
-            pub identity: $crate::configuration::base::ComponentIdentity,
+        $crate::paste::paste! {
+            $(#[$meta])*
+            #[serde(try_from = "" [<$name __Shadow>] "")]
+            $vis struct $name {
+                #[garde(custom($crate::constants::is_id_string_option), length(min = 3, max = 100))]
+                pub id: Option<String>,
 
-            #[garde(length(min = 3, max = 100))]
-            pub platform: String,
+                #[garde(custom($crate::constants::is_readable_string_option), length(min = 3, max = 100))]
+                pub name: Option<String>,
 
-            // #[garde(custom(is_id_string_option), length(min = 3, max = 100))]
-            #[garde(ascii)]
-            pub icon: Option<String>,
-            #[garde(ascii)]
-            pub device_class: Option<String>,
+                /// Whether the component is internal (wired up internally but not
+                /// exposed to connectivity components like api, mqtt, http).
+                /// Resolved during deserialization from the user's `internal`
+                /// attribute, defaulting to `true` when only an `id` was given.
+                #[garde(skip)]
+                pub internal: bool,
 
-            /// Explicitly mark the component as internal or not. When set, this
-            /// overrides the default behaviour (a component with only an `id`
-            /// and no `name` is internal).
-            #[garde(skip)]
-            pub internal: Option<bool>,
+                #[garde(length(min = 3, max = 100))]
+                pub platform: String,
+
+                #[garde(ascii)]
+                pub icon: Option<String>,
+                #[garde(ascii)]
+                pub device_class: Option<String>,
 
 
-            $(
-                $(#[$field_meta])*
-                $field_vis $field_name : $field_type,
-            )*
-        }
-
-        impl $name {
-            pub fn get_object_id(&self) -> String {
-                $crate::utils::format_id(&self.identity.id, &self.identity.name)
+                $(
+                    $(#[$field_meta])*
+                    $field_vis $field_name : $field_type,
+                )*
             }
-            pub fn is_configured(&self) -> bool {
-                true
+
+            impl $name {
+                pub fn get_object_id(&self) -> String {
+                    $crate::utils::format_id(&self.id, &self.name)
+                }
+                pub fn is_configured(&self) -> bool {
+                    true
+                }
             }
-            /// Whether the component is internal, i.e. wired up internally but
-            /// not exposed to connectivity components (api, mqtt, http).
-            ///
-            /// Defaults to true when the component supplies only an `id` and no
-            /// `name`. An explicit `internal` attribute overrides this default.
-            pub fn is_internal(&self) -> bool {
-                self.internal.unwrap_or_else(|| self.identity.name.is_none())
+
+            // Raw, unvalidated counterpart of `$name` that deserializes the
+            // fields as the user wrote them. The `TryFrom` impl enforces the
+            // name/id rule and resolves `internal`.
+            #[doc(hidden)]
+            #[derive(::serde::Deserialize, ::garde::Validate)]
+            #[garde(allow_unvalidated)]
+            #[serde(deny_unknown_fields)]
+            #[allow(non_camel_case_types)]
+            $vis struct [<$name __Shadow>] {
+                id: Option<String>,
+                name: Option<String>,
+                internal: Option<bool>,
+                platform: String,
+                icon: Option<String>,
+                device_class: Option<String>,
+                $(
+                    $(#[$field_meta])*
+                    $field_name : $field_type,
+                )*
+            }
+
+            impl ::core::convert::TryFrom<[<$name __Shadow>]> for $name {
+                type Error = ::std::string::String;
+
+                fn try_from(shadow: [<$name __Shadow>]) -> ::core::result::Result<Self, Self::Error> {
+                    if shadow.id.is_none() && shadow.name.is_none() {
+                        return Err(format!(
+                            "Either 'name' or 'id' must be provided for the '{}' component",
+                            shadow.platform
+                        ));
+                    }
+                    Ok($name {
+                        internal: shadow.internal.unwrap_or(shadow.name.is_none()),
+                        id: shadow.id,
+                        name: shadow.name,
+                        platform: shadow.platform,
+                        icon: shadow.icon,
+                        device_class: shadow.device_class,
+                        $(
+                            $field_name: shadow.$field_name,
+                        )*
+                    })
+                }
             }
         }
     };
@@ -312,18 +316,16 @@ macro_rules! template_light {
 }
 
 #[cfg(test)]
-mod identity_tests {
-    use super::*;
-    use serde::Deserialize;
+mod entity_tests {
+    use garde::Validate;
 
-    #[derive(Debug, Deserialize, Validate)]
-    #[serde(deny_unknown_fields)]
-    struct Probe {
-        #[serde(flatten)]
-        #[garde(dive)]
-        identity: ComponentIdentity,
-        #[garde(skip)]
-        pin: u8,
+    with_base_entity_properties! {
+        #[derive(Clone, ::serde::Deserialize, Debug, Validate)]
+        #[garde(allow_unvalidated)]
+        pub struct Probe {
+            #[garde(skip)]
+            pub pin: u8,
+        }
     }
 
     fn parse(json: &str) -> Result<Probe, String> {
@@ -331,23 +333,35 @@ mod identity_tests {
     }
 
     #[test]
-    fn name_only_is_accepted() {
-        let p = parse(r#"{"name":"Front Door","pin":5}"#).expect("name-only should deserialize");
-        assert_eq!(p.identity.name.as_deref(), Some("Front Door"));
-        assert!(p.identity.id.is_none());
+    fn name_only_is_visible() {
+        let p = parse(r#"{"platform":"probe","name":"Front Door","pin":5}"#)
+            .expect("name-only should deserialize");
+        assert_eq!(p.name.as_deref(), Some("Front Door"));
+        assert!(!p.internal, "a named component is not internal by default");
         assert_eq!(p.pin, 5);
+        assert!(p.is_configured());
+        assert_eq!(p.get_object_id(), "front_door");
     }
 
     #[test]
-    fn id_only_is_accepted() {
-        let p = parse(r#"{"id":"front_door","pin":5}"#).expect("id-only should deserialize");
-        assert_eq!(p.identity.id.as_deref(), Some("front_door"));
-        assert!(p.identity.name.is_none());
+    fn id_only_is_internal() {
+        let p = parse(r#"{"platform":"probe","id":"front_door","pin":5}"#)
+            .expect("id-only should deserialize");
+        assert!(p.internal, "an id-only component is internal by default");
+        assert_eq!(p.get_object_id(), "front_door");
     }
 
     #[test]
-    fn neither_is_rejected_during_deserialization() {
-        let err = parse(r#"{"pin":5}"#).expect_err("missing name and id must fail");
+    fn explicit_internal_overrides_the_default() {
+        let visible = parse(r#"{"platform":"probe","id":"x","internal":false,"pin":5}"#).unwrap();
+        assert!(!visible.internal);
+        let hidden = parse(r#"{"platform":"probe","name":"X","internal":true,"pin":5}"#).unwrap();
+        assert!(hidden.internal);
+    }
+
+    #[test]
+    fn neither_name_nor_id_is_rejected() {
+        let err = parse(r#"{"platform":"probe","pin":5}"#).expect_err("must fail");
         assert!(
             err.contains("Either 'name' or 'id'"),
             "unexpected error: {err}"
@@ -356,9 +370,7 @@ mod identity_tests {
 
     #[test]
     fn unknown_fields_are_still_rejected() {
-        // The flattened identity must not disable deny_unknown_fields on the
-        // enclosing component config.
-        let err = parse(r#"{"name":"x","pin":5,"bogus":9}"#)
+        let err = parse(r#"{"platform":"probe","name":"x","pin":5,"bogus":9}"#)
             .expect_err("unknown field must still be rejected");
         assert!(err.contains("bogus"), "unexpected error: {err}");
     }

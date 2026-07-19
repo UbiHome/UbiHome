@@ -197,8 +197,8 @@ impl Module for UbiHomePlatform {
                 state_class: sensor.state_class.clone(),
                 unit_of_measurement: sensor.unit_of_measurement.clone(),
                 accuracy_decimals: sensor.accuracy_decimals,
-                name: sensor.identity.name.clone().unwrap_or_default(),
-                internal: sensor.is_internal(),
+                name: sensor.name.clone().unwrap_or_default(),
+                internal: sensor.internal,
                 id: id.clone(),
                 filters: sensor.filters.clone(),
             }));
@@ -212,8 +212,8 @@ impl Module for UbiHomePlatform {
                 platform: "sensor".to_string(),
                 icon: binary_sensor.icon.clone(),
                 device_class: binary_sensor.device_class.clone(),
-                name: binary_sensor.identity.name.clone().unwrap_or_default(),
-                internal: binary_sensor.is_internal(),
+                name: binary_sensor.name.clone().unwrap_or_default(),
+                internal: binary_sensor.internal,
                 id: id.clone(),
                 on_press: binary_sensor.on_press.clone(),
                 on_release: binary_sensor.on_release.clone(),
@@ -228,8 +228,8 @@ impl Module for UbiHomePlatform {
             components.push(UbiComponent::Button(UbiButton {
                 platform: "sensor".to_string(),
                 icon: button.icon.clone(),
-                name: button.identity.name.clone().unwrap_or_default(),
-                internal: button.is_internal(),
+                name: button.name.clone().unwrap_or_default(),
+                internal: button.internal,
                 id: id.clone(),
             }));
             buttons.insert(id.clone(), button);
@@ -241,8 +241,8 @@ impl Module for UbiHomePlatform {
             components.push(UbiComponent::Switch(UbiSwitch {
                 platform: "sensor".to_string(),
                 icon: switch.icon.clone(),
-                name: switch.identity.name.clone().unwrap_or_default(),
-                internal: switch.is_internal(),
+                name: switch.name.clone().unwrap_or_default(),
+                internal: switch.internal,
                 id: id.clone(),
                 device_class: None,
                 assumed_state: switch.command_state.is_none(),
@@ -256,8 +256,8 @@ impl Module for UbiHomePlatform {
             components.push(UbiComponent::Light(UbiLight {
                 platform: "light".to_string(),
                 icon: light.icon.clone(),
-                name: light.identity.name.clone().unwrap_or_default(),
-                internal: light.is_internal(),
+                name: light.name.clone().unwrap_or_default(),
+                internal: light.internal,
                 id: id.clone(),
                 disabled_by_default: light.disabled_by_default.unwrap_or(true),
             }));
@@ -270,8 +270,8 @@ impl Module for UbiHomePlatform {
             components.push(UbiComponent::Number(UbiNumber {
                 platform: "number".to_string(),
                 icon: number.icon.clone(),
-                name: number.identity.name.clone().unwrap_or_default(),
-                internal: number.is_internal(),
+                name: number.name.clone().unwrap_or_default(),
+                internal: number.internal,
                 id: id.clone(),
                 min_value: number.min_value.unwrap_or(0.0),
                 max_value: number.max_value.unwrap_or(100.0),
@@ -289,8 +289,8 @@ impl Module for UbiHomePlatform {
             components.push(UbiComponent::TextSensor(UbiTextSensor {
                 platform: "text_sensor".to_string(),
                 icon: text_sensor.icon.clone(),
-                name: text_sensor.identity.name.clone().unwrap_or_default(),
-                internal: text_sensor.is_internal(),
+                name: text_sensor.name.clone().unwrap_or_default(),
+                internal: text_sensor.internal,
                 id: id.clone(),
                 device_class: text_sensor.device_class.clone(),
             }));

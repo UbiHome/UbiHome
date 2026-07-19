@@ -167,8 +167,8 @@ impl Module for UbiHomePlatform {
                     .device_class
                     .clone()
                     .or_else(|| Some("connectivity".to_string())),
-                name: binary_sensor.identity.name.clone().unwrap_or_default(),
-                internal: binary_sensor.is_internal(),
+                name: binary_sensor.name.clone().unwrap_or_default(),
+                internal: binary_sensor.internal,
                 id: id.clone(),
                 on_press: binary_sensor.on_press.clone(),
                 on_release: binary_sensor.on_release.clone(),
