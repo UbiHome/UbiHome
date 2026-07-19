@@ -117,7 +117,7 @@ impl Module for UbiHomePlatform {
                         // Internal components (configured with an
                         // id but no name) are not exposed over MQTT.
                         if component.is_internal() {
-                          continue;
+                            continue;
                         }
                         match component {
                             // TODO: Use object_id generator
