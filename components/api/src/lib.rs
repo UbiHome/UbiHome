@@ -186,6 +186,11 @@ impl Module for UbiHomePlatform {
         Box::pin(async move {
             if let Ok(PublishedMessage::Components { components }) = receiver.recv().await {
                 for component in components {
+                    // Internal components (configured with an id but no name) are
+                    // not exposed over the API.
+                    if component.is_internal() {
+                        continue;
+                    }
                     match component {
                         UbiComponent::Switch(switch_entity) => {
                             let key = hash_fnv1(&switch_entity.id);

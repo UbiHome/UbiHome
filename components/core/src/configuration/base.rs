@@ -27,8 +27,8 @@ macro_rules! with_base_entity_properties {
             #[garde(custom(is_id_string_option), length(min = 3, max = 100))]
             pub id: Option<String>,
 
-            #[garde(custom(is_readable_string), length(min = 3, max = 100))]
-            pub name: String,
+            #[garde(custom($crate::constants::is_readable_string_option), length(min = 3, max = 100))]
+            pub name: Option<String>,
 
 
             #[garde(length(min = 3, max = 100))]
@@ -53,6 +53,22 @@ macro_rules! with_base_entity_properties {
             }
             pub fn is_configured(&self) -> bool {
                 true
+            }
+            /// A component that only supplies an `id` (and no `name`) is
+            /// treated as internal: it participates in internal wiring but is
+            /// not exposed to connectivity components (api, mqtt, http).
+            pub fn is_internal(&self) -> bool {
+                self.name.is_none()
+            }
+            /// Validate that at least one of `name` / `id` is provided.
+            pub fn validate_identity(&self) -> Result<(), String> {
+                if self.name.is_none() && self.id.is_none() {
+                    return Err(format!(
+                        "Either 'name' or 'id' must be provided for the '{}' component",
+                        self.platform
+                    ));
+                }
+                Ok(())
             }
         }
     };
