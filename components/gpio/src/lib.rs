@@ -155,6 +155,10 @@ impl Module for UbiHomePlatform {
                 id: id.clone(),
                 assumed_state: false,
             }));
+            debug!(
+                "Parsed switch '{}': pin={}, inverted={:?}, restore_mode={:?}",
+                id, switch.base.pin, switch.base.inverted, switch.base.restore_mode
+            );
             switches.insert(
                 id,
                 GpioOutputConfig {
@@ -203,9 +207,19 @@ impl Module for UbiHomePlatform {
                         return Ok(());
                     }
                     Ok(gpio) => {
+                        debug!(
+                            "GPIO initialized with {} switch(es) and {} binary_sensor(s)",
+                            switches.len(),
+                            binary_sensors.len()
+                        );
+
                         // Set up switch output pins and apply their configured startup state.
                         let mut output_pins: HashMap<String, OutputPin> = HashMap::new();
                         for (key, switch) in &switches {
+                            debug!(
+                                "Setting up switch {} on pin {} (inverted: {:?}, restore_mode: {:?})",
+                                key, switch.pin, switch.inverted, switch.restore_mode
+                            );
                             match gpio.get(switch.pin) {
                                 Ok(gpio_pin) => {
                                     let inverted = switch.inverted.unwrap_or(false);
@@ -214,6 +228,11 @@ impl Module for UbiHomePlatform {
                                         .unwrap_or(GpioRestoreMode::AlwaysOff)
                                         .initial_state();
 
+                                    debug!(
+                                        "Switch {} computed initial_on: {:?} (inverted: {})",
+                                        key, initial_on, inverted
+                                    );
+
                                     let output_pin = match initial_on {
                                         Some(on) if on != inverted => gpio_pin.into_output_high(),
                                         Some(_) => gpio_pin.into_output_low(),
@@ -221,10 +240,28 @@ impl Module for UbiHomePlatform {
                                     };
 
                                     if let Some(state) = initial_on {
-                                        _ = sender.send(ChangedMessage::SwitchStateChange {
+                                        match sender.send(ChangedMessage::SwitchStateChange {
                                             key: key.clone(),
                                             state,
-                                        });
+                                        }) {
+                                            Ok(receiver_count) => {
+                                                debug!(
+                                                    "Sent initial state {} for switch {} to {} receiver(s)",
+                                                    state, key, receiver_count
+                                                );
+                                            }
+                                            Err(e) => {
+                                                warn!(
+                                                    "Failed to send initial state {} for switch {}: {} (no receivers subscribed yet?)",
+                                                    state, key, e
+                                                );
+                                            }
+                                        }
+                                    } else {
+                                        debug!(
+                                            "Switch {} restore_mode is Disabled, not sending initial state",
+                                            key
+                                        );
                                     }
 
                                     output_pins.insert(key.clone(), output_pin);
