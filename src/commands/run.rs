@@ -3,7 +3,7 @@ use crate::config::{get_platforms_from_config, BaseConfig, BaseConfigContext};
 use flexi_logger::writers::FileLogWriter;
 use flexi_logger::{detailed_format, Age, Cleanup, Criterion, Duplicate, FileSpec, Logger, Naming};
 
-use ubihome_core::configuration::binary_sensor::{ActionType, FilterType};
+use ubihome_core::configuration::binary_sensor::{Action, ActionType, FilterType};
 use ubihome_core::configuration::sensor::SensorFilterType;
 use ubihome_core::internal::sensors::UbiComponent;
 use ubihome_core::{ChangedMessage, PublishedMessage};
@@ -17,6 +17,42 @@ use std::sync::mpsc;
 use std::time::Duration;
 use tokio::sync::broadcast;
 use tokio::{runtime::Runtime, signal};
+
+/// Runs a trigger's list of actions in order.
+///
+/// Actions are executed sequentially so that a `delay` action pauses the list
+/// before the following actions run.
+async fn run_actions(actions: Vec<Action>, internal_tx: &broadcast::Sender<PublishedMessage>) {
+    for action in actions {
+        match &action.action {
+            ActionType::SwitchTurnOn(key) => {
+                let pcmd = PublishedMessage::SwitchStateCommand {
+                    key: key.clone(),
+                    state: true,
+                };
+                debug!("Publishing command from action {:?}: {:?}", action, pcmd);
+                internal_tx.send(pcmd).unwrap();
+            }
+            ActionType::SwitchTurnOff(key) => {
+                let pcmd = PublishedMessage::SwitchStateCommand {
+                    key: key.clone(),
+                    state: false,
+                };
+                debug!("Publishing command from action {:?}: {:?}", action, pcmd);
+                internal_tx.send(pcmd).unwrap();
+            }
+            ActionType::ButtonPress(key) => {
+                let pcmd = PublishedMessage::ButtonPressed { key: key.clone() };
+                debug!("Publishing command from action {:?}: {:?}", action, pcmd);
+                internal_tx.send(pcmd).unwrap();
+            }
+            ActionType::Delay(duration) => {
+                trace!("delay");
+                tokio::time::sleep(*duration).await;
+            }
+        }
+    }
+}
 
 fn read_base_config(path: &str) -> Result<String, String> {
     if !path.is_empty() {
@@ -162,8 +198,6 @@ Remove the "{}:" entry from your configuration or install the cargo crate contai
     // Spawn the root task
     let rt = Runtime::new().unwrap();
     rt.block_on(async {
-
-
         let (internal_tx, modules_rx) = broadcast::channel::<PublishedMessage>(16);
         let (modules_tx, mut internal_rx) = broadcast::channel::<ChangedMessage>(16);
 
@@ -174,7 +208,8 @@ Remove the "{}:" entry from your configuration or install the cargo crate contai
         let mut supervised_tasks: tokio::task::JoinSet<()> = tokio::task::JoinSet::new();
 
         // Double Option Workaround for https://github.com/Pauan/rust-signals/issues/75
-        let mut signal_map_binary_sensor: HashMap<String, Mutable<Option<Option<bool>>>> = HashMap::new();
+        let mut signal_map_binary_sensor: HashMap<String, Mutable<Option<Option<bool>>>> =
+            HashMap::new();
         let mut signal_map_sensor: HashMap<String, Mutable<Option<Option<f32>>>> = HashMap::new();
 
         for component in initialized_platforms.clone() {
@@ -184,8 +219,7 @@ Remove the "{}:" entry from your configuration or install the cargo crate contai
                 }
                 UbiComponent::Sensor(sensor) => {
                     let mutable: Mutable<Option<Option<f32>>> = Mutable::new(Option::None);
-                    signal_map_sensor
-                        .insert(sensor.id.clone(), mutable.clone());
+                    signal_map_sensor.insert(sensor.id.clone(), mutable.clone());
                     let internal_tx_clone = internal_tx.clone();
 
                     let mutable_clone = mutable.clone();
@@ -198,17 +232,18 @@ Remove the "{}:" entry from your configuration or install the cargo crate contai
                                 SensorFilterType::Round(decimals) => {
                                     trace!("round");
                                     signal = signal
-                                    .map(move |value| {
-                                        if let Some(v) = value.and_then(|v| v) {
-                                            // let number: f64 = v.parse().unwrap();
-                                            let output: f32 = format!("{:.1$}", v, decimals).parse().unwrap();
-                                            debug!("Round: {}", output);
-                                            Some(Some(output))
-                                        } else {
-                                            value
-                                        }
-                                    })
-                                    .boxed();
+                                        .map(move |value| {
+                                            if let Some(v) = value.and_then(|v| v) {
+                                                // let number: f64 = v.parse().unwrap();
+                                                let output: f32 =
+                                                    format!("{:.1$}", v, decimals).parse().unwrap();
+                                                debug!("Round: {}", output);
+                                                Some(Some(output))
+                                            } else {
+                                                value
+                                            }
+                                        })
+                                        .boxed();
                                 }
                             }
                         }
@@ -220,17 +255,13 @@ Remove the "{}:" entry from your configuration or install the cargo crate contai
 
                                 let key = sensor.id.clone();
                                 if let Some(value) = value.and_then(|v| v) {
-                                    let pcmd = PublishedMessage::SensorValueChanged {
-                                        key,
-                                        value,
-                                    };
+                                    let pcmd = PublishedMessage::SensorValueChanged { key, value };
                                     debug!("Publishing command from signal: {:?}", pcmd);
 
                                     signal_tx_clone.send(pcmd).unwrap();
                                 }
 
-                                async move {
-                                }
+                                async move {}
                             })
                             .await;
                     });
@@ -249,8 +280,7 @@ Remove the "{}:" entry from your configuration or install the cargo crate contai
                 }
                 UbiComponent::BinarySensor(binary_sensor) => {
                     let mutable: Mutable<Option<Option<bool>>> = Mutable::new(Option::None);
-                    signal_map_binary_sensor
-                        .insert(binary_sensor.id.clone(), mutable.clone());
+                    signal_map_binary_sensor.insert(binary_sensor.id.clone(), mutable.clone());
                     let internal_tx_clone = internal_tx.clone();
 
                     let mutable_clone = mutable.clone();
@@ -319,84 +349,31 @@ Remove the "{}:" entry from your configuration or install the cargo crate contai
 
                         // React to signal changes
                         signal
-                            .for_each(|value| {
+                            .for_each(move |value| {
+                                let action_tx = internal_tx_clone.clone();
                                 let signal_tx_clone = internal_tx_clone.clone();
 
                                 let key = binary_sensor.id.clone();
-                                if let Some(value) = value.and_then(|v| v) {
-                                    if value {
-                                        if let Some(on_press) = binary_sensor.on_press.clone() {
-                                            for action in on_press.then {
-                                                match &action.action {
-                                                    ActionType::SwitchTurnOn(key) => {
-                                                        let pcmd = PublishedMessage::SwitchStateCommand {
-                                                            key: key.clone(),
-                                                            state: true,
-                                                        };
-                                                        debug!("Publishing command from action {:?}: {:?}", action.clone(), pcmd);
-                                                        internal_tx_clone.send(pcmd).unwrap();
-                                                    }
-                                                    ActionType::SwitchTurnOff(key) => {
-                                                        let pcmd = PublishedMessage::SwitchStateCommand {
-                                                            key: key.clone(),
-                                                            state: false,
-                                                        };
-                                                        debug!("Publishing command from action {:?}: {:?}", action.clone(), pcmd);
-                                                        internal_tx_clone.send(pcmd).unwrap();
-                                                    }
-                                                    ActionType::ButtonPress(key) => {
-                                                        let pcmd = PublishedMessage::ButtonPressed {
-                                                            key: key.clone(),
-                                                        };
-                                                        debug!("Publishing command from action {:?}: {:?}", action.clone(), pcmd);
-                                                        internal_tx_clone.send(pcmd).unwrap();
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }else{
-                                        if let Some(on_release) = binary_sensor.on_release.clone() {
-                                            for action in on_release.then {
-                                                match &action.action {
-                                                    ActionType::SwitchTurnOn(key) => {
-                                                        let pcmd = PublishedMessage::SwitchStateCommand {
-                                                            key: key.clone(),
-                                                            state: true,
-                                                        };
-                                                        debug!("Publishing command from action {:?}: {:?}", action.clone(), pcmd);
-                                                        internal_tx_clone.send(pcmd).unwrap();
-                                                    }
-                                                    ActionType::SwitchTurnOff(key) => {
-                                                        let pcmd = PublishedMessage::SwitchStateCommand {
-                                                            key: key.clone(),
-                                                            state: false,
-                                                        };
-                                                        debug!("Publishing command from action {:?}: {:?}", action.clone(), pcmd);
-                                                        internal_tx_clone.send(pcmd).unwrap();
-                                                    }
-                                                    ActionType::ButtonPress(key) => {
-                                                        let pcmd = PublishedMessage::ButtonPressed {
-                                                            key: key.clone(),
-                                                        };
-                                                        debug!("Publishing command from action {:?}: {:?}", action.clone(), pcmd);
-                                                        internal_tx_clone.send(pcmd).unwrap();
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-
-
-                                    let pcmd = PublishedMessage::BinarySensorValueChanged {
-                                        key,
-                                        value,
-                                    };
-                                    debug!("Publishing command from signal: {:?}", pcmd);
-
-                                    signal_tx_clone.send(pcmd).unwrap();
-                                }
-
+                                let on_press = binary_sensor.on_press.clone();
+                                let on_release = binary_sensor.on_release.clone();
                                 async move {
+                                    if let Some(value) = value.and_then(|v| v) {
+                                        if value {
+                                            if let Some(on_press) = on_press {
+                                                run_actions(on_press.then, &action_tx).await;
+                                            }
+                                        } else if let Some(on_release) = on_release {
+                                            run_actions(on_release.then, &action_tx).await;
+                                        }
+
+                                        let pcmd = PublishedMessage::BinarySensorValueChanged {
+                                            key,
+                                            value,
+                                        };
+                                        debug!("Publishing command from signal: {:?}", pcmd);
+
+                                        signal_tx_clone.send(pcmd).unwrap();
+                                    }
                                 }
                             })
                             .await;
@@ -427,12 +404,36 @@ Remove the "{}:" entry from your configuration or install the cargo crate contai
                         ChangedMessage::SwitchStateCommand { key, state } => {
                             Some(PublishedMessage::SwitchStateCommand { key, state })
                         }
-                        ChangedMessage::LightStateChange { key, state, brightness, red, green, blue } => {
-                            Some(PublishedMessage::LightStateChange { key, state, brightness, red, green, blue })
-                        }
-                        ChangedMessage::LightStateCommand { key, state, brightness, red, green, blue } => {
-                            Some(PublishedMessage::LightStateCommand { key, state, brightness, red, green, blue })
-                        }
+                        ChangedMessage::LightStateChange {
+                            key,
+                            state,
+                            brightness,
+                            red,
+                            green,
+                            blue,
+                        } => Some(PublishedMessage::LightStateChange {
+                            key,
+                            state,
+                            brightness,
+                            red,
+                            green,
+                            blue,
+                        }),
+                        ChangedMessage::LightStateCommand {
+                            key,
+                            state,
+                            brightness,
+                            red,
+                            green,
+                            blue,
+                        } => Some(PublishedMessage::LightStateCommand {
+                            key,
+                            state,
+                            brightness,
+                            red,
+                            green,
+                            blue,
+                        }),
                         ChangedMessage::ButtonPress { key } => {
                             Some(PublishedMessage::ButtonPressed { key })
                         }
@@ -490,9 +491,7 @@ Remove the "{}:" entry from your configuration or install the cargo crate contai
                             UbiComponent::BinarySensor(binary_sensor.clone())
                         }
                         UbiComponent::Light(light) => UbiComponent::Light(light.clone()),
-                        UbiComponent::Number(number) => {
-                            UbiComponent::Number(number.clone())
-                        }
+                        UbiComponent::Number(number) => UbiComponent::Number(number.clone()),
                         UbiComponent::TextSensor(text_sensor) => {
                             UbiComponent::TextSensor(text_sensor.clone())
                         }

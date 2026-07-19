@@ -84,3 +84,58 @@ binary_sensor:
     async with UbiHome("run", config=DEVICE_INFO_CONFIG):
         sensor_mock.set_value("false")
         button_mock.wait_for_mock_state("pressed")
+
+
+async def test_binary_sensor_delay_action(io_mock_factory: IOMockFactory):
+    """
+    Test that the `delay` action pauses an action list without aborting it: the
+    action before the delay (turning a switch on) and the action after the delay
+    (pressing a button) both run.
+    """
+
+    switch_mock = io_mock_factory.create_mock()
+    button_mock = io_mock_factory.create_mock()
+    sensor_mock = io_mock_factory.create_mock()
+
+    DEVICE_INFO_CONFIG = f"""
+ubihome:
+  name: test_device
+
+shell:
+
+switch:
+  - platform: shell
+    name: "Test Switch"
+    id: test_switch
+    command_on: "echo true > {switch_mock}"
+    command_off: "echo false > {switch_mock}"
+    command_state: "cat {switch_mock} || echo false"
+
+button:
+  - platform: shell
+    name: "Test Button"
+    id: test_button
+    command: "echo pressed > {button_mock}"
+
+binary_sensor:
+  - platform: shell
+    name: "Test Binary Sensor"
+    update_interval: 2s
+    command: |-
+      cat {sensor_mock}
+    on_press:
+      then:
+        - switch.turn_on: "test_switch"
+        - delay: 1s
+        - button.press: "test_button"
+"""
+    switch_mock.set_value("false")
+    sensor_mock.set_value("false")
+
+    async with UbiHome("run", config=DEVICE_INFO_CONFIG):
+        sensor_mock.set_value("true")
+        # Action before the delay turns the switch on.
+        switch_mock.wait_for_mock_state("true")
+        # Action after the delay presses the button, proving the delay does not
+        # abort the remaining actions in the list.
+        button_mock.wait_for_mock_state("pressed")
