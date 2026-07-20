@@ -2,7 +2,7 @@ use log::{debug, error};
 use rquickjs::{Context, Ctx, Function, Runtime};
 use serde::{Deserialize, Deserializer};
 use std::collections::HashMap;
-use std::sync::{Arc, Mutex, RwLock};
+use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 use std::{future::Future, pin::Pin};
 use tokio::{
@@ -10,12 +10,11 @@ use tokio::{
     time,
 };
 use ubihome_core::internal::sensors::{UbiBinarySensor, UbiComponent, UbiSensor, UbiTextSensor};
+use ubihome_core::state::{EntityState, StateStore};
 use ubihome_core::NoConfig;
 use ubihome_core::{config_template, ChangedMessage, Module, PublishedMessage};
 
 use duration_str::deserialize_duration;
-use ubihome_core::constants::is_id_string_option;
-use ubihome_core::constants::is_readable_string;
 use ubihome_core::template_binary_sensor;
 use ubihome_core::template_sensor;
 use ubihome_core::template_text_sensor;
@@ -87,17 +86,6 @@ config_template!(
     LambdaTextSensorConfig
 );
 
-/// Last known state of other entities, fed from the message bus and exposed to
-/// JavaScript through the `get_*` host functions.
-#[derive(Clone, Debug)]
-enum StateValue {
-    Number(f32),
-    Bool(bool),
-    Text(String),
-}
-
-type StateCache = Arc<RwLock<HashMap<String, StateValue>>>;
-
 #[derive(Clone, Copy, Debug, PartialEq)]
 enum LambdaKind {
     Sensor,
@@ -162,37 +150,41 @@ for (const name of ["get_sensor", "get_binary_sensor", "get_text_sensor"]) {
 }
 "#;
 
-fn register_host_functions(ctx: &Ctx<'_>, cache: StateCache) -> Result<(), rquickjs::Error> {
+fn register_host_functions(ctx: &Ctx<'_>, state: StateStore) -> Result<(), rquickjs::Error> {
     let globals = ctx.globals();
 
-    let sensor_cache = cache.clone();
+    let sensor_state = state.clone();
     globals.set(
         "__native_get_sensor",
         Function::new(ctx.clone(), move |key: String| -> Option<f64> {
-            match sensor_cache.read().unwrap().get(&key) {
-                Some(StateValue::Number(value)) => Some(*value as f64),
+            match sensor_state.get(&key) {
+                Some(EntityState::Sensor(value)) | Some(EntityState::Number(value)) => {
+                    Some(value as f64)
+                }
                 _ => None,
             }
         })?,
     )?;
 
-    let binary_cache = cache.clone();
+    let binary_state = state.clone();
     globals.set(
         "__native_get_binary_sensor",
         Function::new(ctx.clone(), move |key: String| -> Option<bool> {
-            match binary_cache.read().unwrap().get(&key) {
-                Some(StateValue::Bool(value)) => Some(*value),
+            match binary_state.get(&key) {
+                Some(EntityState::BinarySensor(value)) | Some(EntityState::Switch(value)) => {
+                    Some(value)
+                }
                 _ => None,
             }
         })?,
     )?;
 
-    let text_cache = cache.clone();
+    let text_state = state.clone();
     globals.set(
         "__native_get_text_sensor",
         Function::new(ctx.clone(), move |key: String| -> Option<String> {
-            match text_cache.read().unwrap().get(&key) {
-                Some(StateValue::Text(value)) => Some(value.clone()),
+            match text_state.get(&key) {
+                Some(EntityState::TextSensor(value)) => Some(value),
                 _ => None,
             }
         })?,
@@ -246,7 +238,7 @@ fn eval_lambda(
 /// act like ESPHome globals.
 fn engine_thread(
     lambdas: HashMap<String, (LambdaKind, String)>,
-    cache: StateCache,
+    state: StateStore,
     timeout: Duration,
     requests: std::sync::mpsc::Receiver<EvalRequest>,
 ) {
@@ -274,7 +266,7 @@ fn engine_thread(
             return;
         }
     };
-    if let Err(e) = context.with(|ctx| register_host_functions(&ctx, cache)) {
+    if let Err(e) = context.with(|ctx| register_host_functions(&ctx, state)) {
         error!("Failed to register lambda host functions: {}", e);
         return;
     }
@@ -317,7 +309,8 @@ impl Module for UbiHomePlatform {
                 state_class: sensor.state_class.clone(),
                 unit_of_measurement: sensor.unit_of_measurement.clone(),
                 accuracy_decimals: sensor.accuracy_decimals,
-                name: sensor.name.clone(),
+                name: sensor.name.clone().unwrap_or_default(),
+                internal: sensor.internal,
                 id: id.clone(),
                 filters: sensor.filters.clone(),
             }));
@@ -332,7 +325,8 @@ impl Module for UbiHomePlatform {
                 platform: "lambda".to_string(),
                 icon: binary_sensor.icon.clone(),
                 device_class: binary_sensor.device_class.clone(),
-                name: binary_sensor.name.clone(),
+                name: binary_sensor.name.clone().unwrap_or_default(),
+                internal: binary_sensor.internal,
                 id: id.clone(),
                 on_press: binary_sensor.on_press.clone(),
                 on_release: binary_sensor.on_release.clone(),
@@ -348,7 +342,8 @@ impl Module for UbiHomePlatform {
             components.push(UbiComponent::TextSensor(UbiTextSensor {
                 platform: "lambda".to_string(),
                 icon: text_sensor.icon.clone(),
-                name: text_sensor.name.clone(),
+                name: text_sensor.name.clone().unwrap_or_default(),
+                internal: text_sensor.internal,
                 id: id.clone(),
                 device_class: text_sensor.device_class.clone(),
             }));
@@ -371,7 +366,8 @@ impl Module for UbiHomePlatform {
     fn run(
         &self,
         sender: Sender<ChangedMessage>,
-        mut receiver: Receiver<PublishedMessage>,
+        _receiver: Receiver<PublishedMessage>,
+        state: StateStore,
     ) -> Pin<Box<dyn Future<Output = Result<(), Box<dyn std::error::Error>>> + Send + 'static>>
     {
         let timeout = self.config.timeout;
@@ -379,31 +375,9 @@ impl Module for UbiHomePlatform {
         let binary_sensors = self.binary_sensors.clone();
         let text_sensors = self.text_sensors.clone();
         Box::pin(async move {
-            let cache: StateCache = Arc::new(RwLock::new(HashMap::new()));
-
-            // Keep the state cache up to date from the message bus.
-            let cache_writer = cache.clone();
-            tokio::spawn(async move {
-                while let Ok(message) = receiver.recv().await {
-                    let (key, value) = match message {
-                        PublishedMessage::SensorValueChanged { key, value } => {
-                            (key, StateValue::Number(value))
-                        }
-                        PublishedMessage::BinarySensorValueChanged { key, value } => {
-                            (key, StateValue::Bool(value))
-                        }
-                        PublishedMessage::SwitchStateChange { key, state } => {
-                            (key, StateValue::Bool(state))
-                        }
-                        PublishedMessage::TextSensorValueChanged { key, value } => {
-                            (key, StateValue::Text(value))
-                        }
-                        _ => continue,
-                    };
-                    cache_writer.write().unwrap().insert(key, value);
-                }
-            });
-
+            // Other entities' states (including other lambdas' outputs) are read
+            // from the global `StateStore`, which the main application keeps up
+            // to date from the message bus.
             let mut lambdas: HashMap<String, (LambdaKind, String)> = HashMap::new();
             for (key, sensor) in &sensors {
                 lambdas.insert(key.clone(), (LambdaKind::Sensor, sensor.lambda.clone()));
@@ -422,10 +396,7 @@ impl Module for UbiHomePlatform {
             }
 
             let (request_sender, request_receiver) = std::sync::mpsc::channel::<EvalRequest>();
-            let engine_cache = cache.clone();
-            std::thread::spawn(move || {
-                engine_thread(lambdas, engine_cache, timeout, request_receiver)
-            });
+            std::thread::spawn(move || engine_thread(lambdas, state, timeout, request_receiver));
 
             for (key, sensor) in sensors {
                 spawn_lambda_loop(
@@ -525,6 +496,7 @@ fn spawn_lambda_loop(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use ubihome_core::state::StateStoreWriter;
 
     const CONFIG: &str = r#"
 ubihome:
@@ -585,13 +557,13 @@ sensor:
 
     fn eval_on_engine(
         lambdas: HashMap<String, (LambdaKind, String)>,
-        cache: StateCache,
+        state: StateStore,
         timeout: Duration,
         key: &str,
     ) -> Result<Option<LambdaValue>, String> {
         let (request_sender, request_receiver) = std::sync::mpsc::channel::<EvalRequest>();
         let handle =
-            std::thread::spawn(move || engine_thread(lambdas, cache, timeout, request_receiver));
+            std::thread::spawn(move || engine_thread(lambdas, state, timeout, request_receiver));
         let (respond, response) = tokio::sync::oneshot::channel();
         request_sender
             .send(EvalRequest {
@@ -607,15 +579,9 @@ sensor:
 
     #[test]
     fn test_lambda_reads_state_and_returns_number() {
-        let cache: StateCache = Arc::new(RwLock::new(HashMap::new()));
-        cache
-            .write()
-            .unwrap()
-            .insert("power_a".to_string(), StateValue::Number(20.0));
-        cache
-            .write()
-            .unwrap()
-            .insert("power_b".to_string(), StateValue::Number(22.0));
+        let (writer, state) = StateStoreWriter::new(Vec::new());
+        writer.set("power_a".to_string(), EntityState::Sensor(20.0));
+        writer.set("power_b".to_string(), EntityState::Sensor(22.0));
 
         let mut lambdas = HashMap::new();
         lambdas.insert(
@@ -626,26 +592,26 @@ sensor:
             ),
         );
 
-        let result = eval_on_engine(lambdas, cache, Duration::from_secs(5), "total").unwrap();
+        let result = eval_on_engine(lambdas, state, Duration::from_secs(5), "total").unwrap();
         assert_eq!(result, Some(LambdaValue::Number(42.0)));
     }
 
     #[test]
     fn test_lambda_returning_null_publishes_nothing() {
-        let cache: StateCache = Arc::new(RwLock::new(HashMap::new()));
+        let (_writer, state) = StateStoreWriter::new(Vec::new());
         let mut lambdas = HashMap::new();
         lambdas.insert(
             "silent".to_string(),
             (LambdaKind::Sensor, "return null;".to_string()),
         );
 
-        let result = eval_on_engine(lambdas, cache, Duration::from_secs(5), "silent").unwrap();
+        let result = eval_on_engine(lambdas, state, Duration::from_secs(5), "silent").unwrap();
         assert_eq!(result, None);
     }
 
     #[test]
     fn test_unknown_sensor_reads_as_null() {
-        let cache: StateCache = Arc::new(RwLock::new(HashMap::new()));
+        let (_writer, state) = StateStoreWriter::new(Vec::new());
         let mut lambdas = HashMap::new();
         lambdas.insert(
             "guard".to_string(),
@@ -655,20 +621,20 @@ sensor:
             ),
         );
 
-        let result = eval_on_engine(lambdas, cache, Duration::from_secs(5), "guard").unwrap();
+        let result = eval_on_engine(lambdas, state, Duration::from_secs(5), "guard").unwrap();
         assert_eq!(result, Some(LambdaValue::Number(1.0)));
     }
 
     #[test]
     fn test_runaway_lambda_is_interrupted() {
-        let cache: StateCache = Arc::new(RwLock::new(HashMap::new()));
+        let (_writer, state) = StateStoreWriter::new(Vec::new());
         let mut lambdas = HashMap::new();
         lambdas.insert(
             "loop".to_string(),
             (LambdaKind::Sensor, "while (true) {}".to_string()),
         );
 
-        let result = eval_on_engine(lambdas, cache, Duration::from_millis(100), "loop");
+        let result = eval_on_engine(lambdas, state, Duration::from_millis(100), "loop");
         assert!(result.is_err(), "runaway lambda must be interrupted");
     }
 }
