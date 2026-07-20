@@ -42,7 +42,7 @@ impl StateStore {
             .cloned()
     }
 
-    pub fn snapshot(&self) -> HashMap<String, EntityState> {
+    pub fn get_all(&self) -> HashMap<String, EntityState> {
         self.entity_states
             .read()
             .expect("state store lock poisoned")

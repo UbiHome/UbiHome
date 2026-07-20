@@ -604,7 +604,7 @@ impl Module for UbiHomePlatform {
                                             "SubscribeStatesRequest: {:?}",
                                             subscribe_states_request
                                         );
-                                        for (entity_key, entity_state) in state_clone.snapshot() {
+                                        for (entity_key, entity_state) in state_clone.get_all() {
                                             let Some(key) =
                                                 api_components_key_id_clone_for_subscribe
                                                     .get(&entity_key)
