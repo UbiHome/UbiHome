@@ -200,7 +200,7 @@ async def test_button_and_switch_actions_are_executed(ha_page: Page, io_mock_fac
         await ha_page.get_by_role("button", name="Press").click()
         ubihome.button_sensor_mock.wait_for_mock_state("button")
 
-        await ha_page.get_by_role("button", name=f"Toggle {ubihome.device_name} Switch it on").click()
+        await ha_page.get_by_role("switch", name=f"Toggle {ubihome.device_name} Switch it on").click()
         ubihome.switch_mock.wait_for_mock_state("true")
 
 
