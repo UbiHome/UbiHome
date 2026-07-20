@@ -73,12 +73,27 @@ binary_sensor:
       - delayed_off: 5s
 ```
 
+### deduplicate
+
+Only emits a value when it differs from the last emitted value. Repeated identical readings are suppressed.
+
+```yaml
+sensor:
+  - platform: shell
+    name: 'CPU Usage'
+    command: echo 12.34
+    filters:
+      - deduplicate:
+
+# Only emits again once the command output actually changes
+```
+
 ## Filter Support by Component
 
 | Component                                          | Supported Filters                                                               |
 | -------------------------------------------------- | ------------------------------------------------------------------------------- |
-| [Sensor](/features/entities/sensor/)               | [`round`](#round)                                                               |
-| [Binary Sensor](/features/entities/binary_sensor/) | [`invert`](#invert), [`delayed_on`](#delayed_on), [`delayed_off`](#delayed_off) |
+| [Sensor](/features/entities/sensor/)               | [`round`](#round), [`deduplicate`](#deduplicate)                                                               |
+| [Binary Sensor](/features/entities/binary_sensor/) | [`invert`](#invert), [`delayed_on`](#delayed_on), [`delayed_off`](#delayed_off), [`deduplicate`](#deduplicate) |
 | [Button](/features/entities/button/)               | None                                                                            |
 | [Number](/features/entities/number/)               | None                                                                            |
 | [Switch](/features/entities/switch/)               | None                                                                            |

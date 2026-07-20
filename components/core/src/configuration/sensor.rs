@@ -4,6 +4,7 @@ use serde::Deserialize;
 #[serde(rename_all = "lowercase")]
 pub enum SensorFilterType {
     Round(usize),
+    Deduplicate,
 }
 
 #[derive(Clone, Deserialize, Debug)]

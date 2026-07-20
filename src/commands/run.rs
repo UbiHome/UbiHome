@@ -252,6 +252,10 @@ Remove the "{}:" entry from your configuration or install the cargo crate contai
                                         })
                                         .boxed();
                                 }
+                                SensorFilterType::Deduplicate => {
+                                    trace!("deduplicate");
+                                    signal = signal.dedupe().boxed();
+                                }
                             }
                         }
 
@@ -352,6 +356,10 @@ Remove the "{}:" entry from your configuration or install the cargo crate contai
                                             }
                                         })
                                         .boxed();
+                                }
+                                FilterType::Deduplicate => {
+                                    trace!("deduplicate");
+                                    signal = signal.dedupe().boxed();
                                 }
                             }
                         }

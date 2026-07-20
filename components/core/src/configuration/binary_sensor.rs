@@ -15,6 +15,8 @@ pub enum FilterType {
 
     #[serde(deserialize_with = "deserialize_duration")]
     DelayedOn(#[garde(skip)] Duration),
+
+    Deduplicate,
 }
 
 #[derive(Clone, Serialize, Deserialize, Debug, Validate)]
