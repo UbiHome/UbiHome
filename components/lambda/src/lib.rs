@@ -1,9 +1,8 @@
+use boa_engine::{js_string, Context, NativeFunction, Source};
 use log::{debug, error};
-use rquickjs::{Context, Ctx, Function, Runtime};
 use serde::{Deserialize, Deserializer};
 use std::collections::HashMap;
-use std::sync::{Arc, Mutex};
-use std::time::{Duration, Instant};
+use std::time::Duration;
 use std::{future::Future, pin::Pin};
 use tokio::{
     sync::broadcast::{Receiver, Sender},
@@ -14,24 +13,21 @@ use ubihome_core::state::{EntityState, StateStore};
 use ubihome_core::NoConfig;
 use ubihome_core::{config_template, ChangedMessage, Module, PublishedMessage};
 
-use duration_str::deserialize_duration;
 use ubihome_core::template_binary_sensor;
 use ubihome_core::template_sensor;
 use ubihome_core::template_text_sensor;
 use ubihome_core::with_base_entity_properties;
 
+/// Default cap on JS loop iterations per lambda evaluation, so a runaway
+/// `while (true) {}` fails instead of hanging the engine thread.
+const DEFAULT_MAX_LOOP_ITERATIONS: u64 = 10_000_000;
+
 #[derive(Clone, Deserialize, Debug, Validate)]
 #[garde(allow_unvalidated)]
 pub struct LambdaConfig {
-    /// Maximum wall-clock time a single lambda evaluation may run before it is
-    /// interrupted by the engine.
-    #[serde(default = "default_timeout")]
-    #[serde(deserialize_with = "deserialize_duration")]
-    pub timeout: Duration,
-}
-
-fn default_timeout() -> Duration {
-    Duration::from_secs(5)
+    /// Maximum number of JavaScript loop iterations a single lambda evaluation
+    /// may perform before the engine aborts it.
+    pub max_loop_iterations: Option<u64>,
 }
 
 fn default_interval_none() -> Option<Duration> {
@@ -112,106 +108,96 @@ fn wrap_lambda(source: &str) -> String {
     format!("(function() {{ {}\n }})", source)
 }
 
-fn js_error_message(ctx: &Ctx<'_>, err: rquickjs::Error) -> String {
-    match err {
-        rquickjs::Error::Exception => {
-            let caught = ctx.catch();
-            caught
-                .as_exception()
-                .and_then(|exception| exception.message())
-                .unwrap_or_else(|| format!("{:?}", caught))
-        }
-        other => other.to_string(),
-    }
-}
-
 /// Compile (but do not run) a lambda to surface syntax errors at config
-/// validation time.
+/// validation time. Evaluating a function *expression* parses the whole body
+/// without executing it.
 fn check_syntax(id: &str, source: &str) -> Result<(), String> {
-    let runtime = Runtime::new().map_err(|e| e.to_string())?;
-    let context = Context::full(&runtime).map_err(|e| e.to_string())?;
-    context.with(|ctx| {
-        ctx.eval::<rquickjs::Value, _>(wrap_lambda(source))
-            .map(|_| ())
-            .map_err(|e| format!("Invalid lambda for '{}': {}", id, js_error_message(&ctx, e)))
-    })
+    let mut context = Context::default();
+    context
+        .eval(Source::from_bytes(&wrap_lambda(source)))
+        .map(|_| ())
+        .map_err(|e| format!("Invalid lambda for '{}': {}", id, e))
 }
 
-/// Rewraps the native getters so that a missing value is `null` (instead of
-/// the `undefined` that `Option::None` converts to), which is what lambda
-/// authors will expect to compare against.
+/// JS-side helpers. Entity states are injected into `__sensors` / `__binary` /
+/// `__text` before every evaluation (see [`state_injection`]); these getters
+/// read from them and normalise a missing key to `null`.
 const PRELUDE: &str = r#"
-for (const name of ["get_sensor", "get_binary_sensor", "get_text_sensor"]) {
-    const native = globalThis["__native_" + name];
-    globalThis[name] = (key) => {
-        const value = native(key);
-        return value === undefined ? null : value;
-    };
-}
+globalThis.__sensors = {}; globalThis.__binary = {}; globalThis.__text = {};
+globalThis.get_sensor = function(k){ var v = globalThis.__sensors[k]; return v === undefined ? null : v; };
+globalThis.get_binary_sensor = function(k){ var v = globalThis.__binary[k]; return v === undefined ? null : v; };
+globalThis.get_text_sensor = function(k){ var v = globalThis.__text[k]; return v === undefined ? null : v; };
 "#;
 
-fn register_host_functions(ctx: &Ctx<'_>, state: StateStore) -> Result<(), rquickjs::Error> {
-    let globals = ctx.globals();
-
-    let sensor_state = state.clone();
-    globals.set(
-        "__native_get_sensor",
-        Function::new(ctx.clone(), move |key: String| -> Option<f64> {
-            match sensor_state.get(&key) {
-                Some(EntityState::Sensor(value)) | Some(EntityState::Number(value)) => {
-                    Some(value as f64)
+/// Register the `log` host function and evaluate the [`PRELUDE`].
+fn setup_context(context: &mut Context) -> Result<(), String> {
+    context
+        .register_global_builtin_callable(
+            js_string!("log"),
+            1,
+            NativeFunction::from_fn_ptr(|_this, args, ctx| {
+                if let Some(arg) = args.first() {
+                    let message = arg.to_string(ctx)?.to_std_string_escaped();
+                    log::info!("[lambda] {}", message);
                 }
-                _ => None,
-            }
-        })?,
-    )?;
+                Ok(boa_engine::JsValue::undefined())
+            }),
+        )
+        .map_err(|e| e.to_string())?;
+    context
+        .eval(Source::from_bytes(PRELUDE))
+        .map(|_| ())
+        .map_err(|e| e.to_string())
+}
 
-    let binary_state = state.clone();
-    globals.set(
-        "__native_get_binary_sensor",
-        Function::new(ctx.clone(), move |key: String| -> Option<bool> {
-            match binary_state.get(&key) {
-                Some(EntityState::BinarySensor(value)) | Some(EntityState::Switch(value)) => {
-                    Some(value)
+/// Build the JS snippet that injects the current entity states as the
+/// `__sensors` / `__binary` / `__text` global objects the getters read from.
+/// Non-finite sensor values are skipped (JSON cannot represent them), so a
+/// lambda reading such a key sees `null`.
+fn state_injection(state: &StateStore) -> String {
+    use serde_json::{Map, Number, Value};
+
+    let mut sensors = Map::new();
+    let mut binary = Map::new();
+    let mut text = Map::new();
+    for (key, entity_state) in state.get_all() {
+        match entity_state {
+            EntityState::Sensor(value) | EntityState::Number(value) => {
+                if let Some(number) = Number::from_f64(value as f64) {
+                    sensors.insert(key, Value::Number(number));
                 }
-                _ => None,
             }
-        })?,
-    )?;
-
-    let text_state = state.clone();
-    globals.set(
-        "__native_get_text_sensor",
-        Function::new(ctx.clone(), move |key: String| -> Option<String> {
-            match text_state.get(&key) {
-                Some(EntityState::TextSensor(value)) => Some(value),
-                _ => None,
+            EntityState::BinarySensor(value) | EntityState::Switch(value) => {
+                binary.insert(key, Value::Bool(value));
             }
-        })?,
-    )?;
-
-    globals.set(
-        "log",
-        Function::new(ctx.clone(), |message: String| {
-            log::info!("[lambda] {}", message);
-        })?,
-    )?;
-
-    ctx.eval::<(), _>(PRELUDE)?;
-
-    Ok(())
+            EntityState::Light { state: value, .. } => {
+                binary.insert(key, Value::Bool(value));
+            }
+            EntityState::TextSensor(value) => {
+                text.insert(key, Value::String(value));
+            }
+        }
+    }
+    format!(
+        "globalThis.__sensors = {}; globalThis.__binary = {}; globalThis.__text = {};",
+        Value::Object(sensors),
+        Value::Object(binary),
+        Value::Object(text)
+    )
 }
 
 fn eval_lambda(
-    ctx: &Ctx<'_>,
+    context: &mut Context,
     kind: LambdaKind,
     source: &str,
 ) -> Result<Option<LambdaValue>, String> {
     let code = format!("{}()", wrap_lambda(source));
-    let value: rquickjs::Value = ctx.eval(code).map_err(|e| js_error_message(ctx, e))?;
+    let value = context
+        .eval(Source::from_bytes(&code))
+        .map_err(|e| e.to_string())?;
 
     // Like ESPHome lambdas returning `{}`: no return value means "publish nothing".
-    if value.is_undefined() || value.is_null() {
+    if value.is_null_or_undefined() {
         return Ok(None);
     }
 
@@ -221,13 +207,12 @@ fn eval_lambda(
             .map(|number| Some(LambdaValue::Number(number as f32)))
             .ok_or_else(|| "lambda must return a number (or null to skip)".to_string()),
         LambdaKind::BinarySensor => value
-            .as_bool()
+            .as_boolean()
             .map(|boolean| Some(LambdaValue::Bool(boolean)))
             .ok_or_else(|| "lambda must return a boolean (or null to skip)".to_string()),
         LambdaKind::TextSensor => value
             .as_string()
-            .and_then(|string| string.to_string().ok())
-            .map(|string| Some(LambdaValue::Text(string)))
+            .map(|string| Some(LambdaValue::Text(string.to_std_string_escaped())))
             .ok_or_else(|| "lambda must return a string (or null to skip)".to_string()),
     }
 }
@@ -239,43 +224,29 @@ fn eval_lambda(
 fn engine_thread(
     lambdas: HashMap<String, (LambdaKind, String)>,
     state: StateStore,
-    timeout: Duration,
+    max_loop_iterations: u64,
     requests: std::sync::mpsc::Receiver<EvalRequest>,
 ) {
-    let runtime = match Runtime::new() {
-        Ok(runtime) => runtime,
-        Err(e) => {
-            error!("Failed to start lambda engine: {}", e);
-            return;
-        }
-    };
-    runtime.set_memory_limit(32 * 1024 * 1024);
+    let mut context = Context::default();
+    // Bound loops so a runaway `while (true) {}` aborts instead of hanging.
+    context
+        .runtime_limits_mut()
+        .set_loop_iteration_limit(max_loop_iterations);
 
-    let deadline = Arc::new(Mutex::new(Instant::now() + timeout));
-    {
-        let deadline = deadline.clone();
-        runtime.set_interrupt_handler(Some(Box::new(move || {
-            Instant::now() > *deadline.lock().unwrap()
-        })));
-    }
-
-    let context = match Context::full(&runtime) {
-        Ok(context) => context,
-        Err(e) => {
-            error!("Failed to create lambda context: {}", e);
-            return;
-        }
-    };
-    if let Err(e) = context.with(|ctx| register_host_functions(&ctx, state)) {
-        error!("Failed to register lambda host functions: {}", e);
+    if let Err(e) = setup_context(&mut context) {
+        error!("Failed to set up lambda context: {}", e);
         return;
     }
 
     while let Ok(request) = requests.recv() {
         let result = match lambdas.get(&request.key) {
             Some((kind, source)) => {
-                *deadline.lock().unwrap() = Instant::now() + timeout;
-                context.with(|ctx| eval_lambda(&ctx, *kind, source))
+                // Refresh the injected entity states, then run the lambda.
+                let injection = state_injection(&state);
+                match context.eval(Source::from_bytes(&injection)) {
+                    Ok(_) => eval_lambda(&mut context, *kind, source),
+                    Err(e) => Err(e.to_string()),
+                }
             }
             None => Err(format!("Unknown lambda '{}'", request.key)),
         };
@@ -370,7 +341,10 @@ impl Module for UbiHomePlatform {
         state: StateStore,
     ) -> Pin<Box<dyn Future<Output = Result<(), Box<dyn std::error::Error>>> + Send + 'static>>
     {
-        let timeout = self.config.timeout;
+        let max_loop_iterations = self
+            .config
+            .max_loop_iterations
+            .unwrap_or(DEFAULT_MAX_LOOP_ITERATIONS);
         let sensors = self.sensors.clone();
         let binary_sensors = self.binary_sensors.clone();
         let text_sensors = self.text_sensors.clone();
@@ -396,7 +370,9 @@ impl Module for UbiHomePlatform {
             }
 
             let (request_sender, request_receiver) = std::sync::mpsc::channel::<EvalRequest>();
-            std::thread::spawn(move || engine_thread(lambdas, state, timeout, request_receiver));
+            std::thread::spawn(move || {
+                engine_thread(lambdas, state, max_loop_iterations, request_receiver)
+            });
 
             for (key, sensor) in sensors {
                 spawn_lambda_loop(
@@ -558,12 +534,13 @@ sensor:
     fn eval_on_engine(
         lambdas: HashMap<String, (LambdaKind, String)>,
         state: StateStore,
-        timeout: Duration,
+        max_loop_iterations: u64,
         key: &str,
     ) -> Result<Option<LambdaValue>, String> {
         let (request_sender, request_receiver) = std::sync::mpsc::channel::<EvalRequest>();
-        let handle =
-            std::thread::spawn(move || engine_thread(lambdas, state, timeout, request_receiver));
+        let handle = std::thread::spawn(move || {
+            engine_thread(lambdas, state, max_loop_iterations, request_receiver)
+        });
         let (respond, response) = tokio::sync::oneshot::channel();
         request_sender
             .send(EvalRequest {
@@ -592,7 +569,7 @@ sensor:
             ),
         );
 
-        let result = eval_on_engine(lambdas, state, Duration::from_secs(5), "total").unwrap();
+        let result = eval_on_engine(lambdas, state, DEFAULT_MAX_LOOP_ITERATIONS, "total").unwrap();
         assert_eq!(result, Some(LambdaValue::Number(42.0)));
     }
 
@@ -605,7 +582,7 @@ sensor:
             (LambdaKind::Sensor, "return null;".to_string()),
         );
 
-        let result = eval_on_engine(lambdas, state, Duration::from_secs(5), "silent").unwrap();
+        let result = eval_on_engine(lambdas, state, DEFAULT_MAX_LOOP_ITERATIONS, "silent").unwrap();
         assert_eq!(result, None);
     }
 
@@ -621,7 +598,7 @@ sensor:
             ),
         );
 
-        let result = eval_on_engine(lambdas, state, Duration::from_secs(5), "guard").unwrap();
+        let result = eval_on_engine(lambdas, state, DEFAULT_MAX_LOOP_ITERATIONS, "guard").unwrap();
         assert_eq!(result, Some(LambdaValue::Number(1.0)));
     }
 
@@ -634,7 +611,7 @@ sensor:
             (LambdaKind::Sensor, "while (true) {}".to_string()),
         );
 
-        let result = eval_on_engine(lambdas, state, Duration::from_millis(100), "loop");
+        let result = eval_on_engine(lambdas, state, 1_000, "loop");
         assert!(result.is_err(), "runaway lambda must be interrupted");
     }
 }
