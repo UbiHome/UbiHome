@@ -16,6 +16,7 @@ ubihome-bme280 = { path = "components/bme280" }
 ubihome-core = { path = "components/core" }
 ubihome-gpio = { path = "components/gpio" }
 ubihome-illuminance = { path = "components/illuminance" }
+ubihome-lambda = { path = "components/lambda" }
 ubihome-online = { path = "components/online" }
 ubihome-mdns = { path = "components/mdns" }
 ubihome-mqtt = { path = "components/mqtt" }
@@ -75,6 +76,7 @@ members = [
     "components/evdev",
     "components/gpio",
     "components/illuminance",
+    "components/lambda",
     "components/online",
     "components/mdns",
     "components/mqtt",
