@@ -3,10 +3,10 @@ use serde::{Deserialize, Deserializer};
 use std::collections::HashMap;
 use std::{future::Future, pin::Pin, str};
 use tokio::sync::broadcast::{Receiver, Sender};
-use ubihome_core::constants::is_id_string_option;
-use ubihome_core::constants::is_readable_string;
-use ubihome_core::internal::sensors::UbiComponent;
+use ubihome_core::internal::sensors::{UbiComponent, UbiSwitch};
+use ubihome_core::state::StateStore;
 use ubihome_core::template_binary_sensor;
+use ubihome_core::template_switch;
 use ubihome_core::with_base_entity_properties;
 use ubihome_core::{
     config_template, internal::sensors::UbiBinarySensor, ChangedMessage, Module, NoConfig,
@@ -20,26 +20,81 @@ pub enum GpioDevice {
 }
 
 #[derive(Clone, Deserialize, Debug, Validate)]
-#[garde(allow_unvalidated)]
 pub struct GpioConfig {
+    #[garde(dive)]
     pub device: GpioDevice,
 }
 
+// Highest GPIO line count across supported models (BCM2711 on the Pi 4/400
+// exposes lines 0-57); keeps typos (e.g. a physical header pin number) from
+// silently reaching rppal, which otherwise only fails at pin-acquisition time.
 #[derive(Clone, Deserialize, Debug, Validate)]
-#[garde(allow_unvalidated)]
 pub struct GpioSensorConfig {
+    #[garde(range(min = 0, max = 57))]
     pub pin: u8, // TODO: Use GPIO types or library
+    #[garde(skip)]
     pub pull_up: Option<bool>,
 }
 
 template_binary_sensor! {
 
 #[derive(Clone, Deserialize, Debug, Validate)]
-#[garde(allow_unvalidated)]
 pub struct GpioBinarySensorConfig {
     #[serde(flatten)]
     #[garde(dive)]
     pub base: GpioSensorConfig,
+}
+}
+
+// https://esphome.io/components/switch/index.html#config-switch-restore-mode
+//
+// This project does not persist switch state across restarts, so the
+// `RESTORE_*` modes are commented out below: implementing them today would
+// just silently behave like `ALWAYS_OFF`/`ALWAYS_ON`, which is misleading
+// given their name. Uncomment (and update `initial_state` below) once state
+// is actually persisted somewhere.
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Deserialize, Validate)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+pub enum GpioRestoreMode {
+    AlwaysOff,
+    AlwaysOn,
+    // RestoreDefaultOff,
+    // RestoreDefaultOn,
+    // RestoreInvertedDefaultOff,
+    // RestoreInvertedDefaultOn,
+    Disabled,
+}
+
+impl GpioRestoreMode {
+    // `Disabled` leaves the pin level untouched at startup.
+    // Only used on Linux, where GPIO output pins are actually driven.
+    #[cfg_attr(not(target_os = "linux"), allow(dead_code))]
+    fn initial_state(self) -> Option<bool> {
+        match self {
+            GpioRestoreMode::AlwaysOff => Some(false),
+            GpioRestoreMode::AlwaysOn => Some(true),
+            GpioRestoreMode::Disabled => None,
+        }
+    }
+}
+
+#[derive(Clone, Deserialize, Debug, Validate)]
+pub struct GpioOutputConfig {
+    #[garde(range(min = 0, max = 57))]
+    pub pin: u8, // TODO: Use GPIO types or library
+    #[garde(skip)]
+    pub inverted: Option<bool>,
+    #[garde(dive)]
+    pub restore_mode: Option<GpioRestoreMode>,
+}
+
+template_switch! {
+
+#[derive(Clone, Deserialize, Debug, Validate)]
+pub struct GpioSwitchConfig {
+    #[serde(flatten)]
+    #[garde(dive)]
+    pub base: GpioOutputConfig,
 }
 }
 
@@ -49,7 +104,7 @@ config_template!(
     NoConfig,
     GpioBinarySensorConfig,
     NoConfig,
-    NoConfig,
+    GpioSwitchConfig,
     NoConfig,
     NoConfig,
     NoConfig
@@ -59,6 +114,7 @@ config_template!(
 pub struct UbiHomePlatform {
     components: Vec<UbiComponent>,
     binary_sensors: HashMap<String, GpioSensorConfig>,
+    switches: HashMap<String, GpioOutputConfig>,
 }
 
 impl Module for UbiHomePlatform {
@@ -76,7 +132,8 @@ impl Module for UbiHomePlatform {
                 platform: "sensor".to_string(),
                 icon: binary_sensor.icon.clone(),
                 device_class: binary_sensor.device_class.clone(),
-                name: binary_sensor.name.clone(),
+                name: binary_sensor.name.clone().unwrap_or_default(),
+                internal: binary_sensor.internal,
                 id: id.clone(),
                 on_press: binary_sensor.on_press.clone(),
                 on_release: binary_sensor.on_release.clone(),
@@ -91,9 +148,36 @@ impl Module for UbiHomePlatform {
             );
         }
 
+        let mut switches: HashMap<String, GpioOutputConfig> = HashMap::new();
+        for (_, switch) in config.switch.clone().unwrap_or_default() {
+            let id = switch.get_object_id();
+            components.push(UbiComponent::Switch(UbiSwitch {
+                platform: "sensor".to_string(),
+                icon: switch.icon.clone(),
+                device_class: switch.device_class.clone(),
+                name: switch.name.clone().unwrap_or_default(),
+                internal: switch.internal,
+                id: id.clone(),
+                assumed_state: false,
+            }));
+            debug!(
+                "Parsed switch '{}': pin={}, inverted={:?}, restore_mode={:?}",
+                id, switch.base.pin, switch.base.inverted, switch.base.restore_mode
+            );
+            switches.insert(
+                id,
+                GpioOutputConfig {
+                    pin: switch.base.pin,
+                    inverted: switch.base.inverted,
+                    restore_mode: switch.base.restore_mode,
+                },
+            );
+        }
+
         Ok(UbiHomePlatform {
             components,
             binary_sensors,
+            switches,
         })
     }
 
@@ -104,11 +188,14 @@ impl Module for UbiHomePlatform {
     fn run(
         &self,
         #[allow(unused_variables)] sender: Sender<ChangedMessage>,
-        _: Receiver<PublishedMessage>,
+        #[allow(unused_variables, unused_mut)] mut receiver: Receiver<PublishedMessage>,
+        #[allow(unused_variables)] state: StateStore,
     ) -> Pin<Box<dyn Future<Output = Result<(), Box<dyn std::error::Error>>> + Send + 'static>>
     {
         #[allow(unused_variables)]
         let binary_sensors = self.binary_sensors.clone();
+        #[allow(unused_variables)]
+        let switches = self.switches.clone();
         Box::pin(async move {
             #[cfg(any(target_os = "macos", target_os = "windows"))]
             {
@@ -116,7 +203,8 @@ impl Module for UbiHomePlatform {
             }
             #[cfg(target_os = "linux")]
             {
-                use rppal::gpio::{Gpio, Trigger};
+                use rppal::gpio::{Gpio, OutputPin, Trigger};
+                use std::sync::{Arc, Mutex};
 
                 let gpio = Gpio::new();
                 match gpio {
@@ -125,6 +213,107 @@ impl Module for UbiHomePlatform {
                         return Ok(());
                     }
                     Ok(gpio) => {
+                        debug!(
+                            "GPIO initialized with {} switch(es) and {} binary_sensor(s)",
+                            switches.len(),
+                            binary_sensors.len()
+                        );
+
+                        // Set up switch output pins and apply their configured startup state.
+                        let mut output_pins: HashMap<String, OutputPin> = HashMap::new();
+                        for (key, switch) in &switches {
+                            debug!(
+                                "Setting up switch {} on pin {} (inverted: {:?}, restore_mode: {:?})",
+                                key, switch.pin, switch.inverted, switch.restore_mode
+                            );
+                            match gpio.get(switch.pin) {
+                                Ok(gpio_pin) => {
+                                    let inverted = switch.inverted.unwrap_or(false);
+                                    let initial_on = switch
+                                        .restore_mode
+                                        .unwrap_or(GpioRestoreMode::AlwaysOff)
+                                        .initial_state();
+
+                                    debug!(
+                                        "Switch {} computed initial_on: {:?} (inverted: {})",
+                                        key, initial_on, inverted
+                                    );
+
+                                    let output_pin = match initial_on {
+                                        Some(on) if on != inverted => gpio_pin.into_output_high(),
+                                        Some(_) => gpio_pin.into_output_low(),
+                                        None => gpio_pin.into_output(),
+                                    };
+
+                                    if let Some(state) = initial_on {
+                                        match sender.send(ChangedMessage::SwitchStateChange {
+                                            key: key.clone(),
+                                            state,
+                                        }) {
+                                            Ok(receiver_count) => {
+                                                debug!(
+                                                    "Sent initial state {} for switch {} to {} receiver(s)",
+                                                    state, key, receiver_count
+                                                );
+                                            }
+                                            Err(e) => {
+                                                warn!(
+                                                    "Failed to send initial state {} for switch {}: {} (no receivers subscribed yet?)",
+                                                    state, key, e
+                                                );
+                                            }
+                                        }
+                                    } else {
+                                        debug!(
+                                            "Switch {} restore_mode is Disabled, not sending initial state",
+                                            key
+                                        );
+                                    }
+
+                                    output_pins.insert(key.clone(), output_pin);
+                                }
+                                Err(e) => {
+                                    warn!(
+                                        "Error getting GPIO pin {} for switch {}: {}",
+                                        switch.pin, key, e
+                                    );
+                                }
+                            }
+                        }
+
+                        // Handle Switch Commands
+                        let output_pins = Arc::new(Mutex::new(output_pins));
+                        let cloned_switches = switches.clone();
+                        let cloned_sender = sender.clone();
+                        let cloned_output_pins = output_pins.clone();
+                        tokio::spawn(async move {
+                            while let Ok(message) = receiver.recv().await {
+                                if let PublishedMessage::SwitchStateCommand { key, state } = message
+                                {
+                                    if let Some(switch) = cloned_switches.get(&key) {
+                                        let inverted = switch.inverted.unwrap_or(false);
+                                        let mut pins = cloned_output_pins
+                                            .lock()
+                                            .expect("GPIO output pin lock poisoned");
+                                        if let Some(pin) = pins.get_mut(&key) {
+                                            if state != inverted {
+                                                pin.set_high();
+                                            } else {
+                                                pin.set_low();
+                                            }
+                                            debug!("Switch {} set to {}", key, state);
+                                            _ = cloned_sender.send(
+                                                ChangedMessage::SwitchStateChange {
+                                                    key: key.clone(),
+                                                    state,
+                                                },
+                                            );
+                                        }
+                                    }
+                                }
+                            }
+                        });
+
                         // Handle Button Presses
                         // let cloned_config = self.config.clone();
                         // tokio::spawn(async move {
@@ -214,5 +403,108 @@ impl Module for UbiHomePlatform {
             debug!("GPIO module stopped");
             Ok(())
         })
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_switch_config_parsing() {
+        let config = r#"
+ubihome:
+  name: "Test Switch Config"
+
+gpio:
+  device: raspberryPi
+
+switch:
+  - platform: gpio
+    name: "Relay"
+    id: relay
+    pin: 5
+    inverted: true
+    restore_mode: ALWAYS_ON
+"#;
+
+        let module = UbiHomePlatform::new(config, "config.yml");
+        assert!(
+            module.is_ok(),
+            "GPIO module should parse switch config successfully: {:?}",
+            module.err()
+        );
+
+        let module = module.unwrap();
+        assert_eq!(module.switches.len(), 1, "Should have 1 switch entity");
+
+        let switch = module
+            .switches
+            .get("relay")
+            .expect("Should contain 'relay' switch");
+        assert_eq!(switch.pin, 5, "pin should match");
+        assert_eq!(switch.inverted, Some(true), "inverted should match");
+        assert_eq!(
+            switch.restore_mode,
+            Some(GpioRestoreMode::AlwaysOn),
+            "restore_mode should match"
+        );
+    }
+
+    #[test]
+    fn test_switch_config_minimal() {
+        let config = r#"
+ubihome:
+  name: "Test Switch Minimal"
+
+gpio:
+  device: raspberryPi
+
+switch:
+  - platform: gpio
+    name: "Relay"
+    pin: 12
+"#;
+
+        let module = UbiHomePlatform::new(config, "config.yml");
+        assert!(
+            module.is_ok(),
+            "GPIO module should parse minimal switch config successfully: {:?}",
+            module.err()
+        );
+
+        let module = module.unwrap();
+        let switch = module
+            .switches
+            .get("relay")
+            .expect("Should contain 'relay' switch");
+        assert_eq!(switch.pin, 12, "pin should match");
+        assert_eq!(switch.inverted, None, "inverted should default to None");
+        assert_eq!(
+            switch.restore_mode, None,
+            "restore_mode should default to None"
+        );
+    }
+
+    #[test]
+    fn test_switch_config_rejects_out_of_range_pin() {
+        let config = r#"
+ubihome:
+  name: "Test Switch Invalid Pin"
+
+gpio:
+  device: raspberryPi
+
+switch:
+  - platform: gpio
+    name: "Relay"
+    pin: 200
+"#;
+
+        let module = UbiHomePlatform::new(config, "config.yml");
+        assert!(
+            module.is_err(),
+            "GPIO module should reject a pin number outside the valid GPIO range"
+        );
     }
 }

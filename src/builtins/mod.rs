@@ -20,6 +20,7 @@ use tokio::sync::broadcast::{Receiver, Sender};
 use tokio::task::JoinSet;
 use ubihome_core::configuration::automation::{Action, ActionType};
 use ubihome_core::serde_value::Value;
+use ubihome_core::state::{EntityState, StateStoreWriter};
 use ubihome_core::PublishedMessage;
 
 pub use globals::{GlobalConfig, Globals};
@@ -87,10 +88,13 @@ pub fn parse(config_string: &str, config_path: &str) -> Result<BuiltinConfig, St
     })
 }
 
-/// Execute a list of automation actions by publishing the corresponding
+/// Run a list of automation actions in order, publishing the corresponding
 /// messages onto the internal bus. Shared by every trigger site (binary sensor
 /// `on_press`/`on_release`, template switch `turn_on_action`/`turn_off_action`).
-pub fn execute_actions(actions: &[Action], tx: &Sender<PublishedMessage>, globals: &Globals) {
+///
+/// Actions are executed sequentially so that a `delay` action pauses the list
+/// before the following actions run.
+pub async fn run_actions(actions: Vec<Action>, tx: &Sender<PublishedMessage>, globals: &Globals) {
     for action in actions {
         match &action.action {
             ActionType::SwitchTurnOn(key) => {
@@ -111,6 +115,9 @@ pub fn execute_actions(actions: &[Action], tx: &Sender<PublishedMessage>, global
             ActionType::GlobalsSet { id, value } => {
                 globals.set(id, value);
             }
+            ActionType::Delay(duration) => {
+                tokio::time::sleep(*duration).await;
+            }
         }
     }
 }
@@ -119,11 +126,20 @@ pub fn execute_actions(actions: &[Action], tx: &Sender<PublishedMessage>, global
 /// [`PublishedMessage::SwitchStateCommand`] targeting a template switch, runs
 /// the matching `turn_on_action`/`turn_off_action`, and (when `optimistic`)
 /// publishes the new state back onto the bus so connected front-ends update.
+///
+/// Template switches are not platform modules, so nothing else records their
+/// state into the central [`StateStore`](ubihome_core::state::StateStore) the
+/// way the runtime's internal command router does for every other component
+/// (see `crate::commands::run`). Every `SwitchStateChange` published here is
+/// therefore mirrored into `state_writer` directly, so a client that connects
+/// after the fact (e.g. `api`'s `SubscribeStatesRequest`) still observes the
+/// current state instead of nothing.
 pub fn spawn_template_switches(
     tasks: &mut JoinSet<()>,
     switches: Vec<TemplateSwitchConfig>,
     tx: Sender<PublishedMessage>,
     globals: Globals,
+    state_writer: StateStoreWriter,
 ) {
     if switches.is_empty() {
         return;
@@ -140,6 +156,7 @@ pub fn spawn_template_switches(
             if let Some(id) = switch.state_global() {
                 if let Some(state) = globals.get_bool(id) {
                     log::debug!("template switch '{}' initial state from global '{}': {}", key, id, state);
+                    state_writer.set(key.clone(), EntityState::Switch(state));
                     let _ = tx.send(PublishedMessage::SwitchStateChange {
                         key: key.clone(),
                         state,
@@ -155,18 +172,19 @@ pub fn spawn_template_switches(
                         Ok(PublishedMessage::SwitchStateCommand { key, state }) => {
                             if let Some(switch) = switches.get(&key) {
                                 let actions = if state {
-                                    switch.turn_on_action.as_deref()
+                                    switch.turn_on_action.clone()
                                 } else {
-                                    switch.turn_off_action.as_deref()
+                                    switch.turn_off_action.clone()
                                 };
                                 if let Some(actions) = actions {
-                                    execute_actions(actions, &tx, &globals);
+                                    run_actions(actions, &tx, &globals).await;
                                 }
                                 // With a `globals.get` lambda the state follows the
                                 // global (published via the change notification
                                 // below), so only optimistic switches without a
                                 // lambda echo the command.
                                 if switch.optimistic && switch.state_global().is_none() {
+                                    state_writer.set(key.clone(), EntityState::Switch(state));
                                     let _ = tx.send(PublishedMessage::SwitchStateChange {
                                         key,
                                         state,
@@ -186,6 +204,7 @@ pub fn spawn_template_switches(
                             if switch.state_global() == Some(id.as_str()) {
                                 if let Some(state) = globals.get_bool(&id) {
                                     log::debug!("template switch '{}' state from global '{}': {}", key, id, state);
+                                    state_writer.set(key.clone(), EntityState::Switch(state));
                                     let _ = tx.send(PublishedMessage::SwitchStateChange {
                                         key: key.clone(),
                                         state,

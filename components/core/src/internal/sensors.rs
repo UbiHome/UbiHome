@@ -17,6 +17,23 @@ pub enum UbiComponent {
     TextSensor(UbiTextSensor),
 }
 
+impl UbiComponent {
+    /// An internal component is configured with an `id` but no `name`. It is
+    /// wired up internally (filters, actions, state routing) but must not be
+    /// exposed by connectivity components such as api, mqtt or http.
+    pub fn is_internal(&self) -> bool {
+        match self {
+            UbiComponent::Button(c) => c.internal,
+            UbiComponent::Sensor(c) => c.internal,
+            UbiComponent::BinarySensor(c) => c.internal,
+            UbiComponent::Switch(c) => c.internal,
+            UbiComponent::Light(c) => c.internal,
+            UbiComponent::Number(c) => c.internal,
+            UbiComponent::TextSensor(c) => c.internal,
+        }
+    }
+}
+
 // Icons: https://pictogrammers.com/library/mdi/
 
 macro_rules! with_base_properties {
@@ -35,6 +52,11 @@ macro_rules! with_base_properties {
             pub icon: Option<String>,
             pub platform: String,
             pub id: String,
+            /// Set when the component was configured with only an `id` (no
+            /// `name`). Internal components are hidden from connectivity
+            /// components (api, mqtt, http).
+            #[serde(default)]
+            pub internal: bool,
         // pub state_class: Option<String>,
         // pub device_class: Option<String>,
 

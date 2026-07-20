@@ -76,7 +76,7 @@ fn default_true() -> bool {
 
 impl TemplateSwitchConfig {
     pub fn get_object_id(&self) -> String {
-        format_id(&self.id, &self.name)
+        format_id(&self.id, &Some(self.name.clone()))
     }
 
     /// Whether Home Assistant should treat the switch state as assumed. A

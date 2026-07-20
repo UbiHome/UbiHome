@@ -3,11 +3,14 @@ pub mod constants;
 pub mod features;
 pub mod internal;
 pub mod mapper;
+pub mod state;
 pub mod text_sensor;
 pub mod utils;
 #[cfg(feature = "validation")]
 pub mod validation;
 pub extern crate serde_value;
+#[doc(hidden)]
+pub use paste;
 
 use garde::Validate;
 use internal::sensors::UbiComponent;
@@ -16,6 +19,7 @@ use std::{collections::HashMap, future::Future, pin::Pin};
 use tokio::sync::broadcast::{Receiver, Sender};
 
 use crate::constants::{is_readable_string, is_readable_string_option};
+use crate::state::StateStore;
 
 pub type BoxFuture<'a, T> = Pin<Box<dyn Future<Output = T> + Send + 'a>>;
 pub type ModuleRunFuture = BoxFuture<'static, Result<(), Box<dyn std::error::Error>>>;
@@ -39,6 +43,7 @@ where
         &self,
         sender: Sender<ChangedMessage>,
         receiver: Receiver<PublishedMessage>,
+        state: StateStore,
     ) -> ModuleRunFuture;
 }
 
@@ -107,9 +112,6 @@ pub enum ChangedMessage {
 
 #[derive(Debug, Clone)]
 pub enum PublishedMessage {
-    Components {
-        components: Vec<UbiComponent>,
-    },
     ButtonPressed {
         key: String,
     },

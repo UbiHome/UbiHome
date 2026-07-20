@@ -1,6 +1,8 @@
+use duration_str::deserialize_duration;
 use garde::Validate;
 use serde::Deserialize;
 use serde::Serialize;
+use std::time::Duration;
 
 /// A single automation action. New action types are added as variants here and
 /// are executed centrally by the main binary (see the runtime action executor),
@@ -24,6 +26,11 @@ pub enum ActionType {
         #[garde(skip)]
         value: String,
     },
+
+    /// Pauses the action list for the configured duration before running the
+    /// next action.
+    #[serde(rename = "delay", deserialize_with = "deserialize_duration")]
+    Delay(#[garde(skip)] Duration),
 }
 
 #[derive(Clone, Serialize, Deserialize, Debug, Validate)]

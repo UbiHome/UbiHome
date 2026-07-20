@@ -7,6 +7,7 @@ use flexi_logger::{detailed_format, Age, Cleanup, Criterion, Duplicate, FileSpec
 use ubihome_core::configuration::binary_sensor::FilterType;
 use ubihome_core::configuration::sensor::SensorFilterType;
 use ubihome_core::internal::sensors::{UbiComponent, UbiSwitch};
+use ubihome_core::state::{EntityState, StateStoreWriter};
 use ubihome_core::{ChangedMessage, PublishedMessage};
 
 use futures_signals::signal::{Mutable, SignalExt};
@@ -172,6 +173,7 @@ Remove the "{}:" entry from your configuration or install the cargo crate contai
             icon: switch.icon.clone(),
             name: switch.name.clone(),
             id: switch.get_object_id(),
+            internal: false,
             device_class: switch.device_class.clone(),
             assumed_state: switch.is_assumed_state(),
         }));
@@ -180,6 +182,11 @@ Remove the "{}:" entry from your configuration or install the cargo crate contai
     if validate_only {
         return Ok(());
     }
+
+    // The global entity state cache: only this function (the main application)
+    // ever holds a `StateStoreWriter`. Platform modules only ever receive the
+    // read-only `StateStore` handed out below via `run_platforms`.
+    let (state_writer, state_store) = StateStoreWriter::new(initialized_platforms.clone());
 
     // Spawn the root task
     let rt = Runtime::new().unwrap();
@@ -211,6 +218,7 @@ Remove the "{}:" entry from your configuration or install the cargo crate contai
                     let mutable: Mutable<Option<Option<f32>>> = Mutable::new(Option::None);
                     signal_map_sensor.insert(sensor.id.clone(), mutable.clone());
                     let internal_tx_clone = internal_tx.clone();
+                    let state_writer_clone = state_writer.clone();
 
                     let mutable_clone = mutable.clone();
                     supervised_tasks.spawn(async move {
@@ -245,6 +253,7 @@ Remove the "{}:" entry from your configuration or install the cargo crate contai
 
                                 let key = sensor.id.clone();
                                 if let Some(value) = value.and_then(|v| v) {
+                                    state_writer_clone.set(key.clone(), EntityState::Sensor(value));
                                     let pcmd = PublishedMessage::SensorValueChanged { key, value };
                                     debug!("Publishing command from signal: {:?}", pcmd);
 
@@ -273,6 +282,7 @@ Remove the "{}:" entry from your configuration or install the cargo crate contai
                     signal_map_binary_sensor.insert(binary_sensor.id.clone(), mutable.clone());
                     let internal_tx_clone = internal_tx.clone();
                     let globals_clone = globals.clone();
+                    let state_writer_clone = state_writer.clone();
 
                     let mutable_clone = mutable.clone();
                     supervised_tasks.spawn(async move {
@@ -340,32 +350,46 @@ Remove the "{}:" entry from your configuration or install the cargo crate contai
 
                         // React to signal changes
                         signal
-                            .for_each(|value| {
+                            .for_each(move |value| {
+                                let action_tx = internal_tx_clone.clone();
                                 let signal_tx_clone = internal_tx_clone.clone();
+                                let state_writer_for_call = state_writer_clone.clone();
 
                                 let key = binary_sensor.id.clone();
-                                if let Some(value) = value.and_then(|v| v) {
-                                    let trigger = if value {
-                                        binary_sensor.on_press.as_ref()
-                                    } else {
-                                        binary_sensor.on_release.as_ref()
-                                    };
-                                    if let Some(trigger) = trigger {
-                                        builtins::execute_actions(
-                                            &trigger.then,
-                                            &internal_tx_clone,
-                                            &globals_clone,
-                                        );
+                                let on_press = binary_sensor.on_press.clone();
+                                let on_release = binary_sensor.on_release.clone();
+                                let globals_for_call = globals_clone.clone();
+                                async move {
+                                    if let Some(value) = value.and_then(|v| v) {
+                                        if value {
+                                            if let Some(on_press) = on_press {
+                                                builtins::run_actions(
+                                                    on_press.then,
+                                                    &action_tx,
+                                                    &globals_for_call,
+                                                )
+                                                .await;
+                                            }
+                                        } else if let Some(on_release) = on_release {
+                                            builtins::run_actions(
+                                                on_release.then,
+                                                &action_tx,
+                                                &globals_for_call,
+                                            )
+                                            .await;
+                                        }
+
+                                        state_writer_for_call
+                                            .set(key.clone(), EntityState::BinarySensor(value));
+                                        let pcmd = PublishedMessage::BinarySensorValueChanged {
+                                            key,
+                                            value,
+                                        };
+                                        debug!("Publishing command from signal: {:?}", pcmd);
+
+                                        signal_tx_clone.send(pcmd).unwrap();
                                     }
-
-                                    let pcmd =
-                                        PublishedMessage::BinarySensorValueChanged { key, value };
-                                    debug!("Publishing command from signal: {:?}", pcmd);
-
-                                    signal_tx_clone.send(pcmd).unwrap();
                                 }
-
-                                async move {}
                             })
                             .await;
 
@@ -384,6 +408,7 @@ Remove the "{}:" entry from your configuration or install the cargo crate contai
         }
 
         let internal_tx_clone = internal_tx.clone();
+        let state_writer_clone = state_writer.clone();
         supervised_tasks.spawn({
             async move {
                 while let Ok(cmd) = internal_rx.recv().await {
@@ -455,6 +480,38 @@ Remove the "{}:" entry from your configuration or install the cargo crate contai
                         }
                     };
                     if let Some(pcmd) = publish_cmd {
+                        match &pcmd {
+                            PublishedMessage::SwitchStateChange { key, state } => {
+                                state_writer_clone.set(key.clone(), EntityState::Switch(*state));
+                            }
+                            PublishedMessage::LightStateChange {
+                                key,
+                                state,
+                                brightness,
+                                red,
+                                green,
+                                blue,
+                            } => {
+                                state_writer_clone.set(
+                                    key.clone(),
+                                    EntityState::Light {
+                                        state: *state,
+                                        brightness: *brightness,
+                                        red: *red,
+                                        green: *green,
+                                        blue: *blue,
+                                    },
+                                );
+                            }
+                            PublishedMessage::NumberValueChanged { key, value } => {
+                                state_writer_clone.set(key.clone(), EntityState::Number(*value));
+                            }
+                            PublishedMessage::TextSensorValueChanged { key, value } => {
+                                state_writer_clone
+                                    .set(key.clone(), EntityState::TextSensor(value.clone()));
+                            }
+                            _ => {}
+                        }
                         debug!("Publishing command: {:?}", pcmd);
                         internal_tx_clone.send(pcmd).unwrap();
                     }
@@ -469,6 +526,7 @@ Remove the "{}:" entry from your configuration or install the cargo crate contai
             builtin.template_switches.clone(),
             internal_tx.clone(),
             globals.clone(),
+            state_writer.clone(),
         );
 
         run_platforms(
@@ -476,29 +534,10 @@ Remove the "{}:" entry from your configuration or install the cargo crate contai
             configured_platforms,
             modules_tx.clone(),
             modules_rx,
+            state_store,
         );
 
         println!("Platforms: {:?}", initialized_platforms);
-        internal_tx
-            .send(PublishedMessage::Components {
-                components: initialized_platforms
-                    .iter()
-                    .map(|c| match c {
-                        UbiComponent::Switch(switch) => UbiComponent::Switch(switch.clone()),
-                        UbiComponent::Button(button) => UbiComponent::Button(button.clone()),
-                        UbiComponent::Sensor(sensor) => UbiComponent::Sensor(sensor.clone()),
-                        UbiComponent::BinarySensor(binary_sensor) => {
-                            UbiComponent::BinarySensor(binary_sensor.clone())
-                        }
-                        UbiComponent::Light(light) => UbiComponent::Light(light.clone()),
-                        UbiComponent::Number(number) => UbiComponent::Number(number.clone()),
-                        UbiComponent::TextSensor(text_sensor) => {
-                            UbiComponent::TextSensor(text_sensor.clone())
-                        }
-                    })
-                    .collect(),
-            })
-            .unwrap();
 
         let ctrl_c = async {
             signal::ctrl_c()

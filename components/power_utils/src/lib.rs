@@ -3,9 +3,8 @@ use serde::{Deserialize, Deserializer};
 use std::collections::HashMap;
 use std::{future::Future, pin::Pin, str};
 use tokio::sync::broadcast::{Receiver, Sender};
-use ubihome_core::constants::is_id_string_option;
-use ubihome_core::constants::is_readable_string;
 use ubihome_core::internal::sensors::UbiComponent;
+use ubihome_core::state::StateStore;
 use ubihome_core::template_button;
 use ubihome_core::with_base_entity_properties;
 use ubihome_core::{
@@ -74,35 +73,42 @@ impl Module for UbiHomePlatform {
         let mut buttons: HashMap<String, PowerAction> = HashMap::new();
         for (_, button) in config.button.clone().unwrap_or_default() {
             let id = button.get_object_id();
+            let name = button.name.clone().unwrap_or_default();
+            let internal = button.internal;
             let button_component = match button.action {
                 PowerAction::Reboot => UbiButton {
                     platform: "sensor".to_string(),
                     icon: Some(button.icon.unwrap_or("mdi:restart".to_string())),
-                    name: button.name.clone(),
+                    name,
+                    internal,
                     id: id.clone(),
                 },
                 PowerAction::Shutdown => UbiButton {
                     platform: "sensor".to_string(),
                     icon: Some(button.icon.unwrap_or("mdi:power".to_string())),
-                    name: button.name.clone(),
+                    name,
+                    internal,
                     id: id.clone(),
                 },
                 PowerAction::Hibernate => UbiButton {
                     platform: "sensor".to_string(),
                     icon: Some(button.icon.unwrap_or("mdi:snowflake".to_string())),
-                    name: button.name.clone(),
+                    name,
+                    internal,
                     id: id.clone(),
                 },
                 PowerAction::Logout => UbiButton {
                     platform: "sensor".to_string(),
                     icon: Some(button.icon.unwrap_or("mdi:logout".to_string())),
-                    name: button.name.clone(),
+                    name,
+                    internal,
                     id: id.clone(),
                 },
                 PowerAction::Sleep => UbiButton {
                     platform: "sensor".to_string(),
                     icon: Some(button.icon.unwrap_or("mdi:sleep".to_string())),
-                    name: button.name.clone(),
+                    name,
+                    internal,
                     id: id.clone(),
                 },
             };
@@ -124,6 +130,7 @@ impl Module for UbiHomePlatform {
         &self,
         _: Sender<ChangedMessage>,
         mut receiver: Receiver<PublishedMessage>,
+        _state: StateStore,
     ) -> Pin<Box<dyn Future<Output = Result<(), Box<dyn std::error::Error>>> + Send + 'static>>
     {
         let buttons = self.buttons.clone();

@@ -43,11 +43,25 @@ See [Filters](/features/components/filters/) for the available debounce filters.
 | `switch.turn_off` | switch `id` | Turns the referenced [switch](/features/entities/switch/) off. |
 | `button.press`    | button `id` | Presses the referenced [button](/features/entities/button/), running its platform action. |
 | `globals.set`     | `id`, `value` | Sets a [global](/features/components/globals/) variable to `value`. |
+| `delay`           | duration    | Pauses the action list for the given duration (e.g. `2s`, `500ms`) before running the next action. |
 
-The argument is the `id` of the target entity, so make sure the switch or button you reference has an `id` set.
+For entity actions the argument is the `id` of the target entity, so make sure the switch or button you reference has an `id` set.
 
 ```yaml
-# Setting a global uses id/value arguments instead of a single id:
+binary_sensor:
+  - platform: gpio
+    name: 'Button'
+    pin: 17
+    on_press:
+      then:
+        - switch.turn_on: screen
+        - delay: 30s
+        - switch.turn_off: screen
+```
+
+Setting a global uses `id`/`value` arguments instead of a single id:
+
+```yaml
 - globals.set:
     id: door_open
     value: 'true'
