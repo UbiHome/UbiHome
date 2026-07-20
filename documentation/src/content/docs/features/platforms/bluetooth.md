@@ -1,5 +1,6 @@
 ---
 title: 'Bluetooth'
+description: 'Scan for Bluetooth devices and proxy them to Home Assistant'
 tags:
   - linux
 ---

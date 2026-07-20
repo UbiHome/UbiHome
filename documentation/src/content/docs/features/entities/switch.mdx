@@ -1,0 +1,47 @@
+---
+title: 'Switch'
+sidebar:
+  order: 1
+---
+
+import SupportedPlatforms from '../../../../components/SupportedPlatforms.astro';
+
+```yaml title="Base Example"
+switch:
+  - platform: ... # See supported platforms at the end of this page
+    name: 'My Switch'
+```
+
+:::note[Platform-specific attributes]
+Each platform may require additional attributes not shown above.
+Check the [page of the platform](/features/platforms/#platforms) for the full list of required and optional options.
+:::
+
+## Attributes
+
+Common attributes are documented in [Common Component Properties](/features/components/common_properties/).
+
+| Property       | Description                           | Example  |
+| -------------- | ------------------------------------- | -------- |
+| `device_class` | Home Assistant switch classification. | `outlet` |
+
+### Triggers
+
+See [Triggers and Actions](/features/components/actions/) for how triggers work.
+
+| Property | Description                                  | Example |
+| -------- | --------------------------------------------- | ------- |
+| _(none)_ | Switch currently has no additional triggers. | _(n/a)_ |
+
+Supported filters are documented in [Filters](/features/components/filters/).
+
+<SupportedPlatforms />
+
+Similar to ESPHome: [Switch](https://esphome.io/components/switch/index.html)
+
+{/* Backlinks to be displayed */}
+
+<div style='display:none' aria-hidden='true'>
+  <a href='/examples/screen_on_off/'>Turn Raspberry screen on or off</a>
+  <a href='/examples/automatic_screen_power_control/'>Automatic Screen Power Control</a>
+</div>

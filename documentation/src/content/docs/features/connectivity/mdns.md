@@ -1,5 +1,6 @@
 ---
 title: 'MDNS'
+description: 'Advertise the device and its services via mDNS'
 sidebar:
   badge:
     text: Default

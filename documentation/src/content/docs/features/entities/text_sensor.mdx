@@ -1,0 +1,34 @@
+---
+title: 'Text Sensor'
+sidebar:
+  order: 1
+---
+
+import SupportedPlatforms from '../../../../components/SupportedPlatforms.astro';
+
+```yaml title="Base Example"
+text_sensor:
+  - platform: ... # See supported platforms at the end of this page
+    name: 'My Text'
+```
+
+:::note[Platform-specific attributes]
+Each platform may require additional attributes not shown above.
+Check the [page of the platform](/features/platforms/#platforms) for the full list of required and optional options.
+:::
+
+Text sensors publish string values instead of numeric values.
+
+## Triggers
+
+See [Triggers and Actions](/features/components/actions/) for how triggers work.
+
+| Property | Description                                       | Example |
+| -------- | -------------------------------------------------- | ------- |
+| _(none)_ | Text Sensor currently has no additional triggers. | _(n/a)_ |
+
+<SupportedPlatforms />
+
+Similar to ESPHome:
+
+- https://esphome.io/components/text_sensor/

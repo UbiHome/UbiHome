@@ -9,12 +9,19 @@ UbiHome is built in a modular way. The modules can be split into the following c
 
 ## Components
 
-Make data or actions available in a structured way, for example as sensor, button, switch, or number.
-[Platforms](#platforms) provide the implementation for component behavior.
+Make data or actions available in a structured way (as entity), for example as sensor, button, switch, or number.
+[Platforms](#platforms-and-connectivity) provide the implementation for a components behavior.
 
-A component entry is defined under a component key (for example `sensor:` or `switch:`), and each entry selects a `platform`.
+```yaml
+# A component entry is defined under a component key, e.g. switch or
+sensor:
+  # Each entry selects a platform:
+  - platform: <selected platform>
+    name: Test Entity
+```
 
-All components share a set of [common attributes](/features/components/base/) that can be used to customize their behavior.
+All components share a set of [common attributes](/features/components/common_properties/) that can be used to customize their behavior.
+They also provide common [triggers and actions](/features/components/actions/).
 
 ### Entities
 
@@ -60,50 +67,13 @@ All components share a set of [common attributes](/features/components/base/) th
   />
 </CardGrid>
 
-## Platforms
+## Platforms and Connectivity
 
 Platforms extend the functionality of UbiHome.
-They implement how [Components](#components) interact with the system or [connectivity](#connectivity) to external systems.
+They implement how [Components](#components) interact with the system or provide [connectivity](/features/platforms/#connectivity) to external systems.
 Use the built-in platforms to access device sensors (e.g. GPIO), execute commands or create your own component.
 
 <CardGrid>
-  <LinkCard title="GPIO" href="/features/platforms/gpio/" description="Access and control GPIO pins.">
-  </LinkCard>
-  <LinkCard title="Shell" href="/features/platforms/shell/" description="Execute any command when retrieving data or on trigger.">
-  </LinkCard>
-
-  <LinkCard
-    title="Many more..."
-    description="See the side navigation for more platforms."
-  />
+  <LinkCard title='Platforms' href='/features/platforms/#platforms'></LinkCard>
+  <LinkCard title='Connectivity' href='/features/platforms/#connectivity'></LinkCard>
 </CardGrid>
-
-### Connectivity
-
-Connect with Home Assistant via the native API, use MQTT or the built-in web server (REST API).
-
-<CardGrid>
-  <LinkCard title="Native API" href="/features/connectivity/native_api/" description="Use ESPHome's native API to connect to your device">
-  </LinkCard>
-
-<LinkCard title='MQTT' href='/features/connectivity/mqtt/' description='Connect to any MQTT broker'></LinkCard>
-
-<LinkCard
-  title='MDNS'
-  href='/features/connectivity/mdns/'
-  description='Advertise the device and its services via mDNS'
-></LinkCard>
-
-<LinkCard
-  title='Web Server (REST API)'
-  href='/features/connectivity/web_server/'
-  description="Trigger an action via the web server and its REST API."
-></LinkCard>
-
-  <LinkCard 
-    title="HTTP" 
-    href="/features/connectivity/http/" 
-    description="Call any HTTP endpoint to trigger."
-  ></LinkCard>
-</CardGrid>
-platform.

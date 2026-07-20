@@ -4,9 +4,11 @@ sidebar:
   order: 1
 ---
 
+import SupportedPlatforms from '../../../../components/SupportedPlatforms.astro';
+
 ```yaml title="Base Example"
 number:
-  - platform: ... # [!code highlight]
+  - platform: ... # See supported platforms at the end of this page
     name: 'Display Brightness'
     id: display_brightness
     icon: mdi:brightness-6
@@ -18,13 +20,14 @@ number:
     step: 1.0
 ```
 
-:::note[Platform-specific properties]
-Each platform requires additional properties not shown above. Check the [Platforms documentation](/features/) and the page for your chosen platform for the full list of required and optional options.
+:::note[Platform-specific attributes]
+Each platform may require additional attributes not shown above.
+Check the [page of the platform](/features/platforms/#platforms) for the full list of required and optional options.
 :::
 
 ## Attributes
 
-Common attributes are documented in [Common Component Properties](/features/components/base/).
+Common attributes are documented in [Common Component Properties](/features/components/common_properties/).
 
 | Property              | Description                                   | Example       |
 | --------------------- | --------------------------------------------- | ------------- |
@@ -35,18 +38,16 @@ Common attributes are documented in [Common Component Properties](/features/comp
 | `max_value`           | Upper boundary for allowed values.            | `100.0`       |
 | `step`                | Increment/decrement step size.                | `1.0`         |
 
-## Supported Filters
+### Triggers
 
-| Filter   | Description                                |
-| -------- | ------------------------------------------ |
-| _(none)_ | Number does not currently support filters. |
+See [Triggers and Actions](/features/components/actions/) for how triggers work.
 
-## Supported Platforms
+| Property | Description                                  | Example |
+| -------- | --------------------------------------------- | ------- |
+| _(none)_ | Number currently has no additional triggers. | _(n/a)_ |
 
-| Platform                            | Notes                                                        |
-| ----------------------------------- | ------------------------------------------------------------ |
-| [Shell](/features/platforms/shell/) | Uses `command_state` for reads and `command_set` for writes. |
+Supported filters are documented in [Filters](/features/components/filters/).
 
-For platform-specific configuration options, use the linked platform pages.
+<SupportedPlatforms />
 
 Similar to ESPHome: [Number](https://esphome.io/components/number/)

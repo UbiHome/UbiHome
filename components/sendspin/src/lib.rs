@@ -17,6 +17,7 @@ use std::{future::Future, pin::Pin, str};
 use tokio::sync::broadcast::Receiver;
 use tokio::sync::broadcast::Sender;
 use ubihome_core::internal::sensors::UbiComponent;
+use ubihome_core::state::StateStore;
 use ubihome_core::NoConfig;
 use ubihome_core::{config_template, ChangedMessage, Module, PublishedMessage};
 
@@ -162,6 +163,7 @@ impl Module for UbiHomePlatform {
         &self,
         _sender: Sender<ChangedMessage>,
         mut _receiver: Receiver<PublishedMessage>,
+        _state: StateStore,
     ) -> Pin<Box<dyn Future<Output = Result<(), Box<dyn std::error::Error>>> + Send + 'static>>
     {
         let name = self
@@ -499,6 +501,21 @@ impl Module for UbiHomePlatform {
                                                         Some(vol) => {
                                                             info!("Setting player volume to {}", vol);
                                                             let _ = player_tx.send(PlayerCommand::SetVolume(vol));
+                                                            if let Err(e) = sender.send_message(Message::ClientState(
+                                                                ClientState {
+                                                                    state: None,
+                                                                    player: Some(PlayerState {
+                                                                        volume: Some(vol),
+                                                                        muted: None,
+                                                                        static_delay_ms: None,
+                                                                        supported_commands: None,
+                                                                        required_lead_time_ms: None,
+                                                                        min_buffer_ms: None
+                                                                    }),
+                                                                }
+                                                            )).await {
+                                                                warn!("Failed to send volume state to server: {}", e);
+                                                            }
                                                         }
                                                     }
                                                 }

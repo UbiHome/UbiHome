@@ -10,7 +10,7 @@ from utils import SHELL_TYPE, UbiHome
 async def test_run(io_mock: IOMock):
     light_id = "my_light"
     light_name = "Test Light"
-    io_mock.set_value("false")
+    io_mock.set_value("true")
     DEVICE_INFO_CONFIG = f"""
 ubihome:
   name: test_device
@@ -47,9 +47,6 @@ light:
         # Subscribe to the state changes
         api.subscribe_states(mock)
 
-        io_mock.set_value("true")
-
-        # Wait for the state change
         while not mock.called:
             await sleep(0.1)
 

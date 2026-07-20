@@ -11,13 +11,10 @@ Thanks to [Music Assistant](https://github.com/music-assistant) and the [Sendspi
 ```yaml title="config.yml"
 sendspin:
 ```
+
 > For more advanced configuration options check the [Sendspin Platform](/features/platforms/sendspin/).
 
-
-
-
 <!-- Backlinks to be displayed  -->
-<!-- <div style="display:none" aria-hidden="true">
-</div> -->
-
-
+<div style="display:none" aria-hidden="true">
+  <a href="/features/platforms/sendspin/">Sendspin</a>
+</div>

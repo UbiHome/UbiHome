@@ -1,0 +1,49 @@
+---
+title: 'Button'
+sidebar:
+  order: 1
+---
+
+import SupportedPlatforms from '../../../../components/SupportedPlatforms.astro';
+
+```yaml title="Base Example"
+button:
+  - platform: ... # See supported platforms at the end of this page
+    name: 'Write Hello World'
+```
+
+:::note[Platform-specific attributes]
+Each platform may require additional attributes not shown above.
+Check the [page of the platform](/features/platforms/#platforms) for the full list of required and optional options.
+:::
+
+## Attributes
+
+Common attributes are documented in [Common Component Properties](/features/components/common_properties/).
+
+| Property | Description                                                       | Example |
+| -------- | ----------------------------------------------------------------- | ------- |
+| _(none)_ | Button currently has no additional component-specific attributes. | _(n/a)_ |
+
+### Triggers
+
+See [Triggers and Actions](/features/components/actions/) for how triggers work.
+
+| Property | Description                                  | Example |
+| -------- | --------------------------------------------- | ------- |
+| _(none)_ | Button currently has no additional triggers. | _(n/a)_ |
+
+Supported filters are documented in [Filters](/features/components/filters/).
+
+<SupportedPlatforms />
+
+Similar to ESPHome: [Button](https://esphome.io/components/button/)
+
+{/* Backlinks to be displayed */}
+
+<div style='display:none' aria-hidden='true'>
+  <a href='/examples/open_chrome_tab/'>Open a new tab in chrome</a>
+  <a href='/examples/display_notification/'>Display a Notification</a>
+  <a href='/examples/stop_reboot/'>Stop or reboot your system</a>
+  <a href='/examples/bluetooth_monitor_control/'>Monitor and control Bluetooth devices</a>
+</div>

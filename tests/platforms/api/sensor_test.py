@@ -27,7 +27,7 @@ sensor:
     name: {sensor_name}
     command: "cat {io_mock.file}"
 """
-    io_mock.set_value("0.1")
+    io_mock.set_value("0.2")
 
     async with UbiHome("run", config=DEVICE_INFO_CONFIG, wait_for_api=True) as ubihome:
         api = aioesphomeapi.APIClient("127.0.0.1", ubihome.port, "")
@@ -46,9 +46,6 @@ sensor:
         # Subscribe to the state changes
         api.subscribe_states(mock)
 
-        io_mock.set_value("0.2")
-
-        # Wait for the state change
         while not mock.called:
             await sleep(0.1)
 

@@ -9,8 +9,8 @@ use tokio::{
     sync::broadcast::{Receiver, Sender},
     time,
 };
-use ubihome_core::constants::{is_id_string_option, is_readable_string};
 use ubihome_core::internal::sensors::{UbiBinarySensor, UbiComponent};
+use ubihome_core::state::StateStore;
 use ubihome_core::template_binary_sensor;
 use ubihome_core::with_base_entity_properties;
 use ubihome_core::{config_template, ChangedMessage, Module, NoConfig, PublishedMessage};
@@ -168,7 +168,8 @@ impl Module for UbiHomePlatform {
                     .device_class
                     .clone()
                     .or_else(|| Some("connectivity".to_string())),
-                name: binary_sensor.name.clone(),
+                name: binary_sensor.name.clone().unwrap_or_default(),
+                internal: binary_sensor.internal,
                 id: id.clone(),
                 on_press: binary_sensor.on_press.clone(),
                 on_release: binary_sensor.on_release.clone(),
@@ -208,6 +209,7 @@ impl Module for UbiHomePlatform {
         &self,
         sender: Sender<ChangedMessage>,
         _receiver: Receiver<PublishedMessage>,
+        _state: StateStore,
     ) -> Pin<Box<dyn Future<Output = Result<(), Box<dyn std::error::Error>>> + Send + 'static>>
     {
         let binary_sensors = self.binary_sensors.clone();

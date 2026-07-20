@@ -4,8 +4,8 @@ use std::{collections::HashMap, future::Future, pin::Pin, str, time::Duration};
 use tokio::sync::broadcast::{Receiver, Sender};
 use ubihome_core::{
     config_template,
-    constants::{is_id_string_option, is_readable_string},
     internal::sensors::{UbiComponent, UbiSensor},
+    state::StateStore,
     template_sensor, with_base_entity_properties, ChangedMessage, Module, NoConfig,
     PublishedMessage,
 };
@@ -97,7 +97,8 @@ impl Module for UbiHomePlatform {
                 .clone()
                 .unwrap_or(SpecificSensorConfig {
                     id: None,
-                    name: "Temperature".to_string(),
+                    name: Some("Temperature".to_string()),
+                    internal: false,
                     icon: None,
                     state_class: None,
                     accuracy_decimals: None,
@@ -137,13 +138,15 @@ impl Module for UbiHomePlatform {
                         .unwrap_or("°C".to_string()),
                 ),
                 accuracy_decimals: None,
-                name: temperature.name.clone(),
+                name: temperature.name.clone().unwrap_or_default(),
+                internal: temperature.internal,
                 id: object_id.clone(),
                 filters: temperature.filters.clone(),
             }));
             let pressure = n_sensor.pressure.clone().unwrap_or(SpecificSensorConfig {
                 id: None,
-                name: "Pressure".to_string(),
+                name: Some("Pressure".to_string()),
+                internal: false,
                 icon: None,
                 state_class: None,
                 accuracy_decimals: None,
@@ -183,13 +186,15 @@ impl Module for UbiHomePlatform {
                         .unwrap_or("Pa".to_string()),
                 ),
                 accuracy_decimals: None,
-                name: pressure.name.clone(),
+                name: pressure.name.clone().unwrap_or_default(),
+                internal: pressure.internal,
                 id: id.clone(),
                 filters: pressure.filters.clone(),
             }));
             let humidity = n_sensor.humidity.clone().unwrap_or(SpecificSensorConfig {
                 id: None,
-                name: "Humidity".to_string(),
+                name: Some("Humidity".to_string()),
+                internal: false,
                 icon: None,
                 state_class: None,
                 accuracy_decimals: None,
@@ -228,7 +233,8 @@ impl Module for UbiHomePlatform {
                         .unwrap_or("%".to_string()),
                 ),
                 accuracy_decimals: None,
-                name: humidity.name.clone(),
+                name: humidity.name.clone().unwrap_or_default(),
+                internal: humidity.internal,
                 id: id.clone(),
                 filters: humidity.filters.clone(),
             }));
@@ -254,6 +260,7 @@ impl Module for UbiHomePlatform {
         &self,
         sender: Sender<ChangedMessage>,
         _: Receiver<PublishedMessage>,
+        _state: StateStore,
     ) -> Pin<Box<dyn Future<Output = Result<(), Box<dyn std::error::Error>>> + Send + 'static>>
     {
         // let mqtt_config = self.mqtt_config.clone();

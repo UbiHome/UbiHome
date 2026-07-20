@@ -18,7 +18,7 @@ switch:
   - platform: shell
     name: 'Screen'
     id: screen
-    command_on: 'vcgencmd display_power 1' # [!code highlight]
+    command_on: 'vcgencmd display_power 1'
     command_off: 'vcgencmd display_power 0'
     command_state: 'vcgencmd display_power'
 

@@ -28,7 +28,7 @@ binary_sensor:
     name: {sensor_name}
     command: "cat {io_mock.file}"
 """
-    io_mock.set_value("false")
+    io_mock.set_value("true")
 
     async with UbiHome("run", config=DEVICE_INFO_CONFIG, wait_for_api=True) as ubihome:
         api = aioesphomeapi.APIClient("127.0.0.1", ubihome.port, "")
@@ -46,9 +46,6 @@ binary_sensor:
         # Subscribe to the state changes
         api.subscribe_states(mock)
 
-        io_mock.set_value("true")
-
-        # Wait for the state change
         while not mock.called:
             await sleep(0.1)
 
@@ -57,9 +54,7 @@ binary_sensor:
 
         io_mock.set_value("false")
 
-        mock.reset_mock()
-        # Wait for the state change
-        while not mock.called:
+        while not (mock.called and mock.call_args.args[0].state is False):
             await sleep(0.1)
 
         state = mock.call_args.args[0]
