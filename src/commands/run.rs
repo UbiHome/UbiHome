@@ -6,7 +6,7 @@ use flexi_logger::{detailed_format, Age, Cleanup, Criterion, Duplicate, FileSpec
 
 use ubihome_core::configuration::binary_sensor::FilterType;
 use ubihome_core::configuration::sensor::SensorFilterType;
-use ubihome_core::internal::sensors::{UbiComponent, UbiSwitch};
+use ubihome_core::internal::sensors::{UbiButton, UbiComponent, UbiSwitch};
 use ubihome_core::state::{EntityState, StateStoreWriter};
 use ubihome_core::{ChangedMessage, PublishedMessage};
 
@@ -164,8 +164,9 @@ Remove the "{}:" entry from your configuration or install the cargo crate contai
     log::info!("Loaded {} modules", configured_platforms.len());
     let mut initialized_platforms = initialize_platforms(&mut configured_platforms).unwrap();
 
-    // Builtin components (template switches, globals) are parsed and wired up by
-    // the main binary itself; see `crate::builtins` for the rationale.
+    // Builtin components (template switches, template buttons, globals) are
+    // parsed and wired up by the main binary itself; see `crate::builtins` for
+    // the rationale.
     let builtin = builtins::parse(&config_string, config_path)?;
     for switch in &builtin.template_switches {
         initialized_platforms.push(UbiComponent::Switch(UbiSwitch {
@@ -176,6 +177,15 @@ Remove the "{}:" entry from your configuration or install the cargo crate contai
             internal: false,
             device_class: switch.device_class.clone(),
             assumed_state: switch.is_assumed_state(),
+        }));
+    }
+    for button in &builtin.template_buttons {
+        initialized_platforms.push(UbiComponent::Button(UbiButton {
+            platform: "button".to_string(),
+            icon: button.icon.clone(),
+            name: button.name.clone(),
+            id: button.get_object_id(),
+            internal: false,
         }));
     }
 
@@ -527,6 +537,15 @@ Remove the "{}:" entry from your configuration or install the cargo crate contai
             internal_tx.clone(),
             globals.clone(),
             state_writer.clone(),
+        );
+
+        // Wire up builtin template buttons: they react to button presses by
+        // running their on_press automations on the shared bus.
+        builtins::spawn_template_buttons(
+            &mut supervised_tasks,
+            builtin.template_buttons.clone(),
+            internal_tx.clone(),
+            globals.clone(),
         );
 
         run_platforms(

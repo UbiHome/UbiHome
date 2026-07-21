@@ -1,3 +1,4 @@
+use crate::global_value::GlobalValue;
 use duration_str::deserialize_duration;
 use garde::Validate;
 use serde::Deserialize;
@@ -18,13 +19,15 @@ pub enum ActionType {
     #[serde(rename = "button.press")]
     ButtonPress(#[garde(ascii)] String),
 
-    /// Sets the value of a [`globals`] variable.
+    /// Sets the value of a [`globals`] variable. `value` accepts a plain YAML
+    /// scalar (string, boolean, or number); it is reconciled against the
+    /// global's declared `type:` at runtime.
     #[serde(rename = "globals.set")]
     GlobalsSet {
         #[garde(ascii)]
         id: String,
         #[garde(skip)]
-        value: String,
+        value: GlobalValue,
     },
 
     /// Pauses the action list for the configured duration before running the

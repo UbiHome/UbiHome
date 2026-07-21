@@ -9,7 +9,7 @@ can update at runtime with `globals.set`. `globals` is built into UbiHome.
 globals:
   - id: door_open
     type: bool
-    initial_value: 'false'
+    initial_value: false
     # restore_value is accepted for ESPHome compatibility but not yet persisted.
     restore_value: false
 ```
@@ -20,8 +20,12 @@ globals:
 | --------------- | ------------------------------------------------------- | --------- |
 | `id`            | Identifier used to reference the global.                | `door_open` |
 | `type`          | Value type: `bool`, `int`, `float` or `string`.         | `bool`    |
-| `initial_value` | Value the global starts with. Defaults per type.        | `'false'` |
+| `initial_value` | Value the global starts with. Defaults per type.        | `false`   |
 | `restore_value` | Accepted for compatibility; persistence is not implemented yet. | `false` |
+
+`initial_value` and `globals.set` accept the value as a plain YAML scalar
+matching `type` (e.g. an unquoted `false` or `42`) or as a quoted string
+(e.g. `'false'`) — both are reconciled against the global's declared `type`.
 
 Globals are written via the `globals.set` [action](/features/components/actions/).
 A `bool` global can also be read as the state of a

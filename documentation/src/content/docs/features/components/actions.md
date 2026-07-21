@@ -9,13 +9,14 @@ Triggers are available on the [Binary Sensor](/features/entities/binary_sensor/)
 - `on_press` — runs when the state changes to `true`.
 - `on_release` — runs when the state changes to `false`.
 
-and on the [Template](/features/platforms/template/) switch:
+and on the [Template](/features/platforms/template/) switch and button:
 
-- `turn_on_action` — runs when the switch is turned on.
-- `turn_off_action` — runs when the switch is turned off.
+- `turn_on_action` — runs when the template switch is turned on.
+- `turn_off_action` — runs when the template switch is turned off.
+- `on_press` — runs when the template button is pressed.
 
 A binary sensor trigger takes a `then` block listing the actions to run in order
-(template switch actions are a plain list, without `then`):
+(template switch/button actions are a plain list, without `then`):
 
 ```yaml
 binary_sensor:
@@ -59,10 +60,11 @@ binary_sensor:
         - switch.turn_off: screen
 ```
 
-Setting a global uses `id`/`value` arguments instead of a single id:
+Setting a global uses `id`/`value` arguments instead of a single id. `value`
+accepts a plain scalar matching the global's `type` (or a quoted string):
 
 ```yaml
 - globals.set:
     id: door_open
-    value: 'true'
+    value: true
 ```

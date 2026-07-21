@@ -1,12 +1,16 @@
 ---
 title: 'Template'
-description: 'A switch that runs automations when it is turned on or off'
+description: 'A switch or button that runs automations instead of talking to hardware'
 ---
 
-The `template` platform creates a [switch](/features/entities/switch/) that is
-driven entirely by automations: turning it on or off runs the configured
-[actions](/features/components/actions/). It is built into UbiHome, so no
-top-level section is required to enable it.
+The `template` platform creates entities driven entirely by automations
+instead of hardware: their [actions](/features/components/actions/) run in
+response to a command or press. It is built into UbiHome, so no top-level
+section is required to enable it.
+
+## Switch
+
+Turning the switch on or off runs the configured actions.
 
 ```yaml
 switch:
@@ -21,15 +25,15 @@ switch:
       - switch.turn_off: relay
 ```
 
-## Attributes
+### Attributes
 
-| Property           | Description                                                              | Example        |
-| ------------------ | ------------------------------------------------------------------------ | -------------- |
-| `optimistic`       | Publish the new state right after a command, without state feedback.     | `true`         |
-| `assumed_state`    | Whether the state must be assumed. Defaults to `optimistic`.             | `true`         |
-| `lambda`           | Source the reported state from a global (see below).                     | see below      |
-| `turn_on_action`   | List of [actions](/features/components/actions/) run when turned on.     | see above      |
-| `turn_off_action`  | List of [actions](/features/components/actions/) run when turned off.    | see above      |
+| Property          | Description                                                            | Example   |
+| ----------------- | ----------------------------------------------------------------------- | --------- |
+| `optimistic`      | Publish the new state right after a command, without state feedback.    | `true`    |
+| `assumed_state`   | Whether the state must be assumed. Defaults to `optimistic`.            | `true`    |
+| `lambda`          | Source the reported state from a global (see below).                    | see below |
+| `turn_on_action`  | List of [actions](/features/components/actions/) run when turned on.    | see above |
+| `turn_off_action` | List of [actions](/features/components/actions/) run when turned off.   | see above |
 
 ### State from a global (`lambda`)
 
@@ -44,7 +48,7 @@ its state always reflects the global.
 globals:
   - id: relay_state
     type: bool
-    initial_value: 'false'
+    initial_value: false
 
 switch:
   - platform: template
@@ -55,11 +59,11 @@ switch:
     turn_on_action:
       - globals.set:
           id: relay_state
-          value: 'true'
+          value: true
     turn_off_action:
       - globals.set:
           id: relay_state
-          value: 'false'
+          value: false
 ```
 
 C++ lambdas are not supported; use `globals.get` for state and the
@@ -67,9 +71,32 @@ C++ lambdas are not supported; use `globals.get` for state and the
 
 Similar to ESPHome: [Template Switch](https://esphome.io/components/switch/template/)
 
+## Button
+
+Pressing the button (from the API, MQTT, or a `button.press` action) runs
+`on_press`.
+
+```yaml
+button:
+  - platform: template
+    name: 'Restart Service'
+    id: restart_service
+    on_press:
+      - button.press: real_restart_button
+```
+
+### Attributes
+
+| Property   | Description                                                         | Example   |
+| ---------- | --------------------------------------------------------------------- | --------- |
+| `on_press` | List of [actions](/features/components/actions/) run when pressed.    | see above |
+
+Similar to ESPHome: [Template Button](https://esphome.io/components/button/template/)
+
 <!-- Backlinks to be displayed  -->
 <div style="display:none" aria-hidden="true">
   <a href="/features/entities/switch/">Switch</a>
+  <a href="/features/entities/button/">Button</a>
   <a href="/features/components/actions/">Triggers and Actions</a>
   <a href="/features/components/globals/">Globals</a>
 </div>

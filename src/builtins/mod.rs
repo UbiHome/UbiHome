@@ -9,6 +9,7 @@
 //! entities, so it could not drive them. See `documentation` for the rationale.
 
 pub mod globals;
+pub mod template_button;
 pub mod template_switch;
 
 use std::collections::HashMap;
@@ -24,9 +25,10 @@ use ubihome_core::state::{EntityState, StateStoreWriter};
 use ubihome_core::PublishedMessage;
 
 pub use globals::{GlobalConfig, Globals};
+pub use template_button::TemplateButtonConfig;
 pub use template_switch::TemplateSwitchConfig;
 
-/// The switch platform name handled by the builtin template switch.
+/// The switch/button platform name handled by the builtin template components.
 pub const TEMPLATE_PLATFORM: &str = "template";
 /// Top-level config sections handled directly by the main binary (i.e. not
 /// loaded as dynamic platform crates).
@@ -40,6 +42,10 @@ struct BuiltinRoot {
     switch: Vec<Value>,
 
     #[serde(default)]
+    #[garde(skip)]
+    button: Vec<Value>,
+
+    #[serde(default)]
     #[garde(dive)]
     globals: Vec<GlobalConfig>,
 }
@@ -48,6 +54,7 @@ struct BuiltinRoot {
 #[derive(Debug, Default)]
 pub struct BuiltinConfig {
     pub template_switches: Vec<TemplateSwitchConfig>,
+    pub template_buttons: Vec<TemplateButtonConfig>,
     pub globals: Vec<GlobalConfig>,
 }
 
@@ -64,7 +71,8 @@ fn platform_of(value: &Value) -> Option<&str> {
     None
 }
 
-/// Parse the template switches and globals out of the raw configuration.
+/// Parse the template switches, template buttons and globals out of the raw
+/// configuration.
 pub fn parse(config_string: &str, config_path: &str) -> Result<BuiltinConfig, String> {
     let root =
         ubihome_core::validation::validate_config::<BuiltinRoot>(config_string, config_path)?;
@@ -82,8 +90,29 @@ pub fn parse(config_string: &str, config_path: &str) -> Result<BuiltinConfig, St
         template_switches.push(switch);
     }
 
+    let mut template_buttons = Vec::new();
+    for raw in root.button {
+        if platform_of(&raw) != Some(TEMPLATE_PLATFORM) {
+            continue;
+        }
+        let button = TemplateButtonConfig::deserialize(raw.into_deserializer())
+            .map_err(|e| format!("Invalid template button configuration: {}", e))?;
+        button
+            .validate_with(&())
+            .map_err(|e| format!("Invalid template button '{}': {}", button.name, e))?;
+        template_buttons.push(button);
+    }
+
+    for global in &root.globals {
+        if let Some(value) = &global.initial_value {
+            globals::coerce_value(&global.value_type, value.clone())
+                .map_err(|e| format!("Invalid global '{}': {}", global.id, e))?;
+        }
+    }
+
     Ok(BuiltinConfig {
         template_switches,
+        template_buttons,
         globals: root.globals,
     })
 }
@@ -113,7 +142,7 @@ pub async fn run_actions(actions: Vec<Action>, tx: &Sender<PublishedMessage>, gl
                 let _ = tx.send(PublishedMessage::ButtonPressed { key: key.clone() });
             }
             ActionType::GlobalsSet { id, value } => {
-                globals.set(id, value);
+                globals.set(id, value.clone());
             }
             ActionType::Delay(duration) => {
                 tokio::time::sleep(*duration).await;
@@ -214,6 +243,43 @@ pub fn spawn_template_switches(
                         }
                     }
                 }
+            }
+        }
+    });
+}
+
+/// Spawn the runtime handler for template buttons. It listens for
+/// [`PublishedMessage::ButtonPressed`] targeting a template button and runs
+/// its `on_press` actions. Buttons are stateless (there is no
+/// [`EntityState`] variant for them), so unlike template switches this needs
+/// no `StateStoreWriter`.
+pub fn spawn_template_buttons(
+    tasks: &mut JoinSet<()>,
+    buttons: Vec<TemplateButtonConfig>,
+    tx: Sender<PublishedMessage>,
+    globals: Globals,
+) {
+    if buttons.is_empty() {
+        return;
+    }
+    let buttons: HashMap<String, TemplateButtonConfig> = buttons
+        .into_iter()
+        .map(|b| (b.get_object_id(), b))
+        .collect();
+    let mut receiver: Receiver<PublishedMessage> = tx.subscribe();
+    tasks.spawn(async move {
+        loop {
+            match receiver.recv().await {
+                Ok(PublishedMessage::ButtonPressed { key }) => {
+                    if let Some(button) = buttons.get(&key) {
+                        if let Some(actions) = button.on_press.clone() {
+                            run_actions(actions, &tx, &globals).await;
+                        }
+                    }
+                }
+                // Ignore other messages; stop only when the bus closes.
+                Ok(_) => {}
+                Err(_) => break,
             }
         }
     });

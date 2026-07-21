@@ -20,7 +20,7 @@ shell:
 globals:
   - id: light_on
     type: bool
-    initial_value: 'false'
+    initial_value: false
 
 switch:
   - platform: template
@@ -32,12 +32,12 @@ switch:
       - button.press: turn_light_on
       - globals.set:
           id: light_on
-          value: 'true'
+          value: true
     turn_off_action:
       - button.press: turn_light_off
       - globals.set:
           id: light_on
-          value: 'false'
+          value: false
 
 button:
   - platform: shell

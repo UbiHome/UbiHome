@@ -82,7 +82,7 @@ shell:
 globals:
   - id: my_flag
     type: bool
-    initial_value: "false"
+    initial_value: false
     restore_value: true
 
 switch:
@@ -93,11 +93,11 @@ switch:
     turn_on_action:
       - globals.set:
           id: my_flag
-          value: "true"
+          value: true
     turn_off_action:
       - globals.set:
           id: my_flag
-          value: "false"
+          value: false
 """
     output, error = await run_ubihome("validate", config=config, extra_logging=False)
 
@@ -118,7 +118,7 @@ ubihome:
 globals:
   - id: relay_state
     type: bool
-    initial_value: "false"
+    initial_value: false
 
 switch:
   - platform: template
@@ -129,11 +129,11 @@ switch:
     turn_on_action:
       - globals.set:
           id: relay_state
-          value: "true"
+          value: true
     turn_off_action:
       - globals.set:
           id: relay_state
-          value: "false"
+          value: false
 """
     output, error = await run_ubihome("validate", config=config, extra_logging=False)
 
@@ -154,3 +154,23 @@ globals:
 """
     _, error = await run_ubihome("validate", config=config, extra_logging=False)
     assert "Configuration is invalid:" in error
+
+
+async def test_globals_initial_value_type_mismatch_rejected():
+    """
+    An `initial_value` that doesn't match the global's declared `type` is a
+    configuration error, e.g. a number for a `bool` global.
+    """
+
+    config = """
+ubihome:
+  name: test_device
+
+globals:
+  - id: light_on
+    type: bool
+    initial_value: 42
+"""
+    _, error = await run_ubihome("validate", config=config, extra_logging=False)
+    assert "Configuration is invalid:" in error
+    assert "light_on" in error

@@ -1,6 +1,7 @@
 pub mod configuration;
 pub mod constants;
 pub mod features;
+pub mod global_value;
 pub mod internal;
 pub mod mapper;
 pub mod state;
