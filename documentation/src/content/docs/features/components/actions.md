@@ -9,14 +9,15 @@ Triggers are available on the [Binary Sensor](/features/entities/binary_sensor/)
 - `on_press` — runs when the state changes to `true`.
 - `on_release` — runs when the state changes to `false`.
 
-and on the [Template](/features/platforms/template/) switch and button:
+and on the [Template](/features/platforms/template/) switch, button and number:
 
 - `turn_on_action` — runs when the template switch is turned on.
 - `turn_off_action` — runs when the template switch is turned off.
 - `on_press` — runs when the template button is pressed.
+- `set_action` — runs when the template number is set to a new value.
 
 A binary sensor trigger takes a `then` block listing the actions to run in order
-(template switch/button actions are a plain list, without `then`):
+(template switch/button/number actions are a plain list, without `then`):
 
 ```yaml
 binary_sensor:

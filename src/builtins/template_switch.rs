@@ -3,14 +3,7 @@ use serde::Deserialize;
 use ubihome_core::configuration::automation::Action;
 use ubihome_core::utils::format_id;
 
-/// A YAML-expressed state source for a template switch `lambda`. This avoids
-/// C++ lambdas: the switch state is read directly from a global.
-#[derive(Clone, Debug, Deserialize, Validate)]
-pub enum LambdaExpr {
-    /// Report the switch state from a `bool` [`globals`] variable.
-    #[serde(rename = "globals.get")]
-    GlobalsGet(#[garde(ascii)] String),
-}
+use crate::builtins::lambda::LambdaExpr;
 
 /// Configuration of a `switch` entry with `platform: template`.
 ///
@@ -89,9 +82,6 @@ impl TemplateSwitchConfig {
     /// The id of the global this switch reads its state from, if a
     /// `globals.get` lambda is configured.
     pub fn state_global(&self) -> Option<&str> {
-        match &self.lambda {
-            Some(LambdaExpr::GlobalsGet(id)) => Some(id.as_str()),
-            None => None,
-        }
+        self.lambda.as_ref().map(LambdaExpr::global_id)
     }
 }

@@ -1,15 +1,18 @@
 //! Builtin components that are compiled directly into the main binary instead
 //! of living in a `ubihome-*` platform crate.
 //!
-//! Template switches and globals are handled here because they are tightly
-//! integrated with the central runtime: their automations reference entities
-//! (switches, buttons) and globals that belong to *other* platforms, and those
-//! cross-cutting references are only resolvable on the central message bus in
+//! Template switches/buttons/numbers and globals are handled here because
+//! they are tightly integrated with the central runtime: their automations
+//! reference entities (switches, buttons) and globals that belong to *other*
+//! platforms, and those cross-cutting references are only resolvable on the
+//! central message bus in
 //! [`crate::commands::run`]. A standalone platform crate only sees its own
 //! entities, so it could not drive them. See `documentation` for the rationale.
 
 pub mod globals;
+pub mod lambda;
 pub mod template_button;
+pub mod template_number;
 pub mod template_switch;
 
 use std::collections::HashMap;
@@ -20,15 +23,18 @@ use serde::Deserialize;
 use tokio::sync::broadcast::{Receiver, Sender};
 use tokio::task::JoinSet;
 use ubihome_core::configuration::automation::{Action, ActionType};
+use ubihome_core::global_value::GlobalValue;
 use ubihome_core::serde_value::Value;
 use ubihome_core::state::{EntityState, StateStoreWriter};
 use ubihome_core::PublishedMessage;
 
 pub use globals::{GlobalConfig, Globals};
 pub use template_button::TemplateButtonConfig;
+pub use template_number::TemplateNumberConfig;
 pub use template_switch::TemplateSwitchConfig;
 
-/// The switch/button platform name handled by the builtin template components.
+/// The switch/button/number platform name handled by the builtin template
+/// components.
 pub const TEMPLATE_PLATFORM: &str = "template";
 /// Top-level config sections handled directly by the main binary (i.e. not
 /// loaded as dynamic platform crates).
@@ -46,6 +52,10 @@ struct BuiltinRoot {
     button: Vec<Value>,
 
     #[serde(default)]
+    #[garde(skip)]
+    number: Vec<Value>,
+
+    #[serde(default)]
     #[garde(dive)]
     globals: Vec<GlobalConfig>,
 }
@@ -55,6 +65,7 @@ struct BuiltinRoot {
 pub struct BuiltinConfig {
     pub template_switches: Vec<TemplateSwitchConfig>,
     pub template_buttons: Vec<TemplateButtonConfig>,
+    pub template_numbers: Vec<TemplateNumberConfig>,
     pub globals: Vec<GlobalConfig>,
 }
 
@@ -71,7 +82,7 @@ fn platform_of(value: &Value) -> Option<&str> {
     None
 }
 
-/// Parse the template switches, template buttons and globals out of the raw
+/// Parse the template switches, buttons, numbers and globals out of the raw
 /// configuration.
 pub fn parse(config_string: &str, config_path: &str) -> Result<BuiltinConfig, String> {
     let root =
@@ -103,16 +114,23 @@ pub fn parse(config_string: &str, config_path: &str) -> Result<BuiltinConfig, St
         template_buttons.push(button);
     }
 
-    for global in &root.globals {
-        if let Some(value) = &global.initial_value {
-            globals::coerce_value(&global.value_type, value.clone())
-                .map_err(|e| format!("Invalid global '{}': {}", global.id, e))?;
+    let mut template_numbers = Vec::new();
+    for raw in root.number {
+        if platform_of(&raw) != Some(TEMPLATE_PLATFORM) {
+            continue;
         }
+        let number = TemplateNumberConfig::deserialize(raw.into_deserializer())
+            .map_err(|e| format!("Invalid template number configuration: {}", e))?;
+        number
+            .validate_with(&())
+            .map_err(|e| format!("Invalid template number '{}': {}", number.name, e))?;
+        template_numbers.push(number);
     }
 
     Ok(BuiltinConfig {
         template_switches,
         template_buttons,
+        template_numbers,
         globals: root.globals,
     })
 }
@@ -280,6 +298,97 @@ pub fn spawn_template_buttons(
                 // Ignore other messages; stop only when the bus closes.
                 Ok(_) => {}
                 Err(_) => break,
+            }
+        }
+    });
+}
+
+/// Spawn the runtime handler for template numbers. It listens for
+/// [`PublishedMessage::NumberValueCommand`] targeting a template number, runs
+/// `set_action`, and (when `optimistic`, or via a `lambda`'s backing global)
+/// publishes the new state back onto the bus so connected front-ends update.
+///
+/// Like template switches, template numbers are not platform modules, so
+/// every value published here is mirrored into `state_writer` directly (see
+/// [`spawn_template_switches`] for why).
+pub fn spawn_template_numbers(
+    tasks: &mut JoinSet<()>,
+    numbers: Vec<TemplateNumberConfig>,
+    tx: Sender<PublishedMessage>,
+    globals: Globals,
+    state_writer: StateStoreWriter,
+) {
+    if numbers.is_empty() {
+        return;
+    }
+    let numbers: HashMap<String, TemplateNumberConfig> = numbers
+        .into_iter()
+        .map(|n| (n.get_object_id(), n))
+        .collect();
+    let mut receiver: Receiver<PublishedMessage> = tx.subscribe();
+    let mut global_changes = globals.subscribe();
+    tasks.spawn(async move {
+        // Publish the initial value: from the backing global for lambda-driven
+        // numbers, otherwise `initial_value` (defaulting to `min_value`).
+        for (key, number) in &numbers {
+            let initial = match number.state_global() {
+                Some(id) => globals.get_float(id),
+                None => Some(number.initial()),
+            };
+            if let Some(value) = initial {
+                log::debug!("template number '{}' initial value: {}", key, value);
+                state_writer.set(key.clone(), EntityState::Number(value));
+                let _ = tx.send(PublishedMessage::NumberValueChanged {
+                    key: key.clone(),
+                    value,
+                });
+            }
+        }
+
+        loop {
+            tokio::select! {
+                msg = receiver.recv() => {
+                    match msg {
+                        Ok(PublishedMessage::NumberValueCommand { key, value }) => {
+                            if let Some(number) = numbers.get(&key) {
+                                if let Some(actions) = number.set_action.clone() {
+                                    run_actions(actions, &tx, &globals).await;
+                                }
+                                if let Some(id) = number.state_global() {
+                                    // The state follows the global (published via
+                                    // the change notification below).
+                                    globals.set(id, GlobalValue::Float(value as f64));
+                                } else if number.optimistic {
+                                    state_writer.set(key.clone(), EntityState::Number(value));
+                                    let _ = tx.send(PublishedMessage::NumberValueChanged {
+                                        key,
+                                        value,
+                                    });
+                                }
+                            }
+                        }
+                        // Ignore other messages; stop only when the bus closes.
+                        Ok(_) => {}
+                        Err(_) => break,
+                    }
+                }
+                changed = global_changes.recv() => {
+                    // A lagged receiver just misses an update; keep going.
+                    if let Ok(id) = changed {
+                        for (key, number) in &numbers {
+                            if number.state_global() == Some(id.as_str()) {
+                                if let Some(value) = globals.get_float(&id) {
+                                    log::debug!("template number '{}' value from global '{}': {}", key, id, value);
+                                    state_writer.set(key.clone(), EntityState::Number(value));
+                                    let _ = tx.send(PublishedMessage::NumberValueChanged {
+                                        key: key.clone(),
+                                        value,
+                                    });
+                                }
+                            }
+                        }
+                    }
+                }
             }
         }
     });

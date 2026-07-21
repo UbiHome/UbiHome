@@ -1,3 +1,5 @@
+import re
+
 from mock_file import IOMockFactory
 from utils import UbiHome, run_ubihome
 
@@ -173,4 +175,8 @@ globals:
 """
     _, error = await run_ubihome("validate", config=config, extra_logging=False)
     assert "Configuration is invalid:" in error
-    assert "light_on" in error
+    assert "globals[0].initial_value" in error
+    # A source line/column (e.g. `[config.yaml:8:20]`) should be reported, not
+    # just a bare message, since this is wired into the same garde/miette
+    # diagnostics pipeline as every other config validation error.
+    assert re.search(r"\.yaml:\d+:\d+\]", error), error

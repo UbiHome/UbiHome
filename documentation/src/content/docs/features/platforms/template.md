@@ -1,6 +1,6 @@
 ---
 title: 'Template'
-description: 'A switch or button that runs automations instead of talking to hardware'
+description: 'A switch, button or number that runs automations instead of talking to hardware'
 ---
 
 The `template` platform creates entities driven entirely by automations
@@ -93,10 +93,74 @@ button:
 
 Similar to ESPHome: [Template Button](https://esphome.io/components/button/template/)
 
+## Number
+
+Setting the number (from the API, MQTT, or Home Assistant) runs `set_action`.
+`min_value`, `max_value`, `step`, `unit_of_measurement` and `device_class` are
+the shared [Number](/features/entities/number/) attributes.
+
+```yaml
+number:
+  - platform: template
+    name: 'Fan Speed'
+    id: fan_speed
+    min_value: 0
+    max_value: 100
+    step: 1
+    optimistic: true
+    set_action:
+      - button.press: apply_fan_speed
+```
+
+`set_action` has no access to the commanded value (there is no `x` variable,
+unlike ESPHome's C++ lambdas); use `optimistic` or a `lambda` so the entity's
+own reported state reflects it instead.
+
+### Attributes
+
+| Property         | Description                                                                    | Example   |
+| ---------------- | ------------------------------------------------------------------------------- | --------- |
+| `optimistic`     | Publish the commanded value right after a command, without state feedback.      | `true`    |
+| `initial_value`  | Value to report on startup when not driven by a `lambda`. Defaults to `min_value`. | `0`    |
+| `lambda`         | Source the reported value from a `float` global (see below).                    | see below |
+| `set_action`     | List of [actions](/features/components/actions/) run when a value is set.       | see above |
+
+### State from a global (`lambda`)
+
+The same `globals.get` mechanism as the template switch above, but reading a
+`float` [global](/features/components/globals/) instead of a `bool` one. The
+number reports whatever the global currently holds, live, and updates the
+global automatically whenever it is set to a new value:
+
+```yaml
+globals:
+  - id: fan_speed_value
+    type: float
+    initial_value: 0
+
+number:
+  - platform: template
+    name: 'Fan Speed'
+    id: fan_speed
+    min_value: 0
+    max_value: 100
+    step: 1
+    lambda:
+      globals.get: fan_speed_value
+    # A `lambda`-driven number automatically writes the commanded value back
+    # to its backing global, so `set_action` is only needed for extra side
+    # effects (e.g. applying the value elsewhere) and can be omitted.
+    set_action:
+      - button.press: apply_fan_speed
+```
+
+Similar to ESPHome: [Template Number](https://esphome.io/components/number/template/)
+
 <!-- Backlinks to be displayed  -->
 <div style="display:none" aria-hidden="true">
   <a href="/features/entities/switch/">Switch</a>
   <a href="/features/entities/button/">Button</a>
+  <a href="/features/entities/number/">Number</a>
   <a href="/features/components/actions/">Triggers and Actions</a>
   <a href="/features/components/globals/">Globals</a>
 </div>

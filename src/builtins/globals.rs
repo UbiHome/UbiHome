@@ -40,7 +40,7 @@ pub struct GlobalConfig {
     /// Must be the YAML scalar matching `value_type` (unquoted for
     /// bool/int/float); see [`coerce_value`].
     #[serde(default)]
-    #[garde(skip)]
+    #[garde(custom(validate_initial_value(&self.value_type)))]
     pub initial_value: Option<GlobalValue>,
 
     /// Accepted for compatibility with ESPHome. Persisting values across
@@ -51,12 +51,31 @@ pub struct GlobalConfig {
     pub restore_value: bool,
 }
 
+/// Validates that `initial_value` (if given) matches the sibling
+/// `value_type` field, reusing [`coerce_value`]. Wired up via `self` access
+/// (see the `garde` crate's "Context/Self access" docs) so the error is
+/// reported through the same `serde_saphyr`/`garde` pipeline as every other
+/// field - with a source line/column - instead of a plain string surfaced
+/// after deserialization.
+fn validate_initial_value(
+    value_type: &GlobalType,
+) -> impl FnOnce(&Option<GlobalValue>, &()) -> garde::Result + '_ {
+    move |value, _| {
+        let Some(value) = value else {
+            return Ok(());
+        };
+        coerce_value(value_type, value.clone())
+            .map(|_| ())
+            .map_err(garde::Error::new)
+    }
+}
+
 impl GlobalConfig {
     /// The initial value used to seed the runtime store. Falls back to a
     /// type-appropriate default when no `initial_value` is configured. An
     /// `initial_value` that doesn't match `value_type` is a configuration
-    /// error caught by [`crate::builtins::parse`], so this only needs a
-    /// defensive fallback.
+    /// error caught by [`validate_initial_value`] during config validation,
+    /// so this only needs a defensive fallback.
     pub fn initial(&self) -> GlobalValue {
         if let Some(value) = self.initial_value.clone() {
             match coerce_value(&self.value_type, value) {
@@ -169,6 +188,17 @@ impl Globals {
     pub fn get_bool(&self, id: &str) -> Option<bool> {
         match self.get(id)? {
             GlobalValue::Bool(value) => Some(value),
+            _ => None,
+        }
+    }
+
+    /// Current value of a global interpreted as a float (`globals.get` on a
+    /// `float` global). An `int` global is also accepted, widened to `f32`.
+    /// Returns `None` for unknown ids or bool/string values.
+    pub fn get_float(&self, id: &str) -> Option<f32> {
+        match self.get(id)? {
+            GlobalValue::Float(value) => Some(value as f32),
+            GlobalValue::Int(value) => Some(value as f32),
             _ => None,
         }
     }

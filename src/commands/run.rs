@@ -6,7 +6,7 @@ use flexi_logger::{detailed_format, Age, Cleanup, Criterion, Duplicate, FileSpec
 
 use ubihome_core::configuration::binary_sensor::FilterType;
 use ubihome_core::configuration::sensor::SensorFilterType;
-use ubihome_core::internal::sensors::{UbiButton, UbiComponent, UbiSwitch};
+use ubihome_core::internal::sensors::{UbiButton, UbiComponent, UbiNumber, UbiSwitch};
 use ubihome_core::state::{EntityState, StateStoreWriter};
 use ubihome_core::{ChangedMessage, PublishedMessage};
 
@@ -164,7 +164,7 @@ Remove the "{}:" entry from your configuration or install the cargo crate contai
     log::info!("Loaded {} modules", configured_platforms.len());
     let mut initialized_platforms = initialize_platforms(&mut configured_platforms).unwrap();
 
-    // Builtin components (template switches, template buttons, globals) are
+    // Builtin components (template switches/buttons/numbers, globals) are
     // parsed and wired up by the main binary itself; see `crate::builtins` for
     // the rationale.
     let builtin = builtins::parse(&config_string, config_path)?;
@@ -186,6 +186,21 @@ Remove the "{}:" entry from your configuration or install the cargo crate contai
             name: button.name.clone(),
             id: button.get_object_id(),
             internal: false,
+        }));
+    }
+    for number in &builtin.template_numbers {
+        initialized_platforms.push(UbiComponent::Number(UbiNumber {
+            platform: "number".to_string(),
+            icon: number.icon.clone(),
+            name: number.name.clone(),
+            id: number.get_object_id(),
+            internal: false,
+            min_value: number.min_value,
+            max_value: number.max_value,
+            step: number.step,
+            unit_of_measurement: number.unit_of_measurement.clone(),
+            device_class: number.device_class.clone(),
+            mode: 1, // NumberMode::Box
         }));
     }
 
@@ -546,6 +561,16 @@ Remove the "{}:" entry from your configuration or install the cargo crate contai
             builtin.template_buttons.clone(),
             internal_tx.clone(),
             globals.clone(),
+        );
+
+        // Wire up builtin template numbers: they react to set commands by
+        // running their set_action automations on the shared bus.
+        builtins::spawn_template_numbers(
+            &mut supervised_tasks,
+            builtin.template_numbers.clone(),
+            internal_tx.clone(),
+            globals.clone(),
+            state_writer.clone(),
         );
 
         run_platforms(
