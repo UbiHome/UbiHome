@@ -1,12 +1,11 @@
 use crate::builtins::{self, Globals};
 use crate::components::{configure_platforms, initialize_platforms, run_platforms, Platform};
 use crate::config::{get_platforms_from_config, BaseConfig, BaseConfigContext};
-use flexi_logger::writers::FileLogWriter;
-use flexi_logger::{detailed_format, Age, Cleanup, Criterion, Duplicate, FileSpec, Logger, Naming};
+use crate::logger_setup;
 
 use ubihome_core::configuration::binary_sensor::FilterType;
 use ubihome_core::configuration::sensor::SensorFilterType;
-use ubihome_core::internal::sensors::{UbiButton, UbiComponent, UbiNumber, UbiSwitch};
+use ubihome_core::internal::sensors::UbiComponent;
 use ubihome_core::state::{EntityState, StateStoreWriter};
 use ubihome_core::{ChangedMessage, PublishedMessage};
 
@@ -14,7 +13,6 @@ use futures_signals::signal::{Mutable, SignalExt};
 use log::{debug, error, trace, warn};
 use std::collections::{BTreeSet, HashMap};
 use std::fs;
-use std::path::Path;
 use std::sync::mpsc;
 use std::time::Duration;
 use tokio::sync::broadcast;
@@ -46,40 +44,8 @@ pub(crate) fn run(
     validate_only: bool,
     shutdown_signal: Option<mpsc::Receiver<()>>,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    #[cfg(not(debug_assertions))]
-    use directories::BaseDirs;
-    #[cfg(not(debug_assertions))]
-    let base_dirs = BaseDirs::new().expect("Failed to get base directories");
-    #[cfg(not(debug_assertions))]
-    let log_directory = base_dirs.data_local_dir();
-
-    #[cfg(debug_assertions)]
-    let log_directory = Path::new("./logs");
-
-    #[cfg(not(debug_assertions))]
-    let log_level = "info";
-
-    #[cfg(debug_assertions)]
-    let log_level = "debug";
-
-    let mut logger_builder = Logger::try_with_env_or_str(log_level).unwrap();
-
-    logger_builder = logger_builder
-        .format_for_files(detailed_format)
-        .log_to_file(FileSpec::default().directory(log_directory)) // write logs to file
-        // .write_mode(WriteMode::BufferAndFlush)
-        .append()
-        .rotate(
-            Criterion::AgeOrSize(Age::Day, 10 * 1024 * 1024),
-            Naming::Timestamps,
-            Cleanup::KeepLogFiles(7),
-        );
-
-    // if cfg!(debug_assertions) {
-    logger_builder = logger_builder.duplicate_to_stdout(Duplicate::Trace);
-    // }
-
-    let mut logger = logger_builder.start().unwrap();
+    let log_directory = logger_setup::default_log_directory();
+    let mut logger = logger_setup::init(&log_directory);
 
     println!("LogDirectory: {}", log_directory.display());
 
@@ -124,21 +90,8 @@ pub(crate) fn run(
     }
     let config = validation_result.unwrap();
 
-    if let Some(logger_config) = config.logger.clone() {
-        logger
-            .reset_flw(&FileLogWriter::builder(
-                FileSpec::default().directory(
-                    logger_config
-                        .clone()
-                        .directory
-                        .unwrap_or(log_directory.to_string_lossy().to_string()),
-                ),
-            ))
-            .unwrap();
-
-        logger
-            .parse_and_push_temp_spec(logger_config.get_flexi_logger_spec())
-            .unwrap();
+    if let Some(logger_config) = config.logger.as_ref() {
+        logger_setup::apply_config(&mut logger, &log_directory, logger_config);
     };
 
     debug!("BaseConfiguration: {:?}", config);
@@ -168,41 +121,7 @@ Remove the "{}:" entry from your configuration or install the cargo crate contai
     // parsed and wired up by the main binary itself; see `crate::builtins` for
     // the rationale.
     let builtin = builtins::parse(&config_string, config_path)?;
-    for switch in &builtin.template_switches {
-        initialized_platforms.push(UbiComponent::Switch(UbiSwitch {
-            platform: "switch".to_string(),
-            icon: switch.icon.clone(),
-            name: switch.name.clone(),
-            id: switch.get_object_id(),
-            internal: false,
-            device_class: switch.device_class.clone(),
-            assumed_state: switch.is_assumed_state(),
-        }));
-    }
-    for button in &builtin.template_buttons {
-        initialized_platforms.push(UbiComponent::Button(UbiButton {
-            platform: "button".to_string(),
-            icon: button.icon.clone(),
-            name: button.name.clone(),
-            id: button.get_object_id(),
-            internal: false,
-        }));
-    }
-    for number in &builtin.template_numbers {
-        initialized_platforms.push(UbiComponent::Number(UbiNumber {
-            platform: "number".to_string(),
-            icon: number.icon.clone(),
-            name: number.name.clone(),
-            id: number.get_object_id(),
-            internal: false,
-            min_value: number.min_value,
-            max_value: number.max_value,
-            step: number.step,
-            unit_of_measurement: number.unit_of_measurement.clone(),
-            device_class: number.device_class.clone(),
-            mode: 1, // NumberMode::Box
-        }));
-    }
+    initialized_platforms.extend(builtins::template::to_components(&builtin.template));
 
     if validate_only {
         return Ok(());
@@ -544,30 +463,11 @@ Remove the "{}:" entry from your configuration or install the cargo crate contai
             }
         });
 
-        // Wire up builtin template switches: they react to switch commands by
-        // running their turn_on/turn_off automations on the shared bus.
-        builtins::spawn_template_switches(
+        // Wire up builtin template switches/buttons/numbers: they react to
+        // commands/presses by running their automations on the shared bus.
+        builtins::template::spawn(
             &mut supervised_tasks,
-            builtin.template_switches.clone(),
-            internal_tx.clone(),
-            globals.clone(),
-            state_writer.clone(),
-        );
-
-        // Wire up builtin template buttons: they react to button presses by
-        // running their on_press automations on the shared bus.
-        builtins::spawn_template_buttons(
-            &mut supervised_tasks,
-            builtin.template_buttons.clone(),
-            internal_tx.clone(),
-            globals.clone(),
-        );
-
-        // Wire up builtin template numbers: they react to set commands by
-        // running their set_action automations on the shared bus.
-        builtins::spawn_template_numbers(
-            &mut supervised_tasks,
-            builtin.template_numbers.clone(),
+            builtin.template.clone(),
             internal_tx.clone(),
             globals.clone(),
             state_writer.clone(),

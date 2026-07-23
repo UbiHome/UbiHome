@@ -42,7 +42,8 @@ number:
     step: 1
     optimistic: true
     set_action:
-      - button.press: runner
+      then:
+        - button.press: runner
 """
 
     async with UbiHome("run", config=CONFIG, wait_for_api=True) as ubihome:
@@ -156,9 +157,10 @@ number:
     lambda:
       globals.get: fan_speed_value
     set_action:
-      - globals.set:
-          id: fan_speed_value
-          value: 0
+      then:
+        - globals.set:
+            id: fan_speed_value
+            value: 0
 """
     output, error = await run_ubihome("validate", config=config, extra_logging=False)
 

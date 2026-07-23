@@ -19,7 +19,6 @@ pub enum GlobalType {
     Bool,
     Int,
     Float,
-    #[serde(alias = "std::string")]
     String,
 }
 
@@ -42,13 +41,6 @@ pub struct GlobalConfig {
     #[serde(default)]
     #[garde(custom(validate_initial_value(&self.value_type)))]
     pub initial_value: Option<GlobalValue>,
-
-    /// Accepted for compatibility with ESPHome. Persisting values across
-    /// restarts is not implemented yet, so this currently has no effect.
-    #[allow(dead_code)]
-    #[serde(default)]
-    #[garde(skip)]
-    pub restore_value: bool,
 }
 
 /// Validates that `initial_value` (if given) matches the sibling
@@ -71,25 +63,21 @@ fn validate_initial_value(
 }
 
 impl GlobalConfig {
-    /// The initial value used to seed the runtime store. Falls back to a
-    /// type-appropriate default when no `initial_value` is configured. An
-    /// `initial_value` that doesn't match `value_type` is a configuration
-    /// error caught by [`validate_initial_value`] during config validation,
-    /// so this only needs a defensive fallback.
+    /// The initial value used to seed the runtime store. An `initial_value`
+    /// that doesn't match `value_type` is a configuration error already
+    /// caught by [`validate_initial_value`] during config validation, so
+    /// reaching a mismatch here means validation has a gap - fail loudly
+    /// instead of silently falling back to a default that would mask it.
     pub fn initial(&self) -> GlobalValue {
-        if let Some(value) = self.initial_value.clone() {
-            match coerce_value(&self.value_type, value) {
-                Ok(value) => return value,
-                Err(e) => {
-                    log::warn!(
-                        "global '{}': invalid initial_value, falling back to default: {}",
-                        self.id,
-                        e
-                    );
-                }
-            }
+        match self.initial_value.clone() {
+            Some(value) => coerce_value(&self.value_type, value).unwrap_or_else(|e| {
+                panic!(
+                    "global '{}': invalid initial_value should have been rejected during config validation: {}",
+                    self.id, e
+                )
+            }),
+            None => default_value(&self.value_type),
         }
-        default_value(&self.value_type)
     }
 }
 
@@ -126,6 +114,57 @@ pub fn coerce_value(value_type: &GlobalType, value: GlobalValue) -> Result<Globa
     }
 }
 
+/// Notification broadcast whenever a global's value changes, carrying the
+/// changed id together with its new, already-typed value - mirroring
+/// `ubihome_core::ChangedMessage`'s per-type variants - so a receiver can
+/// filter by id and use the value directly, without a second `Globals::get*`
+/// lookup.
+#[derive(Clone, Debug)]
+pub enum GlobalChanged {
+    Bool {
+        id: String,
+        value: bool,
+    },
+    Int {
+        id: String,
+        value: i64,
+    },
+    Float {
+        id: String,
+        value: f64,
+    },
+    // No template entity reads a `string` global today (only bool/float
+    // `lambda`s exist), so this variant has no consumer yet.
+    #[allow(dead_code)]
+    String {
+        id: String,
+        value: String,
+    },
+}
+
+impl GlobalChanged {
+    fn new(id: &str, value: &GlobalValue) -> Self {
+        match value {
+            GlobalValue::Bool(value) => GlobalChanged::Bool {
+                id: id.to_string(),
+                value: *value,
+            },
+            GlobalValue::Int(value) => GlobalChanged::Int {
+                id: id.to_string(),
+                value: *value,
+            },
+            GlobalValue::Float(value) => GlobalChanged::Float {
+                id: id.to_string(),
+                value: *value,
+            },
+            GlobalValue::String(value) => GlobalChanged::String {
+                id: id.to_string(),
+                value: value.clone(),
+            },
+        }
+    }
+}
+
 /// Shared runtime store for global variables. Cloned into every task that can
 /// execute a `globals.set` action or read a global (e.g. a template switch
 /// whose `lambda` is `globals.get`).
@@ -133,9 +172,9 @@ pub fn coerce_value(value_type: &GlobalType, value: GlobalValue) -> Result<Globa
 pub struct Globals {
     values: Arc<Mutex<HashMap<String, GlobalValue>>>,
     types: Arc<HashMap<String, GlobalType>>,
-    /// Broadcasts the id of a global whenever its value changes, so readers
-    /// (like template switch `globals.get` lambdas) can update live.
-    changes: broadcast::Sender<String>,
+    /// Broadcasts a global's new value whenever it changes, so readers (like
+    /// template switch `globals.get` lambdas) can update live.
+    changes: broadcast::Sender<GlobalChanged>,
 }
 
 impl Globals {
@@ -154,27 +193,28 @@ impl Globals {
         }
     }
 
-    /// Set a global's value. Unknown ids and type mismatches are logged and
-    /// ignored so a single bad action never brings the runtime down.
+    /// Set a global's value. Unknown ids and type mismatches are logged as
+    /// errors (so they surface during testing) and ignored so a single bad
+    /// action never brings the runtime down.
     pub fn set(&self, id: &str, value: GlobalValue) {
         let Some(value_type) = self.types.get(id) else {
-            log::warn!("globals.set: unknown global id '{}'", id);
+            log::error!("globals.set: unknown global id '{}'", id);
             return;
         };
         let value = match coerce_value(value_type, value) {
             Ok(value) => value,
             Err(e) => {
-                log::warn!("globals.set: invalid value for global '{}': {}", id, e);
+                log::error!("globals.set: invalid value for global '{}': {}", id, e);
                 return;
             }
         };
         {
             let mut values = self.values.lock().unwrap();
             log::debug!("globals.set: {} = {}", id, value);
-            values.insert(id.to_string(), value);
+            values.insert(id.to_string(), value.clone());
         }
         // Notify readers; an error just means nobody is currently subscribed.
-        let _ = self.changes.send(id.to_string());
+        let _ = self.changes.send(GlobalChanged::new(id, &value));
     }
 
     /// Current value of a global, if it exists.
@@ -203,9 +243,8 @@ impl Globals {
         }
     }
 
-    /// Subscribe to global-change notifications (yields the id of each changed
-    /// global).
-    pub fn subscribe(&self) -> broadcast::Receiver<String> {
+    /// Subscribe to global-change notifications.
+    pub fn subscribe(&self) -> broadcast::Receiver<GlobalChanged> {
         self.changes.subscribe()
     }
 }

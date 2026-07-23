@@ -393,14 +393,12 @@ impl Module for UbiHomePlatform {
                                     PublishedMessage::SensorValueChanged { key, value } => {
                                         api_components_key_id_clone.get(&key).map(|key| {
                                             debug!("SensorValueChanged: {:?}", value);
-                                            ProtoMessage::SensorStateResponse(
-                                                SensorStateResponse {
-                                                    key: *key,
-                                                    device_id: 0,
-                                                    state: value,
-                                                    missing_state: false,
-                                                },
-                                            )
+                                            ProtoMessage::SensorStateResponse(SensorStateResponse {
+                                                key: *key,
+                                                device_id: 0,
+                                                state: value,
+                                                missing_state: false,
+                                            })
                                         })
                                     }
                                     PublishedMessage::BinarySensorValueChanged { key, value } => {
@@ -419,13 +417,11 @@ impl Module for UbiHomePlatform {
                                     PublishedMessage::SwitchStateChange { key, state } => {
                                         api_components_key_id_clone.get(&key).map(|key| {
                                             debug!("SwitchStateChanged: {:?}", state);
-                                            ProtoMessage::SwitchStateResponse(
-                                                SwitchStateResponse {
-                                                    key: *key,
-                                                    device_id: 0,
-                                                    state,
-                                                },
-                                            )
+                                            ProtoMessage::SwitchStateResponse(SwitchStateResponse {
+                                                key: *key,
+                                                device_id: 0,
+                                                state,
+                                            })
                                         })
                                     }
                                     PublishedMessage::LightStateChange {

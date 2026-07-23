@@ -27,7 +27,8 @@ button:
     name: "Template Button"
     id: template_button
     on_press:
-      - button.press: runner
+      then:
+        - button.press: runner
 
 binary_sensor:
   - platform: shell
@@ -66,9 +67,10 @@ button:
     name: "Template Button"
     id: template_button
     on_press:
-      - globals.set:
-          id: my_flag
-          value: true
+      then:
+        - globals.set:
+            id: my_flag
+            value: true
 
 globals:
   - id: my_flag

@@ -1,37 +1,31 @@
 //! Builtin components that are compiled directly into the main binary instead
 //! of living in a `ubihome-*` platform crate.
 //!
-//! Template switches/buttons/numbers and globals are handled here because
-//! they are tightly integrated with the central runtime: their automations
-//! reference entities (switches, buttons) and globals that belong to *other*
-//! platforms, and those cross-cutting references are only resolvable on the
-//! central message bus in
+//! Template switches/buttons/numbers ([`template`]) and globals ([`globals`])
+//! are handled here because they are tightly integrated with the central
+//! runtime: their automations reference entities (switches, buttons) and
+//! globals that belong to *other* platforms, and those cross-cutting
+//! references are only resolvable on the central message bus in
 //! [`crate::commands::run`]. A standalone platform crate only sees its own
 //! entities, so it could not drive them. See `documentation` for the rationale.
 
 pub mod globals;
-pub mod lambda;
-pub mod template_button;
-pub mod template_number;
-pub mod template_switch;
+pub mod template;
 
 use std::collections::HashMap;
 
 use garde::Validate;
-use serde::de::IntoDeserializer;
-use serde::Deserialize;
-use tokio::sync::broadcast::{Receiver, Sender};
-use tokio::task::JoinSet;
+use log::debug;
+use serde::{Deserialize, Deserializer};
+use tokio::sync::broadcast::Sender;
 use ubihome_core::configuration::automation::{Action, ActionType};
-use ubihome_core::global_value::GlobalValue;
-use ubihome_core::serde_value::Value;
-use ubihome_core::state::{EntityState, StateStoreWriter};
+use ubihome_core::template_mapper;
 use ubihome_core::PublishedMessage;
 
 pub use globals::{GlobalConfig, Globals};
-pub use template_button::TemplateButtonConfig;
-pub use template_number::TemplateNumberConfig;
-pub use template_switch::TemplateSwitchConfig;
+pub use template::TemplateConfig;
+
+use template::{TemplateButtonConfig, TemplateNumberConfig, TemplateSwitchConfig};
 
 /// The switch/button/number platform name handled by the builtin template
 /// components.
@@ -40,20 +34,24 @@ pub const TEMPLATE_PLATFORM: &str = "template";
 /// loaded as dynamic platform crates).
 pub const BUILTIN_SECTIONS: &[&str] = &["globals"];
 
+// Reuse the same platform-filtering deserializer every platform crate gets
+// from `config_template!`, instead of hand-rolling the `platform: template`
+// filter here.
+template_mapper!(map_switch, template, TemplateSwitchConfig);
+template_mapper!(map_button, template, TemplateButtonConfig);
+template_mapper!(map_number, template, TemplateNumberConfig);
+
 #[derive(Debug, Deserialize, Validate)]
 #[garde(allow_unvalidated)]
 struct BuiltinRoot {
-    #[serde(default)]
-    #[garde(skip)]
-    switch: Vec<Value>,
+    #[serde(default, deserialize_with = "map_switch")]
+    switch: Option<HashMap<String, TemplateSwitchConfig>>,
 
-    #[serde(default)]
-    #[garde(skip)]
-    button: Vec<Value>,
+    #[serde(default, deserialize_with = "map_button")]
+    button: Option<HashMap<String, TemplateButtonConfig>>,
 
-    #[serde(default)]
-    #[garde(skip)]
-    number: Vec<Value>,
+    #[serde(default, deserialize_with = "map_number")]
+    number: Option<HashMap<String, TemplateNumberConfig>>,
 
     #[serde(default)]
     #[garde(dive)]
@@ -63,23 +61,8 @@ struct BuiltinRoot {
 /// The parsed builtin configuration.
 #[derive(Debug, Default)]
 pub struct BuiltinConfig {
-    pub template_switches: Vec<TemplateSwitchConfig>,
-    pub template_buttons: Vec<TemplateButtonConfig>,
-    pub template_numbers: Vec<TemplateNumberConfig>,
+    pub template: TemplateConfig,
     pub globals: Vec<GlobalConfig>,
-}
-
-fn platform_of(value: &Value) -> Option<&str> {
-    if let Value::Map(entries) = value {
-        for (key, val) in entries {
-            if let (Value::String(k), Value::String(v)) = (key, val) {
-                if k == "platform" {
-                    return Some(v.as_str());
-                }
-            }
-        }
-    }
-    None
 }
 
 /// Parse the template switches, buttons, numbers and globals out of the raw
@@ -88,49 +71,12 @@ pub fn parse(config_string: &str, config_path: &str) -> Result<BuiltinConfig, St
     let root =
         ubihome_core::validation::validate_config::<BuiltinRoot>(config_string, config_path)?;
 
-    let mut template_switches = Vec::new();
-    for raw in root.switch {
-        if platform_of(&raw) != Some(TEMPLATE_PLATFORM) {
-            continue;
-        }
-        let switch = TemplateSwitchConfig::deserialize(raw.into_deserializer())
-            .map_err(|e| format!("Invalid template switch configuration: {}", e))?;
-        switch
-            .validate_with(&())
-            .map_err(|e| format!("Invalid template switch '{}': {}", switch.name, e))?;
-        template_switches.push(switch);
-    }
-
-    let mut template_buttons = Vec::new();
-    for raw in root.button {
-        if platform_of(&raw) != Some(TEMPLATE_PLATFORM) {
-            continue;
-        }
-        let button = TemplateButtonConfig::deserialize(raw.into_deserializer())
-            .map_err(|e| format!("Invalid template button configuration: {}", e))?;
-        button
-            .validate_with(&())
-            .map_err(|e| format!("Invalid template button '{}': {}", button.name, e))?;
-        template_buttons.push(button);
-    }
-
-    let mut template_numbers = Vec::new();
-    for raw in root.number {
-        if platform_of(&raw) != Some(TEMPLATE_PLATFORM) {
-            continue;
-        }
-        let number = TemplateNumberConfig::deserialize(raw.into_deserializer())
-            .map_err(|e| format!("Invalid template number configuration: {}", e))?;
-        number
-            .validate_with(&())
-            .map_err(|e| format!("Invalid template number '{}': {}", number.name, e))?;
-        template_numbers.push(number);
-    }
-
     Ok(BuiltinConfig {
-        template_switches,
-        template_buttons,
-        template_numbers,
+        template: TemplateConfig {
+            switches: root.switch.unwrap_or_default().into_values().collect(),
+            buttons: root.button.unwrap_or_default().into_values().collect(),
+            numbers: root.number.unwrap_or_default().into_values().collect(),
+        },
         globals: root.globals,
     })
 }
@@ -167,229 +113,4 @@ pub async fn run_actions(actions: Vec<Action>, tx: &Sender<PublishedMessage>, gl
             }
         }
     }
-}
-
-/// Spawn the runtime handler for template switches. It listens for
-/// [`PublishedMessage::SwitchStateCommand`] targeting a template switch, runs
-/// the matching `turn_on_action`/`turn_off_action`, and (when `optimistic`)
-/// publishes the new state back onto the bus so connected front-ends update.
-///
-/// Template switches are not platform modules, so nothing else records their
-/// state into the central [`StateStore`](ubihome_core::state::StateStore) the
-/// way the runtime's internal command router does for every other component
-/// (see `crate::commands::run`). Every `SwitchStateChange` published here is
-/// therefore mirrored into `state_writer` directly, so a client that connects
-/// after the fact (e.g. `api`'s `SubscribeStatesRequest`) still observes the
-/// current state instead of nothing.
-pub fn spawn_template_switches(
-    tasks: &mut JoinSet<()>,
-    switches: Vec<TemplateSwitchConfig>,
-    tx: Sender<PublishedMessage>,
-    globals: Globals,
-    state_writer: StateStoreWriter,
-) {
-    if switches.is_empty() {
-        return;
-    }
-    let switches: HashMap<String, TemplateSwitchConfig> = switches
-        .into_iter()
-        .map(|s| (s.get_object_id(), s))
-        .collect();
-    let mut receiver: Receiver<PublishedMessage> = tx.subscribe();
-    let mut global_changes = globals.subscribe();
-    tasks.spawn(async move {
-        // Publish the initial state of switches whose `lambda` reads a global.
-        for (key, switch) in &switches {
-            if let Some(id) = switch.state_global() {
-                if let Some(state) = globals.get_bool(id) {
-                    log::debug!("template switch '{}' initial state from global '{}': {}", key, id, state);
-                    state_writer.set(key.clone(), EntityState::Switch(state));
-                    let _ = tx.send(PublishedMessage::SwitchStateChange {
-                        key: key.clone(),
-                        state,
-                    });
-                }
-            }
-        }
-
-        loop {
-            tokio::select! {
-                msg = receiver.recv() => {
-                    match msg {
-                        Ok(PublishedMessage::SwitchStateCommand { key, state }) => {
-                            if let Some(switch) = switches.get(&key) {
-                                let actions = if state {
-                                    switch.turn_on_action.clone()
-                                } else {
-                                    switch.turn_off_action.clone()
-                                };
-                                if let Some(actions) = actions {
-                                    run_actions(actions, &tx, &globals).await;
-                                }
-                                // With a `globals.get` lambda the state follows the
-                                // global (published via the change notification
-                                // below), so only optimistic switches without a
-                                // lambda echo the command.
-                                if switch.optimistic && switch.state_global().is_none() {
-                                    state_writer.set(key.clone(), EntityState::Switch(state));
-                                    let _ = tx.send(PublishedMessage::SwitchStateChange {
-                                        key,
-                                        state,
-                                    });
-                                }
-                            }
-                        }
-                        // Ignore other messages; stop only when the bus closes.
-                        Ok(_) => {}
-                        Err(_) => break,
-                    }
-                }
-                changed = global_changes.recv() => {
-                    // A lagged receiver just misses an update; keep going.
-                    if let Ok(id) = changed {
-                        for (key, switch) in &switches {
-                            if switch.state_global() == Some(id.as_str()) {
-                                if let Some(state) = globals.get_bool(&id) {
-                                    log::debug!("template switch '{}' state from global '{}': {}", key, id, state);
-                                    state_writer.set(key.clone(), EntityState::Switch(state));
-                                    let _ = tx.send(PublishedMessage::SwitchStateChange {
-                                        key: key.clone(),
-                                        state,
-                                    });
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    });
-}
-
-/// Spawn the runtime handler for template buttons. It listens for
-/// [`PublishedMessage::ButtonPressed`] targeting a template button and runs
-/// its `on_press` actions. Buttons are stateless (there is no
-/// [`EntityState`] variant for them), so unlike template switches this needs
-/// no `StateStoreWriter`.
-pub fn spawn_template_buttons(
-    tasks: &mut JoinSet<()>,
-    buttons: Vec<TemplateButtonConfig>,
-    tx: Sender<PublishedMessage>,
-    globals: Globals,
-) {
-    if buttons.is_empty() {
-        return;
-    }
-    let buttons: HashMap<String, TemplateButtonConfig> = buttons
-        .into_iter()
-        .map(|b| (b.get_object_id(), b))
-        .collect();
-    let mut receiver: Receiver<PublishedMessage> = tx.subscribe();
-    tasks.spawn(async move {
-        loop {
-            match receiver.recv().await {
-                Ok(PublishedMessage::ButtonPressed { key }) => {
-                    if let Some(button) = buttons.get(&key) {
-                        if let Some(actions) = button.on_press.clone() {
-                            run_actions(actions, &tx, &globals).await;
-                        }
-                    }
-                }
-                // Ignore other messages; stop only when the bus closes.
-                Ok(_) => {}
-                Err(_) => break,
-            }
-        }
-    });
-}
-
-/// Spawn the runtime handler for template numbers. It listens for
-/// [`PublishedMessage::NumberValueCommand`] targeting a template number, runs
-/// `set_action`, and (when `optimistic`, or via a `lambda`'s backing global)
-/// publishes the new state back onto the bus so connected front-ends update.
-///
-/// Like template switches, template numbers are not platform modules, so
-/// every value published here is mirrored into `state_writer` directly (see
-/// [`spawn_template_switches`] for why).
-pub fn spawn_template_numbers(
-    tasks: &mut JoinSet<()>,
-    numbers: Vec<TemplateNumberConfig>,
-    tx: Sender<PublishedMessage>,
-    globals: Globals,
-    state_writer: StateStoreWriter,
-) {
-    if numbers.is_empty() {
-        return;
-    }
-    let numbers: HashMap<String, TemplateNumberConfig> = numbers
-        .into_iter()
-        .map(|n| (n.get_object_id(), n))
-        .collect();
-    let mut receiver: Receiver<PublishedMessage> = tx.subscribe();
-    let mut global_changes = globals.subscribe();
-    tasks.spawn(async move {
-        // Publish the initial value: from the backing global for lambda-driven
-        // numbers, otherwise `initial_value` (defaulting to `min_value`).
-        for (key, number) in &numbers {
-            let initial = match number.state_global() {
-                Some(id) => globals.get_float(id),
-                None => Some(number.initial()),
-            };
-            if let Some(value) = initial {
-                log::debug!("template number '{}' initial value: {}", key, value);
-                state_writer.set(key.clone(), EntityState::Number(value));
-                let _ = tx.send(PublishedMessage::NumberValueChanged {
-                    key: key.clone(),
-                    value,
-                });
-            }
-        }
-
-        loop {
-            tokio::select! {
-                msg = receiver.recv() => {
-                    match msg {
-                        Ok(PublishedMessage::NumberValueCommand { key, value }) => {
-                            if let Some(number) = numbers.get(&key) {
-                                if let Some(actions) = number.set_action.clone() {
-                                    run_actions(actions, &tx, &globals).await;
-                                }
-                                if let Some(id) = number.state_global() {
-                                    // The state follows the global (published via
-                                    // the change notification below).
-                                    globals.set(id, GlobalValue::Float(value as f64));
-                                } else if number.optimistic {
-                                    state_writer.set(key.clone(), EntityState::Number(value));
-                                    let _ = tx.send(PublishedMessage::NumberValueChanged {
-                                        key,
-                                        value,
-                                    });
-                                }
-                            }
-                        }
-                        // Ignore other messages; stop only when the bus closes.
-                        Ok(_) => {}
-                        Err(_) => break,
-                    }
-                }
-                changed = global_changes.recv() => {
-                    // A lagged receiver just misses an update; keep going.
-                    if let Ok(id) = changed {
-                        for (key, number) in &numbers {
-                            if number.state_global() == Some(id.as_str()) {
-                                if let Some(value) = globals.get_float(&id) {
-                                    log::debug!("template number '{}' value from global '{}': {}", key, id, value);
-                                    state_writer.set(key.clone(), EntityState::Number(value));
-                                    let _ = tx.send(PublishedMessage::NumberValueChanged {
-                                        key: key.clone(),
-                                        value,
-                                    });
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    });
 }

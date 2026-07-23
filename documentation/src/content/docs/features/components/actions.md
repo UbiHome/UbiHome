@@ -16,8 +16,7 @@ and on the [Template](/features/platforms/template/) switch, button and number:
 - `on_press` — runs when the template button is pressed.
 - `set_action` — runs when the template number is set to a new value.
 
-A binary sensor trigger takes a `then` block listing the actions to run in order
-(template switch/button/number actions are a plain list, without `then`):
+A trigger takes a `then` block listing the actions to run in order:
 
 ```yaml
 binary_sensor:
@@ -61,11 +60,5 @@ binary_sensor:
         - switch.turn_off: screen
 ```
 
-Setting a global uses `id`/`value` arguments instead of a single id. `value`
-accepts a plain scalar matching the global's `type` (or a quoted string):
-
-```yaml
-- globals.set:
-    id: door_open
-    value: true
-```
+`globals.set` takes `id`/`value` arguments instead of a single id; see
+[Globals](/features/components/globals/) for the `value` syntax.

@@ -2,6 +2,7 @@ mod builtins;
 mod components;
 mod config;
 mod constants;
+mod logger_setup;
 
 use commands::run;
 use commands::un_install::{install, uninstall};
