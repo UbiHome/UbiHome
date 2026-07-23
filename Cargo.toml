@@ -13,7 +13,7 @@ serde = { version = "1.0", features = ["derive"] }
 ubihome-api = { path = "components/api" }
 ubihome-bluetooth_proxy = { path = "components/bluetooth_proxy" }
 ubihome-bme280 = { path = "components/bme280" }
-ubihome-core = { path = "components/core" }
+ubihome-core = { path = "components/core", features = ["validation"] }
 ubihome-gpio = { path = "components/gpio" }
 ubihome-illuminance = { path = "components/illuminance" }
 ubihome-online = { path = "components/online" }

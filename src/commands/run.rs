@@ -1,9 +1,9 @@
+use crate::builtins::{self, Globals};
 use crate::components::{configure_platforms, initialize_platforms, run_platforms, Platform};
 use crate::config::{get_platforms_from_config, BaseConfig, BaseConfigContext};
-use flexi_logger::writers::FileLogWriter;
-use flexi_logger::{detailed_format, Age, Cleanup, Criterion, Duplicate, FileSpec, Logger, Naming};
+use crate::logger_setup;
 
-use ubihome_core::configuration::binary_sensor::{Action, ActionType, FilterType};
+use ubihome_core::configuration::binary_sensor::FilterType;
 use ubihome_core::configuration::sensor::SensorFilterType;
 use ubihome_core::internal::sensors::UbiComponent;
 use ubihome_core::state::{EntityState, StateStoreWriter};
@@ -13,47 +13,10 @@ use futures_signals::signal::{Mutable, SignalExt};
 use log::{debug, error, trace, warn};
 use std::collections::{BTreeSet, HashMap};
 use std::fs;
-use std::path::Path;
 use std::sync::mpsc;
 use std::time::Duration;
 use tokio::sync::broadcast;
 use tokio::{runtime::Runtime, signal};
-
-/// Runs a trigger's list of actions in order.
-///
-/// Actions are executed sequentially so that a `delay` action pauses the list
-/// before the following actions run.
-async fn run_actions(actions: Vec<Action>, internal_tx: &broadcast::Sender<PublishedMessage>) {
-    for action in actions {
-        match &action.action {
-            ActionType::SwitchTurnOn(key) => {
-                let pcmd = PublishedMessage::SwitchStateCommand {
-                    key: key.clone(),
-                    state: true,
-                };
-                debug!("Publishing command from action {:?}: {:?}", action, pcmd);
-                internal_tx.send(pcmd).unwrap();
-            }
-            ActionType::SwitchTurnOff(key) => {
-                let pcmd = PublishedMessage::SwitchStateCommand {
-                    key: key.clone(),
-                    state: false,
-                };
-                debug!("Publishing command from action {:?}: {:?}", action, pcmd);
-                internal_tx.send(pcmd).unwrap();
-            }
-            ActionType::ButtonPress(key) => {
-                let pcmd = PublishedMessage::ButtonPressed { key: key.clone() };
-                debug!("Publishing command from action {:?}: {:?}", action, pcmd);
-                internal_tx.send(pcmd).unwrap();
-            }
-            ActionType::Delay(duration) => {
-                trace!("delay");
-                tokio::time::sleep(*duration).await;
-            }
-        }
-    }
-}
 
 fn read_base_config(path: &str) -> Result<String, String> {
     if !path.is_empty() {
@@ -81,40 +44,8 @@ pub(crate) fn run(
     validate_only: bool,
     shutdown_signal: Option<mpsc::Receiver<()>>,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    #[cfg(not(debug_assertions))]
-    use directories::BaseDirs;
-    #[cfg(not(debug_assertions))]
-    let base_dirs = BaseDirs::new().expect("Failed to get base directories");
-    #[cfg(not(debug_assertions))]
-    let log_directory = base_dirs.data_local_dir();
-
-    #[cfg(debug_assertions)]
-    let log_directory = Path::new("./logs");
-
-    #[cfg(not(debug_assertions))]
-    let log_level = "info";
-
-    #[cfg(debug_assertions)]
-    let log_level = "debug";
-
-    let mut logger_builder = Logger::try_with_env_or_str(log_level).unwrap();
-
-    logger_builder = logger_builder
-        .format_for_files(detailed_format)
-        .log_to_file(FileSpec::default().directory(log_directory)) // write logs to file
-        // .write_mode(WriteMode::BufferAndFlush)
-        .append()
-        .rotate(
-            Criterion::AgeOrSize(Age::Day, 10 * 1024 * 1024),
-            Naming::Timestamps,
-            Cleanup::KeepLogFiles(7),
-        );
-
-    // if cfg!(debug_assertions) {
-    logger_builder = logger_builder.duplicate_to_stdout(Duplicate::Trace);
-    // }
-
-    let mut logger = logger_builder.start().unwrap();
+    let log_directory = logger_setup::default_log_directory();
+    let mut logger = logger_setup::init(&log_directory);
 
     println!("LogDirectory: {}", log_directory.display());
 
@@ -124,7 +55,10 @@ pub(crate) fn run(
         config_path = "BUILTIN";
     }
 
-    let platforms = get_platforms_from_config(&config_string);
+    let mut platforms = get_platforms_from_config(&config_string);
+    // Builtin top-level sections (e.g. `globals`) are handled directly by the
+    // main binary and must not be treated as dynamically-loaded platform crates.
+    platforms.retain(|p| !builtins::BUILTIN_SECTIONS.contains(&p.as_str()));
     debug!("Configured modules: {:?}", platforms);
 
     if sentry::Hub::current().client().is_some() {
@@ -137,8 +71,12 @@ pub(crate) fn run(
         with_snippet: false,
         ..Default::default()
     };
+    // Entities may reference builtin platforms (e.g. `platform: template`) that
+    // have no dedicated top-level section, so allow them during validation.
+    let mut allowed_platforms = platforms.clone();
+    allowed_platforms.push(builtins::TEMPLATE_PLATFORM.to_string());
     let ctx = BaseConfigContext {
-        allowed_platforms: Some(platforms.clone()),
+        allowed_platforms: Some(allowed_platforms),
     };
     let validation_result = serde_saphyr::from_str_with_options_context_valid::<BaseConfig>(
         &config_string,
@@ -152,21 +90,8 @@ pub(crate) fn run(
     }
     let config = validation_result.unwrap();
 
-    if let Some(logger_config) = config.logger.clone() {
-        logger
-            .reset_flw(&FileLogWriter::builder(
-                FileSpec::default().directory(
-                    logger_config
-                        .clone()
-                        .directory
-                        .unwrap_or(log_directory.to_string_lossy().to_string()),
-                ),
-            ))
-            .unwrap();
-
-        logger
-            .parse_and_push_temp_spec(logger_config.get_flexi_logger_spec())
-            .unwrap();
+    if let Some(logger_config) = config.logger.as_ref() {
+        logger_setup::apply_config(&mut logger, &log_directory, logger_config);
     };
 
     debug!("BaseConfiguration: {:?}", config);
@@ -190,7 +115,13 @@ Remove the "{}:" entry from your configuration or install the cargo crate contai
     }
     let mut configured_platforms = configuration_result.unwrap();
     log::info!("Loaded {} modules", configured_platforms.len());
-    let initialized_platforms = initialize_platforms(&mut configured_platforms).unwrap();
+    let mut initialized_platforms = initialize_platforms(&mut configured_platforms).unwrap();
+
+    // Builtin components (template switches/buttons/numbers, globals) are
+    // parsed and wired up by the main binary itself; see `crate::builtins` for
+    // the rationale.
+    let builtin = builtins::parse(&config_string, config_path)?;
+    initialized_platforms.extend(builtins::template::to_components(&builtin.template));
 
     if validate_only {
         return Ok(());
@@ -212,6 +143,10 @@ Remove the "{}:" entry from your configuration or install the cargo crate contai
         // a panic in any of them brings the application down instead of being
         // silently swallowed by a detached task.
         let mut supervised_tasks: tokio::task::JoinSet<()> = tokio::task::JoinSet::new();
+
+        // Shared store for `globals:` variables, mutated by `globals.set` actions
+        // executed from any trigger (binary sensor, template switch, ...).
+        let globals = Globals::new(&builtin.globals);
 
         // Double Option Workaround for https://github.com/Pauan/rust-signals/issues/75
         let mut signal_map_binary_sensor: HashMap<String, Mutable<Option<Option<bool>>>> =
@@ -290,6 +225,7 @@ Remove the "{}:" entry from your configuration or install the cargo crate contai
                     let mutable: Mutable<Option<Option<bool>>> = Mutable::new(Option::None);
                     signal_map_binary_sensor.insert(binary_sensor.id.clone(), mutable.clone());
                     let internal_tx_clone = internal_tx.clone();
+                    let globals_clone = globals.clone();
                     let state_writer_clone = state_writer.clone();
 
                     let mutable_clone = mutable.clone();
@@ -366,14 +302,25 @@ Remove the "{}:" entry from your configuration or install the cargo crate contai
                                 let key = binary_sensor.id.clone();
                                 let on_press = binary_sensor.on_press.clone();
                                 let on_release = binary_sensor.on_release.clone();
+                                let globals_for_call = globals_clone.clone();
                                 async move {
                                     if let Some(value) = value.and_then(|v| v) {
                                         if value {
                                             if let Some(on_press) = on_press {
-                                                run_actions(on_press.then, &action_tx).await;
+                                                builtins::run_actions(
+                                                    on_press.then,
+                                                    &action_tx,
+                                                    &globals_for_call,
+                                                )
+                                                .await;
                                             }
                                         } else if let Some(on_release) = on_release {
-                                            run_actions(on_release.then, &action_tx).await;
+                                            builtins::run_actions(
+                                                on_release.then,
+                                                &action_tx,
+                                                &globals_for_call,
+                                            )
+                                            .await;
                                         }
 
                                         state_writer_for_call
@@ -515,6 +462,16 @@ Remove the "{}:" entry from your configuration or install the cargo crate contai
                 }
             }
         });
+
+        // Wire up builtin template switches/buttons/numbers: they react to
+        // commands/presses by running their automations on the shared bus.
+        builtins::template::spawn(
+            &mut supervised_tasks,
+            builtin.template.clone(),
+            internal_tx.clone(),
+            globals.clone(),
+            state_writer.clone(),
+        );
 
         run_platforms(
             &mut supervised_tasks,

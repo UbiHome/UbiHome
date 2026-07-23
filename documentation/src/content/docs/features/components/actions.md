@@ -4,12 +4,19 @@ title: 'Triggers and Actions'
 
 Some components expose **triggers** that run a list of **actions** when something happens (for example a state change).
 
-Currently triggers are available on the [Binary Sensor](/features/entities/binary_sensor/):
+Triggers are available on the [Binary Sensor](/features/entities/binary_sensor/):
 
 - `on_press` — runs when the state changes to `true`.
 - `on_release` — runs when the state changes to `false`.
 
-Each trigger takes a `then` block listing the actions to run in order:
+and on the [Template](/features/platforms/template/) switch, button and number:
+
+- `turn_on_action` — runs when the template switch is turned on.
+- `turn_off_action` — runs when the template switch is turned off.
+- `on_press` — runs when the template button is pressed.
+- `set_action` — runs when the template number is set to a new value.
+
+A trigger takes a `then` block listing the actions to run in order:
 
 ```yaml
 binary_sensor:
@@ -36,6 +43,7 @@ See [Filters](/features/components/filters/) for the available debounce filters.
 | `switch.turn_on`  | switch `id` | Turns the referenced [switch](/features/entities/switch/) on.  |
 | `switch.turn_off` | switch `id` | Turns the referenced [switch](/features/entities/switch/) off. |
 | `button.press`    | button `id` | Presses the referenced [button](/features/entities/button/), running its platform action. |
+| `globals.set`     | `id`, `value` | Sets a [global](/features/components/globals/) variable to `value`. |
 | `delay`           | duration    | Pauses the action list for the given duration (e.g. `2s`, `500ms`) before running the next action. |
 
 For entity actions the argument is the `id` of the target entity, so make sure the switch or button you reference has an `id` set.
@@ -51,3 +59,6 @@ binary_sensor:
         - delay: 30s
         - switch.turn_off: screen
 ```
+
+`globals.set` takes `id`/`value` arguments instead of a single id; see
+[Globals](/features/components/globals/) for the `value` syntax.

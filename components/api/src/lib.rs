@@ -391,39 +391,38 @@ impl Module for UbiHomePlatform {
                             while let Ok(cmd) = receiver_clone.recv().await {
                                 let message = match cmd {
                                     PublishedMessage::SensorValueChanged { key, value } => {
-                                        let key = api_components_key_id_clone.get(&key).unwrap();
-                                        debug!("SensorValueChanged: {:?}", value);
-                                        Some(ProtoMessage::SensorStateResponse(
-                                            SensorStateResponse {
+                                        api_components_key_id_clone.get(&key).map(|key| {
+                                            debug!("SensorValueChanged: {:?}", value);
+                                            ProtoMessage::SensorStateResponse(SensorStateResponse {
                                                 key: *key,
                                                 device_id: 0,
                                                 state: value,
                                                 missing_state: false,
-                                            },
-                                        ))
+                                            })
+                                        })
                                     }
                                     PublishedMessage::BinarySensorValueChanged { key, value } => {
-                                        let key = api_components_key_id_clone.get(&key).unwrap();
-                                        debug!("BinarySensorValueChanged: {:?}", value);
-                                        Some(ProtoMessage::BinarySensorStateResponse(
-                                            BinarySensorStateResponse {
-                                                key: *key,
-                                                device_id: 0,
-                                                state: value,
-                                                missing_state: false,
-                                            },
-                                        ))
+                                        api_components_key_id_clone.get(&key).map(|key| {
+                                            debug!("BinarySensorValueChanged: {:?}", value);
+                                            ProtoMessage::BinarySensorStateResponse(
+                                                BinarySensorStateResponse {
+                                                    key: *key,
+                                                    device_id: 0,
+                                                    state: value,
+                                                    missing_state: false,
+                                                },
+                                            )
+                                        })
                                     }
                                     PublishedMessage::SwitchStateChange { key, state } => {
-                                        let key = api_components_key_id_clone.get(&key).unwrap();
-                                        debug!("SwitchStateChanged: {:?}", state);
-                                        Some(ProtoMessage::SwitchStateResponse(
-                                            SwitchStateResponse {
+                                        api_components_key_id_clone.get(&key).map(|key| {
+                                            debug!("SwitchStateChanged: {:?}", state);
+                                            ProtoMessage::SwitchStateResponse(SwitchStateResponse {
                                                 key: *key,
                                                 device_id: 0,
                                                 state,
-                                            },
-                                        ))
+                                            })
+                                        })
                                     }
                                     PublishedMessage::LightStateChange {
                                         key,
@@ -433,24 +432,25 @@ impl Module for UbiHomePlatform {
                                         green,
                                         blue,
                                     } => {
-                                        let key = api_components_key_id_clone.get(&key).unwrap();
-                                        debug!("LightStateChanged: state={:?}, brightness={:?}, rgb=({:?},{:?},{:?})", state, brightness, red, green, blue);
-                                        Some(ProtoMessage::LightStateResponse(LightStateResponse {
-                                            key: *key,
-                                            device_id: 0,
-                                            state,
-                                            brightness: brightness.unwrap_or(0.0),
-                                            color_mode: 1, // RGB mode, could be made configurable
-                                            color_brightness: brightness.unwrap_or(0.0),
-                                            red: red.unwrap_or(0.0),
-                                            green: green.unwrap_or(0.0),
-                                            blue: blue.unwrap_or(0.0),
-                                            white: 0.0, // Not currently supported
-                                            color_temperature: 0.0, // Not currently supported
-                                            cold_white: 0.0, // Not currently supported
-                                            warm_white: 0.0, // Not currently supported
-                                            effect: "".to_string(), // No effect currently
-                                        }))
+                                        api_components_key_id_clone.get(&key).map(|key| {
+                                            debug!("LightStateChanged: state={:?}, brightness={:?}, rgb=({:?},{:?},{:?})", state, brightness, red, green, blue);
+                                            ProtoMessage::LightStateResponse(LightStateResponse {
+                                                key: *key,
+                                                device_id: 0,
+                                                state,
+                                                brightness: brightness.unwrap_or(0.0),
+                                                color_mode: 1, // RGB mode, could be made configurable
+                                                color_brightness: brightness.unwrap_or(0.0),
+                                                red: red.unwrap_or(0.0),
+                                                green: green.unwrap_or(0.0),
+                                                blue: blue.unwrap_or(0.0),
+                                                white: 0.0, // Not currently supported
+                                                color_temperature: 0.0, // Not currently supported
+                                                cold_white: 0.0, // Not currently supported
+                                                warm_white: 0.0, // Not currently supported
+                                                effect: "".to_string(), // No effect currently
+                                            })
+                                        })
                                     }
                                     PublishedMessage::NumberValueChanged { key, value } => {
                                         api_components_key_id_clone.get(&key).map(|key| {

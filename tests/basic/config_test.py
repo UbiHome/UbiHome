@@ -108,7 +108,9 @@ sensor:
 """,
             [
                 "Platform 'unknown_platform' is not configured in the",
-                "Allowed platforms are: shell for `sensor[0].platform`",
+                # `template` is a builtin platform and is always allowed.
+                "Allowed platforms are: shell, template",
+                "`sensor[0].platform`",
             ],
         ),
     ],
