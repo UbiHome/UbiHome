@@ -265,6 +265,9 @@ switch:
         let result = serde_saphyr::from_str_with_options_context_valid::<BaseConfig>(
             config, no_snippet, &ctx,
         );
-        assert!(result.is_err(), "expected an error when neither name nor id is set");
+        assert!(
+            result.is_err(),
+            "expected an error when neither name nor id is set"
+        );
     }
 }
