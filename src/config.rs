@@ -42,11 +42,42 @@ pub fn is_id_string_option_with_context(
     Ok(())
 }
 
-pub(crate) fn is_readable_string_with_context(value: &str, _: &BaseConfigContext) -> garde::Result {
-    if !READABLE_RE.is_match(value) {
-        return Err(readable_string_error(value));
+pub(crate) fn is_readable_string_option_with_context(
+    value: &Option<String>,
+    _: &BaseConfigContext,
+) -> garde::Result {
+    if let Some(inner_value) = value {
+        if !READABLE_RE.is_match(inner_value) {
+            return Err(readable_string_error(inner_value));
+        }
     }
     Ok(())
+}
+
+/// Validates that at least one of `id`/`name` is set, mirroring the rule
+/// `ubihome_core::with_base_entity_properties!` enforces for platform-specific
+/// configs. Entities may be configured with only an `id` (internal, not
+/// exposed to connectivity components), and this top-level structural check
+/// must accept that too, or it rejects id-only entities before their
+/// platform-specific config is ever validated.
+///
+/// Wired up via `self` access (see the `garde` crate's "Context/Self access"
+/// docs), same as `validate_initial_value` in `builtins::globals`, so the
+/// error is reported through the same `serde_saphyr`/`garde` pipeline as
+/// every other field - with a source line/column.
+fn validate_name_or_id<'a>(
+    id: &'a Option<String>,
+    platform: &'a str,
+) -> impl FnOnce(&Option<String>, &BaseConfigContext) -> garde::Result + 'a {
+    move |name, _ctx| {
+        if id.is_none() && name.is_none() {
+            return Err(garde::Error::new(format!(
+                "Either 'name' or 'id' must be provided for the '{}' component",
+                platform
+            )));
+        }
+        Ok(())
+    }
 }
 
 #[derive(Clone, Debug, Deserialize, Validate)]
@@ -55,8 +86,12 @@ pub struct BaseEntity {
     #[garde(custom(is_id_string_option_with_context), length(min = 3, max = 100))]
     pub id: Option<String>,
 
-    #[garde(custom(is_readable_string_with_context), length(min = 3, max = 100))]
-    pub name: String,
+    #[garde(
+        custom(is_readable_string_option_with_context),
+        custom(validate_name_or_id(&self.id, &self.platform)),
+        length(min = 3, max = 100)
+    )]
+    pub name: Option<String>,
 
     #[garde(custom(only_allow_configured_platforms), length(min = 3, max = 100))]
     pub platform: String,
@@ -177,5 +212,59 @@ ubihome:
         let platforms = get_platforms_from_config(config);
         // Check that the API config is parsed correctly
         assert_eq!(platforms, vec!["api"], "Platform should be api");
+    }
+
+    #[test]
+    fn base_entity_accepts_id_only() {
+        let config = r#"
+ubihome:
+  name: "Test Switch Id Only"
+
+gpio:
+  device: raspberryPi
+
+switch:
+  - platform: gpio
+    id: relay
+    pin: 7
+    restore_mode: ALWAYS_ON
+"#;
+        let ctx = BaseConfigContext {
+            allowed_platforms: Some(vec!["gpio".to_string()]),
+        };
+        let no_snippet = serde_saphyr::Options {
+            with_snippet: false,
+            ..Default::default()
+        };
+        let result = serde_saphyr::from_str_with_options_context_valid::<BaseConfig>(
+            config, no_snippet, &ctx,
+        );
+        assert!(result.is_ok(), "expected ok, got: {:?}", result.err());
+    }
+
+    #[test]
+    fn base_entity_rejects_neither_name_nor_id() {
+        let config = r#"
+ubihome:
+  name: "Test Switch Neither"
+
+gpio:
+  device: raspberryPi
+
+switch:
+  - platform: gpio
+    pin: 7
+"#;
+        let ctx = BaseConfigContext {
+            allowed_platforms: Some(vec!["gpio".to_string()]),
+        };
+        let no_snippet = serde_saphyr::Options {
+            with_snippet: false,
+            ..Default::default()
+        };
+        let result = serde_saphyr::from_str_with_options_context_valid::<BaseConfig>(
+            config, no_snippet, &ctx,
+        );
+        assert!(result.is_err(), "expected an error when neither name nor id is set");
     }
 }
