@@ -388,7 +388,18 @@ impl Module for UbiHomePlatform {
 
                         // Send Messages
                         tokio::spawn(async move {
-                            while let Ok(cmd) = receiver_clone.recv().await {
+                            loop {
+                                let cmd = match receiver_clone.recv().await {
+                                    Ok(cmd) => cmd,
+                                    Err(tokio::sync::broadcast::error::RecvError::Lagged(n)) => {
+                                        warn!(
+                                            "API state-forwarding receiver lagged behind by {} messages; some state updates may have been missed",
+                                            n
+                                        );
+                                        continue;
+                                    }
+                                    Err(tokio::sync::broadcast::error::RecvError::Closed) => break,
+                                };
                                 let message = match cmd {
                                     PublishedMessage::SensorValueChanged { key, value } => {
                                         api_components_key_id_clone.get(&key).map(|key| {

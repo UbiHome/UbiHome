@@ -1,8 +1,8 @@
-use log::{debug, error, info};
+use log::{debug, error, info, warn};
 use serde::{Deserialize, Deserializer};
 use std::collections::HashMap;
 use std::{future::Future, pin::Pin, str};
-use tokio::sync::broadcast::{Receiver, Sender};
+use tokio::sync::broadcast::{self, Receiver, Sender};
 use ubihome_core::internal::sensors::UbiComponent;
 use ubihome_core::state::StateStore;
 use ubihome_core::template_button;
@@ -137,7 +137,18 @@ impl Module for UbiHomePlatform {
         Box::pin(async move {
             // Handle Button Presses
             tokio::spawn(async move {
-                while let Ok(cmd) = receiver.recv().await {
+                loop {
+                    let cmd = match receiver.recv().await {
+                        Ok(cmd) => cmd,
+                        Err(broadcast::error::RecvError::Lagged(n)) => {
+                            warn!(
+                                "Power utils receiver lagged behind by {} messages; some commands may have been missed",
+                                n
+                            );
+                            continue;
+                        }
+                        Err(broadcast::error::RecvError::Closed) => break,
+                    };
                     match cmd {
                         PublishedMessage::ButtonPressed { key } => {
                             debug!("Button pressed1: {}", key);

@@ -224,7 +224,13 @@ fn spawn_switches(
                         }
                         // Ignore other messages; stop only when the bus closes.
                         Ok(_) => {}
-                        Err(_) => break,
+                        Err(tokio::sync::broadcast::error::RecvError::Lagged(n)) => {
+                            log::warn!(
+                                "template switch command receiver lagged behind by {} messages; some commands may have been missed",
+                                n
+                            );
+                        }
+                        Err(tokio::sync::broadcast::error::RecvError::Closed) => break,
                     }
                 }
                 changed = global_changes.recv() => {
@@ -356,7 +362,13 @@ fn spawn_numbers(
                         }
                         // Ignore other messages; stop only when the bus closes.
                         Ok(_) => {}
-                        Err(_) => break,
+                        Err(tokio::sync::broadcast::error::RecvError::Lagged(n)) => {
+                            log::warn!(
+                                "template number command receiver lagged behind by {} messages; some commands may have been missed",
+                                n
+                            );
+                        }
+                        Err(tokio::sync::broadcast::error::RecvError::Closed) => break,
                     }
                 }
                 changed = global_changes.recv() => {

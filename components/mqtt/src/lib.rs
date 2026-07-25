@@ -395,10 +395,11 @@ impl Module for UbiHomePlatform {
                                 warn!("MQTT send encountered an error, but will continue running: {:?}", e);
                                 sleep(Duration::from_secs(60)).await;
                             }
-                            _ => {
-                                error!("Error receiving message: {:?}", e);
-                                error!("MQTT Sender terminated");
-                                break;
+                            tokio::sync::broadcast::error::RecvError::Lagged(n) => {
+                                warn!(
+                                    "MQTT sender lagged behind by {} messages; some state updates may have been missed",
+                                    n
+                                );
                             }
                         },
                     }

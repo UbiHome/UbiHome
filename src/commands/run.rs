@@ -135,8 +135,9 @@ Remove the "{}:" entry from your configuration or install the cargo crate contai
     // Spawn the root task
     let rt = Runtime::new().unwrap();
     rt.block_on(async {
-        let (internal_tx, modules_rx) = broadcast::channel::<PublishedMessage>(16);
-        let (modules_tx, mut internal_rx) = broadcast::channel::<ChangedMessage>(16);
+        let message_buffer_size = config.ubihome.message_buffer_size;
+        let (internal_tx, modules_rx) = broadcast::channel::<PublishedMessage>(message_buffer_size);
+        let (modules_tx, mut internal_rx) = broadcast::channel::<ChangedMessage>(message_buffer_size);
 
         // Supervise every long-running task (sensor/binary-sensor signal handlers,
         // the internal command router, and the platform modules) in one JoinSet so
@@ -149,8 +150,13 @@ Remove the "{}:" entry from your configuration or install the cargo crate contai
         let globals = Globals::new(&builtin.globals);
 
         // Dedicated JS engine backing every `lambda` (entity state and
-        // action); see `crate::builtins::script`.
-        let script = builtins::ScriptEngine::spawn(globals.clone(), internal_tx.clone());
+        // action); see `crate::builtins::script`. The id -> kind lookup lets
+        // `id()` shape its returned handle to only the commands valid for
+        // that id (e.g. a button never gets `turn_on`), across every
+        // platform's components, not just template entities.
+        let entity_kinds = builtins::script::entity_kinds_from_components(&initialized_platforms);
+        let script =
+            builtins::ScriptEngine::spawn(globals.clone(), internal_tx.clone(), entity_kinds);
 
         // Double Option Workaround for https://github.com/Pauan/rust-signals/issues/75
         let mut signal_map_binary_sensor: HashMap<String, Mutable<Option<Option<bool>>>> =
@@ -365,7 +371,18 @@ Remove the "{}:" entry from your configuration or install the cargo crate contai
         let state_writer_clone = state_writer.clone();
         supervised_tasks.spawn({
             async move {
-                while let Ok(cmd) = internal_rx.recv().await {
+                loop {
+                    let cmd = match internal_rx.recv().await {
+                        Ok(cmd) => cmd,
+                        Err(broadcast::error::RecvError::Lagged(n)) => {
+                            warn!(
+                                "Internal command router lagged behind by {} messages; some state changes may have been missed",
+                                n
+                            );
+                            continue;
+                        }
+                        Err(broadcast::error::RecvError::Closed) => break,
+                    };
                     debug!("Received command: {:?}", cmd);
                     let publish_cmd: Option<PublishedMessage> = match cmd {
                         ChangedMessage::SwitchStateChange { key, state } => {

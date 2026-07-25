@@ -179,6 +179,13 @@ impl NoConfig {
     }
 }
 
+/// Default capacity of the internal broadcast channels (`PublishedMessage`/
+/// `ChangedMessage`) connecting the runtime to every platform module. See
+/// [`UbiHome::message_buffer_size`].
+pub const fn default_message_buffer_size() -> usize {
+    32
+}
+
 #[derive(Clone, Deserialize, Debug, Validate)]
 #[serde(deny_unknown_fields)]
 pub struct UbiHome {
@@ -191,6 +198,15 @@ pub struct UbiHome {
     /// Actions to run once, when UbiHome starts up.
     #[garde(dive)]
     pub on_startup: Option<Trigger>,
+    /// Capacity of the internal broadcast channels carrying commands
+    /// (`PublishedMessage`) and state changes (`ChangedMessage`) between the
+    /// runtime and every platform module. A burst of more messages than this
+    /// within a single tick (e.g. a `lambda` action pressing a button many
+    /// times in a tight loop) can outrun a slow consumer (like a shell
+    /// command); raise this if that's a concern for your configuration.
+    #[serde(default = "default_message_buffer_size")]
+    #[garde(range(min = 1, max = 10_000))]
+    pub message_buffer_size: usize,
 }
 
 #[macro_export]
