@@ -55,6 +55,7 @@ See [Filters](/features/components/filters/) for the available debounce filters.
 | `button.press`    | button `id` | Presses the referenced [button](/features/entities/button/), running its platform action. |
 | `globals.set`     | `id`, `value` | Sets a [global](/features/components/globals/) variable to `value`. |
 | `delay`           | duration    | Pauses the action list for the given duration (e.g. `2s`, `500ms`) before running the next action. |
+| `lambda`          | JavaScript source | Runs an inline JavaScript lambda. See below. |
 
 For entity actions the argument is the `id` of the target entity, so make sure the switch or button you reference has an `id` set.
 
@@ -72,3 +73,49 @@ binary_sensor:
 
 `globals.set` takes `id`/`value` arguments instead of a single id; see
 [Globals](/features/components/globals/) for the `value` syntax.
+
+## `lambda` Actions
+
+A `lambda` action runs inline JavaScript, similar to an ESPHome C++ lambda.
+It has access to:
+
+- `id(name)` — the current value of a [global](/features/components/globals/),
+  or (for anything else) a handle with `turn_on()` / `turn_off()` / `press()`
+  methods to command a switch or button.
+- `set_global(name, value)` — sets a global (there is no assignment syntax
+  like ESPHome's `id(x) = value;`).
+- `x` — for triggers that carry a commanded value (currently only a
+  [template](/features/platforms/template/) number's `set_action`); otherwise
+  `undefined`.
+- `log(message)` — writes to the application log.
+
+```yaml
+number:
+  - platform: template
+    name: 'Volume'
+    min_value: 0
+    max_value: 100
+    step: 1
+    lambda: |-
+      return id(global_volume)
+    set_action:
+      then:
+        - lambda: |
+            // x is the value given by set_action; press volume_up_button /
+            // volume_down_button one step at a time towards it.
+            let difference = id(global_volume) - x
+            while (difference != 0) {
+              if (difference < 0) {
+                id(volume_up_button).press();
+                difference = difference + 1
+              } else {
+                id(volume_down_button).press();
+                difference = difference - 1
+              }
+            }
+```
+
+A template switch/number's own `lambda` (the one that computes its reported
+state, not a `lambda` action) runs the same JavaScript engine and supports
+`id()`/`log()` too, but not `x` — see
+[Template](/features/platforms/template/).

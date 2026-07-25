@@ -4,17 +4,17 @@ use ubihome_core::configuration::automation::Trigger;
 use ubihome_core::template_number;
 use ubihome_core::with_base_entity_properties;
 
-use crate::builtins::template::lambda::LambdaExpr;
+use crate::builtins::script;
 
 template_number! {
     /// Configuration of a `number` entry with `platform: template`.
     ///
     /// Mirrors a subset of the ESPHome template number
     /// (<https://esphome.io/components/number/template/>). The reported
-    /// value either follows a `globals.get` `lambda` or is echoed
-    /// optimistically after a command, and `set_action` runs as a plain
-    /// action list (it has no access to the commanded value - use a `lambda`
-    /// to have the entity's own state reflect it instead).
+    /// value either follows a `lambda` or is echoed optimistically after a
+    /// command. `set_action` runs as a normal action list with the commanded
+    /// value available as `x` in `lambda` actions (see
+    /// [Triggers and Actions](crate::builtins)).
     #[derive(Clone, Deserialize, Debug, Validate)]
     #[garde(allow_unvalidated)]
     pub struct TemplateNumberConfig {
@@ -28,15 +28,17 @@ template_number! {
         /// Defaults to `min_value`.
         pub initial_value: Option<f32>,
 
-        /// Optional YAML "lambda" that sources the reported value from a
-        /// `float` [`globals`](crate::builtins::globals) variable, e.g.
-        /// `lambda: { globals.get: my_value }`. When set, the reported state
-        /// tracks that global instead of the optimistic command value.
-        #[garde(dive)]
-        pub lambda: Option<LambdaExpr>,
+        /// Optional inline JavaScript lambda that computes the reported
+        /// value, e.g. `lambda: |- return id(my_value)` to read a
+        /// [`globals`](crate::builtins::globals) variable. Re-evaluated
+        /// whenever any global changes. When set, the reported state tracks
+        /// the lambda's result instead of the optimistic command value.
+        #[garde(custom(script::validate_lambda))]
+        pub lambda: Option<String>,
 
         /// Actions run when a client (e.g. Home Assistant) sets a new value.
-        /// Runs before the new state is published/stored.
+        /// Runs before the new state is published/stored; a `lambda` action
+        /// here sees the commanded value as `x`.
         #[serde(default, deserialize_with = "ubihome_core::configuration::automation::deserialize_option_map_only")]
         #[garde(dive)]
         pub set_action: Option<Trigger>,
@@ -49,8 +51,8 @@ template_number! {
 
         /// Accepted for compatibility with ESPHome, where it controls how
         /// often a `lambda` is re-evaluated. This project's `lambda` is
-        /// push-based (it updates immediately when the backing global
-        /// changes), so polling is not needed and this has no effect.
+        /// push-based (it updates immediately when a global changes), so
+        /// polling is not needed and this has no effect.
         #[allow(dead_code)]
         pub update_interval: Option<String>,
     }
@@ -60,11 +62,5 @@ impl TemplateNumberConfig {
     /// The value to report on startup, when not driven by a `lambda`.
     pub fn initial(&self) -> f32 {
         self.initial_value.unwrap_or(self.min_value.unwrap_or(0.0))
-    }
-
-    /// The id of the global this number reads its state from, if a
-    /// `globals.get` lambda is configured.
-    pub fn state_global(&self) -> Option<&str> {
-        self.lambda.as_ref().map(LambdaExpr::global_id)
     }
 }

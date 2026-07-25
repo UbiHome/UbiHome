@@ -148,6 +148,10 @@ Remove the "{}:" entry from your configuration or install the cargo crate contai
         // executed from any trigger (binary sensor, template switch, ...).
         let globals = Globals::new(&builtin.globals);
 
+        // Dedicated JS engine backing every `lambda` (entity state and
+        // action); see `crate::builtins::script`.
+        let script = builtins::ScriptEngine::spawn(globals.clone(), internal_tx.clone());
+
         // Double Option Workaround for https://github.com/Pauan/rust-signals/issues/75
         let mut signal_map_binary_sensor: HashMap<String, Mutable<Option<Option<bool>>>> =
             HashMap::new();
@@ -226,6 +230,7 @@ Remove the "{}:" entry from your configuration or install the cargo crate contai
                     signal_map_binary_sensor.insert(binary_sensor.id.clone(), mutable.clone());
                     let internal_tx_clone = internal_tx.clone();
                     let globals_clone = globals.clone();
+                    let script_clone = script.clone();
                     let state_writer_clone = state_writer.clone();
 
                     let mutable_clone = mutable.clone();
@@ -303,6 +308,7 @@ Remove the "{}:" entry from your configuration or install the cargo crate contai
                                 let on_press = binary_sensor.on_press.clone();
                                 let on_release = binary_sensor.on_release.clone();
                                 let globals_for_call = globals_clone.clone();
+                                let script_for_call = script_clone.clone();
                                 async move {
                                     if let Some(value) = value.and_then(|v| v) {
                                         if value {
@@ -311,6 +317,8 @@ Remove the "{}:" entry from your configuration or install the cargo crate contai
                                                     on_press.then,
                                                     &action_tx,
                                                     &globals_for_call,
+                                                    &script_for_call,
+                                                    None,
                                                 )
                                                 .await;
                                             }
@@ -319,6 +327,8 @@ Remove the "{}:" entry from your configuration or install the cargo crate contai
                                                 on_release.then,
                                                 &action_tx,
                                                 &globals_for_call,
+                                                &script_for_call,
+                                                None,
                                             )
                                             .await;
                                         }
@@ -471,6 +481,7 @@ Remove the "{}:" entry from your configuration or install the cargo crate contai
             internal_tx.clone(),
             globals.clone(),
             state_writer.clone(),
+            script.clone(),
         );
 
         run_platforms(
@@ -486,8 +497,16 @@ Remove the "{}:" entry from your configuration or install the cargo crate contai
         if let Some(on_startup) = config.ubihome.on_startup.clone() {
             let internal_tx_clone = internal_tx.clone();
             let globals_clone = globals.clone();
+            let script_clone = script.clone();
             supervised_tasks.spawn(async move {
-                builtins::run_actions(on_startup.then, &internal_tx_clone, &globals_clone).await;
+                builtins::run_actions(
+                    on_startup.then,
+                    &internal_tx_clone,
+                    &globals_clone,
+                    &script_clone,
+                    None,
+                )
+                .await;
             });
         }
 

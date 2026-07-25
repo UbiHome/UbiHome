@@ -114,67 +114,19 @@ pub fn coerce_value(value_type: &GlobalType, value: GlobalValue) -> Result<Globa
     }
 }
 
-/// Notification broadcast whenever a global's value changes, carrying the
-/// changed id together with its new, already-typed value - mirroring
-/// `ubihome_core::ChangedMessage`'s per-type variants - so a receiver can
-/// filter by id and use the value directly, without a second `Globals::get*`
-/// lookup.
-#[derive(Clone, Debug)]
-pub enum GlobalChanged {
-    Bool {
-        id: String,
-        value: bool,
-    },
-    Int {
-        id: String,
-        value: i64,
-    },
-    Float {
-        id: String,
-        value: f64,
-    },
-    // No template entity reads a `string` global today (only bool/float
-    // `lambda`s exist), so this variant has no consumer yet.
-    #[allow(dead_code)]
-    String {
-        id: String,
-        value: String,
-    },
-}
-
-impl GlobalChanged {
-    fn new(id: &str, value: &GlobalValue) -> Self {
-        match value {
-            GlobalValue::Bool(value) => GlobalChanged::Bool {
-                id: id.to_string(),
-                value: *value,
-            },
-            GlobalValue::Int(value) => GlobalChanged::Int {
-                id: id.to_string(),
-                value: *value,
-            },
-            GlobalValue::Float(value) => GlobalChanged::Float {
-                id: id.to_string(),
-                value: *value,
-            },
-            GlobalValue::String(value) => GlobalChanged::String {
-                id: id.to_string(),
-                value: value.clone(),
-            },
-        }
-    }
-}
-
 /// Shared runtime store for global variables. Cloned into every task that can
 /// execute a `globals.set` action or read a global (e.g. a template switch
-/// whose `lambda` is `globals.get`).
+/// whose `lambda` reads it via `id()`).
 #[derive(Clone)]
 pub struct Globals {
     values: Arc<Mutex<HashMap<String, GlobalValue>>>,
     types: Arc<HashMap<String, GlobalType>>,
-    /// Broadcasts a global's new value whenever it changes, so readers (like
-    /// template switch `globals.get` lambdas) can update live.
-    changes: broadcast::Sender<GlobalChanged>,
+    /// Notifies readers (like template switch/number `lambda`s) that *some*
+    /// global changed, so they re-evaluate. The changed id/value isn't
+    /// carried: a `lambda` is arbitrary JS that may read any number of
+    /// globals (or none), so a reader can't tell in advance which changes
+    /// are relevant to it and just re-evaluates on every notification.
+    changes: broadcast::Sender<()>,
 }
 
 impl Globals {
@@ -214,37 +166,22 @@ impl Globals {
             values.insert(id.to_string(), value.clone());
         }
         // Notify readers; an error just means nobody is currently subscribed.
-        let _ = self.changes.send(GlobalChanged::new(id, &value));
+        let _ = self.changes.send(());
     }
 
     /// Current value of a global, if it exists.
-    #[allow(dead_code)]
     pub fn get(&self, id: &str) -> Option<GlobalValue> {
         self.values.lock().unwrap().get(id).cloned()
     }
 
-    /// Current value of a global interpreted as a boolean (`globals.get` on a
-    /// `bool` global). Returns `None` for unknown ids or non-boolean values.
-    pub fn get_bool(&self, id: &str) -> Option<bool> {
-        match self.get(id)? {
-            GlobalValue::Bool(value) => Some(value),
-            _ => None,
-        }
-    }
-
-    /// Current value of a global interpreted as a float (`globals.get` on a
-    /// `float` global). An `int` global is also accepted, widened to `f32`.
-    /// Returns `None` for unknown ids or bool/string values.
-    pub fn get_float(&self, id: &str) -> Option<f32> {
-        match self.get(id)? {
-            GlobalValue::Float(value) => Some(value as f32),
-            GlobalValue::Int(value) => Some(value as f32),
-            _ => None,
-        }
+    /// The declared `type:` of a global, if it exists. Used by the script
+    /// engine's `set_global` to reconcile a JS number into `Int` vs `Float`.
+    pub fn type_of(&self, id: &str) -> Option<GlobalType> {
+        self.types.get(id).cloned()
     }
 
     /// Subscribe to global-change notifications.
-    pub fn subscribe(&self) -> broadcast::Receiver<GlobalChanged> {
+    pub fn subscribe(&self) -> broadcast::Receiver<()> {
         self.changes.subscribe()
     }
 }

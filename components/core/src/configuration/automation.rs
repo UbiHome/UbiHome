@@ -36,6 +36,14 @@ pub enum ActionType {
     /// next action.
     #[serde(rename = "delay", deserialize_with = "deserialize_duration")]
     Delay(#[garde(skip)] Duration),
+
+    /// Runs an inline JavaScript lambda. Executed by a dedicated engine in
+    /// the main binary (see `crate::builtins::script`), which is not
+    /// reachable from this shared crate, so its syntax is not checked here -
+    /// a broken lambda surfaces as a runtime error when the action runs,
+    /// not as a config validation error.
+    #[serde(rename = "lambda")]
+    Lambda(#[garde(skip)] String),
 }
 
 #[derive(Clone, Serialize, Deserialize, Debug, Validate)]

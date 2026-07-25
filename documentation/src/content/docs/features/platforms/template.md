@@ -37,14 +37,14 @@ switch:
 | `turn_on_action`  | List of [actions](/features/components/actions/) run when turned on.    | see above |
 | `turn_off_action` | List of [actions](/features/components/actions/) run when turned off.   | see above |
 
-### State from a global (`lambda`)
+### State from a `lambda`
 
-The `lambda` is written in YAML and currently supports `globals.get`, which
-reports the switch state from a `bool` [global](/features/components/globals/).
-The state tracks the global live — whenever the global changes (e.g. from a
-`turn_on_action` that sets it, or from elsewhere) the switch updates. With a
-`lambda` the switch is no longer optimistic; its state always reflects the
-global.
+`lambda` is an inline JavaScript expression (see
+[Triggers and Actions](/features/components/actions/#lambda-actions)) that
+computes the reported state, e.g. `return id(relay_state)` to read a `bool`
+[global](/features/components/globals/). The state tracks the lambda live —
+whenever any global changes, it is re-evaluated. With a `lambda` the switch is
+no longer optimistic; its state always reflects the lambda's result.
 
 ```yaml
 globals:
@@ -56,8 +56,8 @@ switch:
   - platform: template
     name: 'Living Room'
     id: living_room
-    lambda:
-      globals.get: relay_state
+    lambda: |-
+      return id(relay_state)
     turn_on_action:
       then:
         - globals.set:
@@ -115,9 +115,9 @@ number:
         - button.press: apply_fan_speed
 ```
 
-`set_action` has no access to the commanded value (there is no `x` variable,
-unlike ESPHome's C++ lambdas); use `optimistic` or a `lambda` so the entity's
-own reported state reflects it instead.
+A plain action in `set_action` (like `button.press` above) has no access to
+the commanded value; a `lambda` action does, as the `x` variable (see
+[Triggers and Actions](/features/components/actions/#lambda-actions)).
 
 ### Attributes
 
@@ -125,15 +125,18 @@ own reported state reflects it instead.
 | ---------------- | ------------------------------------------------------------------------------- | --------- |
 | `optimistic`     | Publish the commanded value right after a command, without state feedback.      | `true`    |
 | `initial_value`  | Value to report on startup when not driven by a `lambda`. Defaults to `min_value`. | `0`    |
-| `lambda`         | Source the reported value from a `float` global (see below).                    | see below |
+| `lambda`         | Source the reported value from a JavaScript expression (see below).             | see below |
 | `set_action`     | List of [actions](/features/components/actions/) run when a value is set.       | see above |
 
-### State from a global (`lambda`)
+### State from a `lambda`
 
-The same `globals.get` mechanism as the template switch above, but reading a
-`float` [global](/features/components/globals/) instead of a `bool` one. The
-number reports whatever the global currently holds, live, and updates the
-global automatically whenever it is set to a new value:
+The same `lambda` mechanism as the template switch above, e.g.
+`return id(fan_speed_value)` to read a `float`
+[global](/features/components/globals/). The number reports whatever the
+lambda currently returns, live (re-evaluated on every global change). Unlike
+`optimistic`, a `lambda`-driven number does not echo the commanded value on
+its own — write the value back (e.g. with `set_global`) from a `lambda`
+action in `set_action`:
 
 ```yaml
 globals:
@@ -148,14 +151,13 @@ number:
     min_value: 0
     max_value: 100
     step: 1
-    lambda:
-      globals.get: fan_speed_value
-    # A `lambda`-driven number automatically writes the commanded value back
-    # to its backing global, so `set_action` is only needed for extra side
-    # effects (e.g. applying the value elsewhere) and can be omitted.
+    lambda: |-
+      return id(fan_speed_value)
     set_action:
       then:
         - button.press: apply_fan_speed
+        - lambda: |
+            set_global('fan_speed_value', x)
 ```
 
 Similar to ESPHome: [Template Number](https://esphome.io/components/number/template/)
