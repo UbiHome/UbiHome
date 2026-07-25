@@ -140,8 +140,10 @@ macro_rules! template_binary_sensor {
             $vis struct $name {
                 #[garde(dive)]
                 pub filters: Option<Vec<BinarySensorFilter>>,
+                #[serde(default, deserialize_with = "ubihome_core::configuration::automation::deserialize_option_map_only")]
                 #[garde(dive)]
                 pub on_press: Option<Trigger>,
+                #[serde(default, deserialize_with = "ubihome_core::configuration::automation::deserialize_option_map_only")]
                 #[garde(dive)]
                 pub on_release: Option<Trigger>,
 

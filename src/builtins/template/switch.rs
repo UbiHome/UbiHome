@@ -33,10 +33,12 @@ template_switch! {
         pub lambda: Option<LambdaExpr>,
 
         /// Actions run when the switch is turned on.
+        #[serde(default, deserialize_with = "ubihome_core::configuration::automation::deserialize_option_map_only")]
         #[garde(dive)]
         pub turn_on_action: Option<Trigger>,
 
         /// Actions run when the switch is turned off.
+        #[serde(default, deserialize_with = "ubihome_core::configuration::automation::deserialize_option_map_only")]
         #[garde(dive)]
         pub turn_off_action: Option<Trigger>,
     }

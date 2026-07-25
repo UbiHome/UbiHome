@@ -14,6 +14,7 @@ template_button! {
     #[garde(allow_unvalidated)]
     pub struct TemplateButtonConfig {
         /// Actions run when the button is pressed.
+        #[serde(default, deserialize_with = "ubihome_core::configuration::automation::deserialize_option_map_only")]
         #[garde(dive)]
         pub on_press: Option<Trigger>,
     }

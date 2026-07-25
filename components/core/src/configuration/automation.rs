@@ -3,6 +3,8 @@ use duration_str::deserialize_duration;
 use garde::Validate;
 use serde::Deserialize;
 use serde::Serialize;
+use serde::de;
+use std::marker::PhantomData;
 use std::time::Duration;
 
 /// A single automation action. New action types are added as variants here and
@@ -51,4 +53,79 @@ pub struct Action {
 pub struct Trigger {
     #[garde(dive)]
     pub then: Vec<Action>,
+}
+
+/// Generic `deserialize_with` helper for `Option<T>` config fields where `T`
+/// is expected to be a YAML mapping (for example a [`Trigger`]'s `then:
+/// [...]`).
+///
+/// Plain `#[derive(Deserialize)]` structs also accept a bare sequence: serde
+/// generates positional/tuple-style deserialization for every struct (needed
+/// for non-self-describing formats like bincode), so a struct with few
+/// fields silently tries to read a wrongly-supplied list positionally and
+/// reports a confusing, backwards-reading error - e.g. `Trigger { then:
+/// Vec<Action> }` given `[{switch.turn_on: x}, ...]` tries to parse the
+/// list's first item as `then`'s value and fails with "invalid type: map,
+/// expected a sequence", not the other way around as you'd expect.
+///
+/// Routing a field through this helper instead rejects any sequence up
+/// front with a plain, correctly-oriented "invalid type: sequence, expected
+/// a mapping" error - no per-struct `Visitor` needed. Use it (together with
+/// `#[serde(default)]`, so a missing key still resolves to `None`) on any
+/// `Option<T>` field prone to this mistake:
+///
+/// ```ignore
+/// #[serde(default, deserialize_with = "ubihome_core::configuration::automation::deserialize_option_map_only")]
+/// pub on_press: Option<Trigger>,
+/// ```
+pub fn deserialize_option_map_only<'de, D, T>(deserializer: D) -> Result<Option<T>, D::Error>
+where
+    D: de::Deserializer<'de>,
+    T: Deserialize<'de>,
+{
+    struct MapOnlyVisitor<T>(PhantomData<T>);
+
+    impl<'de, T: Deserialize<'de>> de::Visitor<'de> for MapOnlyVisitor<T> {
+        type Value = T;
+
+        fn expecting(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+            f.write_str("a mapping")
+        }
+
+        fn visit_map<A>(self, map: A) -> Result<Self::Value, A::Error>
+        where
+            A: de::MapAccess<'de>,
+        {
+            T::deserialize(de::value::MapAccessDeserializer::new(map))
+        }
+    }
+
+    struct OptionMapOnlyVisitor<T>(PhantomData<T>);
+
+    impl<'de, T: Deserialize<'de>> de::Visitor<'de> for OptionMapOnlyVisitor<T> {
+        type Value = Option<T>;
+
+        fn expecting(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+            f.write_str("a mapping or null")
+        }
+
+        fn visit_unit<E: de::Error>(self) -> Result<Self::Value, E> {
+            Ok(None)
+        }
+
+        fn visit_none<E: de::Error>(self) -> Result<Self::Value, E> {
+            Ok(None)
+        }
+
+        fn visit_some<D2>(self, deserializer: D2) -> Result<Self::Value, D2::Error>
+        where
+            D2: de::Deserializer<'de>,
+        {
+            deserializer
+                .deserialize_any(MapOnlyVisitor::<T>(PhantomData))
+                .map(Some)
+        }
+    }
+
+    deserializer.deserialize_option(OptionMapOnlyVisitor(PhantomData))
 }

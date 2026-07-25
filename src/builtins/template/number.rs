@@ -37,6 +37,7 @@ template_number! {
 
         /// Actions run when a client (e.g. Home Assistant) sets a new value.
         /// Runs before the new state is published/stored.
+        #[serde(default, deserialize_with = "ubihome_core::configuration::automation::deserialize_option_map_only")]
         #[garde(dive)]
         pub set_action: Option<Trigger>,
 
