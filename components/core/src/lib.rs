@@ -18,6 +18,7 @@ use serde::Deserialize;
 use std::{collections::HashMap, future::Future, pin::Pin};
 use tokio::sync::broadcast::{Receiver, Sender};
 
+use crate::configuration::binary_sensor::Trigger;
 use crate::constants::{is_readable_string, is_readable_string_option};
 use crate::state::StateStore;
 
@@ -186,6 +187,9 @@ pub struct UbiHome {
     pub friendly_name: Option<String>,
     #[garde(custom(is_readable_string_option), length(min = 3, max = 100))]
     pub area: Option<String>,
+    /// Actions to run once, when UbiHome starts up.
+    #[garde(dive)]
+    pub on_startup: Option<Trigger>,
 }
 
 #[macro_export]

@@ -9,6 +9,16 @@ Currently triggers are available on the [Binary Sensor](/features/entities/binar
 - `on_press` — runs when the state changes to `true`.
 - `on_release` — runs when the state changes to `false`.
 
+There is also a global `on_startup` trigger, configured under `ubihome:`, that runs once when UbiHome starts:
+
+```yaml
+ubihome:
+  name: 'Raspberry Pi behind the TV'
+  on_startup:
+    then:
+      - switch.turn_on: status_led
+```
+
 Each trigger takes a `then` block listing the actions to run in order:
 
 ```yaml
