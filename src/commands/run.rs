@@ -481,6 +481,16 @@ Remove the "{}:" entry from your configuration or install the cargo crate contai
             state_store,
         );
 
+        // Fire the `ubihome.on_startup` trigger once, now that every platform
+        // module has resubscribed and is listening for published commands.
+        if let Some(on_startup) = config.ubihome.on_startup.clone() {
+            let internal_tx_clone = internal_tx.clone();
+            let globals_clone = globals.clone();
+            supervised_tasks.spawn(async move {
+                builtins::run_actions(on_startup.then, &internal_tx_clone, &globals_clone).await;
+            });
+        }
+
         println!("Platforms: {:?}", initialized_platforms);
 
         let ctrl_c = async {

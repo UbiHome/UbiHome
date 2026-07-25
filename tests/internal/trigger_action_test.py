@@ -86,6 +86,37 @@ binary_sensor:
         button_mock.wait_for_mock_state("pressed")
 
 
+async def test_on_startup_trigger(io_mock_factory: IOMockFactory):
+    """
+    Test that the `ubihome.on_startup` trigger runs its actions once when
+    UbiHome starts up.
+    """
+
+    switch_mock = io_mock_factory.create_mock()
+
+    DEVICE_INFO_CONFIG = f"""
+ubihome:
+  name: test_device
+  on_startup:
+    then:
+      - switch.turn_on: "test_switch"
+
+shell:
+
+switch:
+  - platform: shell
+    name: "Test Switch"
+    id: test_switch
+    command_on: "echo true > {switch_mock}"
+    command_off: "echo false > {switch_mock}"
+    command_state: "cat {switch_mock} || echo false"
+"""
+    switch_mock.set_value("false")
+
+    async with UbiHome("run", config=DEVICE_INFO_CONFIG):
+        switch_mock.wait_for_mock_state("true")
+
+
 async def test_binary_sensor_delay_action(io_mock_factory: IOMockFactory):
     """
     Test that the `delay` action pauses an action list without aborting it: the

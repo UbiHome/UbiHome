@@ -16,6 +16,16 @@ and on the [Template](/features/platforms/template/) switch, button and number:
 - `on_press` — runs when the template button is pressed.
 - `set_action` — runs when the template number is set to a new value.
 
+There is also a global `on_startup` trigger, configured under `ubihome:`, that runs once when UbiHome starts:
+
+```yaml
+ubihome:
+  name: 'Raspberry Pi behind the TV'
+  on_startup:
+    then:
+      - switch.turn_on: status_led
+```
+
 A trigger takes a `then` block listing the actions to run in order:
 
 ```yaml
