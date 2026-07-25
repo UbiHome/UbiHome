@@ -15,6 +15,10 @@
 //! - `id(some_global)` reads a [`globals`](crate::builtins::globals) variable
 //!   (ESPHome instead lets you assign directly, e.g. `id(x) = 5;`; this JS
 //!   engine can't offer that, so writing uses `set_global(name, value)`).
+//!   Calling a command that doesn't apply to the referenced id (e.g.
+//!   `.turn_on()` on a button, or any command on an unknown id) throws,
+//!   since the returned handle only ever exposes the commands valid for that
+//!   id's actual kind (see [`entity_handle`]).
 //! - `x` is the value passed to the trigger, for triggers that carry one
 //!   (currently only a template number's `set_action`); `None` everywhere
 //!   else.
@@ -33,13 +37,50 @@ use boa_engine::{
     js_string, Context, Finalize, JsObject, JsResult, JsValue, NativeFunction, Source, Trace,
 };
 use log::error;
+use std::collections::HashMap;
 use std::sync::mpsc;
+use std::sync::Arc;
 use tokio::sync::broadcast::Sender;
 use tokio::sync::oneshot;
 use ubihome_core::global_value::GlobalValue;
+use ubihome_core::internal::sensors::UbiComponent;
 use ubihome_core::PublishedMessage;
 
 use crate::builtins::globals::{GlobalType, Globals};
+
+/// The kind of entity an `id()` argument refers to, used to shape the handle
+/// `id()` returns to only the commands that actually apply (see
+/// [`entity_handle`]). Built once from every configured component (see
+/// [`entity_kinds_from_components`]).
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum EntityKind {
+    Switch,
+    Button,
+    Number,
+    Sensor,
+    BinarySensor,
+    Light,
+    TextSensor,
+}
+
+/// Builds the id -> kind lookup [`entity_handle`] uses, from every component
+/// configured across every platform (not just template entities), so `id()`
+/// can shape a handle correctly regardless of which platform an id belongs
+/// to.
+pub fn entity_kinds_from_components(components: &[UbiComponent]) -> HashMap<String, EntityKind> {
+    components
+        .iter()
+        .map(|component| match component {
+            UbiComponent::Switch(c) => (c.id.clone(), EntityKind::Switch),
+            UbiComponent::Button(c) => (c.id.clone(), EntityKind::Button),
+            UbiComponent::Number(c) => (c.id.clone(), EntityKind::Number),
+            UbiComponent::Sensor(c) => (c.id.clone(), EntityKind::Sensor),
+            UbiComponent::BinarySensor(c) => (c.id.clone(), EntityKind::BinarySensor),
+            UbiComponent::Light(c) => (c.id.clone(), EntityKind::Light),
+            UbiComponent::TextSensor(c) => (c.id.clone(), EntityKind::TextSensor),
+        })
+        .collect()
+}
 
 /// Cap on JS loop iterations per evaluation, so a runaway `while` loop (like
 /// the one in a template number's `set_action` example) fails instead of
@@ -58,13 +99,14 @@ pub enum ScriptValue {
 }
 
 /// Data captured by every native function the engine registers. Cheap to
-/// clone (both fields are reference-counted handles), and holds no `Gc`
+/// clone (every field is a reference-counted handle), and holds no `Gc`
 /// pointers, so it's safe to hand to Boa as opaque, non-traced captures (see
 /// the `Trace`/`Finalize` impls below).
 #[derive(Clone)]
 struct EngineContext {
     globals: Globals,
     tx: Sender<PublishedMessage>,
+    entities: Arc<HashMap<String, EntityKind>>,
 }
 
 impl Finalize for EngineContext {}
@@ -92,10 +134,15 @@ pub struct ScriptEngine {
 impl ScriptEngine {
     /// Spawns the dedicated OS thread that owns the JS engine, and returns a
     /// handle every consumer (template switches/numbers, `run_actions`) can
-    /// clone and send requests to.
-    pub fn spawn(globals: Globals, tx: Sender<PublishedMessage>) -> Self {
+    /// clone and send requests to. `entities` is the id -> kind lookup (see
+    /// [`entity_kinds_from_components`]) used to shape what `id()` returns.
+    pub fn spawn(
+        globals: Globals,
+        tx: Sender<PublishedMessage>,
+        entities: HashMap<String, EntityKind>,
+    ) -> Self {
         let (requests, receiver) = mpsc::channel();
-        std::thread::spawn(move || engine_thread(globals, tx, receiver));
+        std::thread::spawn(move || engine_thread(globals, tx, entities, receiver));
         ScriptEngine { requests }
     }
 
@@ -142,6 +189,7 @@ pub fn validate_lambda(source: &Option<String>, _: &()) -> garde::Result {
 fn engine_thread(
     globals: Globals,
     tx: Sender<PublishedMessage>,
+    entities: HashMap<String, EntityKind>,
     requests: mpsc::Receiver<Request>,
 ) {
     let mut context = Context::default();
@@ -149,7 +197,11 @@ fn engine_thread(
         .runtime_limits_mut()
         .set_loop_iteration_limit(DEFAULT_MAX_LOOP_ITERATIONS);
 
-    let engine_context = EngineContext { globals, tx };
+    let engine_context = EngineContext {
+        globals,
+        tx,
+        entities: Arc::new(entities),
+    };
     if let Err(e) = setup_context(&mut context, &engine_context) {
         error!("Failed to set up script engine context: {}", e);
         return;
@@ -223,37 +275,50 @@ fn id_native(
     Ok(entity_handle(&key, captures, context).into())
 }
 
-/// Builds the `{ turn_on, turn_off, press }` object `id()` returns for a
-/// name that isn't a known global. Calling a method that doesn't apply to
-/// the referenced entity (e.g. `.press()` on a switch) is a harmless no-op:
-/// it just publishes a command nobody listens for.
+/// Builds the command handle `id()` returns for a name that isn't a known
+/// global, shaped to only expose the commands valid for that id's actual
+/// kind: `{ turn_on, turn_off }` for a switch, `{ press }` for a button, and
+/// an empty object for anything else (a number/sensor/light/... id, or an id
+/// that doesn't exist at all). Calling an unsupported command is therefore a
+/// regular JS `TypeError` (not a callable function), not a silent no-op.
 fn entity_handle(key: &str, captures: &EngineContext, context: &mut Context) -> JsObject {
-    ObjectInitializer::new(context)
-        .function(
-            NativeFunction::from_copy_closure_with_captures(
-                turn_on_native,
-                (captures.clone(), key.to_string()),
-            ),
-            js_string!("turn_on"),
-            0,
-        )
-        .function(
-            NativeFunction::from_copy_closure_with_captures(
-                turn_off_native,
-                (captures.clone(), key.to_string()),
-            ),
-            js_string!("turn_off"),
-            0,
-        )
-        .function(
-            NativeFunction::from_copy_closure_with_captures(
-                press_native,
-                (captures.clone(), key.to_string()),
-            ),
-            js_string!("press"),
-            0,
-        )
-        .build()
+    let mut builder = ObjectInitializer::new(context);
+    match captures.entities.get(key) {
+        Some(EntityKind::Switch) => {
+            builder
+                .function(
+                    NativeFunction::from_copy_closure_with_captures(
+                        turn_on_native,
+                        (captures.clone(), key.to_string()),
+                    ),
+                    js_string!("turn_on"),
+                    0,
+                )
+                .function(
+                    NativeFunction::from_copy_closure_with_captures(
+                        turn_off_native,
+                        (captures.clone(), key.to_string()),
+                    ),
+                    js_string!("turn_off"),
+                    0,
+                );
+        }
+        Some(EntityKind::Button) => {
+            builder.function(
+                NativeFunction::from_copy_closure_with_captures(
+                    press_native,
+                    (captures.clone(), key.to_string()),
+                ),
+                js_string!("press"),
+                0,
+            );
+        }
+        // A known id with no supported commands yet (number/sensor/light/...),
+        // or an id that isn't declared anywhere - either way, the handle
+        // exposes nothing, so any command called on it throws.
+        Some(_) | None => {}
+    }
+    builder.build()
 }
 
 fn turn_on_native(
@@ -339,9 +404,12 @@ fn global_value_to_js(value: &GlobalValue) -> JsValue {
 
 /// Wraps the lambda body in a function expression. Evaluating the expression
 /// compiles the body (surfacing syntax errors) without executing it;
-/// appending `()` executes it and yields the `return` value.
+/// appending `()` executes it and yields the `return` value. Strict mode
+/// turns otherwise-silent footguns (e.g. assigning to a variable that was
+/// never declared with `let`/`var`, creating an accidental global) into a
+/// thrown error instead.
 fn wrap_lambda(source: &str) -> String {
-    format!("(function() {{ {}\n }})", source)
+    format!("(function() {{ \"use strict\";\n{}\n }})", source)
 }
 
 /// Sets the JS `x` global, then compiles and runs `source`, converting its
@@ -490,10 +558,18 @@ mod tests {
         }])
     }
 
+    fn test_entities() -> HashMap<String, EntityKind> {
+        HashMap::from([
+            ("volume_up_button".to_string(), EntityKind::Button),
+            ("relay".to_string(), EntityKind::Switch),
+            ("room_temperature".to_string(), EntityKind::Sensor),
+        ])
+    }
+
     #[tokio::test]
     async fn test_eval_reads_global_and_x() {
         let (tx, _rx) = tokio::sync::broadcast::channel(16);
-        let engine = ScriptEngine::spawn(test_globals(), tx);
+        let engine = ScriptEngine::spawn(test_globals(), tx, test_entities());
         let result = engine
             .eval("return id(global_volume) - x;", Some(3.0))
             .await;
@@ -503,7 +579,7 @@ mod tests {
     #[tokio::test]
     async fn test_eval_runaway_loop_is_interrupted() {
         let (tx, _rx) = tokio::sync::broadcast::channel(16);
-        let engine = ScriptEngine::spawn(test_globals(), tx);
+        let engine = ScriptEngine::spawn(test_globals(), tx, test_entities());
         let result = engine.eval("while (true) {}", None).await;
         assert!(result.is_err());
     }
@@ -511,7 +587,7 @@ mod tests {
     #[tokio::test]
     async fn test_eval_dispatches_button_press() {
         let (tx, mut rx) = tokio::sync::broadcast::channel(16);
-        let engine = ScriptEngine::spawn(test_globals(), tx);
+        let engine = ScriptEngine::spawn(test_globals(), tx, test_entities());
         engine
             .eval("id(volume_up_button).press();", None)
             .await
@@ -521,5 +597,52 @@ mod tests {
             message,
             PublishedMessage::ButtonPressed { key } if key == "volume_up_button"
         ));
+    }
+
+    #[tokio::test]
+    async fn test_eval_dispatches_switch_commands() {
+        let (tx, mut rx) = tokio::sync::broadcast::channel(16);
+        let engine = ScriptEngine::spawn(test_globals(), tx, test_entities());
+        engine.eval("id(relay).turn_on();", None).await.unwrap();
+        let message = rx.recv().await.unwrap();
+        assert!(matches!(
+            message,
+            PublishedMessage::SwitchStateCommand { key, state: true } if key == "relay"
+        ));
+    }
+
+    #[tokio::test]
+    async fn test_eval_wrong_command_for_entity_kind_errors() {
+        let (tx, _rx) = tokio::sync::broadcast::channel(16);
+        let engine = ScriptEngine::spawn(test_globals(), tx, test_entities());
+
+        // A button has no `turn_on`.
+        let error = engine
+            .eval("id(volume_up_button).turn_on();", None)
+            .await
+            .unwrap_err();
+        assert!(error.contains("not a callable function"), "got: {}", error);
+
+        // A switch has no `press`.
+        let error = engine.eval("id(relay).press();", None).await.unwrap_err();
+        assert!(error.contains("not a callable function"), "got: {}", error);
+
+        // A sensor supports no commands at all.
+        let error = engine
+            .eval("id(room_temperature).turn_on();", None)
+            .await
+            .unwrap_err();
+        assert!(error.contains("not a callable function"), "got: {}", error);
+    }
+
+    #[tokio::test]
+    async fn test_eval_unknown_id_command_errors() {
+        let (tx, _rx) = tokio::sync::broadcast::channel(16);
+        let engine = ScriptEngine::spawn(test_globals(), tx, test_entities());
+        let error = engine
+            .eval("id(does_not_exist).press();", None)
+            .await
+            .unwrap_err();
+        assert!(error.contains("not a callable function"), "got: {}", error);
     }
 }
