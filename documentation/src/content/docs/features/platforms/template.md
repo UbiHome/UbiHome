@@ -1,6 +1,6 @@
 ---
 title: 'Template'
-description: 'A switch, button or number that runs automations instead of talking to hardware'
+description: 'A switch, button, number or sensor that runs automations instead of talking to hardware'
 ---
 
 The `template` platform creates entities driven entirely by automations
@@ -162,11 +162,40 @@ number:
 
 Similar to ESPHome: [Template Number](https://esphome.io/components/number/template/)
 
+## Sensor
+
+Sensors are read-only, so - unlike the switch/number above - there is no
+command a client can send. The reported value always comes from a `lambda`
+(the same mechanism as the switch above), and updates live whenever any
+global it reads changes.
+
+```yaml
+globals:
+  - id: room_temperature_value
+    type: float
+    initial_value: 21.5
+
+sensor:
+  - platform: template
+    name: 'Room Temperature'
+    id: room_temperature
+    unit_of_measurement: '°C'
+    lambda: |-
+      return id(room_temperature_value)
+```
+
+`unit_of_measurement`, `device_class`, `state_class`, `accuracy_decimals` and
+`filters` are the shared [Sensor](/features/entities/sensor/) attributes.
+
+Similar to ESPHome: [Template Sensor](https://esphome.io/components/sensor/template/)
+
 <!-- Backlinks to be displayed  -->
 <div style="display:none" aria-hidden="true">
   <a href="/features/entities/switch/">Switch</a>
   <a href="/features/entities/button/">Button</a>
   <a href="/features/entities/number/">Number</a>
+  <a href="/features/entities/sensor/">Sensor</a>
   <a href="/features/components/actions/">Triggers and Actions</a>
   <a href="/features/components/globals/">Globals</a>
+  <a href="/features/components/filters/">Filters</a>
 </div>

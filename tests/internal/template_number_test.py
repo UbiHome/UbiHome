@@ -116,7 +116,7 @@ number:
             await sleep(0.1)
         assert mock.call_args.args[0].state == pytest.approx(42.0)
 
-        pressed_mock.wait_for_mock_state("pressed")
+        await pressed_mock.wait_for_mock_state("pressed")
 
 
 async def test_template_number_lambda_set(io_mock_factory: IOMockFactory):

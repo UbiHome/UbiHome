@@ -687,6 +687,7 @@ Remove the "{}:" entry from your configuration or install the cargo crate contai
             &mut supervised_tasks,
             builtin.template.clone(),
             internal_tx.clone(),
+            modules_tx.clone(),
             globals.clone(),
             state_writer.clone(),
             script.clone(),

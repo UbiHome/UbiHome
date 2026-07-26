@@ -1,3 +1,4 @@
+import asyncio
 import os
 import platform
 import time
@@ -22,9 +23,15 @@ class IOMock:
         with open(self._full_path, "w") as f:
             f.write(content)
 
-    def wait_for_mock_state(self, expected_state, timeout=5):
+    async def wait_for_mock_state(self, expected_state, timeout=5):
         """
         Wait for a file to be created or modified.
+
+        This polls with `asyncio.sleep`, not blocking `time.sleep`, so the
+        event loop keeps draining the UbiHome subprocess's stdout/stderr
+        pipes while we wait. Blocking the loop here let those pipes fill up
+        under verbose (`RUST_LOG=TRACE`) logging, which stalled the
+        subprocess's own polling and made these waits flaky.
         """
         state: str = ""
         start_time = time.time()
@@ -34,7 +41,7 @@ class IOMock:
             while not os.path.exists(self._full_path):
                 if time.time() - start_time > timeout:
                     raise TimeoutError(f"File {self._full_path} was not created within {timeout} seconds.")
-                time.sleep(0.1)
+                await asyncio.sleep(0.1)
 
             if platform.system() == "Windows":
                 # On Windows, read with utf-16 encoding
@@ -48,7 +55,7 @@ class IOMock:
             else:
                 with open(self._full_path) as f:
                     state = f.read()
-            time.sleep(0.1)
+            await asyncio.sleep(0.1)
 
         return True
 

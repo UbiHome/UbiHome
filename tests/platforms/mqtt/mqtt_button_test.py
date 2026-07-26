@@ -52,4 +52,4 @@ button:
         publish = mqtt_client.publish(command_topic, "ON")
         publish.wait_for_publish()
 
-        io_mock.wait_for_mock_state("Hello World!\n")
+        await io_mock.wait_for_mock_state("Hello World!\n")

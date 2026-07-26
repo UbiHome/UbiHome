@@ -43,11 +43,11 @@ binary_sensor:
 
     async with UbiHome("run", config=DEVICE_INFO_CONFIG):
         sensor_mock.set_value("true")
-        switch_mock.wait_for_mock_state("true")
+        await switch_mock.wait_for_mock_state("true")
         switch_mock.remove()
 
         sensor_mock.set_value("false")
-        switch_mock.wait_for_mock_state("false")
+        await switch_mock.wait_for_mock_state("false")
 
 
 async def test_binary_sensor_button_press_action(io_mock_factory: IOMockFactory):
@@ -85,7 +85,7 @@ binary_sensor:
 
     async with UbiHome("run", config=DEVICE_INFO_CONFIG):
         sensor_mock.set_value("false")
-        button_mock.wait_for_mock_state("pressed")
+        await button_mock.wait_for_mock_state("pressed")
 
 
 async def test_on_startup_trigger(io_mock_factory: IOMockFactory):
@@ -116,7 +116,7 @@ switch:
     switch_mock.set_value("false")
 
     async with UbiHome("run", config=DEVICE_INFO_CONFIG):
-        switch_mock.wait_for_mock_state("true")
+        await switch_mock.wait_for_mock_state("true")
 
 
 async def test_binary_sensor_delay_action(io_mock_factory: IOMockFactory):
@@ -168,10 +168,10 @@ binary_sensor:
     async with UbiHome("run", config=DEVICE_INFO_CONFIG):
         sensor_mock.set_value("true")
         # Action before the delay turns the switch on.
-        switch_mock.wait_for_mock_state("true")
+        await switch_mock.wait_for_mock_state("true")
         # Action after the delay presses the button, proving the delay does not
         # abort the remaining actions in the list.
-        button_mock.wait_for_mock_state("pressed")
+        await button_mock.wait_for_mock_state("pressed")
 
 
 async def test_binary_sensor_logger_log_action(io_mock_factory: IOMockFactory):

@@ -23,11 +23,14 @@ button:
   - platform: shell
     name: "On Runner"
     id: on_runner
-    command: "echo on > {on_mock}"
+    # Not just "on": cmd.exe (the default Windows shell) special-cases
+    # `echo on`/`echo off` as the command-echoing toggle, so it never writes
+    # the literal text to the redirected file.
+    command: "echo turned_on > {on_mock}"
   - platform: shell
     name: "Off Runner"
     id: off_runner
-    command: "echo off > {off_mock}"
+    command: "echo turned_off > {off_mock}"
 
 switch:
   - platform: template
@@ -61,9 +64,9 @@ binary_sensor:
         # Turning the binary sensor on turns the template switch on, which runs
         # its turn_on_action (press the on_runner button).
         sensor_mock.set_value("true")
-        on_mock.wait_for_mock_state("on")
+        await on_mock.wait_for_mock_state("turned_on")
 
         # Turning it off runs the turn_off_action (press the off_runner button).
         off_mock.remove()
         sensor_mock.set_value("false")
-        off_mock.wait_for_mock_state("off")
+        await off_mock.wait_for_mock_state("turned_off")
