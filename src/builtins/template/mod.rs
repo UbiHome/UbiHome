@@ -6,19 +6,21 @@
 pub mod button;
 pub mod lambda;
 pub mod number;
+pub mod sensor;
 pub mod switch;
 
 pub use button::TemplateButtonConfig;
 pub use number::TemplateNumberConfig;
+pub use sensor::TemplateSensorConfig;
 pub use switch::TemplateSwitchConfig;
 
 use std::collections::HashMap;
 
 use tokio::sync::broadcast::{Receiver, Sender};
 use tokio::task::JoinSet;
-use ubihome_core::internal::sensors::{UbiButton, UbiComponent, UbiNumber, UbiSwitch};
+use ubihome_core::internal::sensors::{UbiButton, UbiComponent, UbiNumber, UbiSensor, UbiSwitch};
 use ubihome_core::state::{EntityState, StateStoreWriter};
-use ubihome_core::PublishedMessage;
+use ubihome_core::{ChangedMessage, PublishedMessage};
 
 use crate::builtins::globals::GlobalChanged;
 use crate::builtins::{run_actions, Globals};
@@ -29,6 +31,7 @@ pub struct TemplateConfig {
     pub switches: Vec<TemplateSwitchConfig>,
     pub buttons: Vec<TemplateButtonConfig>,
     pub numbers: Vec<TemplateNumberConfig>,
+    pub sensors: Vec<TemplateSensorConfig>,
 }
 
 /// The `UbiComponent` entries every configured template entity exposes to
@@ -74,15 +77,31 @@ pub fn to_components(config: &TemplateConfig) -> Vec<UbiComponent> {
         }));
     }
 
+    for sensor in &config.sensors {
+        components.push(UbiComponent::Sensor(UbiSensor {
+            platform: "sensor".to_string(),
+            icon: sensor.icon.clone(),
+            name: sensor.name.clone().unwrap_or_default(),
+            id: sensor.get_object_id(),
+            internal: sensor.internal,
+            device_class: sensor.device_class.clone(),
+            state_class: sensor.state_class.clone(),
+            unit_of_measurement: sensor.unit_of_measurement.clone(),
+            accuracy_decimals: sensor.accuracy_decimals,
+            filters: sensor.filters.clone(),
+        }));
+    }
+
     components
 }
 
-/// Spawn the runtime handlers for every configured template switch, button
-/// and number.
+/// Spawn the runtime handlers for every configured template switch, button,
+/// number and sensor.
 pub fn spawn(
     tasks: &mut JoinSet<()>,
     config: TemplateConfig,
     tx: Sender<PublishedMessage>,
+    modules_tx: Sender<ChangedMessage>,
     globals: Globals,
     state_writer: StateStoreWriter,
 ) {
@@ -94,7 +113,8 @@ pub fn spawn(
         state_writer.clone(),
     );
     spawn_buttons(tasks, config.buttons, tx.clone(), globals.clone());
-    spawn_numbers(tasks, config.numbers, tx, globals, state_writer);
+    spawn_numbers(tasks, config.numbers, tx, globals.clone(), state_writer);
+    spawn_sensors(tasks, config.sensors, modules_tx, globals);
 }
 
 /// Spawn the runtime handler for template switches. It listens for
@@ -316,6 +336,76 @@ fn spawn_numbers(
                                 });
                             }
                         }
+                    }
+                }
+            }
+        }
+    });
+}
+
+/// Spawn the runtime handler for template sensors. Sensors are read-only, so
+/// unlike template switches/numbers there is no command to react to: the
+/// value always comes from the `lambda`'s backing global.
+///
+/// Values are published as [`ChangedMessage::SensorValueChange`] on
+/// `modules_tx`, i.e. exactly as a hardware platform module would report a
+/// reading. That routes template sensors through the same signal/filter
+/// pipeline in `crate::commands::run` that real sensors use, so `filters`
+/// and state-store mirroring work identically for both.
+fn spawn_sensors(
+    tasks: &mut JoinSet<()>,
+    sensors: Vec<TemplateSensorConfig>,
+    modules_tx: Sender<ChangedMessage>,
+    globals: Globals,
+) {
+    if sensors.is_empty() {
+        return;
+    }
+    let sensors: HashMap<String, TemplateSensorConfig> = sensors
+        .into_iter()
+        .map(|s| (s.get_object_id(), s))
+        .collect();
+    let mut global_changes = globals.subscribe();
+    tasks.spawn(async move {
+        // Publish the initial value from each sensor's backing global.
+        for (key, sensor) in &sensors {
+            if let Some(value) = globals.get_float(sensor.state_global()) {
+                log::debug!(
+                    "template sensor '{}' initial value from global '{}': {}",
+                    key,
+                    sensor.state_global(),
+                    value
+                );
+                let _ = modules_tx.send(ChangedMessage::SensorValueChange {
+                    key: key.clone(),
+                    value,
+                });
+            }
+        }
+
+        loop {
+            // A lagged receiver just misses an update; keep going.
+            let Ok(changed) = global_changes.recv().await else {
+                break;
+            };
+            let value = match changed {
+                GlobalChanged::Float { id, value } => Some((id, value as f32)),
+                GlobalChanged::Int { id, value } => Some((id, value as f32)),
+                _ => None,
+            };
+            if let Some((id, value)) = value {
+                for (key, sensor) in &sensors {
+                    if sensor.state_global() == id.as_str() {
+                        log::debug!(
+                            "template sensor '{}' value from global '{}': {}",
+                            key,
+                            id,
+                            value
+                        );
+                        let _ = modules_tx.send(ChangedMessage::SensorValueChange {
+                            key: key.clone(),
+                            value,
+                        });
                     }
                 }
             }
