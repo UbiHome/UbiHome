@@ -13,24 +13,29 @@ tags:
 
 UbiHome can be used as a client for [Sendspin](https://www.sendspin-audio.com/), e.g. for [Music Assistant](https://www.music-assistant.io/) which natively integrates with Home Assistant.
 
+Each `media_player` entry is its own Sendspin player, with its own connection to the server. Settings that only make sense per-player (client name/id, output device, volume, mute) live on the `media_player` entry; settings shared by every player (server address, audio format, buffer size) stay in the top-level `sendspin:` section.
+
 ```yaml
 sendspin:
   # Optional: Address of the Sendspin server (default: automatically discovered via mDNS)
   # server: ws://
-  # Optional: Name of this client in Sendspin (default: ubihome device name)
-  # name:
-  # Optional: Unique ID of this client in Sendspin (default: ubihome device name)
-  # client_id:
-  # Optional: ID of the output device (defaults to first device found)
-  # output_id:
-  # Optional: Default playback volume 0-100, applied on init (default: 100)
-  # volume: 100
-  # Optional: Start muted (default: false)
-  # muted: false
+  # Optional: Audio format used by every player (defaults shown)
+  # bit_depth: 16
+  # sample_rate: 48000
+  # Optional: ALSA buffer size in frames, shared by every player (default: system default)
+  # buffer_size:
 
 media_player:
   - platform: sendspin
     name: 'Living Room Speaker'
+    # Optional: Unique ID of this client in Sendspin (default: this entity's id)
+    # id: living_room_speaker
+    # Optional: ID of the output device (defaults to first device found)
+    # output_id:
+    # Optional: Default playback volume 0-100, applied on init (default: 100)
+    # volume: 100
+    # Optional: Start muted (default: false)
+    # muted: false
     # on_play / on_pause / on_volume_change: see Media Player
 ```
 
@@ -39,6 +44,7 @@ To find the device name enable debug logging for UbiHome and look for the line `
 
 ## Features
 
+- Multiple `media_player` entries, each with its own connection to the server and its own output device
 - Play/pause/stop, with triggers for custom automations
 - Volume control, with a trigger on volume change
 
