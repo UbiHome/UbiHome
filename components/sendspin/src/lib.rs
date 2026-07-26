@@ -450,12 +450,9 @@ async fn run_player(cfg: PlayerRuntimeConfig, changed_tx: Sender<ChangedMessage>
                             });
                         }
                         Message::ServerCommand(cmd) => {
-                            // debug!("Received server command: {}", );
-                            // Set Volume
-                            if !player_initialized {
-                                log::warn!("Received server command before player initialized: {:?}", cmd);
-                                continue;
-                            }
+                            // Volume/mute are software-controlled (see PlayerCommand::SetVolume/
+                            // SetMute) and don't require a live player, so these are handled
+                            // regardless of `player_initialized`.
                             match cmd.player {
                                 None => {
                                     log::warn!("Received server command without player field: {:?}", cmd);
