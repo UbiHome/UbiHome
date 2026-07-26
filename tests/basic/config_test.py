@@ -211,6 +211,33 @@ sensor:
 
 
 @pytest.mark.asyncio
+async def test_media_player_config_valid():
+    """Test that a top-level `media_player:` section validates successfully.
+
+    Regression test: `media_player` used to be missing from the base config's
+    known entity sections, so it was mistaken for an (unknown) platform name
+    instead of being recognized as an entity list, causing validation to fail
+    with "Unknown platform specified: media_player".
+    """
+    config = """
+ubihome:
+  name: test_media_player
+
+sendspin: {}
+
+media_player:
+  - platform: sendspin
+    name: "Living Room Speaker"
+    id: living_room_speaker
+"""
+    output, error = await run_ubihome("validate", config=config, extra_logging=False)
+
+    assert not error, f"Unexpected error: {error}"
+    assert 'Platforms to load: ["sendspin"]' in output
+    assert "Configuration is valid." in output
+
+
+@pytest.mark.asyncio
 async def test_shell_switch_with_invalid_command_type():
     """Test that deserialization errors for matching platform configs are caught.
 
