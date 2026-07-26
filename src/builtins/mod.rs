@@ -25,7 +25,9 @@ use ubihome_core::PublishedMessage;
 pub use globals::{GlobalConfig, Globals};
 pub use template::TemplateConfig;
 
-use template::{TemplateButtonConfig, TemplateNumberConfig, TemplateSwitchConfig};
+use template::{
+    TemplateButtonConfig, TemplateNumberConfig, TemplateSensorConfig, TemplateSwitchConfig,
+};
 
 /// The switch/button/number platform name handled by the builtin template
 /// components.
@@ -40,6 +42,7 @@ pub const BUILTIN_SECTIONS: &[&str] = &["globals"];
 template_mapper!(map_switch, template, TemplateSwitchConfig);
 template_mapper!(map_button, template, TemplateButtonConfig);
 template_mapper!(map_number, template, TemplateNumberConfig);
+template_mapper!(map_sensor, template, TemplateSensorConfig);
 
 #[derive(Debug, Deserialize, Validate)]
 #[garde(allow_unvalidated)]
@@ -52,6 +55,9 @@ struct BuiltinRoot {
 
     #[serde(default, deserialize_with = "map_number")]
     number: Option<HashMap<String, TemplateNumberConfig>>,
+
+    #[serde(default, deserialize_with = "map_sensor")]
+    sensor: Option<HashMap<String, TemplateSensorConfig>>,
 
     #[serde(default)]
     #[garde(dive)]
@@ -76,6 +82,7 @@ pub fn parse(config_string: &str, config_path: &str) -> Result<BuiltinConfig, St
             switches: root.switch.unwrap_or_default().into_values().collect(),
             buttons: root.button.unwrap_or_default().into_values().collect(),
             numbers: root.number.unwrap_or_default().into_values().collect(),
+            sensors: root.sensor.unwrap_or_default().into_values().collect(),
         },
         globals: root.globals,
     })
