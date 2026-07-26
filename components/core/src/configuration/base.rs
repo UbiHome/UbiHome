@@ -157,6 +157,48 @@ macro_rules! template_binary_sensor {
 }
 
 #[macro_export]
+macro_rules! template_media_player {
+    (
+        $(#[$meta:meta])*
+        $vis:vis struct $name:ident {
+            $(
+                $(#[$field_meta:meta])*
+                $field_vis:vis $field_name:ident : $field_type:ty
+            ),* $(,)?
+        }
+    ) => {
+        use ubihome_core::configuration::automation::Trigger;
+
+        with_base_entity_properties! {
+            $(#[$meta])*
+            // Unknown fields are already rejected by the shadow struct that
+            // `with_base_entity_properties!` generates (unconditional
+            // `#[serde(deny_unknown_fields)]`), so nothing extra is needed here.
+
+            $vis struct $name {
+                #[serde(default, deserialize_with = "ubihome_core::configuration::automation::deserialize_option_map_only")]
+                #[garde(dive)]
+                pub on_play: Option<Trigger>,
+                #[serde(default, deserialize_with = "ubihome_core::configuration::automation::deserialize_option_map_only")]
+                #[garde(dive)]
+                pub on_pause: Option<Trigger>,
+                #[serde(default, deserialize_with = "ubihome_core::configuration::automation::deserialize_option_map_only")]
+                #[garde(dive)]
+                pub on_volume_change: Option<Trigger>,
+                #[serde(default, deserialize_with = "ubihome_core::configuration::automation::deserialize_option_map_only")]
+                #[garde(dive)]
+                pub on_mute_change: Option<Trigger>,
+
+                $(
+                    $(#[$field_meta])*
+                    $field_vis $field_name : $field_type,
+                )*
+            }
+        }
+    };
+}
+
+#[macro_export]
 macro_rules! template_sensor {
     (
         $(#[$meta:meta])*

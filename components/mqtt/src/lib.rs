@@ -38,7 +38,8 @@ pub struct MqttConfig {
 }
 
 config_template!(
-    mqtt, MqttConfig, NoConfig, NoConfig, NoConfig, NoConfig, NoConfig, NoConfig, NoConfig
+    mqtt, MqttConfig, NoConfig, NoConfig, NoConfig, NoConfig, NoConfig, NoConfig, NoConfig,
+    NoConfig
 );
 
 #[derive(Clone, Debug)]
@@ -248,6 +249,9 @@ impl Module for UbiHomePlatform {
                             }
                             UbiComponent::TextSensor(_text_sensor) => {
                                 // TODO: Add MQTT text sensor support if needed
+                            }
+                            UbiComponent::MediaPlayer(_media_player) => {
+                                // TODO: Add MQTT media_player support if needed
                             }
                         }
                     }

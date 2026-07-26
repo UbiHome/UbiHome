@@ -131,6 +131,9 @@ pub struct BaseConfig {
 
     #[garde(dive)]
     pub text_sensor: Option<Vec<BaseEntity>>,
+
+    #[garde(dive)]
+    pub media_player: Option<Vec<BaseEntity>>,
 }
 
 // Load Platforms
