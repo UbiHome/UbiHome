@@ -47,7 +47,7 @@ binary_sensor:
         # Pressing the binary sensor presses the template button, which runs
         # its on_press action (press the runner button).
         sensor_mock.set_value("true")
-        pressed_mock.wait_for_mock_state("pressed")
+        await pressed_mock.wait_for_mock_state("pressed")
 
 
 async def test_template_button_validate():
