@@ -21,6 +21,7 @@ and on the [Media Player](/features/entities/media_player/):
 - `on_play` — runs when playback starts.
 - `on_pause` — runs when playback stops/pauses.
 - `on_volume_change` — runs when the volume changes.
+- `on_mute_change` — runs when the muted state changes.
 
 There is also a global `on_startup` trigger, configured under `ubihome:`, that runs once when UbiHome starts:
 
