@@ -24,6 +24,9 @@
 //!   else.
 //! - `log(message)` writes to the application log, same as the standalone
 //!   `lambda` sensor platform.
+//! - `delay(ms)` blocks the engine thread for `ms` milliseconds, so a loop
+//!   can pace repeated commands (e.g. `id(x).press()`) instead of firing
+//!   them all in one uninterrupted burst.
 //!
 //! Every lambda runs on one dedicated OS thread (Boa's `Context` is not
 //! `Send`), sharing a single JS context/global scope - like ESPHome globals,
@@ -245,7 +248,30 @@ fn setup_context(context: &mut Context, engine_context: &EngineContext) -> Resul
             NativeFunction::from_copy_closure(log_native),
         )
         .map_err(|e| e.to_string())?;
+    context
+        .register_global_builtin_callable(
+            js_string!("delay"),
+            1,
+            NativeFunction::from_copy_closure(delay_native),
+        )
+        .map_err(|e| e.to_string())?;
     Ok(())
+}
+
+/// `delay(ms)`: blocks the script engine's dedicated thread for `ms`
+/// milliseconds. Safe to block here (unlike in an async context) because
+/// this thread only ever runs JS evaluations - see the module docs. Lets a
+/// lambda pace its own loop (e.g. between repeated `id(x).press()` calls)
+/// instead of firing every iteration in one uninterrupted burst.
+fn delay_native(_this: &JsValue, args: &[JsValue], context: &mut Context) -> JsResult<JsValue> {
+    let ms = match args.first() {
+        Some(arg) => arg.to_number(context)?,
+        None => 0.0,
+    };
+    if ms.is_finite() && ms > 0.0 {
+        std::thread::sleep(std::time::Duration::from_millis(ms as u64));
+    }
+    Ok(JsValue::undefined())
 }
 
 fn log_native(_this: &JsValue, args: &[JsValue], context: &mut Context) -> JsResult<JsValue> {
@@ -584,6 +610,15 @@ mod tests {
         let engine = ScriptEngine::spawn(test_globals(), tx, test_entities());
         let result = engine.eval("while (true) {}", None).await;
         assert!(result.is_err());
+    }
+
+    #[tokio::test]
+    async fn test_eval_delay_pauses_execution() {
+        let (tx, _rx) = tokio::sync::broadcast::channel(16);
+        let engine = ScriptEngine::spawn(test_globals(), tx, test_entities());
+        let start = std::time::Instant::now();
+        engine.eval("delay(30);", None).await.unwrap();
+        assert!(start.elapsed() >= std::time::Duration::from_millis(30));
     }
 
     #[tokio::test]

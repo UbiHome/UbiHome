@@ -105,6 +105,8 @@ It has access to:
   [template](/features/platforms/template/) number's `set_action`); otherwise
   `undefined`.
 - `log(message)` — writes to the application log.
+- `delay(ms)` — pauses the script for `ms` milliseconds, e.g. to pace
+  repeated commands in a loop instead of firing them all at once.
 
 ```yaml
 number:
