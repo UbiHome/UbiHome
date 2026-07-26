@@ -111,6 +111,9 @@ pub async fn run_actions(actions: Vec<Action>, tx: &Sender<PublishedMessage>, gl
             ActionType::Delay(duration) => {
                 tokio::time::sleep(*duration).await;
             }
+            ActionType::LoggerLog(value) => {
+                log::info!("{value}");
+            }
         }
     }
 }

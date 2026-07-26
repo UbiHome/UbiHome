@@ -1,3 +1,5 @@
+import asyncio
+
 from mock_file import IOMockFactory
 from utils import UbiHome
 
@@ -170,3 +172,38 @@ binary_sensor:
         # Action after the delay presses the button, proving the delay does not
         # abort the remaining actions in the list.
         button_mock.wait_for_mock_state("pressed")
+
+
+async def test_binary_sensor_logger_log_action(io_mock_factory: IOMockFactory):
+    """
+    Test that the `logger.log` action logs the given value to the console.
+    """
+
+    sensor_mock = io_mock_factory.create_mock()
+
+    DEVICE_INFO_CONFIG = f"""
+ubihome:
+  name: test_device
+
+shell:
+
+binary_sensor:
+  - platform: shell
+    name: "Test Binary Sensor"
+    update_interval: 2s
+    command: |-
+      cat {sensor_mock}
+    on_press:
+      then:
+        - logger.log: "Motion detected"
+"""
+    sensor_mock.set_value("false")
+
+    async with UbiHome("run", config=DEVICE_INFO_CONFIG) as ubihome:
+        sensor_mock.set_value("true")
+
+        async def wait_for_log():
+            while "Motion detected" not in (ubihome.stdout or ""):
+                await asyncio.sleep(0.1)
+
+        await asyncio.wait_for(wait_for_log(), timeout=5)

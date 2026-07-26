@@ -36,6 +36,10 @@ pub enum ActionType {
     /// next action.
     #[serde(rename = "delay", deserialize_with = "deserialize_duration")]
     Delay(#[garde(skip)] Duration),
+
+    /// Logs `value` to the console at info level.
+    #[serde(rename = "logger.log")]
+    LoggerLog(#[garde(skip)] GlobalValue),
 }
 
 #[derive(Clone, Serialize, Deserialize, Debug, Validate)]
