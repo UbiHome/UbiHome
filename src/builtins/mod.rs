@@ -129,6 +129,9 @@ pub async fn run_actions(
                     log::error!("lambda action failed: {}", e);
                 }
             }
+            ActionType::LoggerLog(value) => {
+                log::info!("{value}");
+            }
         }
     }
 }

@@ -44,6 +44,10 @@ pub enum ActionType {
     /// not as a config validation error.
     #[serde(rename = "lambda")]
     Lambda(#[garde(skip)] String),
+
+    /// Logs `value` to the console at info level.
+    #[serde(rename = "logger.log")]
+    LoggerLog(#[garde(skip)] GlobalValue),
 }
 
 #[derive(Clone, Serialize, Deserialize, Debug, Validate)]

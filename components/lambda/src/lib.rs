@@ -79,7 +79,8 @@ config_template!(
     NoConfig,
     NoConfig,
     NoConfig,
-    LambdaTextSensorConfig
+    LambdaTextSensorConfig,
+    NoConfig
 );
 
 #[derive(Clone, Copy, Debug, PartialEq)]

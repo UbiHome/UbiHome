@@ -16,6 +16,12 @@ and on the [Template](/features/platforms/template/) switch, button and number:
 - `on_press` — runs when the template button is pressed.
 - `set_action` — runs when the template number is set to a new value.
 
+and on the [Media Player](/features/entities/media_player/):
+
+- `on_play` — runs when playback starts.
+- `on_pause` — runs when playback stops/pauses.
+- `on_volume_change` — runs when the volume changes.
+
 There is also a global `on_startup` trigger, configured under `ubihome:`, that runs once when UbiHome starts:
 
 ```yaml
@@ -56,6 +62,7 @@ See [Filters](/features/components/filters/) for the available debounce filters.
 | `globals.set`     | `id`, `value` | Sets a [global](/features/components/globals/) variable to `value`. |
 | `delay`           | duration    | Pauses the action list for the given duration (e.g. `2s`, `500ms`) before running the next action. |
 | `lambda`          | JavaScript source | Runs an inline JavaScript lambda. See below. |
+| `logger.log`      | value       | Logs the given value to the console at info level. |
 
 For entity actions the argument is the `id` of the target entity, so make sure the switch or button you reference has an `id` set.
 
@@ -74,14 +81,23 @@ binary_sensor:
 `globals.set` takes `id`/`value` arguments instead of a single id; see
 [Globals](/features/components/globals/) for the `value` syntax.
 
+`logger.log` takes a plain YAML scalar (string, boolean, or number), the same
+way `globals.set`'s `value` does:
+
+```yaml
+- logger.log: 'Motion detected'
+```
+
 ## `lambda` Actions
 
 A `lambda` action runs inline JavaScript, similar to an ESPHome C++ lambda.
 It has access to:
 
 - `id(name)` — the current value of a [global](/features/components/globals/),
-  or (for anything else) a handle with `turn_on()` / `turn_off()` / `press()`
-  methods to command a switch or button.
+  or (for anything else) a handle exposing only the commands valid for that
+  id's actual kind: `turn_on()`/`turn_off()` for a switch, `press()` for a
+  button. Calling an unsupported command (or referencing an unknown id)
+  throws.
 - `set_global(name, value)` — sets a global (there is no assignment syntax
   like ESPHome's `id(x) = value;`).
 - `x` — for triggers that carry a commanded value (currently only a

@@ -61,6 +61,7 @@ pub enum EntityKind {
     BinarySensor,
     Light,
     TextSensor,
+    MediaPlayer,
 }
 
 /// Builds the id -> kind lookup [`entity_handle`] uses, from every component
@@ -78,6 +79,7 @@ pub fn entity_kinds_from_components(components: &[UbiComponent]) -> HashMap<Stri
             UbiComponent::BinarySensor(c) => (c.id.clone(), EntityKind::BinarySensor),
             UbiComponent::Light(c) => (c.id.clone(), EntityKind::Light),
             UbiComponent::TextSensor(c) => (c.id.clone(), EntityKind::TextSensor),
+            UbiComponent::MediaPlayer(c) => (c.id.clone(), EntityKind::MediaPlayer),
         })
         .collect()
 }
