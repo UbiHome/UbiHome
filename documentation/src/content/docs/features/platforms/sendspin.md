@@ -27,6 +27,11 @@ sendspin:
   # volume: 100
   # Optional: Start muted (default: false)
   # muted: false
+
+media_player:
+  - platform: sendspin
+    name: 'Living Room Speaker'
+    # on_play / on_pause / on_volume_change: see Media Player
 ```
 
 On Linux you may need to specify the output device name manually, as UbiHome may detect the default device incorrectly.
@@ -34,8 +39,8 @@ To find the device name enable debug logging for UbiHome and look for the line `
 
 ## Features
 
-- Play/pause/stop
-- Volume control
+- Play/pause/stop, with triggers for custom automations
+- Volume control, with a trigger on volume change
 
 ### Supported audio backends
 
@@ -104,3 +109,8 @@ INFO [ubihome_sendspin] Using device: alsa:hw:CARD=sndrpihifiberry,DEV=0
 ```
 
 > You may also use `aplay -l` to list the available ALSA devices.
+
+<!-- Backlinks to be displayed  -->
+<div style="display:none" aria-hidden="true">
+  <a href="/features/entities/media_player/">Media Player</a>
+</div>

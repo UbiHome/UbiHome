@@ -16,8 +16,10 @@ use std::time::{SystemTime, UNIX_EPOCH};
 use std::{future::Future, pin::Pin, str};
 use tokio::sync::broadcast::Receiver;
 use tokio::sync::broadcast::Sender;
-use ubihome_core::internal::sensors::UbiComponent;
+use ubihome_core::internal::sensors::{UbiComponent, UbiMediaPlayer};
 use ubihome_core::state::StateStore;
+use ubihome_core::template_media_player;
+use ubihome_core::with_base_entity_properties;
 use ubihome_core::NoConfig;
 use ubihome_core::{config_template, ChangedMessage, Module, PublishedMessage};
 
@@ -125,6 +127,12 @@ pub struct SendspinConfig {
     pub buffer_size: Option<u32>,
 }
 
+template_media_player! {
+    #[derive(Clone, Deserialize, Debug, Validate)]
+    pub struct SendspinMediaPlayerConfig {
+    }
+}
+
 config_template!(
     sendspin,
     SendspinConfig,
@@ -134,13 +142,15 @@ config_template!(
     NoConfig,
     NoConfig,
     NoConfig,
-    NoConfig
+    NoConfig,
+    SendspinMediaPlayerConfig
 );
 
 #[derive(Clone, Debug)]
 pub struct UbiHomePlatform {
     config: CoreConfig,
     pub sendspin_config: SendspinConfig,
+    media_player_id: Option<String>,
 }
 
 impl Module for UbiHomePlatform {
@@ -149,19 +159,44 @@ impl Module for UbiHomePlatform {
             ubihome_core::validation::validate_config::<CoreConfig>(config_string, config_path)?;
 
         let config_clone = config.clone();
+        let media_player_id = config
+            .media_player
+            .as_ref()
+            .and_then(|m| m.keys().next().cloned());
+        if config.media_player.as_ref().is_some_and(|m| m.len() > 1) {
+            warn!("Only one media_player entity is supported for sendspin; using the first one configured and ignoring the rest.");
+        }
         Ok(UbiHomePlatform {
             config,
             sendspin_config: config_clone.sendspin,
+            media_player_id,
         })
     }
 
     fn components(&mut self) -> Vec<UbiComponent> {
-        Vec::new()
+        self.config
+            .media_player
+            .clone()
+            .unwrap_or_default()
+            .into_iter()
+            .map(|(id, cfg)| {
+                UbiComponent::MediaPlayer(UbiMediaPlayer {
+                    platform: "sendspin".to_string(),
+                    icon: cfg.icon,
+                    name: cfg.name.unwrap_or_default(),
+                    internal: cfg.internal,
+                    id,
+                    on_play: cfg.on_play,
+                    on_pause: cfg.on_pause,
+                    on_volume_change: cfg.on_volume_change,
+                })
+            })
+            .collect()
     }
 
     fn run(
         &self,
-        _sender: Sender<ChangedMessage>,
+        sender: Sender<ChangedMessage>,
         mut _receiver: Receiver<PublishedMessage>,
         _state: StateStore,
     ) -> Pin<Box<dyn Future<Output = Result<(), Box<dyn std::error::Error>>> + Send + 'static>>
@@ -177,6 +212,7 @@ impl Module for UbiHomePlatform {
         let buffer_size = self.sendspin_config.buffer_size;
         let volume = self.sendspin_config.volume.unwrap_or(100);
         let muted = self.sendspin_config.muted.unwrap_or(false);
+        let media_player_id = self.media_player_id.clone();
         // Device selection is deferred until playback starts (see PlayerCommand::Init)
         // so devices connected after startup (e.g. Bluetooth) can be used.
         let output_id = self.sendspin_config.output_id.clone();
@@ -228,6 +264,10 @@ impl Module for UbiHomePlatform {
         };
 
         Box::pin(async move {
+            // Renamed so it isn't shadowed by `conn.sender` (the Sendspin
+            // protocol's own connection sender) further down.
+            let changed_tx = sender;
+
             // Configuration from environment variables
             let start_buffer_ms = env_u64("SS_PLAY_START_BUFFER_MS", 500);
             let log_lead = env_bool("SS_LOG_LEAD");
@@ -434,6 +474,13 @@ impl Module for UbiHomePlatform {
                                         playback_started = false;
                                         first_chunk_logged = false; // Reset for new stream
                                         debug!("Waiting for first audio chunk to auto-detect endianness...");
+
+                                        if let Some(ref key) = media_player_id {
+                                            let _ = changed_tx.send(ChangedMessage::MediaPlayerStateChange {
+                                                key: key.clone(),
+                                                playing: true,
+                                            });
+                                        }
                                     } else {
                                         debug!("Received stream/start without player config");
                                     }
@@ -470,6 +517,13 @@ impl Module for UbiHomePlatform {
                                     playback_started = false;
                                     first_chunk_logged = false;
                                     player_initialized = false;
+
+                                    if let Some(ref key) = media_player_id {
+                                        let _ = changed_tx.send(ChangedMessage::MediaPlayerStateChange {
+                                            key: key.clone(),
+                                            playing: false,
+                                        });
+                                    }
                                 }
                                 Message::StreamClear(stream_clear) => {
                                     debug!("Stream cleared: {:?}", stream_clear.roles);
@@ -478,6 +532,13 @@ impl Module for UbiHomePlatform {
                                     playback_started = false;
                                     first_chunk_logged = false;
                                     player_initialized = false;
+
+                                    if let Some(ref key) = media_player_id {
+                                        let _ = changed_tx.send(ChangedMessage::MediaPlayerStateChange {
+                                            key: key.clone(),
+                                            playing: false,
+                                        });
+                                    }
                                 }
                                 Message::ServerCommand(cmd) => {
                                     // debug!("Received server command: {}", );
@@ -501,6 +562,12 @@ impl Module for UbiHomePlatform {
                                                         Some(vol) => {
                                                             info!("Setting player volume to {}", vol);
                                                             let _ = player_tx.send(PlayerCommand::SetVolume(vol));
+                                                            if let Some(ref key) = media_player_id {
+                                                                let _ = changed_tx.send(ChangedMessage::MediaPlayerVolumeChange {
+                                                                    key: key.clone(),
+                                                                    value: vol as f32,
+                                                                });
+                                                            }
                                                             if let Err(e) = sender.send_message(Message::ClientState(
                                                                 ClientState {
                                                                     state: None,
@@ -681,5 +748,197 @@ impl Module for UbiHomePlatform {
                 backoff = (backoff * 2).min(max_backoff);
             }
         })
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_media_player_config_parsing() {
+        let config = r#"
+ubihome:
+  name: "Test Media Player Config"
+
+sendspin:
+  name: "Test Sendspin"
+
+media_player:
+  - platform: sendspin
+    name: "Living Room Speaker"
+    id: living_room_speaker
+    on_play:
+      then:
+        - switch.turn_on: office_light
+    on_pause:
+      then:
+        - switch.turn_off: office_light
+    on_volume_change:
+      then:
+        - button.press: chime
+"#;
+
+        let module = UbiHomePlatform::new(config, "config.yml");
+        assert!(
+            module.is_ok(),
+            "Sendspin module should parse media_player config successfully: {:?}",
+            module.err()
+        );
+
+        let module = module.unwrap();
+        assert_eq!(
+            module.media_player_id.as_deref(),
+            Some("living_room_speaker")
+        );
+
+        let media_player = module
+            .config
+            .media_player
+            .as_ref()
+            .expect("media_player should be configured")
+            .get("living_room_speaker")
+            .expect("Should contain 'living_room_speaker' media_player");
+        assert!(media_player.on_play.is_some(), "on_play should be set");
+        assert!(media_player.on_pause.is_some(), "on_pause should be set");
+        assert!(
+            media_player.on_volume_change.is_some(),
+            "on_volume_change should be set"
+        );
+    }
+
+    #[test]
+    fn test_media_player_config_minimal() {
+        let config = r#"
+ubihome:
+  name: "Test Media Player Minimal"
+
+sendspin:
+  name: "Test Sendspin"
+
+media_player:
+  - platform: sendspin
+    name: "Living Room Speaker"
+"#;
+
+        let module = UbiHomePlatform::new(config, "config.yml");
+        assert!(
+            module.is_ok(),
+            "Sendspin module should parse minimal media_player config successfully: {:?}",
+            module.err()
+        );
+
+        let module = module.unwrap();
+        let media_player = module
+            .config
+            .media_player
+            .as_ref()
+            .expect("media_player should be configured")
+            .get("living_room_speaker")
+            .expect("Should contain 'living_room_speaker' media_player");
+        assert!(
+            media_player.on_play.is_none(),
+            "on_play should default to None"
+        );
+        assert!(
+            media_player.on_pause.is_none(),
+            "on_pause should default to None"
+        );
+        assert!(
+            media_player.on_volume_change.is_none(),
+            "on_volume_change should default to None"
+        );
+    }
+
+    #[test]
+    fn test_media_player_config_rejects_bad_trigger_shape() {
+        let config = r#"
+ubihome:
+  name: "Test Media Player Bad Trigger"
+
+sendspin:
+  name: "Test Sendspin"
+
+media_player:
+  - platform: sendspin
+    name: "Living Room Speaker"
+    on_play:
+      - switch.turn_on: office_light
+"#;
+
+        let module = UbiHomePlatform::new(config, "config.yml");
+        assert!(
+            module.is_err(),
+            "Sendspin module should reject on_play given as a bare sequence"
+        );
+    }
+
+    #[test]
+    fn test_components_builds_media_player_entity() {
+        let config = r#"
+ubihome:
+  name: "Test Media Player Components"
+
+sendspin:
+  name: "Test Sendspin"
+
+media_player:
+  - platform: sendspin
+    name: "Living Room Speaker"
+    id: living_room_speaker
+    on_play:
+      then:
+        - switch.turn_on: office_light
+"#;
+
+        let mut module = UbiHomePlatform::new(config, "config.yml").expect("should parse");
+        let components = module.components();
+        assert_eq!(components.len(), 1, "Should build exactly one component");
+        match &components[0] {
+            UbiComponent::MediaPlayer(media_player) => {
+                assert_eq!(media_player.id, "living_room_speaker");
+                assert_eq!(media_player.name, "Living Room Speaker");
+                assert!(media_player.on_play.is_some());
+                assert!(media_player.on_pause.is_none());
+            }
+            other => std::panic!("Expected a MediaPlayer component, got {:?}", other),
+        }
+    }
+
+    #[test]
+    fn test_no_media_player_configured() {
+        let config = r#"
+ubihome:
+  name: "Test No Media Player"
+
+sendspin:
+  name: "Test Sendspin"
+"#;
+
+        let mut module = UbiHomePlatform::new(config, "config.yml").expect("should parse");
+        assert_eq!(module.media_player_id, None);
+        assert_eq!(module.components().len(), 0);
+    }
+
+    #[test]
+    fn test_media_player_config_rejects_unknown_field() {
+        let config = r#"
+ubihome:
+  name: "Test Media Player Unknown Field"
+
+sendspin:
+  name: "Test Sendspin"
+
+media_player:
+  - platform: sendspin
+    name: "Living Room Speaker"
+    bogus_field: 1
+"#;
+
+        let module = UbiHomePlatform::new(config, "config.yml");
+        assert!(
+            module.is_err(),
+            "Sendspin module should reject an unknown media_player field"
+        );
     }
 }

@@ -15,6 +15,7 @@ pub enum UbiComponent {
     Light(UbiLight),
     Number(UbiNumber),
     TextSensor(UbiTextSensor),
+    MediaPlayer(UbiMediaPlayer),
 }
 
 impl UbiComponent {
@@ -30,6 +31,7 @@ impl UbiComponent {
             UbiComponent::Light(c) => c.internal,
             UbiComponent::Number(c) => c.internal,
             UbiComponent::TextSensor(c) => c.internal,
+            UbiComponent::MediaPlayer(c) => c.internal,
         }
     }
 }
@@ -139,5 +141,15 @@ with_base_properties! {
 #[derive(Clone, Serialize, Deserialize, Debug)]
 pub struct UbiTextSensor {
     pub device_class: Option<String>,
+}
+}
+
+with_base_properties! {
+// https://esphome.io/components/media_player/
+#[derive(Clone, Serialize, Deserialize, Debug)]
+pub struct UbiMediaPlayer {
+    pub on_play: Option<Trigger>,
+    pub on_pause: Option<Trigger>,
+    pub on_volume_change: Option<Trigger>,
 }
 }

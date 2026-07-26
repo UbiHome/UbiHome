@@ -152,6 +152,10 @@ Remove the "{}:" entry from your configuration or install the cargo crate contai
         let mut signal_map_binary_sensor: HashMap<String, Mutable<Option<Option<bool>>>> =
             HashMap::new();
         let mut signal_map_sensor: HashMap<String, Mutable<Option<Option<f32>>>> = HashMap::new();
+        let mut signal_map_media_player_state: HashMap<String, Mutable<Option<Option<bool>>>> =
+            HashMap::new();
+        let mut signal_map_media_player_volume: HashMap<String, Mutable<Option<Option<f32>>>> =
+            HashMap::new();
 
         for component in initialized_platforms.clone() {
             match component {
@@ -220,6 +224,105 @@ Remove the "{}:" entry from your configuration or install the cargo crate contai
                 }
                 UbiComponent::TextSensor(_text_sensor) => {
                     // Text sensors are read-only, state changes are forwarded directly
+                }
+                UbiComponent::MediaPlayer(media_player) => {
+                    // Playback state (play/pause), dispatched the same way as a
+                    // binary sensor's on_press/on_release, minus filters (none
+                    // are modeled for media_player).
+                    let mutable_state: Mutable<Option<Option<bool>>> = Mutable::new(Option::None);
+                    signal_map_media_player_state
+                        .insert(media_player.id.clone(), mutable_state.clone());
+                    let internal_tx_clone = internal_tx.clone();
+                    let globals_clone = globals.clone();
+                    let key = media_player.id.clone();
+                    let on_play = media_player.on_play.clone();
+                    let on_pause = media_player.on_pause.clone();
+
+                    let mutable_clone = mutable_state.clone();
+                    supervised_tasks.spawn(async move {
+                        mutable_clone
+                            .signal()
+                            .for_each(move |value| {
+                                let action_tx = internal_tx_clone.clone();
+                                let signal_tx_clone = internal_tx_clone.clone();
+                                let key = key.clone();
+                                let on_play = on_play.clone();
+                                let on_pause = on_pause.clone();
+                                let globals_for_call = globals_clone.clone();
+                                async move {
+                                    if let Some(playing) = value.and_then(|v| v) {
+                                        if playing {
+                                            if let Some(on_play) = on_play {
+                                                builtins::run_actions(
+                                                    on_play.then,
+                                                    &action_tx,
+                                                    &globals_for_call,
+                                                )
+                                                .await;
+                                            }
+                                        } else if let Some(on_pause) = on_pause {
+                                            builtins::run_actions(
+                                                on_pause.then,
+                                                &action_tx,
+                                                &globals_for_call,
+                                            )
+                                            .await;
+                                        }
+
+                                        let pcmd = PublishedMessage::MediaPlayerStateChanged {
+                                            key,
+                                            playing,
+                                        };
+                                        debug!("Publishing command from signal: {:?}", pcmd);
+                                        signal_tx_clone.send(pcmd).unwrap();
+                                    }
+                                }
+                            })
+                            .await;
+                    });
+
+                    // Volume, dispatched separately from playback state (its
+                    // own signal map/task), since the two change independently.
+                    let mutable_volume: Mutable<Option<Option<f32>>> = Mutable::new(Option::None);
+                    signal_map_media_player_volume
+                        .insert(media_player.id.clone(), mutable_volume.clone());
+                    let internal_tx_clone = internal_tx.clone();
+                    let globals_clone = globals.clone();
+                    let key = media_player.id.clone();
+                    let on_volume_change = media_player.on_volume_change.clone();
+
+                    let mutable_clone = mutable_volume.clone();
+                    supervised_tasks.spawn(async move {
+                        mutable_clone
+                            .signal_cloned()
+                            .for_each(move |value| {
+                                let action_tx = internal_tx_clone.clone();
+                                let signal_tx_clone = internal_tx_clone.clone();
+                                let key = key.clone();
+                                let on_volume_change = on_volume_change.clone();
+                                let globals_for_call = globals_clone.clone();
+                                async move {
+                                    if let Some(value) = value.and_then(|v| v) {
+                                        if let Some(on_volume_change) = on_volume_change {
+                                            builtins::run_actions(
+                                                on_volume_change.then,
+                                                &action_tx,
+                                                &globals_for_call,
+                                            )
+                                            .await;
+                                        }
+
+                                        let pcmd = PublishedMessage::MediaPlayerVolumeChanged {
+                                            key,
+                                            value,
+                                        };
+                                        debug!("Publishing command from signal: {:?}", pcmd);
+                                        signal_tx_clone.send(pcmd).unwrap();
+                                    }
+                                }
+                            })
+                            .await;
+                    });
                 }
                 UbiComponent::BinarySensor(binary_sensor) => {
                     let mutable: Mutable<Option<Option<bool>>> = Mutable::new(Option::None);
@@ -421,6 +524,18 @@ Remove the "{}:" entry from your configuration or install the cargo crate contai
                         }
                         ChangedMessage::TextSensorValueChange { key, value } => {
                             Some(PublishedMessage::TextSensorValueChanged { key, value })
+                        }
+                        ChangedMessage::MediaPlayerStateChange { key, playing } => {
+                            if let Some(signal) = signal_map_media_player_state.get(&key) {
+                                signal.set(Some(Some(playing)));
+                            }
+                            None
+                        }
+                        ChangedMessage::MediaPlayerVolumeChange { key, value } => {
+                            if let Some(signal) = signal_map_media_player_volume.get(&key) {
+                                signal.set(Some(Some(value)));
+                            }
+                            None
                         }
                     };
                     if let Some(pcmd) = publish_cmd {

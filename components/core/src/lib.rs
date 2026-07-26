@@ -110,6 +110,14 @@ pub enum ChangedMessage {
         value: String,
     },
     BluetoothProxyMessage(BluetoothProxyMessage),
+    MediaPlayerStateChange {
+        key: String,
+        playing: bool,
+    },
+    MediaPlayerVolumeChange {
+        key: String,
+        value: f32,
+    },
 }
 
 #[derive(Debug, Clone)]
@@ -162,6 +170,14 @@ pub enum PublishedMessage {
         value: String,
     },
     BluetoothProxyMessage(BluetoothProxyMessage),
+    MediaPlayerStateChanged {
+        key: String,
+        playing: bool,
+    },
+    MediaPlayerVolumeChanged {
+        key: String,
+        value: f32,
+    },
 }
 
 #[derive(Clone, Deserialize, Debug, Validate)]
@@ -204,7 +220,8 @@ macro_rules! config_template {
         $switch_extension:ident,
         $light_extension:ident,
         $number_extension:ident,
-        $text_sensor_extension:ident) => {
+        $text_sensor_extension:ident,
+        $media_player_extension:ident) => {
         use duration_str::deserialize_option_duration;
         use garde::Validate;
         use ubihome_core::UbiHome;
@@ -217,6 +234,7 @@ macro_rules! config_template {
         template_mapper!(map_button, $component_name, $button_extension);
         template_mapper!(map_binary_sensor, $component_name, $binary_sensor_extension);
         template_mapper!(map_text_sensor, $component_name, $text_sensor_extension);
+        template_mapper!(map_media_player, $component_name, $media_player_extension);
 
         #[derive(Clone, Deserialize, Debug, Validate)]
         #[garde(allow_unvalidated)]
@@ -252,6 +270,10 @@ macro_rules! config_template {
 
             #[serde(default, deserialize_with = "map_text_sensor")]
             pub text_sensor: Option<HashMap<String, $text_sensor_extension>>,
+
+            #[serde(default, deserialize_with = "map_media_player")]
+            #[garde(dive)]
+            pub media_player: Option<HashMap<String, $media_player_extension>>,
         }
     };
 }

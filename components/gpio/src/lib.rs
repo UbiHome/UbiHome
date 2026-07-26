@@ -107,6 +107,7 @@ config_template!(
     GpioSwitchConfig,
     NoConfig,
     NoConfig,
+    NoConfig,
     NoConfig
 );
 

@@ -106,7 +106,7 @@ const fn default_port() -> u16 {
 }
 
 config_template!(
-    api, ApiConfig, NoConfig, NoConfig, NoConfig, NoConfig, NoConfig, NoConfig, NoConfig
+    api, ApiConfig, NoConfig, NoConfig, NoConfig, NoConfig, NoConfig, NoConfig, NoConfig, NoConfig
 );
 
 #[derive(Clone, Debug)]
@@ -345,6 +345,11 @@ impl Module for UbiHomePlatform {
                                 );
                             api_components_by_key.insert(key, component_text_sensor);
                             api_components_key_id.insert(text_sensor.id.clone(), key);
+                        }
+                        UbiComponent::MediaPlayer(_media_player) => {
+                            // The vendored ESPHome API protocol has no
+                            // media_player message support yet; skip exposing
+                            // it over the native API for now.
                         }
                     }
                 }

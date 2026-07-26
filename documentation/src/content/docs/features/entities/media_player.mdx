@@ -1,0 +1,40 @@
+---
+title: 'Media Player'
+sidebar:
+  order: 100
+---
+
+import SupportedPlatforms from '../../../../components/SupportedPlatforms.astro';
+
+```yaml title="Base Example"
+media_player:
+  - platform: ... # See supported platforms at the end of this page
+    name: 'My Media Player'
+```
+
+:::note[Platform-specific attributes]
+Each platform may require additional attributes not shown above.
+Check the [page of the platform](/features/platforms/#platforms) for the full list of required and optional options.
+:::
+
+## Attributes
+
+Common attributes are documented in [Common Component Properties](/features/components/common_properties/).
+
+### Triggers
+
+Triggers can issue [actions](/features/components/actions/).
+
+| Property          | Description                                         | Example                            |
+| ------------------ | ---------------------------------------------------- | ----------------------------------- |
+| `on_play`          | Trigger block that runs when playback starts.        | `then: - switch.turn_on: "screen"`  |
+| `on_pause`         | Trigger block that runs when playback stops/pauses.  | `then: - switch.turn_off: "screen"` |
+| `on_volume_change` | Trigger block that runs when the volume changes.     | `then: - button.press: "chime"`     |
+
+<SupportedPlatforms />
+
+Similar to ESPHome: [Media Player](https://esphome.io/components/media_player/)
+
+{/* Backlinks to be displayed */}
+
+<div style='display:none' aria-hidden='true'></div>

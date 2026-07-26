@@ -17,7 +17,7 @@ use ubihome_core::{
     config_template,
     internal::sensors::{UbiBinarySensor, UbiButton, UbiSensor},
     state::StateStore,
-    ChangedMessage, Module, PublishedMessage,
+    ChangedMessage, Module, NoConfig, PublishedMessage,
 };
 
 use ubihome_core::template_binary_sensor;
@@ -166,7 +166,8 @@ config_template!(
     ShellSwitchConfig,
     ShellLightConfig,
     ShellNumberConfig,
-    ShellTextSensorConfig
+    ShellTextSensorConfig,
+    NoConfig
 );
 
 pub struct UbiHomePlatform {
