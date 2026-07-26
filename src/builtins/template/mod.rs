@@ -288,7 +288,13 @@ fn spawn_buttons(
                 }
                 // Ignore other messages; stop only when the bus closes.
                 Ok(_) => {}
-                Err(_) => break,
+                Err(tokio::sync::broadcast::error::RecvError::Lagged(n)) => {
+                    log::warn!(
+                        "template button command receiver lagged behind by {} messages; some presses may have been missed",
+                        n
+                    );
+                }
+                Err(tokio::sync::broadcast::error::RecvError::Closed) => break,
             }
         }
     });
