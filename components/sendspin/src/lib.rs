@@ -111,8 +111,9 @@ template_media_player! {
         /// ID of the output device (defaults to first device found).
         #[garde(skip)]
         pub output_id: Option<String>,
-        /// Default playback volume (0-100) applied when the player is initialized.
-        /// The server can still change it at runtime via volume commands. Default: 100.
+        /// Default playback volume (0-100), used as the volume initially reported
+        /// to the server when the player is initialized. The server can change it
+        /// at runtime via volume commands. Default: 100.
         #[garde(range(min = 0, max = 100))]
         pub volume: Option<u8>,
         /// Whether the player starts muted. The server can still change it at
@@ -122,8 +123,10 @@ template_media_player! {
         /// Whether volume commands from the server are applied to the
         /// software player. Disable this if `on_volume_change` already
         /// drives a hardware volume, to avoid the volume being applied
-        /// twice (once in software, once via the hardware trigger).
-        /// Default: true.
+        /// twice (once in software, once via the hardware trigger); the
+        /// software player then always plays back at full volume, while the
+        /// volume reported to the server is still updated optimistically
+        /// (there is no feedback path from the hardware). Default: true.
         #[garde(skip)]
         pub software_volume: Option<bool>,
     }
@@ -290,6 +293,13 @@ async fn run_player(cfg: PlayerRuntimeConfig, changed_tx: Sender<ChangedMessage>
     // Whether a player has ever been initialized. Used to avoid clearing a
     // player that does not exist yet (e.g. on the very first connection).
     let mut player_ever_initialized = false;
+    // Volume reported to the server, seeded from the configured `volume`
+    // and then optimistically updated to whatever value the server last
+    // requested via a volume command - there is no feedback path from the
+    // actual (possibly hardware-controlled) volume, so this is always a
+    // best guess. Tracked across reconnects so a dropped connection resumes
+    // with the last-known value instead of resetting to the config default.
+    let mut reported_volume = volume;
 
     loop {
         info!("Connecting to Sendspin server at {}...", server);
@@ -307,7 +317,7 @@ async fn run_player(cfg: PlayerRuntimeConfig, changed_tx: Sender<ChangedMessage>
                 supported_commands: vec!["volume".to_string(), "mute".to_string()],
             })
             .initial_player_state(PlayerState {
-                volume: Some(volume),
+                volume: Some(reported_volume),
                 muted: Some(muted),
                 static_delay_ms: Some(0),
                 supported_commands: None,
@@ -480,11 +490,12 @@ async fn run_player(cfg: PlayerRuntimeConfig, changed_tx: Sender<ChangedMessage>
                                                     log::warn!("Received server command without volume field");
                                                 }
                                                 Some(vol) => {
+                                                    reported_volume = vol;
                                                     if software_volume {
                                                         info!("Setting player volume to {}", vol);
                                                         let _ = player_tx.send(PlayerCommand::SetVolume(vol));
                                                     } else {
-                                                        debug!("Software volume disabled; not applying volume {} to the player", vol);
+                                                        debug!("Software volume disabled; optimistically reporting volume {} without applying it to the player", vol);
                                                     }
                                                     let _ = changed_tx.send(ChangedMessage::MediaPlayerStateChange {
                                                         key: media_player_id.clone(),

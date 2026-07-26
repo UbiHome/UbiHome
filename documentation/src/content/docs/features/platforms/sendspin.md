@@ -34,13 +34,15 @@ media_player:
     # id: living_room_speaker
     # Optional: ID of the output device (defaults to first device found)
     # output_id:
-    # Optional: Default playback volume 0-100, applied on init (default: 100)
+    # Optional: Default playback volume 0-100, initially reported to the server (default: 100)
     # volume: 100
     # Optional: Start muted (default: false)
     # muted: false
     # Optional: Apply server volume commands to the software player (default: true)
     # Disable if on_volume_change already drives a hardware volume, to avoid
-    # applying the volume change twice.
+    # applying the volume change twice. The software player then always plays
+    # back at full volume, while the volume reported to the server is still
+    # updated optimistically (there is no feedback path from the hardware).
     # software_volume: true
     # on_play / on_pause / on_volume_change / on_mute_change: see Media Player
 ```
