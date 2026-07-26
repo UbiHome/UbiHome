@@ -55,6 +55,7 @@ See [Filters](/features/components/filters/) for the available debounce filters.
 | `button.press`    | button `id` | Presses the referenced [button](/features/entities/button/), running its platform action. |
 | `globals.set`     | `id`, `value` | Sets a [global](/features/components/globals/) variable to `value`. |
 | `delay`           | duration    | Pauses the action list for the given duration (e.g. `2s`, `500ms`) before running the next action. |
+| `logger.log`      | value       | Logs the given value to the console at info level. |
 
 For entity actions the argument is the `id` of the target entity, so make sure the switch or button you reference has an `id` set.
 
@@ -72,3 +73,10 @@ binary_sensor:
 
 `globals.set` takes `id`/`value` arguments instead of a single id; see
 [Globals](/features/components/globals/) for the `value` syntax.
+
+`logger.log` takes a plain YAML scalar (string, boolean, or number), the same
+way `globals.set`'s `value` does:
+
+```yaml
+- logger.log: 'Motion detected'
+```
