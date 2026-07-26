@@ -185,6 +185,9 @@ macro_rules! template_media_player {
                 #[serde(default, deserialize_with = "ubihome_core::configuration::automation::deserialize_option_map_only")]
                 #[garde(dive)]
                 pub on_volume_change: Option<Trigger>,
+                #[serde(default, deserialize_with = "ubihome_core::configuration::automation::deserialize_option_map_only")]
+                #[garde(dive)]
+                pub on_mute_change: Option<Trigger>,
 
                 $(
                     $(#[$field_meta])*

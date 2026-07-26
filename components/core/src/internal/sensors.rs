@@ -151,5 +151,6 @@ pub struct UbiMediaPlayer {
     pub on_play: Option<Trigger>,
     pub on_pause: Option<Trigger>,
     pub on_volume_change: Option<Trigger>,
+    pub on_mute_change: Option<Trigger>,
 }
 }

@@ -40,20 +40,6 @@ enum PlayerCommand {
     SetMute(bool),
 }
 
-fn env_u64(key: &str, default: u64) -> u64 {
-    std::env::var(key)
-        .ok()
-        .and_then(|v| v.parse().ok())
-        .unwrap_or(default)
-}
-
-fn env_bool(key: &str) -> bool {
-    std::env::var(key)
-        .ok()
-        .map(|v| v == "1" || v.to_lowercase() == "true")
-        .unwrap_or(false)
-}
-
 /// Enumerate the available audio hosts and pick the output device to use.
 ///
 /// Enumeration runs fresh on every call, so devices that connect after
@@ -115,6 +101,8 @@ pub struct SendspinConfig {
     /// to prevent buffer underruns ("Broken pipe" errors). At 48 kHz stereo,
     /// 4096 frames ≈ 85 ms. Default: system default (typically 512-1024 frames).
     pub buffer_size: Option<u32>,
+    /// Milliseconds of audio to pre-buffer before starting playback. Default: 500.
+    pub start_buffer_ms: Option<u64>,
 }
 
 template_media_player! {
@@ -161,6 +149,7 @@ struct PlayerRuntimeConfig {
     bit_depth: u8,
     sample_rate: u32,
     buffer_size: Option<u32>,
+    start_buffer_ms: u64,
     server: String,
 }
 
@@ -179,11 +168,9 @@ async fn run_player(cfg: PlayerRuntimeConfig, changed_tx: Sender<ChangedMessage>
         bit_depth,
         sample_rate,
         buffer_size,
+        start_buffer_ms,
         server,
     } = cfg;
-
-    // Device selection is deferred until playback starts (see PlayerCommand::Init)
-    // so devices connected after startup (e.g. Bluetooth) can be used.
 
     // Enumerate devices once at startup so users can discover output ids from
     // the `Devices:` log lines. Only when debug logging is enabled, since the
@@ -192,13 +179,7 @@ async fn run_player(cfg: PlayerRuntimeConfig, changed_tx: Sender<ChangedMessage>
         resolve_output_device(output_id.as_deref());
     }
 
-    // Configuration from environment variables
-    let start_buffer_ms = env_u64("SS_PLAY_START_BUFFER_MS", 500);
-    let log_lead = env_bool("SS_LOG_LEAD");
-    info!(
-        "Player config: start_buffer={}ms, log_lead={}",
-        start_buffer_ms, log_lead
-    );
+    info!("Player config: start_buffer={}ms", start_buffer_ms);
 
     // Create a channel for sending commands to the audio player thread.
     // The player thread outlives individual server connections, so it is
@@ -208,6 +189,12 @@ async fn run_player(cfg: PlayerRuntimeConfig, changed_tx: Sender<ChangedMessage>
     // Spawn a dedicated thread for audio playback (SyncedPlayer is not Send)
     std::thread::spawn(move || {
         let mut synced_player: Option<SyncedPlayer> = None;
+        // Volume/mute are software-controlled and can be changed before a
+        // stream ever starts, so the desired values are tracked here and
+        // applied whenever the player is (re-)initialized, rather than only
+        // being accepted once a player already exists.
+        let mut current_volume = volume;
+        let mut current_muted = muted;
 
         while let Ok(cmd) = player_rx.recv() {
             match cmd {
@@ -229,8 +216,8 @@ async fn run_player(cfg: PlayerRuntimeConfig, changed_tx: Sender<ChangedMessage>
                         clock_sync,
                         SyncedPlayerConfig {
                             device,
-                            volume,
-                            muted,
+                            volume: current_volume,
+                            muted: current_muted,
                             buffer_size,
                         },
                     ) {
@@ -258,17 +245,15 @@ async fn run_player(cfg: PlayerRuntimeConfig, changed_tx: Sender<ChangedMessage>
                     }
                 }
                 PlayerCommand::SetVolume(vol) => {
+                    current_volume = vol;
                     if let Some(ref mut player) = synced_player {
                         player.set_volume(vol);
-                    } else {
-                        log::warn!("Player not initialized yet, cannot set volume");
                     }
                 }
                 PlayerCommand::SetMute(muted) => {
+                    current_muted = muted;
                     if let Some(ref mut player) = synced_player {
                         player.set_mute(muted);
-                    } else {
-                        log::warn!("Player not initialized yet, cannot set mute");
                     }
                 }
             }
@@ -401,7 +386,9 @@ async fn run_player(cfg: PlayerRuntimeConfig, changed_tx: Sender<ChangedMessage>
 
                                 let _ = changed_tx.send(ChangedMessage::MediaPlayerStateChange {
                                     key: media_player_id.clone(),
-                                    playing: true,
+                                    playing: Some(true),
+                                    volume: None,
+                                    muted: None,
                                 });
                             } else {
                                 debug!("Received stream/start without player config");
@@ -442,7 +429,9 @@ async fn run_player(cfg: PlayerRuntimeConfig, changed_tx: Sender<ChangedMessage>
 
                             let _ = changed_tx.send(ChangedMessage::MediaPlayerStateChange {
                                 key: media_player_id.clone(),
-                                playing: false,
+                                playing: Some(false),
+                                volume: None,
+                                muted: None,
                             });
                         }
                         Message::StreamClear(stream_clear) => {
@@ -455,7 +444,9 @@ async fn run_player(cfg: PlayerRuntimeConfig, changed_tx: Sender<ChangedMessage>
 
                             let _ = changed_tx.send(ChangedMessage::MediaPlayerStateChange {
                                 key: media_player_id.clone(),
-                                playing: false,
+                                playing: Some(false),
+                                volume: None,
+                                muted: None,
                             });
                         }
                         Message::ServerCommand(cmd) => {
@@ -480,9 +471,11 @@ async fn run_player(cfg: PlayerRuntimeConfig, changed_tx: Sender<ChangedMessage>
                                                 Some(vol) => {
                                                     info!("Setting player volume to {}", vol);
                                                     let _ = player_tx.send(PlayerCommand::SetVolume(vol));
-                                                    let _ = changed_tx.send(ChangedMessage::MediaPlayerVolumeChange {
+                                                    let _ = changed_tx.send(ChangedMessage::MediaPlayerStateChange {
                                                         key: media_player_id.clone(),
-                                                        value: vol as f32,
+                                                        playing: None,
+                                                        volume: Some(vol as f32),
+                                                        muted: None,
                                                     });
                                                     if let Err(e) = sender.send_message(Message::ClientState(
                                                         ClientState {
@@ -510,6 +503,12 @@ async fn run_player(cfg: PlayerRuntimeConfig, changed_tx: Sender<ChangedMessage>
                                                 Some(mute) => {
                                                     log::info!("Received mute command: {}", mute);
                                                     let _ = player_tx.send(PlayerCommand::SetMute(mute));
+                                                    let _ = changed_tx.send(ChangedMessage::MediaPlayerStateChange {
+                                                        key: media_player_id.clone(),
+                                                        playing: None,
+                                                        volume: None,
+                                                        muted: Some(mute),
+                                                    });
                                                     if let Err(e) = sender.send_message(Message::ClientState(
                                                         ClientState {
                                                             state: None,
@@ -606,16 +605,6 @@ async fn run_player(cfg: PlayerRuntimeConfig, changed_tx: Sender<ChangedMessage>
                                     );
                                 }
 
-                                // Track and log lead time
-                                if log_lead {
-                                    trace!(
-                                        "Enqueued chunk ts={} buffered={:.1}ms len={} bytes",
-                                        chunk.timestamp,
-                                        buffered_duration_us as f64 / 1000.0,
-                                        chunk.data.len()
-                                    );
-                                }
-
                                 if !player_initialized {
                                     let _ = player_tx.send(PlayerCommand::Init(
                                         fmt.clone(),
@@ -699,6 +688,7 @@ impl Module for UbiHomePlatform {
                     on_play: cfg.on_play,
                     on_pause: cfg.on_pause,
                     on_volume_change: cfg.on_volume_change,
+                    on_mute_change: cfg.on_mute_change,
                 })
             })
             .collect()
@@ -714,6 +704,7 @@ impl Module for UbiHomePlatform {
         let bit_depth = self.sendspin_config.bit_depth.unwrap_or(16);
         let sample_rate = self.sendspin_config.sample_rate.unwrap_or(48000);
         let buffer_size = self.sendspin_config.buffer_size;
+        let start_buffer_ms = self.sendspin_config.start_buffer_ms.unwrap_or(500);
 
         let media_players: Vec<(String, SendspinMediaPlayerConfig)> = self
             .config
@@ -782,6 +773,7 @@ impl Module for UbiHomePlatform {
                     bit_depth,
                     sample_rate,
                     buffer_size,
+                    start_buffer_ms,
                     server: server.clone(),
                 };
                 let changed_tx = sender.clone();
@@ -834,6 +826,9 @@ media_player:
     on_volume_change:
       then:
         - button.press: chime
+    on_mute_change:
+      then:
+        - button.press: chime
 "#;
 
         let module = UbiHomePlatform::new(config, "config.yml");
@@ -862,6 +857,10 @@ media_player:
         assert!(
             media_player.on_volume_change.is_some(),
             "on_volume_change should be set"
+        );
+        assert!(
+            media_player.on_mute_change.is_some(),
+            "on_mute_change should be set"
         );
     }
 
@@ -907,6 +906,10 @@ media_player:
         assert!(
             media_player.on_volume_change.is_none(),
             "on_volume_change should default to None"
+        );
+        assert!(
+            media_player.on_mute_change.is_none(),
+            "on_mute_change should default to None"
         );
     }
 

@@ -156,6 +156,8 @@ Remove the "{}:" entry from your configuration or install the cargo crate contai
             HashMap::new();
         let mut signal_map_media_player_volume: HashMap<String, Mutable<Option<Option<f32>>>> =
             HashMap::new();
+        let mut signal_map_media_player_mute: HashMap<String, Mutable<Option<Option<bool>>>> =
+            HashMap::new();
 
         for component in initialized_platforms.clone() {
             match component {
@@ -271,7 +273,9 @@ Remove the "{}:" entry from your configuration or install the cargo crate contai
 
                                         let pcmd = PublishedMessage::MediaPlayerStateChanged {
                                             key,
-                                            playing,
+                                            playing: Some(playing),
+                                            volume: None,
+                                            muted: None,
                                         };
                                         debug!("Publishing command from signal: {:?}", pcmd);
                                         signal_tx_clone.send(pcmd).unwrap();
@@ -312,9 +316,56 @@ Remove the "{}:" entry from your configuration or install the cargo crate contai
                                             .await;
                                         }
 
-                                        let pcmd = PublishedMessage::MediaPlayerVolumeChanged {
+                                        let pcmd = PublishedMessage::MediaPlayerStateChanged {
                                             key,
-                                            value,
+                                            playing: None,
+                                            volume: Some(value),
+                                            muted: None,
+                                        };
+                                        debug!("Publishing command from signal: {:?}", pcmd);
+                                        signal_tx_clone.send(pcmd).unwrap();
+                                    }
+                                }
+                            })
+                            .await;
+                    });
+
+                    // Mute, dispatched separately from playback state/volume (its
+                    // own signal map/task), since all three change independently.
+                    let mutable_mute: Mutable<Option<Option<bool>>> = Mutable::new(Option::None);
+                    signal_map_media_player_mute
+                        .insert(media_player.id.clone(), mutable_mute.clone());
+                    let internal_tx_clone = internal_tx.clone();
+                    let globals_clone = globals.clone();
+                    let key = media_player.id.clone();
+                    let on_mute_change = media_player.on_mute_change.clone();
+
+                    let mutable_clone = mutable_mute.clone();
+                    supervised_tasks.spawn(async move {
+                        mutable_clone
+                            .signal()
+                            .for_each(move |value| {
+                                let action_tx = internal_tx_clone.clone();
+                                let signal_tx_clone = internal_tx_clone.clone();
+                                let key = key.clone();
+                                let on_mute_change = on_mute_change.clone();
+                                let globals_for_call = globals_clone.clone();
+                                async move {
+                                    if let Some(muted) = value.and_then(|v| v) {
+                                        if let Some(on_mute_change) = on_mute_change {
+                                            builtins::run_actions(
+                                                on_mute_change.then,
+                                                &action_tx,
+                                                &globals_for_call,
+                                            )
+                                            .await;
+                                        }
+
+                                        let pcmd = PublishedMessage::MediaPlayerStateChanged {
+                                            key,
+                                            playing: None,
+                                            volume: None,
+                                            muted: Some(muted),
                                         };
                                         debug!("Publishing command from signal: {:?}", pcmd);
                                         signal_tx_clone.send(pcmd).unwrap();
@@ -525,15 +576,26 @@ Remove the "{}:" entry from your configuration or install the cargo crate contai
                         ChangedMessage::TextSensorValueChange { key, value } => {
                             Some(PublishedMessage::TextSensorValueChanged { key, value })
                         }
-                        ChangedMessage::MediaPlayerStateChange { key, playing } => {
-                            if let Some(signal) = signal_map_media_player_state.get(&key) {
-                                signal.set(Some(Some(playing)));
+                        ChangedMessage::MediaPlayerStateChange {
+                            key,
+                            playing,
+                            volume,
+                            muted,
+                        } => {
+                            if let Some(playing) = playing {
+                                if let Some(signal) = signal_map_media_player_state.get(&key) {
+                                    signal.set(Some(Some(playing)));
+                                }
                             }
-                            None
-                        }
-                        ChangedMessage::MediaPlayerVolumeChange { key, value } => {
-                            if let Some(signal) = signal_map_media_player_volume.get(&key) {
-                                signal.set(Some(Some(value)));
+                            if let Some(volume) = volume {
+                                if let Some(signal) = signal_map_media_player_volume.get(&key) {
+                                    signal.set(Some(Some(volume)));
+                                }
+                            }
+                            if let Some(muted) = muted {
+                                if let Some(signal) = signal_map_media_player_mute.get(&key) {
+                                    signal.set(Some(Some(muted)));
+                                }
                             }
                             None
                         }

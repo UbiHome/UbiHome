@@ -24,6 +24,8 @@ sendspin:
   # sample_rate: 48000
   # Optional: ALSA buffer size in frames, shared by every player (default: system default)
   # buffer_size:
+  # Optional: Milliseconds of audio to pre-buffer before starting playback (default: 500)
+  # start_buffer_ms: 500
 
 media_player:
   - platform: sendspin
@@ -36,7 +38,7 @@ media_player:
     # volume: 100
     # Optional: Start muted (default: false)
     # muted: false
-    # on_play / on_pause / on_volume_change: see Media Player
+    # on_play / on_pause / on_volume_change / on_mute_change: see Media Player
 ```
 
 On Linux you may need to specify the output device name manually, as UbiHome may detect the default device incorrectly.

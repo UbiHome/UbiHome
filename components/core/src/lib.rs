@@ -110,13 +110,13 @@ pub enum ChangedMessage {
         value: String,
     },
     BluetoothProxyMessage(BluetoothProxyMessage),
+    /// Combined so a single message can carry any subset of playback/volume/mute
+    /// changes instead of needing one enum variant per field.
     MediaPlayerStateChange {
         key: String,
-        playing: bool,
-    },
-    MediaPlayerVolumeChange {
-        key: String,
-        value: f32,
+        playing: Option<bool>,
+        volume: Option<f32>,
+        muted: Option<bool>,
     },
 }
 
@@ -172,11 +172,9 @@ pub enum PublishedMessage {
     BluetoothProxyMessage(BluetoothProxyMessage),
     MediaPlayerStateChanged {
         key: String,
-        playing: bool,
-    },
-    MediaPlayerVolumeChanged {
-        key: String,
-        value: f32,
+        playing: Option<bool>,
+        volume: Option<f32>,
+        muted: Option<bool>,
     },
 }
 
