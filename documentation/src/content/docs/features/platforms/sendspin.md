@@ -38,6 +38,10 @@ media_player:
     # volume: 100
     # Optional: Start muted (default: false)
     # muted: false
+    # Optional: Apply server volume commands to the software player (default: true)
+    # Disable if on_volume_change already drives a hardware volume, to avoid
+    # applying the volume change twice.
+    # software_volume: true
     # on_play / on_pause / on_volume_change / on_mute_change: see Media Player
 ```
 

@@ -119,6 +119,13 @@ template_media_player! {
         /// runtime via mute commands. Default: false.
         #[garde(skip)]
         pub muted: Option<bool>,
+        /// Whether volume commands from the server are applied to the
+        /// software player. Disable this if `on_volume_change` already
+        /// drives a hardware volume, to avoid the volume being applied
+        /// twice (once in software, once via the hardware trigger).
+        /// Default: true.
+        #[garde(skip)]
+        pub software_volume: Option<bool>,
     }
 }
 
@@ -146,6 +153,7 @@ struct PlayerRuntimeConfig {
     output_id: Option<String>,
     volume: u8,
     muted: bool,
+    software_volume: bool,
     bit_depth: u8,
     sample_rate: u32,
     buffer_size: Option<u32>,
@@ -165,6 +173,7 @@ async fn run_player(cfg: PlayerRuntimeConfig, changed_tx: Sender<ChangedMessage>
         output_id,
         volume,
         muted,
+        software_volume,
         bit_depth,
         sample_rate,
         buffer_size,
@@ -193,7 +202,12 @@ async fn run_player(cfg: PlayerRuntimeConfig, changed_tx: Sender<ChangedMessage>
         // stream ever starts, so the desired values are tracked here and
         // applied whenever the player is (re-)initialized, rather than only
         // being accepted once a player already exists.
-        let mut current_volume = volume;
+        // When software_volume is disabled, `volume` is treated as a purely
+        // logical/protocol value (reported to the server and available to
+        // `on_volume_change`) and the software player itself always plays
+        // back at full volume, since a hardware trigger is expected to
+        // apply the actual attenuation.
+        let mut current_volume = if software_volume { volume } else { 100 };
         let mut current_muted = muted;
 
         while let Ok(cmd) = player_rx.recv() {
@@ -466,8 +480,12 @@ async fn run_player(cfg: PlayerRuntimeConfig, changed_tx: Sender<ChangedMessage>
                                                     log::warn!("Received server command without volume field");
                                                 }
                                                 Some(vol) => {
-                                                    info!("Setting player volume to {}", vol);
-                                                    let _ = player_tx.send(PlayerCommand::SetVolume(vol));
+                                                    if software_volume {
+                                                        info!("Setting player volume to {}", vol);
+                                                        let _ = player_tx.send(PlayerCommand::SetVolume(vol));
+                                                    } else {
+                                                        debug!("Software volume disabled; not applying volume {} to the player", vol);
+                                                    }
                                                     let _ = changed_tx.send(ChangedMessage::MediaPlayerStateChange {
                                                         key: media_player_id.clone(),
                                                         playing: None,
@@ -767,6 +785,7 @@ impl Module for UbiHomePlatform {
                     output_id: player_cfg.output_id.clone(),
                     volume: player_cfg.volume.unwrap_or(100),
                     muted: player_cfg.muted.unwrap_or(false),
+                    software_volume: player_cfg.software_volume.unwrap_or(true),
                     bit_depth,
                     sample_rate,
                     buffer_size,
@@ -814,6 +833,7 @@ media_player:
     output_id: "alsa:hw:CARD=Dummy,DEV=0"
     volume: 42
     muted: true
+    software_volume: false
     on_play:
       then:
         - switch.turn_on: office_light
@@ -849,6 +869,7 @@ media_player:
         );
         assert_eq!(media_player.volume, Some(42));
         assert_eq!(media_player.muted, Some(true));
+        assert_eq!(media_player.software_volume, Some(false));
         assert!(media_player.on_play.is_some(), "on_play should be set");
         assert!(media_player.on_pause.is_some(), "on_pause should be set");
         assert!(
@@ -892,6 +913,7 @@ media_player:
         assert!(media_player.output_id.is_none());
         assert!(media_player.volume.is_none());
         assert!(media_player.muted.is_none());
+        assert!(media_player.software_volume.is_none());
         assert!(
             media_player.on_play.is_none(),
             "on_play should default to None"
