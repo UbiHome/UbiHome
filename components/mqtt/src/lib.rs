@@ -27,7 +27,7 @@ use ubihome_core::{
 mod discovery;
 use discovery::*;
 
-#[derive(Clone, Deserialize, Debug, Validate)]
+#[derive(Clone, Deserialize, Validate)]
 #[garde(allow_unvalidated)]
 pub struct MqttConfig {
     pub discovery_prefix: Option<String>,
@@ -35,6 +35,21 @@ pub struct MqttConfig {
     pub port: Option<u16>,
     pub username: Option<String>,
     pub password: Option<String>,
+}
+
+// The MQTT password is a credential and must never be written to logs. A manual
+// `Debug` impl redacts it so that any accidental `{:?}` formatting cannot leak
+// it, while still showing whether a password is configured.
+impl std::fmt::Debug for MqttConfig {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("MqttConfig")
+            .field("discovery_prefix", &self.discovery_prefix)
+            .field("broker", &self.broker)
+            .field("port", &self.port)
+            .field("username", &self.username)
+            .field("password", &self.password.as_ref().map(|_| "[REDACTED]"))
+            .finish()
+    }
 }
 
 config_template!(
@@ -533,5 +548,37 @@ impl Module for UbiHomePlatform {
             error!("MQTT event loop terminated");
             Ok(())
         })
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // Defense-in-depth for issue #178: the MQTT password is a credential and
+    // must never appear in Debug/log output.
+    #[test]
+    fn test_mqtt_password_is_never_in_debug_output() {
+        const TEST_PASSWORD: &str = "super-secret-mqtt-password";
+        let config = MqttConfig {
+            discovery_prefix: Some("ubihome".to_string()),
+            broker: "mqtt.example.com".to_string(),
+            port: Some(1883),
+            username: Some("user".to_string()),
+            password: Some(TEST_PASSWORD.to_string()),
+        };
+
+        let rendered = format!("{config:?}");
+        assert!(
+            !rendered.contains(TEST_PASSWORD),
+            "MQTT password leaked in Debug output: {rendered}"
+        );
+        assert!(
+            rendered.contains("[REDACTED]"),
+            "expected redaction marker in Debug output: {rendered}"
+        );
+        // Non-sensitive fields should still be visible.
+        assert!(rendered.contains("mqtt.example.com"));
+        assert!(rendered.contains("user"));
     }
 }
