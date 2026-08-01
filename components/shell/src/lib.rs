@@ -202,6 +202,7 @@ impl Module for UbiHomePlatform {
                 name: sensor.name.clone().unwrap_or_default(),
                 internal: sensor.internal,
                 id: id.clone(),
+                entity_category: sensor.entity_category,
                 filters: sensor.filters.clone(),
             }));
             sensors.insert(id.clone(), sensor);
@@ -217,6 +218,7 @@ impl Module for UbiHomePlatform {
                 name: binary_sensor.name.clone().unwrap_or_default(),
                 internal: binary_sensor.internal,
                 id: id.clone(),
+                entity_category: binary_sensor.entity_category,
                 on_press: binary_sensor.on_press.clone(),
                 on_release: binary_sensor.on_release.clone(),
                 filters: binary_sensor.filters.clone(),
@@ -233,6 +235,7 @@ impl Module for UbiHomePlatform {
                 name: button.name.clone().unwrap_or_default(),
                 internal: button.internal,
                 id: id.clone(),
+                entity_category: button.entity_category,
             }));
             buttons.insert(id.clone(), button);
         }
@@ -246,6 +249,7 @@ impl Module for UbiHomePlatform {
                 name: switch.name.clone().unwrap_or_default(),
                 internal: switch.internal,
                 id: id.clone(),
+                entity_category: switch.entity_category,
                 device_class: None,
                 assumed_state: switch.command_state.is_none(),
             }));
@@ -261,6 +265,7 @@ impl Module for UbiHomePlatform {
                 name: light.name.clone().unwrap_or_default(),
                 internal: light.internal,
                 id: id.clone(),
+                entity_category: light.entity_category,
                 disabled_by_default: light.disabled_by_default.unwrap_or(true),
             }));
             lights.insert(id.clone(), light);
@@ -275,6 +280,7 @@ impl Module for UbiHomePlatform {
                 name: number.name.clone().unwrap_or_default(),
                 internal: number.internal,
                 id: id.clone(),
+                entity_category: number.entity_category,
                 min_value: number.min_value.unwrap_or(0.0),
                 max_value: number.max_value.unwrap_or(100.0),
                 step: number.step.unwrap_or(1.0),
@@ -294,6 +300,7 @@ impl Module for UbiHomePlatform {
                 name: text_sensor.name.clone().unwrap_or_default(),
                 internal: text_sensor.internal,
                 id: id.clone(),
+                entity_category: text_sensor.entity_category,
                 device_class: text_sensor.device_class.clone(),
             }));
             text_sensors.insert(id.clone(), text_sensor);

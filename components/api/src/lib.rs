@@ -28,6 +28,15 @@ use log::error;
 use log::info;
 use log::warn;
 use serde::{Deserialize, Deserializer};
+use ubihome_core::configuration::base::EntityCategory as UbiEntityCategory;
+
+fn entity_category_from(category: Option<UbiEntityCategory>) -> i32 {
+    match category.unwrap_or_default() {
+        UbiEntityCategory::Diagnostic => EntityCategory::Diagnostic as i32,
+        UbiEntityCategory::Config => EntityCategory::Config as i32,
+        UbiEntityCategory::None => EntityCategory::None as i32,
+    }
+}
 use std::collections::HashMap;
 use std::net::SocketAddr;
 use std::num::ParseIntError;
@@ -220,7 +229,9 @@ impl Module for UbiHomePlatform {
                                     icon: switch_entity.icon.unwrap_or_default(),
                                     device_class: switch_entity.device_class.unwrap_or_default(),
                                     disabled_by_default: false,
-                                    entity_category: EntityCategory::None as i32,
+                                    entity_category: entity_category_from(
+                                        switch_entity.entity_category,
+                                    ),
                                     assumed_state: switch_entity.assumed_state,
                                 },
                             );
@@ -238,7 +249,7 @@ impl Module for UbiHomePlatform {
                                     icon: button.icon.unwrap_or_default(),
                                     device_class: "".to_string(),
                                     disabled_by_default: false,
-                                    entity_category: EntityCategory::None as i32,
+                                    entity_category: entity_category_from(button.entity_category),
                                 },
                             );
                             api_components_by_key.insert(key, component_button);
@@ -264,7 +275,7 @@ impl Module for UbiHomePlatform {
                                     legacy_last_reset_type: SensorLastResetType::LastResetNone
                                         as i32,
                                     disabled_by_default: false,
-                                    entity_category: EntityCategory::None as i32,
+                                    entity_category: entity_category_from(sensor.entity_category),
                                 },
                             );
                             api_components_by_key.insert(key, component_sensor);
@@ -285,7 +296,9 @@ impl Module for UbiHomePlatform {
                                             .unwrap_or("".to_string()),
                                         is_status_binary_sensor: false,
                                         disabled_by_default: false,
-                                        entity_category: EntityCategory::None as i32,
+                                        entity_category: entity_category_from(
+                                            binary_sensor.entity_category,
+                                        ),
                                     },
                                 );
                             api_components_by_key.insert(key, component_binary_sensor);
@@ -302,7 +315,7 @@ impl Module for UbiHomePlatform {
                                     device_id: 0,
                                     icon: light.icon.unwrap_or_default(),
                                     disabled_by_default: false,
-                                    entity_category: EntityCategory::None as i32,
+                                    entity_category: entity_category_from(light.entity_category),
                                     supported_color_modes: vec![],
                                     min_mireds: 153.0,
                                     max_mireds: 500.0,
@@ -329,7 +342,7 @@ impl Module for UbiHomePlatform {
                                     max_value: number.max_value,
                                     step: number.step,
                                     disabled_by_default: false,
-                                    entity_category: EntityCategory::None as i32,
+                                    entity_category: entity_category_from(number.entity_category),
                                     unit_of_measurement: number
                                         .unit_of_measurement
                                         .unwrap_or_default(),
@@ -351,7 +364,9 @@ impl Module for UbiHomePlatform {
                                         device_id: 0,
                                         icon: text_sensor.icon.unwrap_or_default(),
                                         disabled_by_default: false,
-                                        entity_category: EntityCategory::None as i32,
+                                        entity_category: entity_category_from(
+                                            text_sensor.entity_category,
+                                        ),
                                         device_class: text_sensor.device_class.unwrap_or_default(),
                                     },
                                 );
