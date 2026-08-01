@@ -77,11 +77,23 @@ fn log_api_error(context: &str, err: &Error) {
     }
 }
 
-#[derive(Clone, Deserialize, Debug, Validate)]
+#[derive(Clone, Deserialize, Validate)]
 #[serde(deny_unknown_fields)]
 pub struct ApiEncryptionConfig {
     #[garde(ascii, length(min = 44, max = 44))]
     pub key: Option<String>,
+}
+
+// The encryption key is a pre-shared credential and must never be written to
+// logs, including at debug/trace level. A manual `Debug` impl redacts the key
+// so that any accidental `{:?}` formatting (now or in the future) cannot leak
+// it, while still showing whether a key is configured.
+impl std::fmt::Debug for ApiEncryptionConfig {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("ApiEncryptionConfig")
+            .field("key", &self.key.as_ref().map(|_| "[REDACTED]"))
+            .finish()
+    }
 }
 
 #[derive(Clone, Deserialize, Debug, Validate)]
@@ -869,6 +881,49 @@ api:
             module.config.api.encryption.unwrap().key,
             Some("xiahAckHBW7BcKEQ6mRfasIW20Md9uMh/5PjrjbAhXQ=".to_string()),
             "Encryption key should be xiahAckHBW7BcKEQ6mRfasIW20Md9uMh/5PjrjbAhXQ="
+        );
+    }
+
+    // Regression test for issue #178: the API encryption key is a pre-shared
+    // credential and must never appear in any Debug/log output.
+    #[test]
+    fn test_encryption_key_is_never_in_debug_output() {
+        const TEST_KEY: &str = "xiahAckHBW7BcKEQ6mRfasIW20Md9uMh/5PjrjbAhXQ=";
+        let config = format!(
+            r#"
+ubihome:
+  name: "Test API Config"
+
+api:
+  port: 8053
+  encryption:
+    key: '{TEST_KEY}'
+"#
+        );
+
+        let module = UbiHomePlatform::new(&config, "config.yml").expect("should parse");
+
+        // Debug of the encryption config, the api config and the whole core
+        // config must all redact the key.
+        let encryption_debug = format!("{:?}", module.config.api.encryption);
+        let api_debug = format!("{:?}", module.config.api);
+        let core_debug = format!("{:?}", module.config);
+
+        for rendered in [&encryption_debug, &api_debug, &core_debug] {
+            assert!(
+                !rendered.contains(TEST_KEY),
+                "encryption key leaked in Debug output: {rendered}"
+            );
+            assert!(
+                rendered.contains("[REDACTED]"),
+                "expected redaction marker in Debug output: {rendered}"
+            );
+        }
+
+        // The key must still be usable programmatically.
+        assert_eq!(
+            module.config.api.encryption.and_then(|e| e.key),
+            Some(TEST_KEY.to_string()),
         );
     }
 
