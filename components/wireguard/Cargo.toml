@@ -1,0 +1,23 @@
+[package]
+name = "ubihome-wireguard"
+version = "0.13.0"
+authors = ["Daniel Habenicht <daniel-habenicht@outlook.de>"]
+edition = "2021"
+
+[dependencies]
+log = "0.4"
+serde = { version = "1.0", features = ["derive"] }
+tokio = { version = "1", features = ["full"] }
+ubihome-core = { path = "../core", features = ["validation"] }
+duration-str = "0.16.1"
+garde = { version = "0.22.1", features = ["serde"] }
+base64 = "0.22"
+boringtun = "0.7.1"
+smoltcp = { version = "0.12", default-features = false, features = [
+    "std",
+    "log",
+    "medium-ip",
+    "proto-ipv4",
+    "proto-ipv6",
+    "socket-tcp",
+] }
