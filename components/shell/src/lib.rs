@@ -615,12 +615,24 @@ impl Module for UbiHomePlatform {
                             match output {
                                 Ok(output) => {
                                     debug!("Sensor {} output: {}", key, output);
-                                    let value = output;
-
-                                    _ = cloned_sender.send(ChangedMessage::SensorValueChange {
-                                        key: key.clone(),
-                                        value: value.parse().unwrap(),
-                                    });
+                                    match output.trim().parse::<f32>() {
+                                        Ok(value) => {
+                                            _ = cloned_sender.send(
+                                                ChangedMessage::SensorValueChange {
+                                                    key: key.clone(),
+                                                    value,
+                                                },
+                                            );
+                                        }
+                                        Err(e) => {
+                                            warn!(
+                                                "Sensor {} command returned unparseable output (expected parsable number) '{}': {}",
+                                                key,
+                                                output.trim(),
+                                                e
+                                            );
+                                        }
+                                    }
                                 }
                                 Err(e) => {
                                     error!("Error executing command: {}", e);
@@ -667,7 +679,11 @@ impl Module for UbiHomePlatform {
                                     } else if output.trim().to_lowercase() == "false" {
                                         false
                                     } else {
-                                        debug!("Invalid switch sensor output: {}", output);
+                                        warn!(
+                                            "Switch {} command returned unexpected output (expected 'true'/'false'): '{}'",
+                                            key,
+                                            output.trim()
+                                        );
                                         interval.tick().await;
                                         continue;
                                     };
@@ -714,7 +730,12 @@ impl Module for UbiHomePlatform {
                                     } else if output.trim().to_lowercase() == "false" {
                                         false
                                     } else {
-                                        debug!("Invalid binary sensor output: {}", output);
+                                        warn!(
+                                            "Binary Sensor {} command returned unexpected output (expected 'true'/'false'): '{}'",
+                                            key,
+                                            output.trim()
+                                        );
+                                        interval.tick().await;
                                         continue;
                                     };
                                     debug!("Binary Sensor '{}' output: {}", key, value);
@@ -768,7 +789,11 @@ impl Module for UbiHomePlatform {
                                     } else if output.trim().to_lowercase() == "false" {
                                         false
                                     } else {
-                                        debug!("Invalid light state output: {}", output);
+                                        warn!(
+                                            "Light {} command returned unexpected output (expected 'true'/'false'): '{}'",
+                                            key,
+                                            output.trim()
+                                        );
                                         interval.tick().await;
                                         continue;
                                     };
@@ -834,8 +859,9 @@ impl Module for UbiHomePlatform {
                                             );
                                         }
                                         Err(e) => {
-                                            debug!(
-                                                "Invalid number state output '{}': {}",
+                                            warn!(
+                                                "Number {} command returned unparseable output (expected parsable number) '{}': {}",
+                                                key,
                                                 output.trim(),
                                                 e
                                             );
