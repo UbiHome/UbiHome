@@ -614,7 +614,7 @@ impl Module for UbiHomePlatform {
                             // TODO: Handle long running commands (e.g. newline per value) and multivalued outputs (e.g. json)
                             match output {
                                 Ok(output) => {
-                                    debug!("Sensor {} output: {}", key, &output);
+                                    debug!("Sensor {} output: {}", key, output);
                                     match output.trim().parse::<f32>() {
                                         Ok(value) => {
                                             _ = cloned_sender.send(
@@ -673,7 +673,7 @@ impl Module for UbiHomePlatform {
                             .await;
                             match output {
                                 Ok(output) => {
-                                    debug!("Switch {} output: {}", key, &output);
+                                    debug!("Switch {} output: {}", key, output);
                                     let value = if output.trim().to_lowercase() == "true" {
                                         true
                                     } else if output.trim().to_lowercase() == "false" {
@@ -783,7 +783,7 @@ impl Module for UbiHomePlatform {
                             .await;
                             match output {
                                 Ok(output) => {
-                                    debug!("Light {} state: {}", key, &output);
+                                    debug!("Light {} state: {}", key, output);
                                     let value = if output.trim().to_lowercase() == "true" {
                                         true
                                     } else if output.trim().to_lowercase() == "false" {
@@ -848,7 +848,7 @@ impl Module for UbiHomePlatform {
                             .await;
                             match output {
                                 Ok(output) => {
-                                    debug!("Number {} state: {}", key, &output);
+                                    debug!("Number {} state: {}", key, output);
                                     match output.trim().parse::<f32>() {
                                         Ok(value) => {
                                             _ = cloned_sender.send(
