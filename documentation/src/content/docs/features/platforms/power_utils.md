@@ -19,6 +19,11 @@ button:
     name: 'Reboot'
     action: reboot
 
+  # Restarts the UbiHome process itself (not the machine).
+  - platform: power_utils
+    name: 'Restart UbiHome'
+    action: restart_service
+
   - platform: power_utils
     name: 'Logout'
     action: logout
