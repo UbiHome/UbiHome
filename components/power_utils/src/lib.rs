@@ -22,11 +22,55 @@ use system_shutdown::sleep;
 #[garde(allow_unvalidated)]
 pub struct PowerUtilsConfig {}
 
+/// Restarts UbiHome by re-executing the current binary. On Unix the image is
+/// replaced in place; on a Windows terminal a new process is spawned; as a
+/// Windows service it exits so the service controller restarts it. On failure
+/// it logs the error and keeps running.
+fn restart_process() {
+    info!("Restart requested - restarting UbiHome process");
+
+    let exe = match std::env::current_exe() {
+        Ok(exe) => exe,
+        Err(err) => {
+            error!("Could not restart UbiHome: failed to resolve current executable: {err}");
+            return;
+        }
+    };
+    let args: Vec<String> = std::env::args().skip(1).collect();
+
+    #[cfg(unix)]
+    {
+        use std::os::unix::process::CommandExt;
+        // `exec` replaces the image in place; it only returns on failure.
+        let err = std::process::Command::new(&exe).args(&args).exec();
+        error!("Could not restart UbiHome: {err}");
+    }
+
+    #[cfg(not(unix))]
+    {
+        // Exit so the Windows service controller restarts us (the only way).
+        if args
+            .iter()
+            .any(|arg| arg.as_str() == "--as-windows-service")
+        {
+            std::process::exit(0);
+        }
+
+        match std::process::Command::new(&exe).args(&args).spawn() {
+            Ok(_) => std::process::exit(0),
+            Err(err) => error!("Could not restart UbiHome: failed to spawn new process: {err}"),
+        }
+    }
+}
+
 #[derive(Debug, Copy, Clone, Deserialize, Validate)]
 #[serde(rename_all = "camelCase")]
 pub enum PowerAction {
     #[serde(alias = "reboot", alias = "restart")]
     Reboot,
+    /// Restarts the UbiHome process itself (not the machine).
+    #[serde(rename = "restart_service")]
+    RestartService,
     #[serde(alias = "shutdown")]
     Shutdown,
     #[serde(alias = "hibernate")]
@@ -80,6 +124,13 @@ impl Module for UbiHomePlatform {
                 PowerAction::Reboot => UbiButton {
                     platform: "sensor".to_string(),
                     icon: Some(button.icon.unwrap_or("mdi:restart".to_string())),
+                    name,
+                    internal,
+                    id: id.clone(),
+                },
+                PowerAction::RestartService => UbiButton {
+                    platform: "sensor".to_string(),
+                    icon: Some(button.icon.unwrap_or("mdi:reload".to_string())),
                     name,
                     internal,
                     id: id.clone(),
@@ -153,6 +204,9 @@ impl Module for UbiHomePlatform {
                                             Ok(_) => debug!("Rebooting."),
                                             Err(error) => error!("Failed to reboot: {}", error),
                                         }
+                                    }
+                                    PowerAction::RestartService => {
+                                        restart_process();
                                     }
                                     PowerAction::Shutdown => {
                                         debug!("Shutting down...");
