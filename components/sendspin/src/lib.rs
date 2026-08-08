@@ -279,7 +279,7 @@ async fn run_player(cfg: PlayerRuntimeConfig, changed_tx: Sender<ChangedMessage>
     // backoff instead of exiting the module, which would drop this player
     // until UbiHome is restarted.
     let initial_backoff = std::time::Duration::from_secs(1);
-    let max_backoff = std::time::Duration::from_secs(30);
+    let max_backoff = std::time::Duration::from_secs(600);
     // A connection must stay up at least this long to be treated as stable.
     // Connections that drop sooner keep escalating the backoff, so a server
     // that accepts the connection and then drops the session immediately is
