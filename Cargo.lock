@@ -4769,9 +4769,8 @@ dependencies = [
 
 [[package]]
 name = "shell_exec"
-version = "0.2.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6f66f85f865342648a1f73b9ab8bef96fcc1142fc50c7b379ab80275d49defea"
+version = "0.3.0"
+source = "git+https://github.com/DanielHabenicht/fork.shell_exec?branch=stream-stdout-stderr#dd319301ce2d96adeab53e92a3f3a8028efce4f3"
 dependencies = [
  "bstr",
  "log",
