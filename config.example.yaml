@@ -24,3 +24,19 @@ switch:
 #     unit_of_measurement: 'lx'
 #     device_class: illuminance
 #     state_class: measurement
+#
+# icmp_ping:
+#   timeout: 5s
+#
+# sensor:
+#   - platform: icmp_ping
+#     name: 'Router Latency'
+#     ip: 192.168.1.1
+#     update_interval: 30s
+#
+# binary_sensor:
+#   - platform: icmp_ping
+#     name: 'Router Online'
+#     ip: 192.168.1.1
+#     update_interval: 10s
+#     timeout: 2s
