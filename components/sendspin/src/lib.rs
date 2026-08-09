@@ -188,9 +188,23 @@ async fn run_player(cfg: PlayerRuntimeConfig, changed_tx: Sender<ChangedMessage>
     // The player thread outlives individual server connections, so it is
     // created once, before the reconnect loop.
     let (player_tx, player_rx) = std::sync::mpsc::channel::<PlayerCommand>();
+    let thread_changed_tx = changed_tx.clone();
+    let thread_media_player_id = media_player_id.clone();
 
     // Spawn a dedicated thread for audio playback (SyncedPlayer is not Send)
     std::thread::spawn(move || {
+        // A lone underrun/overrun is common (cpal/ALSA usually recover on
+        // their own) and not worth an audible stream teardown for. Only
+        // self-heal once errors repeat within a short window, which is a
+        // sign the stream is actually stuck rather than hiccuping.
+        const ERROR_THRESHOLD: u32 = 3;
+        const ERROR_WINDOW: std::time::Duration = std::time::Duration::from_secs(30);
+        // Throttle for both the initial `Init` failure and self-heal
+        // recreation attempts, so a persistently unavailable device (e.g.
+        // "device busy") doesn't spin the poll loop retrying every tick.
+        const RECREATE_RETRY_BACKOFF: std::time::Duration = std::time::Duration::from_secs(5);
+        const POLL_INTERVAL: std::time::Duration = std::time::Duration::from_millis(500);
+
         let mut synced_player: Option<SyncedPlayer> = None;
         // Volume/mute are software-controlled and can be changed before a
         // stream ever starts, so the desired values are tracked here and
@@ -198,56 +212,70 @@ async fn run_player(cfg: PlayerRuntimeConfig, changed_tx: Sender<ChangedMessage>
         // being accepted once a player already exists.
         let mut current_volume = volume;
         let mut current_muted = muted;
+        // Format/clock sync of the current stream, kept so the player can be
+        // recreated (on initial failure or self-heal) without waiting for a
+        // fresh `Init` from the connection loop.
+        let mut last_init: Option<(AudioFormat, ClockSyncRef)> = None;
+        let mut stream_error_count: u32 = 0;
+        let mut stream_error_window_start: Option<std::time::Instant> = None;
+        let mut next_recreate_attempt: Option<std::time::Instant> = None;
+        // Whether a `playing: false` was sent for the current outage, so a
+        // successful recreate knows to send the matching `playing: true`.
+        // Kept separate from `next_recreate_attempt` because a self-heal
+        // recreate can succeed on its very first attempt.
+        let mut unavailable_reported = false;
 
-        while let Ok(cmd) = player_rx.recv() {
-            match cmd {
-                PlayerCommand::Init(fmt, clock_sync) => {
-                    // Re-resolve the output device for each playback so that
-                    // devices connected after startup (e.g. Bluetooth) are used.
-                    let device = resolve_output_device(output_id.as_deref());
-                    match &device {
-                        Some(d) => info!(
-                            "Using device: {}",
-                            d.id().map_or("Unknown Id".to_string(), |id| id.to_string())
-                        ),
-                        None => {
-                            info!("No output device resolved; falling back to system default")
-                        }
-                    }
-                    match SyncedPlayer::new(
-                        fmt,
-                        clock_sync,
-                        SyncedPlayerConfig {
-                            device,
-                            volume: current_volume,
-                            muted: current_muted,
-                            buffer_size,
-                        },
-                    ) {
-                        Ok(player) => {
-                            debug!("Synced audio output initialized");
-                            synced_player = Some(player);
-                        }
-                        Err(e) => {
-                            error!("Failed to create synced output: {}", e);
-                        }
-                    }
+        // Re-resolves the output device (so devices connected after startup,
+        // e.g. Bluetooth, are used) and creates a new SyncedPlayer for it.
+        let create_player =
+            |fmt: AudioFormat, clock_sync: &ClockSyncRef, volume: u8, muted: bool| {
+                let device = resolve_output_device(output_id.as_deref());
+                match &device {
+                    Some(d) => info!(
+                        "Using device: {}",
+                        d.id().map_or("Unknown Id".to_string(), |id| id.to_string())
+                    ),
+                    None => info!("No output device resolved; falling back to system default"),
                 }
-                PlayerCommand::Enqueue(buffer) => {
+                SyncedPlayer::new(
+                    fmt,
+                    Arc::clone(clock_sync),
+                    SyncedPlayerConfig {
+                        device,
+                        volume,
+                        muted,
+                        buffer_size,
+                    },
+                )
+            };
+
+        loop {
+            match player_rx.recv_timeout(POLL_INTERVAL) {
+                Ok(PlayerCommand::Init(fmt, clock_sync)) => {
+                    // Tear down any previous stream before swapping formats;
+                    // the block below (re)creates it uniformly.
+                    synced_player = None;
+                    last_init = Some((fmt, clock_sync));
+                    stream_error_count = 0;
+                    stream_error_window_start = None;
+                    next_recreate_attempt = None;
+                    unavailable_reported = false;
+                }
+                Ok(PlayerCommand::Enqueue(buffer)) => {
                     if let Some(ref player) = synced_player {
                         player.enqueue(buffer);
                     } else {
                         log::warn!("Player not initialized yet, dropping audio buffer");
                     }
                 }
-                PlayerCommand::Clear => {
+                Ok(PlayerCommand::Clear) => {
                     if let Some(ref player) = synced_player {
                         player.clear();
                     } else {
                         log::warn!("Player not initialized yet, cannot clear");
                     }
                 }
-                PlayerCommand::Stop => {
+                Ok(PlayerCommand::Stop) => {
                     // Dropping the player releases its cpal stream (and the
                     // underlying ALSA device). Leaving it alive here left an
                     // idle exclusive `hw:` device open: it produced periodic
@@ -256,17 +284,96 @@ async fn run_player(cfg: PlayerRuntimeConfig, changed_tx: Sender<ChangedMessage>
                     if synced_player.take().is_some() {
                         debug!("Audio output stopped, device released");
                     }
+                    last_init = None;
+                    stream_error_count = 0;
+                    stream_error_window_start = None;
+                    next_recreate_attempt = None;
+                    unavailable_reported = false;
                 }
-                PlayerCommand::SetVolume(vol) => {
+                Ok(PlayerCommand::SetVolume(vol)) => {
                     current_volume = vol;
                     if let Some(ref mut player) = synced_player {
                         player.set_volume(vol);
                     }
                 }
-                PlayerCommand::SetMute(muted) => {
+                Ok(PlayerCommand::SetMute(muted)) => {
                     current_muted = muted;
                     if let Some(ref mut player) = synced_player {
                         player.set_mute(muted);
+                    }
+                }
+                Err(std::sync::mpsc::RecvTimeoutError::Timeout) => {}
+                Err(std::sync::mpsc::RecvTimeoutError::Disconnected) => break,
+            }
+
+            // Count fatal stream errors reported since the last poll and
+            // self-heal once they repeat within ERROR_WINDOW.
+            if let Some(player) = &synced_player {
+                if let Some(err) = player.take_error() {
+                    let now = std::time::Instant::now();
+                    let within_window = stream_error_window_start
+                        .map(|start| now.duration_since(start) <= ERROR_WINDOW)
+                        .unwrap_or(false);
+                    stream_error_count = if within_window {
+                        stream_error_count + 1
+                    } else {
+                        stream_error_window_start = Some(now);
+                        1
+                    };
+                    warn!(
+                        "Audio stream error ({}/{} in {:?}): {}",
+                        stream_error_count, ERROR_THRESHOLD, ERROR_WINDOW, err
+                    );
+
+                    if stream_error_count >= ERROR_THRESHOLD {
+                        warn!("Repeated audio stream errors, recreating audio output");
+                        synced_player = None;
+                        stream_error_count = 0;
+                        stream_error_window_start = None;
+                        next_recreate_attempt = None; // retry immediately below
+                        unavailable_reported = true;
+                        let _ = thread_changed_tx.send(ChangedMessage::MediaPlayerStateChange {
+                            key: thread_media_player_id.clone(),
+                            playing: Some(false),
+                            volume: None,
+                            muted: None,
+                        });
+                    }
+                }
+            }
+
+            // (Re)create the output if it's down and a stream is expected:
+            // either the initial failure from `Init`, or a self-heal
+            // triggered above.
+            if synced_player.is_none() {
+                if let Some((fmt, clock_sync)) = last_init.clone() {
+                    let due = next_recreate_attempt
+                        .map(|at| std::time::Instant::now() >= at)
+                        .unwrap_or(true);
+                    if due {
+                        match create_player(fmt, &clock_sync, current_volume, current_muted) {
+                            Ok(player) => {
+                                debug!("Synced audio output initialized");
+                                synced_player = Some(player);
+                                next_recreate_attempt = None;
+                                if unavailable_reported {
+                                    unavailable_reported = false;
+                                    let _ = thread_changed_tx.send(
+                                        ChangedMessage::MediaPlayerStateChange {
+                                            key: thread_media_player_id.clone(),
+                                            playing: Some(true),
+                                            volume: None,
+                                            muted: None,
+                                        },
+                                    );
+                                }
+                            }
+                            Err(e) => {
+                                error!("Failed to create synced output: {}", e);
+                                next_recreate_attempt =
+                                    Some(std::time::Instant::now() + RECREATE_RETRY_BACKOFF);
+                            }
+                        }
                     }
                 }
             }
