@@ -4,7 +4,6 @@
 //! a platform crate.
 
 pub mod button;
-pub mod lambda;
 pub mod number;
 pub mod sensor;
 pub mod switch;
@@ -22,8 +21,8 @@ use ubihome_core::internal::sensors::{UbiButton, UbiComponent, UbiNumber, UbiSen
 use ubihome_core::state::{EntityState, StateStoreWriter};
 use ubihome_core::{ChangedMessage, PublishedMessage};
 
-use crate::builtins::globals::GlobalChanged;
-use crate::builtins::{run_actions, Globals};
+use crate::builtins::script::ScriptValue;
+use crate::builtins::{run_actions, Globals, ScriptEngine};
 
 /// The parsed `platform: template` entities from the configuration.
 #[derive(Debug, Default, Clone)]
@@ -104,6 +103,7 @@ pub fn spawn(
     modules_tx: Sender<ChangedMessage>,
     globals: Globals,
     state_writer: StateStoreWriter,
+    script: ScriptEngine,
 ) {
     spawn_switches(
         tasks,
@@ -111,16 +111,77 @@ pub fn spawn(
         tx.clone(),
         globals.clone(),
         state_writer.clone(),
+        script.clone(),
     );
-    spawn_buttons(tasks, config.buttons, tx.clone(), globals.clone());
-    spawn_numbers(tasks, config.numbers, tx, globals.clone(), state_writer);
-    spawn_sensors(tasks, config.sensors, modules_tx, globals);
+    spawn_buttons(
+        tasks,
+        config.buttons,
+        tx.clone(),
+        globals.clone(),
+        script.clone(),
+    );
+    spawn_numbers(
+        tasks,
+        config.numbers,
+        tx,
+        globals.clone(),
+        state_writer,
+        script.clone(),
+    );
+    spawn_sensors(tasks, config.sensors, modules_tx, globals, script);
+}
+
+/// Evaluates an entity's `lambda`, logging and returning `None` on error or
+/// on a return type mismatch. `ScriptValue::None` (the lambda returned
+/// nothing, or `null`) also maps to `None`: skip this round's update, same as
+/// the standalone `lambda` sensor platform.
+async fn eval_bool_lambda(script: &ScriptEngine, key: &str, lambda: &str) -> Option<bool> {
+    match script.eval(lambda, None).await {
+        Ok(ScriptValue::Bool(value)) => Some(value),
+        Ok(ScriptValue::None) => None,
+        Ok(other) => {
+            log::error!(
+                "template switch '{}' lambda must return a boolean, got {:?}",
+                key,
+                other
+            );
+            None
+        }
+        Err(e) => {
+            log::error!("template switch '{}' lambda failed: {}", key, e);
+            None
+        }
+    }
+}
+
+/// Evaluates an entity's `lambda`, logging and returning `None` on error or
+/// on a return type mismatch. `ScriptValue::None` (the lambda returned
+/// nothing, or `null`) also maps to `None`: skip this round's update, same as
+/// the standalone `lambda` sensor platform.
+async fn eval_number_lambda(script: &ScriptEngine, key: &str, lambda: &str) -> Option<f32> {
+    match script.eval(lambda, None).await {
+        Ok(ScriptValue::Number(value)) => Some(value),
+        Ok(ScriptValue::None) => None,
+        Ok(other) => {
+            log::error!(
+                "template number '{}' lambda must return a number, got {:?}",
+                key,
+                other
+            );
+            None
+        }
+        Err(e) => {
+            log::error!("template number '{}' lambda failed: {}", key, e);
+            None
+        }
+    }
 }
 
 /// Spawn the runtime handler for template switches. It listens for
 /// [`PublishedMessage::SwitchStateCommand`] targeting a template switch, runs
-/// the matching `turn_on_action`/`turn_off_action`, and (when `optimistic`)
-/// publishes the new state back onto the bus so connected front-ends update.
+/// the matching `turn_on_action`/`turn_off_action`, and (when `optimistic`,
+/// or via a `lambda`) publishes the new state back onto the bus so connected
+/// front-ends update.
 ///
 /// Template switches are not platform modules, so nothing else records their
 /// state into the central [`StateStore`](ubihome_core::state::StateStore) the
@@ -135,6 +196,7 @@ fn spawn_switches(
     tx: Sender<PublishedMessage>,
     globals: Globals,
     state_writer: StateStoreWriter,
+    script: ScriptEngine,
 ) {
     if switches.is_empty() {
         return;
@@ -146,11 +208,11 @@ fn spawn_switches(
     let mut receiver: Receiver<PublishedMessage> = tx.subscribe();
     let mut global_changes = globals.subscribe();
     tasks.spawn(async move {
-        // Publish the initial state of switches whose `lambda` reads a global.
+        // Publish the initial state of every switch with a `lambda`.
         for (key, switch) in &switches {
-            if let Some(id) = switch.state_global() {
-                if let Some(state) = globals.get_bool(id) {
-                    log::debug!("template switch '{}' initial state from global '{}': {}", key, id, state);
+            if let Some(lambda) = &switch.lambda {
+                if let Some(state) = eval_bool_lambda(&script, key, lambda).await {
+                    log::debug!("template switch '{}' initial state: {}", key, state);
                     state_writer.set(key.clone(), EntityState::Switch(state));
                     let _ = tx.send(PublishedMessage::SwitchStateChange {
                         key: key.clone(),
@@ -172,13 +234,13 @@ fn spawn_switches(
                                     switch.turn_off_action.clone()
                                 };
                                 if let Some(trigger) = actions {
-                                    run_actions(trigger.then, &tx, &globals).await;
+                                    run_actions(trigger.then, &tx, &globals, &script, None).await;
                                 }
-                                // With a `globals.get` lambda the state follows the
-                                // global (published via the change notification
-                                // below), so only optimistic switches without a
-                                // lambda echo the command.
-                                if switch.optimistic && switch.state_global().is_none() {
+                                // With a `lambda` the state follows the lambda
+                                // (re-evaluated below on every global change), so
+                                // only optimistic switches without one echo the
+                                // command.
+                                if switch.optimistic && switch.lambda.is_none() {
                                     state_writer.set(key.clone(), EntityState::Switch(state));
                                     let _ = tx.send(PublishedMessage::SwitchStateChange {
                                         key,
@@ -189,20 +251,29 @@ fn spawn_switches(
                         }
                         // Ignore other messages; stop only when the bus closes.
                         Ok(_) => {}
-                        Err(_) => break,
+                        Err(tokio::sync::broadcast::error::RecvError::Lagged(n)) => {
+                            log::warn!(
+                                "template switch command receiver lagged behind by {} messages; some commands may have been missed",
+                                n
+                            );
+                        }
+                        Err(tokio::sync::broadcast::error::RecvError::Closed) => break,
                     }
                 }
                 changed = global_changes.recv() => {
-                    // A lagged receiver just misses an update; keep going.
-                    if let Ok(GlobalChanged::Bool { id, value: state }) = changed {
+                    // A lagged receiver just misses some updates; a global's
+                    // lambdas don't need re-evaluating (nothing changed from
+                    // this switch's perspective), so just keep going.
+                    if changed.is_ok() {
                         for (key, switch) in &switches {
-                            if switch.state_global() == Some(id.as_str()) {
-                                log::debug!("template switch '{}' state from global '{}': {}", key, id, state);
-                                state_writer.set(key.clone(), EntityState::Switch(state));
-                                let _ = tx.send(PublishedMessage::SwitchStateChange {
-                                    key: key.clone(),
-                                    state,
-                                });
+                            if let Some(lambda) = &switch.lambda {
+                                if let Some(state) = eval_bool_lambda(&script, key, lambda).await {
+                                    state_writer.set(key.clone(), EntityState::Switch(state));
+                                    let _ = tx.send(PublishedMessage::SwitchStateChange {
+                                        key: key.clone(),
+                                        state,
+                                    });
+                                }
                             }
                         }
                     }
@@ -222,6 +293,7 @@ fn spawn_buttons(
     buttons: Vec<TemplateButtonConfig>,
     tx: Sender<PublishedMessage>,
     globals: Globals,
+    script: ScriptEngine,
 ) {
     if buttons.is_empty() {
         return;
@@ -237,13 +309,19 @@ fn spawn_buttons(
                 Ok(PublishedMessage::ButtonPressed { key }) => {
                     if let Some(button) = buttons.get(&key) {
                         if let Some(trigger) = button.on_press.clone() {
-                            run_actions(trigger.then, &tx, &globals).await;
+                            run_actions(trigger.then, &tx, &globals, &script, None).await;
                         }
                     }
                 }
                 // Ignore other messages; stop only when the bus closes.
                 Ok(_) => {}
-                Err(_) => break,
+                Err(tokio::sync::broadcast::error::RecvError::Lagged(n)) => {
+                    log::warn!(
+                        "template button command receiver lagged behind by {} messages; some presses may have been missed",
+                        n
+                    );
+                }
+                Err(tokio::sync::broadcast::error::RecvError::Closed) => break,
             }
         }
     });
@@ -251,8 +329,9 @@ fn spawn_buttons(
 
 /// Spawn the runtime handler for template numbers. It listens for
 /// [`PublishedMessage::NumberValueCommand`] targeting a template number, runs
-/// `set_action`, and (when `optimistic`, or via a `lambda`'s backing global)
-/// publishes the new state back onto the bus so connected front-ends update.
+/// `set_action` (with the commanded value available as `x` in `lambda`
+/// actions), and (when `optimistic`, or via a `lambda`) publishes the new
+/// state back onto the bus so connected front-ends update.
 ///
 /// Like template switches, template numbers are not platform modules, so
 /// every value published here is mirrored into `state_writer` directly (see
@@ -263,6 +342,7 @@ fn spawn_numbers(
     tx: Sender<PublishedMessage>,
     globals: Globals,
     state_writer: StateStoreWriter,
+    script: ScriptEngine,
 ) {
     if numbers.is_empty() {
         return;
@@ -274,11 +354,11 @@ fn spawn_numbers(
     let mut receiver: Receiver<PublishedMessage> = tx.subscribe();
     let mut global_changes = globals.subscribe();
     tasks.spawn(async move {
-        // Publish the initial value: from the backing global for lambda-driven
-        // numbers, otherwise `initial_value` (defaulting to `min_value`).
+        // Publish the initial value: from the `lambda` if configured,
+        // otherwise `initial_value` (defaulting to `min_value`).
         for (key, number) in &numbers {
-            let initial = match number.state_global() {
-                Some(id) => globals.get_float(id),
+            let initial = match &number.lambda {
+                Some(lambda) => eval_number_lambda(&script, key, lambda).await,
                 None => Some(number.initial()),
             };
             if let Some(value) = initial {
@@ -298,13 +378,13 @@ fn spawn_numbers(
                         Ok(PublishedMessage::NumberValueCommand { key, value }) => {
                             if let Some(number) = numbers.get(&key) {
                                 if let Some(trigger) = number.set_action.clone() {
-                                    run_actions(trigger.then, &tx, &globals).await;
+                                    run_actions(trigger.then, &tx, &globals, &script, Some(value as f64)).await;
                                 }
-                                if let Some(id) = number.state_global() {
-                                    // The state follows the global (published via
-                                    // the change notification below).
-                                    globals.set(id, ubihome_core::global_value::GlobalValue::Float(value as f64));
-                                } else if number.optimistic {
+                                // With a `lambda` the state follows the lambda
+                                // (re-evaluated below on every global change), so
+                                // only optimistic numbers without one echo the
+                                // command.
+                                if number.lambda.is_none() && number.optimistic {
                                     state_writer.set(key.clone(), EntityState::Number(value));
                                     let _ = tx.send(PublishedMessage::NumberValueChanged {
                                         key,
@@ -315,25 +395,27 @@ fn spawn_numbers(
                         }
                         // Ignore other messages; stop only when the bus closes.
                         Ok(_) => {}
-                        Err(_) => break,
+                        Err(tokio::sync::broadcast::error::RecvError::Lagged(n)) => {
+                            log::warn!(
+                                "template number command receiver lagged behind by {} messages; some commands may have been missed",
+                                n
+                            );
+                        }
+                        Err(tokio::sync::broadcast::error::RecvError::Closed) => break,
                     }
                 }
                 changed = global_changes.recv() => {
-                    // A lagged receiver just misses an update; keep going.
-                    let value = match changed {
-                        Ok(GlobalChanged::Float { id, value }) => Some((id, value as f32)),
-                        Ok(GlobalChanged::Int { id, value }) => Some((id, value as f32)),
-                        _ => None,
-                    };
-                    if let Some((id, value)) = value {
+                    // A lagged receiver just misses some updates; keep going.
+                    if changed.is_ok() {
                         for (key, number) in &numbers {
-                            if number.state_global() == Some(id.as_str()) {
-                                log::debug!("template number '{}' value from global '{}': {}", key, id, value);
-                                state_writer.set(key.clone(), EntityState::Number(value));
-                                let _ = tx.send(PublishedMessage::NumberValueChanged {
-                                    key: key.clone(),
-                                    value,
-                                });
+                            if let Some(lambda) = &number.lambda {
+                                if let Some(value) = eval_number_lambda(&script, key, lambda).await {
+                                    state_writer.set(key.clone(), EntityState::Number(value));
+                                    let _ = tx.send(PublishedMessage::NumberValueChanged {
+                                        key: key.clone(),
+                                        value,
+                                    });
+                                }
                             }
                         }
                     }
@@ -345,7 +427,8 @@ fn spawn_numbers(
 
 /// Spawn the runtime handler for template sensors. Sensors are read-only, so
 /// unlike template switches/numbers there is no command to react to: the
-/// value always comes from the `lambda`'s backing global.
+/// value always comes from the `lambda`, re-evaluated on every global
+/// change.
 ///
 /// Values are published as [`ChangedMessage::SensorValueChange`] on
 /// `modules_tx`, i.e. exactly as a hardware platform module would report a
@@ -357,6 +440,7 @@ fn spawn_sensors(
     sensors: Vec<TemplateSensorConfig>,
     modules_tx: Sender<ChangedMessage>,
     globals: Globals,
+    script: ScriptEngine,
 ) {
     if sensors.is_empty() {
         return;
@@ -367,41 +451,28 @@ fn spawn_sensors(
         .collect();
     let mut global_changes = globals.subscribe();
     tasks.spawn(async move {
-        // Publish the initial value from each sensor's backing global.
+        // Publish the initial value of every sensor with a `lambda`.
         for (key, sensor) in &sensors {
-            if let Some(value) = globals.get_float(sensor.state_global()) {
-                log::debug!(
-                    "template sensor '{}' initial value from global '{}': {}",
-                    key,
-                    sensor.state_global(),
-                    value
-                );
-                let _ = modules_tx.send(ChangedMessage::SensorValueChange {
-                    key: key.clone(),
-                    value,
-                });
+            if let Some(lambda) = &sensor.lambda {
+                if let Some(value) = eval_number_lambda(&script, key, lambda).await {
+                    log::debug!("template sensor '{}' initial value: {}", key, value);
+                    let _ = modules_tx.send(ChangedMessage::SensorValueChange {
+                        key: key.clone(),
+                        value,
+                    });
+                }
             }
         }
 
         loop {
-            // A lagged receiver just misses an update; keep going.
-            let Ok(changed) = global_changes.recv().await else {
+            // A lagged receiver just misses some updates; keep going.
+            let Ok(()) = global_changes.recv().await else {
                 break;
             };
-            let value = match changed {
-                GlobalChanged::Float { id, value } => Some((id, value as f32)),
-                GlobalChanged::Int { id, value } => Some((id, value as f32)),
-                _ => None,
-            };
-            if let Some((id, value)) = value {
-                for (key, sensor) in &sensors {
-                    if sensor.state_global() == id.as_str() {
-                        log::debug!(
-                            "template sensor '{}' value from global '{}': {}",
-                            key,
-                            id,
-                            value
-                        );
+            for (key, sensor) in &sensors {
+                if let Some(lambda) = &sensor.lambda {
+                    if let Some(value) = eval_number_lambda(&script, key, lambda).await {
+                        log::debug!("template sensor '{}' value: {}", key, value);
                         let _ = modules_tx.send(ChangedMessage::SensorValueChange {
                             key: key.clone(),
                             value,

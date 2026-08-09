@@ -21,6 +21,7 @@ and on the [Media Player](/features/entities/media_player/):
 - `on_play` — runs when playback starts.
 - `on_pause` — runs when playback stops/pauses.
 - `on_volume_change` — runs when the volume changes.
+- `on_mute_change` — runs when the muted state changes.
 
 There is also a global `on_startup` trigger, configured under `ubihome:`, that runs once when UbiHome starts:
 
@@ -61,6 +62,7 @@ See [Filters](/features/components/filters/) for the available debounce filters.
 | `button.press`    | button `id` | Presses the referenced [button](/features/entities/button/), running its platform action. |
 | `globals.set`     | `id`, `value` | Sets a [global](/features/components/globals/) variable to `value`. |
 | `delay`           | duration    | Pauses the action list for the given duration (e.g. `2s`, `500ms`) before running the next action. |
+| `lambda`          | JavaScript source | Runs an inline JavaScript lambda. See below. |
 | `logger.log`      | value       | Logs the given value to the console at info level. |
 
 For entity actions the argument is the `id` of the target entity, so make sure the switch or button you reference has an `id` set.
@@ -86,3 +88,53 @@ way `globals.set`'s `value` does:
 ```yaml
 - logger.log: 'Motion detected'
 ```
+
+## `lambda` Actions
+
+A `lambda` action runs inline JavaScript, similar to an ESPHome C++ lambda.
+It has access to:
+
+- `id(name)` — the current value of a [global](/features/components/globals/),
+  or (for anything else) a handle exposing only the commands valid for that
+  id's actual kind: `turn_on()`/`turn_off()` for a switch, `press()` for a
+  button. Calling an unsupported command (or referencing an unknown id)
+  throws.
+- `set_global(name, value)` — sets a global (there is no assignment syntax
+  like ESPHome's `id(x) = value;`).
+- `x` — for triggers that carry a commanded value (currently only a
+  [template](/features/platforms/template/) number's `set_action`); otherwise
+  `undefined`.
+- `log(message)` — writes to the application log.
+- `delay(ms)` — pauses the script for `ms` milliseconds, e.g. to pace
+  repeated commands in a loop instead of firing them all at once.
+
+```yaml
+number:
+  - platform: template
+    name: 'Volume'
+    min_value: 0
+    max_value: 100
+    step: 1
+    lambda: |-
+      return id(global_volume)
+    set_action:
+      then:
+        - lambda: |
+            // x is the value given by set_action; press volume_up_button /
+            // volume_down_button one step at a time towards it.
+            let difference = id(global_volume) - x
+            while (difference != 0) {
+              if (difference < 0) {
+                id(volume_up_button).press();
+                difference = difference + 1
+              } else {
+                id(volume_down_button).press();
+                difference = difference - 1
+              }
+            }
+```
+
+A template switch/number's own `lambda` (the one that computes its reported
+state, not a `lambda` action) runs the same JavaScript engine and supports
+`id()`/`log()` too, but not `x` — see
+[Template](/features/platforms/template/).

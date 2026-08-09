@@ -10,6 +10,7 @@
 //! entities, so it could not drive them. See `documentation` for the rationale.
 
 pub mod globals;
+pub mod script;
 pub mod template;
 
 use std::collections::HashMap;
@@ -23,6 +24,7 @@ use ubihome_core::template_mapper;
 use ubihome_core::PublishedMessage;
 
 pub use globals::{GlobalConfig, Globals};
+pub use script::ScriptEngine;
 pub use template::TemplateConfig;
 
 use template::{
@@ -90,11 +92,22 @@ pub fn parse(config_string: &str, config_path: &str) -> Result<BuiltinConfig, St
 
 /// Run a list of automation actions in order, publishing the corresponding
 /// messages onto the internal bus. Shared by every trigger site (binary sensor
-/// `on_press`/`on_release`, template switch `turn_on_action`/`turn_off_action`).
+/// `on_press`/`on_release`, template switch `turn_on_action`/`turn_off_action`,
+/// template number `set_action`, ...).
 ///
 /// Actions are executed sequentially so that a `delay` action pauses the list
 /// before the following actions run.
-pub async fn run_actions(actions: Vec<Action>, tx: &Sender<PublishedMessage>, globals: &Globals) {
+///
+/// `x` is bound as the JS `x` global for `lambda` actions, for triggers that
+/// carry a commanded value (currently only a template number's
+/// `set_action`); pass `None` for every other trigger site.
+pub async fn run_actions(
+    actions: Vec<Action>,
+    tx: &Sender<PublishedMessage>,
+    globals: &Globals,
+    script: &ScriptEngine,
+    x: Option<f64>,
+) {
     for action in actions {
         match &action.action {
             ActionType::SwitchTurnOn(key) => {
@@ -117,6 +130,11 @@ pub async fn run_actions(actions: Vec<Action>, tx: &Sender<PublishedMessage>, gl
             }
             ActionType::Delay(duration) => {
                 tokio::time::sleep(*duration).await;
+            }
+            ActionType::Lambda(source) => {
+                if let Err(e) = script.eval(source, x).await {
+                    log::error!("lambda action failed: {}", e);
+                }
             }
             ActionType::LoggerLog(value) => {
                 log::info!("{value}");

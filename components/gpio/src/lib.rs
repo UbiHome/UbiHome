@@ -288,7 +288,18 @@ impl Module for UbiHomePlatform {
                         let cloned_sender = sender.clone();
                         let cloned_output_pins = output_pins.clone();
                         tokio::spawn(async move {
-                            while let Ok(message) = receiver.recv().await {
+                            loop {
+                                let message = match receiver.recv().await {
+                                    Ok(message) => message,
+                                    Err(tokio::sync::broadcast::error::RecvError::Lagged(n)) => {
+                                        warn!(
+                                            "GPIO switch command receiver lagged behind by {} messages; some commands may have been missed",
+                                            n
+                                        );
+                                        continue;
+                                    }
+                                    Err(tokio::sync::broadcast::error::RecvError::Closed) => break,
+                                };
                                 if let PublishedMessage::SwitchStateCommand { key, state } = message
                                 {
                                     if let Some(switch) = cloned_switches.get(&key) {

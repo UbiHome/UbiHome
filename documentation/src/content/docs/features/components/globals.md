@@ -33,16 +33,19 @@ which takes `id`/`value` arguments instead of a single id:
     value: true
 ```
 
-A `bool` global can also be read as the state of a
-[template switch](/features/platforms/template/) using a `globals.get` lambda —
-written in YAML, not code:
+A `lambda` [action](/features/components/actions/) can instead read/write a
+global from JavaScript with `id()`/`set_global()`.
+
+A global can also be read as the state of a
+[template](/features/platforms/template/) switch or number using `id()` in a
+`lambda`:
 
 ```yaml
 switch:
   - platform: template
     name: 'Relay'
-    lambda:
-      globals.get: door_open
+    lambda: |-
+      return id(door_open)
 ```
 
 Similar to ESPHome: [Globals](https://esphome.io/components/globals/)

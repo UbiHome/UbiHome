@@ -5,7 +5,7 @@ use shell_exec::{Execution, Shell, ShellError};
 use std::collections::HashMap;
 use std::{future::Future, pin::Pin, str, time::Duration};
 use tokio::{
-    sync::broadcast::{Receiver, Sender},
+    sync::broadcast::{self, Receiver, Sender},
     time,
 };
 use ubihome_core::internal::sensors::{
@@ -342,7 +342,18 @@ impl Module for UbiHomePlatform {
             tokio::spawn(async move {
                 let cloned_sender = csender.clone();
 
-                while let Ok(cmd) = receiver.recv().await {
+                loop {
+                    let cmd = match receiver.recv().await {
+                        Ok(cmd) => cmd,
+                        Err(broadcast::error::RecvError::Lagged(n)) => {
+                            warn!(
+                                "Shell command receiver lagged behind by {} messages; some commands may have been missed",
+                                n
+                            );
+                            continue;
+                        }
+                        Err(broadcast::error::RecvError::Closed) => break,
+                    };
                     match cmd {
                         PublishedMessage::SwitchStateCommand { key, state } => {
                             debug!("SwitchStateChanged: {} {}", key, state);

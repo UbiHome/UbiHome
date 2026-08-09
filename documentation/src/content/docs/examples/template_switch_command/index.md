@@ -9,8 +9,8 @@ binary sensor toggles the template switch, whose `turn_on_action` /
 `turn_off_action` drive entities on two different platforms - a
 [gpio](/features/platforms/gpio/) relay switch and a shell button - and track
 state in a [global](/features/components/globals/). The switch's `lambda`
-reads that global back with `globals.get`, so its reported state always
-reflects the global.
+reads that global back with `id()`, so its reported state always reflects
+the global.
 
 ```yaml
 ubihome:
@@ -30,8 +30,8 @@ switch:
   - platform: template
     name: 'Desk Light'
     id: desk_light
-    lambda:
-      globals.get: light_on
+    lambda: |-
+      return id(light_on)
     turn_on_action:
       then:
         - switch.turn_on: relay

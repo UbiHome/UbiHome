@@ -114,14 +114,24 @@ template_media_player! {
         /// ID of the output device (defaults to first device found).
         #[garde(skip)]
         pub output_id: Option<String>,
-        /// Default playback volume (0-100) applied when the player is initialized.
-        /// The server can still change it at runtime via volume commands. Default: 100.
+        /// Default playback volume (0-100), used as the volume initially reported
+        /// to the server when the player is initialized. The server can change it
+        /// at runtime via volume commands. Default: 100.
         #[garde(range(min = 0, max = 100))]
         pub volume: Option<u8>,
         /// Whether the player starts muted. The server can still change it at
         /// runtime via mute commands. Default: false.
         #[garde(skip)]
         pub muted: Option<bool>,
+        /// Whether volume commands from the server are applied to the
+        /// software player. Disable this if `on_volume_change` already
+        /// drives a hardware volume, to avoid the volume being applied
+        /// twice (once in software, once via the hardware trigger); the
+        /// software player then always plays back at full volume, while the
+        /// volume reported to the server is still updated optimistically
+        /// (there is no feedback path from the hardware). Default: true.
+        #[garde(skip)]
+        pub software_volume: Option<bool>,
     }
 }
 
@@ -149,6 +159,7 @@ struct PlayerRuntimeConfig {
     output_id: Option<String>,
     volume: u8,
     muted: bool,
+    software_volume: bool,
     bit_depth: u8,
     sample_rate: u32,
     buffer_size: Option<u32>,
@@ -168,6 +179,7 @@ async fn run_player(cfg: PlayerRuntimeConfig, changed_tx: Sender<ChangedMessage>
         output_id,
         volume,
         muted,
+        software_volume,
         bit_depth,
         sample_rate,
         buffer_size,
@@ -196,7 +208,12 @@ async fn run_player(cfg: PlayerRuntimeConfig, changed_tx: Sender<ChangedMessage>
         // stream ever starts, so the desired values are tracked here and
         // applied whenever the player is (re-)initialized, rather than only
         // being accepted once a player already exists.
-        let mut current_volume = volume;
+        // When software_volume is disabled, `volume` is treated as a purely
+        // logical/protocol value (reported to the server and available to
+        // `on_volume_change`) and the software player itself always plays
+        // back at full volume, since a hardware trigger is expected to
+        // apply the actual attenuation.
+        let mut current_volume = if software_volume { volume } else { 100 };
         let mut current_muted = muted;
 
         while let Ok(cmd) = player_rx.recv() {
@@ -289,6 +306,13 @@ async fn run_player(cfg: PlayerRuntimeConfig, changed_tx: Sender<ChangedMessage>
     // Whether a player has ever been initialized. Used to avoid clearing a
     // player that does not exist yet (e.g. on the very first connection).
     let mut player_ever_initialized = false;
+    // Volume reported to the server, seeded from the configured `volume`
+    // and then optimistically updated to whatever value the server last
+    // requested via a volume command - there is no feedback path from the
+    // actual (possibly hardware-controlled) volume, so this is always a
+    // best guess. Tracked across reconnects so a dropped connection resumes
+    // with the last-known value instead of resetting to the config default.
+    let mut reported_volume = volume;
 
     loop {
         info!("Connecting to Sendspin server at {}...", server);
@@ -306,7 +330,7 @@ async fn run_player(cfg: PlayerRuntimeConfig, changed_tx: Sender<ChangedMessage>
                 supported_commands: vec!["volume".to_string(), "mute".to_string()],
             })
             .initial_player_state(PlayerState {
-                volume: Some(volume),
+                volume: Some(reported_volume),
                 muted: Some(muted),
                 static_delay_ms: Some(0),
                 supported_commands: None,
@@ -479,8 +503,13 @@ async fn run_player(cfg: PlayerRuntimeConfig, changed_tx: Sender<ChangedMessage>
                                                     log::warn!("Received server command without volume field");
                                                 }
                                                 Some(vol) => {
-                                                    info!("Setting player volume to {}", vol);
-                                                    let _ = player_tx.send(PlayerCommand::SetVolume(vol));
+                                                    reported_volume = vol;
+                                                    if software_volume {
+                                                        info!("Setting player volume to {}", vol);
+                                                        let _ = player_tx.send(PlayerCommand::SetVolume(vol));
+                                                    } else {
+                                                        debug!("Software volume disabled; optimistically reporting volume {} without applying it to the player", vol);
+                                                    }
                                                     let _ = changed_tx.send(ChangedMessage::MediaPlayerStateChange {
                                                         key: media_player_id.clone(),
                                                         playing: None,
@@ -780,6 +809,7 @@ impl Module for UbiHomePlatform {
                     output_id: player_cfg.output_id.clone(),
                     volume: player_cfg.volume.unwrap_or(100),
                     muted: player_cfg.muted.unwrap_or(false),
+                    software_volume: player_cfg.software_volume.unwrap_or(true),
                     bit_depth,
                     sample_rate,
                     buffer_size,
@@ -827,6 +857,7 @@ media_player:
     output_id: "alsa:hw:CARD=Dummy,DEV=0"
     volume: 42
     muted: true
+    software_volume: false
     on_play:
       then:
         - switch.turn_on: office_light
@@ -862,6 +893,7 @@ media_player:
         );
         assert_eq!(media_player.volume, Some(42));
         assert_eq!(media_player.muted, Some(true));
+        assert_eq!(media_player.software_volume, Some(false));
         assert!(media_player.on_play.is_some(), "on_play should be set");
         assert!(media_player.on_pause.is_some(), "on_pause should be set");
         assert!(
@@ -905,6 +937,7 @@ media_player:
         assert!(media_player.output_id.is_none());
         assert!(media_player.volume.is_none());
         assert!(media_player.muted.is_none());
+        assert!(media_player.software_volume.is_none());
         assert!(
             media_player.on_play.is_none(),
             "on_play should default to None"
