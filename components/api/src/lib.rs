@@ -31,10 +31,10 @@ use serde::{Deserialize, Deserializer};
 use ubihome_core::configuration::base::EntityCategory as UbiEntityCategory;
 
 fn entity_category_from(category: Option<UbiEntityCategory>) -> i32 {
-    match category.unwrap_or_default() {
-        UbiEntityCategory::Diagnostic => EntityCategory::Diagnostic as i32,
-        UbiEntityCategory::Config => EntityCategory::Config as i32,
-        UbiEntityCategory::None => EntityCategory::None as i32,
+    match category {
+        Some(UbiEntityCategory::Diagnostic) => EntityCategory::Diagnostic as i32,
+        Some(UbiEntityCategory::Config) => EntityCategory::Config as i32,
+        None => EntityCategory::None as i32,
     }
 }
 use std::collections::HashMap;

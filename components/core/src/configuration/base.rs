@@ -1,14 +1,14 @@
 use serde::{Deserialize, Serialize};
 
-/// Home Assistant entity category. Controls whether an entity is shown among
-/// the primary controls (`None`) or under the Config / Diagnostic sections.
+/// Home Assistant entity category. Controls whether an entity is shown under
+/// the Config or Diagnostic sections. Entities without a category (the
+/// common case) are represented as `Option::None` on the enclosing field
+/// rather than a variant here, so there is only one way to say "no category".
 ///
 /// See <https://developers.home-assistant.io/docs/core/entity/#registry-properties>.
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum EntityCategory {
-    #[default]
-    None,
     Config,
     Diagnostic,
 }
