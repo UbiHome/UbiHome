@@ -11,6 +11,12 @@ The status platform provides a binary sensor that is `on` for as long as the Ubi
 
 ## Configuration
 
+Enable the platform:
+
+```yaml
+status:
+```
+
 ```yaml
 binary_sensor:
   - platform: status
@@ -21,7 +27,7 @@ binary_sensor:
 
 ## Options
 
-This platform has no global (`status:`) options; only the standard [Binary Sensor entity](/features/entities/binary_sensor/) options apply.
+This platform has no global (`status:`) options - only the standard [Binary Sensor entity](/features/entities/binary_sensor/) options apply.
 
 ## Actions
 

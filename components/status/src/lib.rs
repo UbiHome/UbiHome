@@ -1,6 +1,6 @@
 use log::debug;
-use serde::Deserialize;
-use std::{future::Future, pin::Pin};
+use serde::{Deserialize, Deserializer};
+use std::{collections::HashMap, future::Future, pin::Pin};
 use tokio::sync::broadcast::{Receiver, Sender};
 use ubihome_core::internal::sensors::{UbiBinarySensor, UbiComponent};
 use ubihome_core::state::StateStore;

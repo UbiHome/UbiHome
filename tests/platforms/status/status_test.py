@@ -29,6 +29,8 @@ ubihome:
 
 api:
 
+status:
+
 binary_sensor:
   - platform: status
     id: status
