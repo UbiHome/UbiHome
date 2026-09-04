@@ -30,8 +30,11 @@ type ClockSyncRef = Arc<parking_lot::Mutex<ClockSync>>;
 enum PlayerCommand {
     /// Enqueue an audio buffer for playback
     Enqueue(AudioBuffer),
-    /// Clear the player buffer
+    /// Clear the player buffer (stream continues, e.g. a seek)
     Clear,
+    /// Tear down the player and release the audio device (stream truly
+    /// ended, e.g. pause/stop or a lost connection)
+    Stop,
     /// Initialize the player with the given format and clock sync
     Init(AudioFormat, ClockSyncRef),
     /// Set the player volume (0-100)
@@ -244,6 +247,16 @@ async fn run_player(cfg: PlayerRuntimeConfig, changed_tx: Sender<ChangedMessage>
                         log::warn!("Player not initialized yet, cannot clear");
                     }
                 }
+                PlayerCommand::Stop => {
+                    // Dropping the player releases its cpal stream (and the
+                    // underlying ALSA device). Leaving it alive here left an
+                    // idle exclusive `hw:` device open: it produced periodic
+                    // underrun clicks and made the next Init fail with
+                    // "device busy" since the old stream was never closed.
+                    if synced_player.take().is_some() {
+                        debug!("Audio output stopped, device released");
+                    }
+                }
                 PlayerCommand::SetVolume(vol) => {
                     current_volume = vol;
                     if let Some(ref mut player) = synced_player {
@@ -266,7 +279,7 @@ async fn run_player(cfg: PlayerRuntimeConfig, changed_tx: Sender<ChangedMessage>
     // backoff instead of exiting the module, which would drop this player
     // until UbiHome is restarted.
     let initial_backoff = std::time::Duration::from_secs(1);
-    let max_backoff = std::time::Duration::from_secs(30);
+    let max_backoff = std::time::Duration::from_secs(600);
     // A connection must stay up at least this long to be treated as stable.
     // Connections that drop sooner keep escalating the backoff, so a server
     // that accepts the connection and then drops the session immediately is
@@ -326,10 +339,10 @@ async fn run_player(cfg: PlayerRuntimeConfig, changed_tx: Sender<ChangedMessage>
 
         info!("Waiting for stream to start...");
 
-        // Clear any audio left buffered from a previous connection. Skip it
+        // Release any player left over from a previous connection. Skip it
         // until a player exists, otherwise this warns on every startup.
         if player_ever_initialized {
-            let _ = player_tx.send(PlayerCommand::Clear);
+            let _ = player_tx.send(PlayerCommand::Stop);
         }
 
         // Message handling variables (reset for each connection)
@@ -421,7 +434,7 @@ async fn run_player(cfg: PlayerRuntimeConfig, changed_tx: Sender<ChangedMessage>
                         }
                         Message::StreamEnd(stream_end) => {
                             debug!("Stream ended: {:?}", stream_end.roles);
-                            let _ = player_tx.send(PlayerCommand::Clear);
+                            let _ = player_tx.send(PlayerCommand::Stop);
                             buffered_duration_us = 0;
                             playback_started = false;
                             first_chunk_logged = false;
@@ -644,7 +657,7 @@ async fn run_player(cfg: PlayerRuntimeConfig, changed_tx: Sender<ChangedMessage>
             server, backoff
         );
         if player_ever_initialized {
-            let _ = player_tx.send(PlayerCommand::Clear);
+            let _ = player_tx.send(PlayerCommand::Stop);
         }
         tokio::time::sleep(backoff).await;
         backoff = (backoff * 2).min(max_backoff);
