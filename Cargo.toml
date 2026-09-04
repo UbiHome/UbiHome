@@ -24,6 +24,7 @@ ubihome-sendspin = { path = "components/sendspin" }
 ubihome-shell = { path = "components/shell" }
 ubihome-status = { path = "components/status" }
 ubihome-web_server = { path = "components/web_server" }
+ubihome-wireguard = { path = "components/wireguard" }
 inquire = "0.7.5"
 shell_exec = "0.2.0"
 flexi_logger = "0.29.8"
@@ -84,4 +85,5 @@ members = [
     "components/shell",
     "components/status",
     "components/web_server",
+    "components/wireguard",
 ]
