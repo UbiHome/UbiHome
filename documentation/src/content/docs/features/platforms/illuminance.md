@@ -1,5 +1,6 @@
 ---
 title: 'Illuminance'
+description: 'Report ambient light levels from e.g. a laptop'
 tags:
   - illuminance
   - linux
@@ -107,5 +108,6 @@ illuminance:
 
 <!-- Backlinks to be displayed  -->
 <div style="display:none" aria-hidden="true">
+  <a href="/features/entities/sensor/"></a>
   <a href="/examples/illuminance/"></a>
 </div>

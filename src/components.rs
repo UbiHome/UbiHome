@@ -2,6 +2,7 @@ use serde::Deserialize;
 use std::collections::BTreeSet;
 use tokio::sync::broadcast::{Receiver, Sender};
 use ubihome_core::internal::sensors::UbiComponent;
+use ubihome_core::state::StateStore;
 use ubihome_core::Module;
 use ubihome_core::{ChangedMessage, PublishedMessage};
 
@@ -88,17 +89,19 @@ pub(crate) fn run_platforms(
     modules: Vec<Box<dyn Module>>,
     sender: Sender<ChangedMessage>,
     receiver: Receiver<PublishedMessage>,
+    state: StateStore,
 ) {
     for module in modules {
         let tx = sender.clone();
         let rx = receiver.resubscribe();
+        let state = state.clone();
         tasks.spawn(async move {
             // A module returning Ok(()) is a normal, intentional exit and stays
             // silent. An Err is a real failure: unwrap panics, which is reported to
             // Sentry by the panic integration. Tasks are collected in a JoinSet so
             // the caller observes the panic (instead of it being swallowed by this
             // task) and shuts the application down.
-            module.run(tx, rx).await.unwrap();
+            module.run(tx, rx, state).await.unwrap();
         });
     }
 }
@@ -106,6 +109,7 @@ pub(crate) fn run_platforms(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use ubihome_core::state::StateStoreWriter;
     use ubihome_core::ModuleRunFuture;
 
     #[test]
@@ -134,6 +138,7 @@ mod tests {
             &self,
             _sender: Sender<ChangedMessage>,
             _receiver: Receiver<PublishedMessage>,
+            _state: StateStore,
         ) -> ModuleRunFuture {
             let should_err = self.should_err;
             Box::pin(async move {
@@ -151,7 +156,8 @@ mod tests {
         let (_published_tx, published_rx) = tokio::sync::broadcast::channel::<PublishedMessage>(16);
         let mut tasks = tokio::task::JoinSet::new();
         let modules: Vec<Box<dyn Module>> = vec![Box::new(MockModule { should_err })];
-        run_platforms(&mut tasks, modules, changed_tx, published_rx);
+        let (_state_writer, state) = StateStoreWriter::new(Vec::new());
+        run_platforms(&mut tasks, modules, changed_tx, published_rx, state);
         tasks
     }
 

@@ -1,5 +1,6 @@
 ---
 title: 'Logger'
+description: 'Configure log level and log files'
 tags:
   - linux
   - macos

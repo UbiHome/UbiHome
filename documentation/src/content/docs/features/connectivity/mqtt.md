@@ -1,5 +1,6 @@
 ---
 title: 'MQTT'
+description: 'Connect to any MQTT broker'
 ---
 
 > Note: Not all platforms are currently exposed via MQTT.

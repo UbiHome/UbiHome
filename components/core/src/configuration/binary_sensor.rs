@@ -25,29 +25,7 @@ pub struct BinarySensorFilter {
     pub filter: FilterType,
 }
 
-#[derive(Clone, Serialize, Deserialize, Debug, Validate)]
-pub enum ActionType {
-    #[serde(rename = "switch.turn_on")]
-    SwitchTurnOn(#[garde(ascii)] String),
-
-    #[serde(rename = "switch.turn_off")]
-    SwitchTurnOff(#[garde(ascii)] String),
-
-    #[serde(rename = "button.press")]
-    ButtonPress(#[garde(ascii)] String),
-}
-
-#[derive(Clone, Serialize, Deserialize, Debug, Validate)]
-#[serde(deny_unknown_fields)]
-pub struct Action {
-    #[serde(flatten)]
-    #[garde(skip)]
-    pub action: ActionType,
-}
-
-#[derive(Clone, Serialize, Deserialize, Debug, Validate)]
-#[serde(deny_unknown_fields)]
-pub struct Trigger {
-    #[garde(dive)]
-    pub then: Vec<Action>,
-}
+// Actions and triggers are shared across components (binary sensors, template
+// switches, ...) and therefore live in the `automation` module. They are
+// re-exported here for backwards compatibility with existing imports.
+pub use crate::configuration::automation::{Action, ActionType, Trigger};

@@ -7,9 +7,8 @@ use tokio::{
     sync::broadcast::{Receiver, Sender},
     time,
 };
-use ubihome_core::constants::is_id_string_option;
-use ubihome_core::constants::is_readable_string;
 use ubihome_core::internal::sensors::UbiComponent;
+use ubihome_core::state::StateStore;
 use ubihome_core::template_sensor;
 use ubihome_core::with_base_entity_properties;
 use ubihome_core::{
@@ -44,6 +43,7 @@ config_template!(
     NoConfig,
     NoConfig,
     AmbientLightSensorConfig,
+    NoConfig,
     NoConfig,
     NoConfig,
     NoConfig,
@@ -87,8 +87,10 @@ impl Module for UbiHomePlatform {
                         .clone()
                         .or_else(|| Some("lx".to_string())),
                     accuracy_decimals: sensor.accuracy_decimals,
-                    name: sensor.name.clone(),
+                    name: sensor.name.clone().unwrap_or_default(),
+                    internal: sensor.internal,
                     id: id.clone(),
+                    entity_category: None,
                     filters: sensor.filters.clone(),
                 }));
                 sensors.insert(id.clone(), sensor);
@@ -110,6 +112,7 @@ impl Module for UbiHomePlatform {
         &self,
         sender: Sender<ChangedMessage>,
         _receiver: Receiver<PublishedMessage>,
+        _state: StateStore,
     ) -> Pin<Box<dyn Future<Output = Result<(), Box<dyn std::error::Error>>> + Send + 'static>>
     {
         let sensors = self.sensors.clone();

@@ -8,7 +8,8 @@ use tokio::sync::broadcast::{Receiver, Sender};
 use ubihome_core::features::ip::{get_ip_address, get_network_mac_address};
 use ubihome_core::NoConfig;
 use ubihome_core::{
-    config_template, internal::sensors::UbiComponent, ChangedMessage, Module, PublishedMessage,
+    config_template, internal::sensors::UbiComponent, state::StateStore, ChangedMessage, Module,
+    PublishedMessage,
 };
 
 #[derive(Clone, Deserialize, Debug, Validate)]
@@ -24,6 +25,7 @@ pub struct MdnsConfig {
 config_template!(
     mdns,
     Option<MdnsConfig>,
+    NoConfig,
     NoConfig,
     NoConfig,
     NoConfig,
@@ -55,6 +57,7 @@ impl Module for UbiHomePlatform {
         &self,
         _sender: Sender<ChangedMessage>,
         _: Receiver<PublishedMessage>,
+        _state: StateStore,
     ) -> Pin<Box<dyn Future<Output = Result<(), Box<dyn std::error::Error>>> + Send + 'static>>
     {
         let config = self.config.clone();

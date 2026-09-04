@@ -1,10 +1,12 @@
+mod builtins;
 mod components;
 mod config;
 mod constants;
+mod logger_setup;
 
 use commands::run;
 use commands::un_install::{install, uninstall};
-use commands::update::update;
+use commands::update::{update, update_pr};
 use flexi_logger::{Duplicate, Logger};
 
 use clap::{Arg, Command};
@@ -108,8 +110,7 @@ fn cli() -> Command {
             Arg::new("configuration_file")
             .short('c')
             .long("configuration")
-            .help("Optional configuration file. If not provided, the default configuration will be used.")
-            .default_values(vec![DEFAULT_CONFIG_FILE_YML, DEFAULT_CONFIG_FILE_YAML]),
+            .help("Optional configuration file. If not provided, config.yml (or config.yaml) in the current directory is used."),
             Arg::new("log_level")
             .long("log-level")
             .global(true)
@@ -141,6 +142,24 @@ fn cli() -> Command {
                         .help("Include pre-release tags (unstable versions).")
                         .action(clap::ArgAction::SetTrue)
                         .num_args(0),
+                )
+                .subcommand(
+                    Command::new("pr")
+                        .about("Update to the latest development build published for a pull request.")
+                        .arg(
+                            Arg::new("pr_number")
+                                .help("The pull request number to update to.")
+                                .value_parser(clap::value_parser!(u32))
+                                .required(true),
+                        )
+                        .arg(
+                            Arg::new("token")
+                                .long("token")
+                                .env("GITHUB_TOKEN")
+                                .help("GitHub token used to download the PR build.")
+                                .num_args(1)
+                                .required(true),
+                        ),
                 ),
         )
         .subcommand(
@@ -223,11 +242,21 @@ fn main() {
                         logger_builder = logger_builder.duplicate_to_stdout(Duplicate::Trace);
                         logger_builder.start().unwrap();
                     }
-                    let include_pre_release = sub_matches
-                        .get_one::<bool>("include_pre_release")
-                        .copied()
-                        .unwrap_or(false);
-                    update(include_pre_release).unwrap();
+                    match sub_matches.subcommand() {
+                        Some(("pr", pr_matches)) => {
+                            let pr_number = *pr_matches.get_one::<u32>("pr_number").unwrap();
+                            let github_token =
+                                pr_matches.get_one::<String>("token").unwrap().clone();
+                            update_pr(pr_number, github_token).unwrap();
+                        }
+                        _ => {
+                            let include_pre_release = sub_matches
+                                .get_one::<bool>("include_pre_release")
+                                .copied()
+                                .unwrap_or(false);
+                            update(include_pre_release).unwrap();
+                        }
+                    }
                 }
                 Some(("uninstall", sub_matches)) => {
                     let location = sub_matches.try_get_one::<String>("location").unwrap();

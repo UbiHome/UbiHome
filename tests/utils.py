@@ -2,7 +2,6 @@ import asyncio
 import logging
 import os
 import platform
-import random
 import re
 import signal
 import socket
@@ -18,6 +17,13 @@ def represent_none(self, _):
 
 
 yaml.add_representer(type(None), represent_none)
+
+
+def _get_free_port() -> int:
+    """Ask the OS for an unused TCP port instead of guessing one."""
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+        sock.bind(("127.0.0.1", 0))
+        return sock.getsockname()[1]
 
 
 @dataclass
@@ -181,7 +187,7 @@ class UbiHome:
             if "api" in config_yaml:
                 if config_yaml["api"] is None:
                     config_yaml["api"] = {}
-                self.port = random.randint(1024, 65535)
+                self.port = _get_free_port()
                 config_yaml["api"]["port"] = self.port
 
             self.config = yaml.dump(config_yaml)

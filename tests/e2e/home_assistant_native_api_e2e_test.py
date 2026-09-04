@@ -198,10 +198,10 @@ async def test_button_and_switch_actions_are_executed(ha_page: Page, io_mock_fac
         await add_esphome_integration(ha_page, ubihome.port)
 
         await ha_page.get_by_role("button", name="Press").click()
-        ubihome.button_sensor_mock.wait_for_mock_state("button")
+        await ubihome.button_sensor_mock.wait_for_mock_state("button")
 
-        await ha_page.get_by_role("button", name=f"Turn {ubihome.device_name} Switch it on").click()
-        ubihome.switch_mock.wait_for_mock_state("true")
+        await ha_page.get_by_role("switch", name=f"Toggle {ubihome.device_name} Switch it on").click()
+        await ubihome.switch_mock.wait_for_mock_state("true")
 
 
 async def test_number_action_is_executed(ha_page: Page, io_mock_factory: IOMockFactory):
@@ -213,7 +213,7 @@ async def test_number_action_is_executed(ha_page: Page, io_mock_factory: IOMockF
         number_input = ha_page.locator("state-card-number input")
         await number_input.fill("25")
         await number_input.press("Enter")
-        ubihome.number_set_mock.wait_for_mock_state("25")
+        await ubihome.number_set_mock.wait_for_mock_state("25")
 
 
 @pytest.mark.parametrize(

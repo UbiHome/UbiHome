@@ -1,60 +1,71 @@
 ---
 title: 'Sendspin - Music Streaming'
+description: 'Stream music via Sendspin, e.g. Music Assistant'
 sidebar:
   badge:
     text: Experimental
     variant: caution
-tags: 
+tags:
   - windows
   - linux
   - macos
-
 ---
 
 UbiHome can be used as a client for [Sendspin](https://www.sendspin-audio.com/), e.g. for [Music Assistant](https://www.music-assistant.io/) which natively integrates with Home Assistant.
+
+Each `media_player` entry is its own Sendspin player, with its own connection to the server. Settings that only make sense per-player (client name/id, output device, volume, mute) live on the `media_player` entry; settings shared by every player (server address, audio format, buffer size) stay in the top-level `sendspin:` section.
 
 ```yaml
 sendspin:
   # Optional: Address of the Sendspin server (default: automatically discovered via mDNS)
   # server: ws://
-  # Optional: Name of this client in Sendspin (default: ubihome device name)
-  # name:
-  # Optional: Unique ID of this client in Sendspin (default: ubihome device name)
-  # client_id:
-  # Optional: ID of the output device (defaults to first device found)
-  # output_id:
-  # Optional: Default playback volume 0-100, applied on init (default: 100)
-  # volume: 100
-  # Optional: Start muted (default: false)
-  # muted: false
+  # Optional: Audio format used by every player (defaults shown)
+  # bit_depth: 16
+  # sample_rate: 48000
+  # Optional: ALSA buffer size in frames, shared by every player (default: system default)
+  # buffer_size:
+  # Optional: Milliseconds of audio to pre-buffer before starting playback (default: 500)
+  # start_buffer_ms: 500
+
+media_player:
+  - platform: sendspin
+    name: 'Living Room Speaker'
+    # Optional: Unique ID of this client in Sendspin (default: this entity's id)
+    # id: living_room_speaker
+    # Optional: ID of the output device (defaults to first device found)
+    # output_id:
+    # Optional: Default playback volume 0-100, applied on init (default: 100)
+    # volume: 100
+    # Optional: Start muted (default: false)
+    # muted: false
+    # on_play / on_pause / on_volume_change / on_mute_change: see Media Player
 ```
 
 On Linux you may need to specify the output device name manually, as UbiHome may detect the default device incorrectly.
 To find the device name enable debug logging for UbiHome and look for the line `Devices:` in the logs.
 
-
 ## Features
 
-- Play/pause/stop
-- Volume control
+- Multiple `media_player` entries, each with its own connection to the server and its own output device
+- Play/pause/stop, with triggers for custom automations
+- Volume control, with a trigger on volume change
 
 ### Supported audio backends
 
 - ALSA (Linux)
 - PulseAudio (Linux)
 
-
 ## Setup
 
 ### How to find the server address?
 
-By default UbiHome will try to discover the Sendspin server using mDNS. 
+By default UbiHome will try to discover the Sendspin server using mDNS.
 If this does not work you can specify the address manually in the configuration (e.g. `ws://192.168.178.123:8927/sendspin`).
 
 ### How to find the output device id?
 
 Depending on the platform and audio backend, UbiHome may not be able to automatically detect the correct output device.
-In this case you can specify the output device name manually in the configuration. 
+In this case you can specify the output device name manually in the configuration.
 
 #### ALSA (Linux)
 
@@ -66,7 +77,7 @@ logger:
     ubihome_sendspin: debug
 ```
 
-and look for the line `Devices:` in the logs. Example: 
+and look for the line `Devices:` in the logs. Example:
 
 ```
 DEBUG [ubihome_sendspin] Host: ALSA
@@ -106,3 +117,8 @@ INFO [ubihome_sendspin] Using device: alsa:hw:CARD=sndrpihifiberry,DEV=0
 ```
 
 > You may also use `aplay -l` to list the available ALSA devices.
+
+<!-- Backlinks to be displayed  -->
+<div style="display:none" aria-hidden="true">
+  <a href="/features/entities/media_player/">Media Player</a>
+</div>

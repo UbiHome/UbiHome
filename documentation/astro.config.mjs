@@ -7,6 +7,7 @@ import starlightLinksValidator from "starlight-links-validator";
 import starlightSidebarTopics from "starlight-sidebar-topics";
 import starlightSiteGraph from "starlight-site-graph";
 import starlightTagsPlugin from "starlight-tags";
+import umami from "@yeskunall/astro-umami";
 
 // Generate examples sidebar items by reading the examples directory
 function getExamplesItems() {
@@ -78,7 +79,16 @@ export default defineConfig({
 									label: "Getting started",
 									link: "/getting_started/",
 								},
-								{ label: "Commands", link: "/commands/" },
+								{
+									label: "CLI",
+									items: [
+										{ label: "Overview", link: "/commands/" },
+										{
+											label: "Updating",
+											link: "/commands/update/",
+										},
+									],
+								},
 								{ label: "Roadmap", link: "/roadmap/" },
 								{
 									label: "Help",
@@ -112,6 +122,10 @@ export default defineConfig({
 								{
 									label: "Platforms",
 									items: [
+										{
+											label: "Connectivity and Platforms",
+											link: "/features/platforms/",
+										},
 										{
 											label: "Connectivity",
 											items: [
@@ -149,6 +163,10 @@ export default defineConfig({
 					exclude: ["/tags/", "/tags/**"],
 				}),
 			],
+		}),
+		umami({
+			endpointUrl: "https://analytics.aquiver.de/",
+			id: "47376340-dcba-422e-b906-a453eea1ede1",
 		}),
 	],
 	// redirects: {
