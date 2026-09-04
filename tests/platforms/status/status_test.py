@@ -45,6 +45,7 @@ binary_sensor:
         assert len(entities) == 1, entities
         assert isinstance(entities[0], aioesphomeapi.BinarySensorInfo)
         assert entities[0].object_id == "status"
+        assert entities[0].entity_category == aioesphomeapi.EntityCategory.DIAGNOSTIC
 
         mock = Mock()
         api.subscribe_states(mock)
