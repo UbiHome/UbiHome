@@ -57,6 +57,7 @@ impl Module for UbiHomePlatform {
                     .or_else(|| Some("connectivity".to_string())),
                 name: binary_sensor.name.clone().unwrap_or_default(),
                 internal: binary_sensor.internal,
+                entity_category: binary_sensor.entity_category,
                 id: id.clone(),
                 on_press: binary_sensor.on_press.clone(),
                 on_release: binary_sensor.on_release.clone(),
