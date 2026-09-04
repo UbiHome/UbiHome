@@ -5651,6 +5651,7 @@ dependencies = [
  "ubihome-power_utils",
  "ubihome-sendspin",
  "ubihome-shell",
+ "ubihome-status",
  "ubihome-web_server",
  "windows-service",
  "windows-sys 0.59.0",
@@ -5854,6 +5855,18 @@ dependencies = [
  "serde",
  "serde-saphyr 0.0.26",
  "shell_exec",
+ "tokio",
+ "ubihome-core",
+]
+
+[[package]]
+name = "ubihome-status"
+version = "0.1.0"
+dependencies = [
+ "duration-str",
+ "garde",
+ "log",
+ "serde",
  "tokio",
  "ubihome-core",
 ]
