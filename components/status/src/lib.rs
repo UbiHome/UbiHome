@@ -2,6 +2,7 @@ use log::debug;
 use serde::{Deserialize, Deserializer};
 use std::{collections::HashMap, future::Future, pin::Pin};
 use tokio::sync::broadcast::{Receiver, Sender};
+use ubihome_core::configuration::base::EntityCategory;
 use ubihome_core::internal::sensors::{UbiBinarySensor, UbiComponent};
 use ubihome_core::state::StateStore;
 use ubihome_core::template_binary_sensor;
@@ -57,6 +58,9 @@ impl Module for UbiHomePlatform {
                     .or_else(|| Some("connectivity".to_string())),
                 name: binary_sensor.name.clone().unwrap_or_default(),
                 internal: binary_sensor.internal,
+                entity_category: binary_sensor
+                    .entity_category
+                    .or(Some(EntityCategory::Diagnostic)),
                 id: id.clone(),
                 on_press: binary_sensor.on_press.clone(),
                 on_release: binary_sensor.on_release.clone(),

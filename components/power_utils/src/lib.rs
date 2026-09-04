@@ -76,6 +76,7 @@ impl Module for UbiHomePlatform {
             let id = button.get_object_id();
             let name = button.name.clone().unwrap_or_default();
             let internal = button.internal;
+            let entity_category = button.entity_category;
             let button_component = match button.action {
                 PowerAction::Reboot => UbiButton {
                     platform: "sensor".to_string(),
@@ -83,6 +84,7 @@ impl Module for UbiHomePlatform {
                     name,
                     internal,
                     id: id.clone(),
+                    entity_category,
                 },
                 PowerAction::Shutdown => UbiButton {
                     platform: "sensor".to_string(),
@@ -90,6 +92,7 @@ impl Module for UbiHomePlatform {
                     name,
                     internal,
                     id: id.clone(),
+                    entity_category,
                 },
                 PowerAction::Hibernate => UbiButton {
                     platform: "sensor".to_string(),
@@ -97,6 +100,7 @@ impl Module for UbiHomePlatform {
                     name,
                     internal,
                     id: id.clone(),
+                    entity_category,
                 },
                 PowerAction::Logout => UbiButton {
                     platform: "sensor".to_string(),
@@ -104,6 +108,7 @@ impl Module for UbiHomePlatform {
                     name,
                     internal,
                     id: id.clone(),
+                    entity_category,
                 },
                 PowerAction::Sleep => UbiButton {
                     platform: "sensor".to_string(),
@@ -111,6 +116,7 @@ impl Module for UbiHomePlatform {
                     name,
                     internal,
                     id: id.clone(),
+                    entity_category,
                 },
             };
 

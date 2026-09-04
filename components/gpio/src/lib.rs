@@ -136,6 +136,7 @@ impl Module for UbiHomePlatform {
                 name: binary_sensor.name.clone().unwrap_or_default(),
                 internal: binary_sensor.internal,
                 id: id.clone(),
+                entity_category: binary_sensor.entity_category,
                 on_press: binary_sensor.on_press.clone(),
                 on_release: binary_sensor.on_release.clone(),
                 filters: binary_sensor.filters.clone(),
@@ -159,6 +160,7 @@ impl Module for UbiHomePlatform {
                 name: switch.name.clone().unwrap_or_default(),
                 internal: switch.internal,
                 id: id.clone(),
+                entity_category: switch.entity_category,
                 assumed_state: false,
             }));
             debug!(

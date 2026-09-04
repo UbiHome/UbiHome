@@ -1,3 +1,18 @@
+use serde::{Deserialize, Serialize};
+
+/// Home Assistant entity category. Controls whether an entity is shown under
+/// the Config or Diagnostic sections. Entities without a category (the
+/// common case) are represented as `Option::None` on the enclosing field
+/// rather than a variant here, so there is only one way to say "no category".
+///
+/// See <https://developers.home-assistant.io/docs/core/entity/#registry-properties>.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum EntityCategory {
+    Config,
+    Diagnostic,
+}
+
 /// Macro to add base entity properties (id, name, internal, platform) to a
 /// struct.
 ///
@@ -56,6 +71,10 @@ macro_rules! with_base_entity_properties {
                 #[garde(ascii)]
                 pub device_class: Option<String>,
 
+                /// Home Assistant entity category (`config` or `diagnostic`).
+                #[garde(skip)]
+                pub entity_category: Option<$crate::configuration::base::EntityCategory>,
+
 
                 $(
                     $(#[$field_meta])*
@@ -87,6 +106,7 @@ macro_rules! with_base_entity_properties {
                 platform: String,
                 icon: Option<String>,
                 device_class: Option<String>,
+                entity_category: Option<$crate::configuration::base::EntityCategory>,
                 $(
                     $(#[$field_meta])*
                     $field_name : $field_type,
@@ -110,6 +130,7 @@ macro_rules! with_base_entity_properties {
                         platform: shadow.platform,
                         icon: shadow.icon,
                         device_class: shadow.device_class,
+                        entity_category: shadow.entity_category,
                         $(
                             $field_name: shadow.$field_name,
                         )*
@@ -361,6 +382,7 @@ macro_rules! template_light {
 
 #[cfg(test)]
 mod entity_tests {
+    use super::EntityCategory;
     use garde::Validate;
 
     with_base_entity_properties! {
@@ -417,5 +439,31 @@ mod entity_tests {
         let err = parse(r#"{"platform":"probe","name":"x","pin":5,"bogus":9}"#)
             .expect_err("unknown field must still be rejected");
         assert!(err.contains("bogus"), "unexpected error: {err}");
+    }
+
+    #[test]
+    fn entity_category_defaults_to_none_when_absent() {
+        let p = parse(r#"{"platform":"probe","name":"x","pin":5}"#).unwrap();
+        assert_eq!(p.entity_category, None);
+    }
+
+    #[test]
+    fn entity_category_accepts_valid_variants() {
+        let p = parse(r#"{"platform":"probe","name":"x","pin":5,"entity_category":"diagnostic"}"#)
+            .unwrap();
+        assert_eq!(p.entity_category, Some(EntityCategory::Diagnostic));
+        let p =
+            parse(r#"{"platform":"probe","name":"x","pin":5,"entity_category":"config"}"#).unwrap();
+        assert_eq!(p.entity_category, Some(EntityCategory::Config));
+    }
+
+    #[test]
+    fn entity_category_rejects_invalid_values() {
+        let err = parse(r#"{"platform":"probe","name":"x","pin":5,"entity_category":"bogus"}"#)
+            .expect_err("invalid entity_category must be rejected");
+        assert!(
+            err.contains("entity_category") || err.contains("bogus") || err.contains("variant"),
+            "unexpected error: {err}"
+        );
     }
 }

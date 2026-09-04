@@ -46,6 +46,7 @@ pub fn to_components(config: &TemplateConfig) -> Vec<UbiComponent> {
             name: switch.name.clone().unwrap_or_default(),
             id: switch.get_object_id(),
             internal: switch.internal,
+            entity_category: switch.entity_category,
             device_class: switch.device_class.clone(),
             assumed_state: switch.is_assumed_state(),
         }));
@@ -58,6 +59,7 @@ pub fn to_components(config: &TemplateConfig) -> Vec<UbiComponent> {
             name: button.name.clone().unwrap_or_default(),
             id: button.get_object_id(),
             internal: button.internal,
+            entity_category: button.entity_category,
         }));
     }
 
@@ -68,6 +70,7 @@ pub fn to_components(config: &TemplateConfig) -> Vec<UbiComponent> {
             name: number.name.clone().unwrap_or_default(),
             id: number.get_object_id(),
             internal: number.internal,
+            entity_category: number.entity_category,
             min_value: number.min_value.unwrap_or(0.0),
             max_value: number.max_value.unwrap_or(100.0),
             step: number.step.unwrap_or(1.0),
@@ -88,6 +91,7 @@ pub fn to_components(config: &TemplateConfig) -> Vec<UbiComponent> {
             state_class: sensor.state_class.clone(),
             unit_of_measurement: sensor.unit_of_measurement.clone(),
             accuracy_decimals: sensor.accuracy_decimals,
+            entity_category: sensor.entity_category,
             filters: sensor.filters.clone(),
         }));
     }

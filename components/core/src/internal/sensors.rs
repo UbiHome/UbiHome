@@ -1,6 +1,7 @@
 use serde::{Deserialize, Serialize};
 
 use crate::{
+    configuration::base::EntityCategory,
     configuration::binary_sensor::{BinarySensorFilter, Trigger},
     configuration::sensor::SensorFilter,
 };
@@ -59,6 +60,9 @@ macro_rules! with_base_properties {
             /// components (api, mqtt, http).
             #[serde(default)]
             pub internal: bool,
+            /// Home Assistant entity category (`config` or `diagnostic`).
+            #[serde(default)]
+            pub entity_category: Option<EntityCategory>,
         // pub state_class: Option<String>,
         // pub device_class: Option<String>,
 

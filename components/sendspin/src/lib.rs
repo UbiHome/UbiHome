@@ -695,6 +695,7 @@ impl Module for UbiHomePlatform {
                     name: cfg.name.unwrap_or_default(),
                     internal: cfg.internal,
                     id,
+                    entity_category: cfg.entity_category,
                     on_play: cfg.on_play,
                     on_pause: cfg.on_pause,
                     on_volume_change: cfg.on_volume_change,

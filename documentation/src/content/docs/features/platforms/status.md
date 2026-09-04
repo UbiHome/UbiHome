@@ -23,6 +23,7 @@ binary_sensor:
     name: 'Living Room Status'
     icon: mdi:check-network-outline
     device_class: connectivity
+    # entity_category defaults to diagnostic and can be overridden here
 ```
 
 ## Options

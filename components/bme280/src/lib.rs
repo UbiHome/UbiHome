@@ -105,6 +105,7 @@ impl Module for UbiHomePlatform {
                     accuracy_decimals: None,
                     device_class: None,
                     unit_of_measurement: None,
+                    entity_category: None,
                     filters: None,
                     platform: "bme280".to_string(),
                 });
@@ -142,6 +143,7 @@ impl Module for UbiHomePlatform {
                 name: temperature.name.clone().unwrap_or_default(),
                 internal: temperature.internal,
                 id: object_id.clone(),
+                entity_category: temperature.entity_category,
                 filters: temperature.filters.clone(),
             }));
             let pressure = n_sensor.pressure.clone().unwrap_or(SpecificSensorConfig {
@@ -153,6 +155,7 @@ impl Module for UbiHomePlatform {
                 accuracy_decimals: None,
                 device_class: None,
                 unit_of_measurement: None,
+                entity_category: None,
                 filters: None,
                 platform: "bme280".to_string(),
             });
@@ -190,6 +193,7 @@ impl Module for UbiHomePlatform {
                 name: pressure.name.clone().unwrap_or_default(),
                 internal: pressure.internal,
                 id: id.clone(),
+                entity_category: pressure.entity_category,
                 filters: pressure.filters.clone(),
             }));
             let humidity = n_sensor.humidity.clone().unwrap_or(SpecificSensorConfig {
@@ -201,6 +205,7 @@ impl Module for UbiHomePlatform {
                 accuracy_decimals: None,
                 device_class: None,
                 unit_of_measurement: None,
+                entity_category: None,
                 filters: None,
                 platform: "bme280".to_string(),
             });
@@ -237,6 +242,7 @@ impl Module for UbiHomePlatform {
                 name: humidity.name.clone().unwrap_or_default(),
                 internal: humidity.internal,
                 id: id.clone(),
+                entity_category: humidity.entity_category,
                 filters: humidity.filters.clone(),
             }));
             let sensor_entry = BME280Sensor {

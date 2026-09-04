@@ -90,6 +90,7 @@ impl Module for UbiHomePlatform {
                     name: sensor.name.clone().unwrap_or_default(),
                     internal: sensor.internal,
                     id: id.clone(),
+                    entity_category: None,
                     filters: sensor.filters.clone(),
                 }));
                 sensors.insert(id.clone(), sensor);
