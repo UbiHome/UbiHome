@@ -3,7 +3,7 @@ use log::{debug, error, trace, warn};
 use serde::{Deserialize, Deserializer};
 use shell_exec::{Execution, Shell, ShellError};
 use std::collections::HashMap;
-use std::{future::Future, pin::Pin, str, time::Duration};
+use std::{future::Future, pin::Pin, time::Duration};
 use tokio::{
     sync::broadcast::{Receiver, Sender},
     time,
@@ -48,6 +48,10 @@ pub struct ShellConfig {
     #[serde(deserialize_with = "deserialize_duration")]
     #[garde(skip)]
     pub timeout: Duration,
+
+    #[serde(default)]
+    #[garde(skip)]
+    pub parse_stderr: bool,
 }
 
 fn default_timeout() -> Duration {
@@ -952,10 +956,32 @@ async fn execute_command(
         .build();
 
     trace!("Executing command: {}", command);
-    let output = execution.execute(b"").await?;
-    let output_string = str::from_utf8(&output).unwrap_or("");
-    trace!("Command '{}' executed: {}", command, output_string);
-    Ok(output_string.to_string())
+    let output = execution.execute_full(Vec::new()).await?;
+    let stdout = String::from_utf8_lossy(&output.stdout)
+        .trim_end()
+        .to_string();
+    let stderr = String::from_utf8_lossy(&output.stderr)
+        .trim_end()
+        .to_string();
+
+    if !output.success {
+        return Err(ShellError::Failure(format!(
+            "stdout: '{}', stderr: '{}'",
+            stdout, stderr
+        )));
+    }
+
+    if !stderr.is_empty() {
+        warn!("Command '{}' wrote to stderr: {}", command, stderr);
+    }
+
+    trace!("Command '{}' executed: {}", command, stdout);
+
+    if shell_config.parse_stderr && stdout.is_empty() {
+        Ok(stderr)
+    } else {
+        Ok(stdout)
+    }
 }
 
 #[cfg(test)]
@@ -1137,6 +1163,43 @@ text_sensor:
         assert!(
             text_sensor.update_interval.is_none(),
             "Minimal text_sensor should have no update_interval"
+        );
+    }
+
+    #[test]
+    fn test_shell_parse_stderr_defaults_to_false() {
+        let config = r#"
+ubihome:
+  name: "Test Shell Config"
+
+shell:
+  type: bash
+"#;
+
+        let module = UbiHomePlatform::new(config, "config.yml")
+            .expect("minimal shell config should be valid");
+        assert!(
+            !module.config.parse_stderr,
+            "parse_stderr should default to false"
+        );
+    }
+
+    #[test]
+    fn test_shell_parse_stderr_can_be_enabled() {
+        let config = r#"
+ubihome:
+  name: "Test Shell Config"
+
+shell:
+  type: bash
+  parse_stderr: true
+"#;
+
+        let module = UbiHomePlatform::new(config, "config.yml")
+            .expect("shell config with parse_stderr should be valid");
+        assert!(
+            module.config.parse_stderr,
+            "parse_stderr should be true when configured"
         );
     }
 
