@@ -205,8 +205,8 @@ pub(crate) fn update(include_pre_release: bool) -> Result<(), String> {
             return Err("No matching release found.".to_string());
         };
 
-        if new_version == format!("v{}", VERSION_GIT_TAG) {
-            println!("Already on the latest version.");
+        if new_version == VERSION_GIT_TAG {
+            println!("Already up to date!");
             return Ok(());
         }
 
