@@ -79,7 +79,16 @@ export default defineConfig({
 									label: "Getting started",
 									link: "/getting_started/",
 								},
-								{ label: "Commands", link: "/commands/" },
+								{
+									label: "CLI",
+									items: [
+										{ label: "Overview", link: "/commands/" },
+										{
+											label: "Updating",
+											link: "/commands/update/",
+										},
+									],
+								},
 								{ label: "Roadmap", link: "/roadmap/" },
 								{
 									label: "Help",
