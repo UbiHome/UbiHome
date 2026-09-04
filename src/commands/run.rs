@@ -10,7 +10,7 @@ use ubihome_core::state::{EntityState, StateStoreWriter};
 use ubihome_core::{ChangedMessage, PublishedMessage};
 
 use futures_signals::signal::{Mutable, SignalExt};
-use log::{debug, error, trace, warn};
+use log::{debug, error, trace};
 use std::collections::{BTreeSet, HashMap};
 use std::fs;
 use std::sync::mpsc;
@@ -19,28 +19,39 @@ use tokio::sync::broadcast;
 use tokio::{runtime::Runtime, signal};
 
 fn read_base_config(path: &str) -> Result<String, String> {
-    if !path.is_empty() {
-        println!("Config: {}", path);
-        let config_file_path = fs::canonicalize(path).unwrap();
-        if let Ok(content) = fs::read_to_string(config_file_path) {
-            return Ok(content);
-        } else {
-            warn!(
-                "Failed to read the configuration file at '{}'.", //, falling back to default.",
-                path
-            );
-        }
+    if path.is_empty() {
+        // TODO: Fallback to the embedded default configuration once wired up
+        // (DEFAULT_CONFIG in main.rs isn't currently passed through to this
+        // function). Until then, treat an empty path as "no config found".
+        // println!("Config file path: BUILTIN");
+        // DEFAULT_CONFIG
+        return Err(
+            "No configuration file found. Create a config.yml or config.yaml in the current \
+             directory, or point to one with --configuration <path>."
+                .to_string(),
+        );
     }
 
-    // Fallback to the embedded default configuration
-    // println!("Config file path: BUILTIN");
-    // printlm!(DEFAULT_CONFIG);
-    // DEFAULT_CONFIG
-    panic!("oh no!");
+    println!("Config: {}", path);
+
+    let config_file_path = fs::canonicalize(path).map_err(|_| {
+        format!(
+            "Configuration file not found at '{}'. Create it, or point to an existing file with --configuration <path>.",
+            path
+        )
+    })?;
+
+    fs::read_to_string(&config_file_path).map_err(|e| {
+        format!(
+            "Failed to read the configuration file at '{}': {}",
+            config_file_path.display(),
+            e
+        )
+    })
 }
 
 pub(crate) fn run(
-    mut config_path: &str,
+    config_path: &str,
     validate_only: bool,
     shutdown_signal: Option<mpsc::Receiver<()>>,
 ) -> Result<(), Box<dyn std::error::Error>> {
@@ -49,11 +60,7 @@ pub(crate) fn run(
 
     println!("LogDirectory: {}", log_directory.display());
 
-    let config_string: String =
-        read_base_config(config_path).expect("Failed to load base configuration");
-    if config_path.is_empty() {
-        config_path = "BUILTIN";
-    }
+    let config_string: String = read_base_config(config_path)?;
 
     let mut platforms = get_platforms_from_config(&config_string);
     // Builtin top-level sections (e.g. `globals`) are handled directly by the
@@ -742,4 +749,62 @@ Remove the "{}:" entry from your configuration or install the cargo crate contai
     });
     debug!("Shutdown complete");
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn unique_temp_path(name: &str) -> std::path::PathBuf {
+        let nanos = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap()
+            .as_nanos();
+        std::env::temp_dir().join(format!(
+            "ubihome_test_{}_{}_{}",
+            std::process::id(),
+            nanos,
+            name
+        ))
+    }
+
+    #[test]
+    fn read_base_config_errors_when_path_is_empty() {
+        let error = read_base_config("").expect_err("expected an error for an empty config path");
+        assert!(
+            error.contains("No configuration file found"),
+            "unexpected error message: {}",
+            error
+        );
+    }
+
+    #[test]
+    fn read_base_config_errors_with_helpful_message_when_file_is_missing() {
+        let missing_path = unique_temp_path("missing.yaml");
+        let missing_path = missing_path.to_str().unwrap();
+
+        let error = read_base_config(missing_path)
+            .expect_err("expected an error for a missing config file");
+        assert!(
+            error.contains("Configuration file not found"),
+            "unexpected error message: {}",
+            error
+        );
+        assert!(
+            error.contains(missing_path),
+            "error should mention the missing path: {}",
+            error
+        );
+    }
+
+    #[test]
+    fn read_base_config_reads_existing_file_contents() {
+        let path = unique_temp_path("config.yaml");
+        fs::write(&path, "ubihome:\n  name: test\n").unwrap();
+
+        let result = read_base_config(path.to_str().unwrap());
+        fs::remove_file(&path).ok();
+
+        assert_eq!(result.unwrap(), "ubihome:\n  name: test\n");
+    }
 }
