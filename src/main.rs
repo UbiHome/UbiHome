@@ -110,8 +110,7 @@ fn cli() -> Command {
             Arg::new("configuration_file")
             .short('c')
             .long("configuration")
-            .help("Optional configuration file. If not provided, the default configuration will be used.")
-            .default_values(vec![DEFAULT_CONFIG_FILE_YML, DEFAULT_CONFIG_FILE_YAML]),
+            .help("Optional configuration file. If not provided, config.yml (or config.yaml) in the current directory is used."),
             Arg::new("log_level")
             .long("log-level")
             .global(true)
