@@ -25,7 +25,7 @@ ubihome-shell = { path = "components/shell" }
 ubihome-status = { path = "components/status" }
 ubihome-web_server = { path = "components/web_server" }
 inquire = "0.7.5"
-shell_exec = "0.2.0"
+shell_exec = { git = "https://github.com/DanielHabenicht/fork.shell_exec", branch = "stream-stdout-stderr" }
 flexi_logger = "0.29.8"
 directories = "6.0.0"
 futures-signals = "0.3.34"

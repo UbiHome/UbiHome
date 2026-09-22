@@ -21,8 +21,11 @@ shell:
 | Property        | Description                                   |
 | --------------- | --------------------------------------------- |
 | update_interval | How often to run the command. Default is 60s. |
+| parse_stderr    | If a command's stdout is empty, fall back to parsing its stderr instead. Default is `false`. |
 
 > In the future an update interval of `0` will allow you to stream the output of long running commands (e.g. a json log line by line).
+
+When a command exits with a non-zero status, both its stdout and stderr are included in the logged error, regardless of `parse_stderr`.
 
 ### Sensors
 

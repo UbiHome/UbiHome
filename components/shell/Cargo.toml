@@ -7,7 +7,7 @@ edition = "2021"
 [dependencies]
 log = "0.4"
 serde = { version = "1.0", features = ["derive"] }
-shell_exec = "0.2.0"
+shell_exec = { git = "https://github.com/DanielHabenicht/fork.shell_exec", branch = "stream-stdout-stderr" }
 ubihome-core = { path = "../core", features = ["validation"] }
 tokio = { version = "1", features = ["full"] }
 duration-str = "0.16.1"
