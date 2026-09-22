@@ -44,8 +44,8 @@ switch:
 
 async def test_template_switch_globals_get_lambda_validate():
     """
-    A template switch can read its state from a global with a `globals.get`
-    lambda (written in YAML, no code).
+    A template switch can read its state from a global with a `lambda` that
+    reads it via `id()`.
     """
 
     config = """
@@ -61,8 +61,8 @@ switch:
   - platform: template
     name: "Relay"
     id: relay
-    lambda:
-      globals.get: relay_state
+    lambda: |-
+      return id(relay_state)
     turn_on_action:
       then:
         - globals.set:

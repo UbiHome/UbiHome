@@ -142,8 +142,9 @@ Remove the "{}:" entry from your configuration or install the cargo crate contai
     // Spawn the root task
     let rt = Runtime::new().unwrap();
     rt.block_on(async {
-        let (internal_tx, modules_rx) = broadcast::channel::<PublishedMessage>(16);
-        let (modules_tx, mut internal_rx) = broadcast::channel::<ChangedMessage>(16);
+        let message_buffer_size = config.ubihome.message_buffer_size;
+        let (internal_tx, modules_rx) = broadcast::channel::<PublishedMessage>(message_buffer_size);
+        let (modules_tx, mut internal_rx) = broadcast::channel::<ChangedMessage>(message_buffer_size);
 
         // Supervise every long-running task (sensor/binary-sensor signal handlers,
         // the internal command router, and the platform modules) in one JoinSet so
@@ -154,6 +155,15 @@ Remove the "{}:" entry from your configuration or install the cargo crate contai
         // Shared store for `globals:` variables, mutated by `globals.set` actions
         // executed from any trigger (binary sensor, template switch, ...).
         let globals = Globals::new(&builtin.globals);
+
+        // Dedicated JS engine backing every `lambda` (entity state and
+        // action); see `crate::builtins::script`. The id -> kind lookup lets
+        // `id()` shape its returned handle to only the commands valid for
+        // that id (e.g. a button never gets `turn_on`), across every
+        // platform's components, not just template entities.
+        let entity_kinds = builtins::script::entity_kinds_from_components(&initialized_platforms);
+        let script =
+            builtins::ScriptEngine::spawn(globals.clone(), internal_tx.clone(), entity_kinds);
 
         // Double Option Workaround for https://github.com/Pauan/rust-signals/issues/75
         let mut signal_map_binary_sensor: HashMap<String, Mutable<Option<Option<bool>>>> =
@@ -243,6 +253,7 @@ Remove the "{}:" entry from your configuration or install the cargo crate contai
                         .insert(media_player.id.clone(), mutable_state.clone());
                     let internal_tx_clone = internal_tx.clone();
                     let globals_clone = globals.clone();
+                    let script_clone = script.clone();
                     let key = media_player.id.clone();
                     let on_play = media_player.on_play.clone();
                     let on_pause = media_player.on_pause.clone();
@@ -258,6 +269,7 @@ Remove the "{}:" entry from your configuration or install the cargo crate contai
                                 let on_play = on_play.clone();
                                 let on_pause = on_pause.clone();
                                 let globals_for_call = globals_clone.clone();
+                                let script_for_call = script_clone.clone();
                                 async move {
                                     if let Some(playing) = value.and_then(|v| v) {
                                         if playing {
@@ -266,6 +278,8 @@ Remove the "{}:" entry from your configuration or install the cargo crate contai
                                                     on_play.then,
                                                     &action_tx,
                                                     &globals_for_call,
+                                                    &script_for_call,
+                                                    None,
                                                 )
                                                 .await;
                                             }
@@ -274,6 +288,8 @@ Remove the "{}:" entry from your configuration or install the cargo crate contai
                                                 on_pause.then,
                                                 &action_tx,
                                                 &globals_for_call,
+                                                &script_for_call,
+                                                None,
                                             )
                                             .await;
                                         }
@@ -299,6 +315,7 @@ Remove the "{}:" entry from your configuration or install the cargo crate contai
                         .insert(media_player.id.clone(), mutable_volume.clone());
                     let internal_tx_clone = internal_tx.clone();
                     let globals_clone = globals.clone();
+                    let script_clone = script.clone();
                     let key = media_player.id.clone();
                     let on_volume_change = media_player.on_volume_change.clone();
 
@@ -312,6 +329,7 @@ Remove the "{}:" entry from your configuration or install the cargo crate contai
                                 let key = key.clone();
                                 let on_volume_change = on_volume_change.clone();
                                 let globals_for_call = globals_clone.clone();
+                                let script_for_call = script_clone.clone();
                                 async move {
                                     if let Some(value) = value.and_then(|v| v) {
                                         if let Some(on_volume_change) = on_volume_change {
@@ -319,6 +337,8 @@ Remove the "{}:" entry from your configuration or install the cargo crate contai
                                                 on_volume_change.then,
                                                 &action_tx,
                                                 &globals_for_call,
+                                                &script_for_call,
+                                                Some(value as f64),
                                             )
                                             .await;
                                         }
@@ -344,6 +364,7 @@ Remove the "{}:" entry from your configuration or install the cargo crate contai
                         .insert(media_player.id.clone(), mutable_mute.clone());
                     let internal_tx_clone = internal_tx.clone();
                     let globals_clone = globals.clone();
+                    let script_clone = script.clone();
                     let key = media_player.id.clone();
                     let on_mute_change = media_player.on_mute_change.clone();
 
@@ -357,6 +378,7 @@ Remove the "{}:" entry from your configuration or install the cargo crate contai
                                 let key = key.clone();
                                 let on_mute_change = on_mute_change.clone();
                                 let globals_for_call = globals_clone.clone();
+                                let script_for_call = script_clone.clone();
                                 async move {
                                     if let Some(muted) = value.and_then(|v| v) {
                                         if let Some(on_mute_change) = on_mute_change {
@@ -364,6 +386,8 @@ Remove the "{}:" entry from your configuration or install the cargo crate contai
                                                 on_mute_change.then,
                                                 &action_tx,
                                                 &globals_for_call,
+                                                &script_for_call,
+                                                None,
                                             )
                                             .await;
                                         }
@@ -387,6 +411,7 @@ Remove the "{}:" entry from your configuration or install the cargo crate contai
                     signal_map_binary_sensor.insert(binary_sensor.id.clone(), mutable.clone());
                     let internal_tx_clone = internal_tx.clone();
                     let globals_clone = globals.clone();
+                    let script_clone = script.clone();
                     let state_writer_clone = state_writer.clone();
 
                     let mutable_clone = mutable.clone();
@@ -464,6 +489,7 @@ Remove the "{}:" entry from your configuration or install the cargo crate contai
                                 let on_press = binary_sensor.on_press.clone();
                                 let on_release = binary_sensor.on_release.clone();
                                 let globals_for_call = globals_clone.clone();
+                                let script_for_call = script_clone.clone();
                                 async move {
                                     if let Some(value) = value.and_then(|v| v) {
                                         if value {
@@ -472,6 +498,8 @@ Remove the "{}:" entry from your configuration or install the cargo crate contai
                                                     on_press.then,
                                                     &action_tx,
                                                     &globals_for_call,
+                                                    &script_for_call,
+                                                    None,
                                                 )
                                                 .await;
                                             }
@@ -480,6 +508,8 @@ Remove the "{}:" entry from your configuration or install the cargo crate contai
                                                 on_release.then,
                                                 &action_tx,
                                                 &globals_for_call,
+                                                &script_for_call,
+                                                None,
                                             )
                                             .await;
                                         }
@@ -516,7 +546,18 @@ Remove the "{}:" entry from your configuration or install the cargo crate contai
         let state_writer_clone = state_writer.clone();
         supervised_tasks.spawn({
             async move {
-                while let Ok(cmd) = internal_rx.recv().await {
+                loop {
+                    let cmd = match internal_rx.recv().await {
+                        Ok(cmd) => cmd,
+                        Err(broadcast::error::RecvError::Lagged(n)) => {
+                            warn!(
+                                "Internal command router lagged behind by {} messages; some state changes may have been missed",
+                                n
+                            );
+                            continue;
+                        }
+                        Err(broadcast::error::RecvError::Closed) => break,
+                    };
                     debug!("Received command: {:?}", cmd);
                     let publish_cmd: Option<PublishedMessage> = match cmd {
                         ChangedMessage::SwitchStateChange { key, state } => {
@@ -656,6 +697,7 @@ Remove the "{}:" entry from your configuration or install the cargo crate contai
             modules_tx.clone(),
             globals.clone(),
             state_writer.clone(),
+            script.clone(),
         );
 
         run_platforms(
@@ -671,8 +713,16 @@ Remove the "{}:" entry from your configuration or install the cargo crate contai
         if let Some(on_startup) = config.ubihome.on_startup.clone() {
             let internal_tx_clone = internal_tx.clone();
             let globals_clone = globals.clone();
+            let script_clone = script.clone();
             supervised_tasks.spawn(async move {
-                builtins::run_actions(on_startup.then, &internal_tx_clone, &globals_clone).await;
+                builtins::run_actions(
+                    on_startup.then,
+                    &internal_tx_clone,
+                    &globals_clone,
+                    &script_clone,
+                    None,
+                )
+                .await;
             });
         }
 

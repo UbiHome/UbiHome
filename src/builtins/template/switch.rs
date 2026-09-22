@@ -4,14 +4,15 @@ use ubihome_core::configuration::automation::Trigger;
 use ubihome_core::template_switch;
 use ubihome_core::with_base_entity_properties;
 
-use crate::builtins::template::lambda::LambdaExpr;
+use crate::builtins::script;
 
 template_switch! {
     /// Configuration of a `switch` entry with `platform: template`.
     ///
     /// Mirrors a subset of the ESPHome template switch
-    /// (<https://esphome.io/components/switch/template/>). Lambdas are not
-    /// supported; the switch is driven purely by the `turn_on_action` /
+    /// (<https://esphome.io/components/switch/template/>). The reported
+    /// state either follows a `lambda` or is echoed optimistically after a
+    /// command; without either it is driven purely by the `turn_on_action` /
     /// `turn_off_action` automations.
     #[derive(Clone, Deserialize, Debug, Validate)]
     #[garde(allow_unvalidated)]
@@ -26,11 +27,13 @@ template_switch! {
         /// `optimistic`.
         pub assumed_state: Option<bool>,
 
-        /// Optional YAML "lambda" that sources the switch state from a global,
-        /// e.g. `lambda: { globals.get: my_flag }`. When set, the reported
-        /// state tracks that global instead of the optimistic command state.
-        #[garde(dive)]
-        pub lambda: Option<LambdaExpr>,
+        /// Optional inline JavaScript lambda that computes the reported
+        /// state, e.g. `lambda: |- return id(my_flag)` to read a
+        /// [`globals`](crate::builtins::globals) variable. Re-evaluated
+        /// whenever any global changes. When set, the reported state tracks
+        /// the lambda's result instead of the optimistic command state.
+        #[garde(custom(script::validate_lambda))]
+        pub lambda: Option<String>,
 
         /// Actions run when the switch is turned on.
         #[serde(default, deserialize_with = "ubihome_core::configuration::automation::deserialize_option_map_only")]
@@ -50,15 +53,9 @@ fn default_true() -> bool {
 
 impl TemplateSwitchConfig {
     /// Whether Home Assistant should treat the switch state as assumed. A
-    /// `globals.get` lambda makes the state known, so it is not assumed.
+    /// `lambda` makes the state known, so it is not assumed.
     pub fn is_assumed_state(&self) -> bool {
         self.assumed_state
             .unwrap_or(self.optimistic && self.lambda.is_none())
-    }
-
-    /// The id of the global this switch reads its state from, if a
-    /// `globals.get` lambda is configured.
-    pub fn state_global(&self) -> Option<&str> {
-        self.lambda.as_ref().map(LambdaExpr::global_id)
     }
 }

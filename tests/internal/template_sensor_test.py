@@ -10,8 +10,8 @@ from utils import UbiHome, fnv1_hash_object_id, run_ubihome
 async def test_template_sensor_lambda():
     """
     A template sensor is read-only: its reported value always comes from a
-    `globals.get` `lambda`, reporting the current value on startup and
-    updating live whenever the backing `float` global changes.
+    `lambda`, reporting the current value on startup and updating live
+    whenever a global it reads changes.
     """
 
     sensor_id = "room_temperature"
@@ -33,8 +33,8 @@ sensor:
     name: "Room Temperature"
     id: {sensor_id}
     unit_of_measurement: "°C"
-    lambda:
-      globals.get: room_temperature_value
+    lambda: |-
+      return id(room_temperature_value)
 
 switch:
   - platform: template
@@ -43,9 +43,8 @@ switch:
     optimistic: true
     turn_on_action:
       then:
-        - globals.set:
-            id: room_temperature_value
-            value: 23.4
+        - lambda: |
+            set_global('room_temperature_value', 23.4)
 """
 
     async with UbiHome("run", config=CONFIG, wait_for_api=True) as ubihome:
@@ -96,8 +95,8 @@ sensor:
     name: "Room Temperature"
     id: room_temperature
     unit_of_measurement: "°C"
-    lambda:
-      globals.get: room_temperature_value
+    lambda: |-
+      return id(room_temperature_value)
 """
     output, error = await run_ubihome("validate", config=config, extra_logging=False)
 
