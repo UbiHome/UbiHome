@@ -1,0 +1,72 @@
+name: Bug Report
+description: Report a bug or issue with the project
+title: "[Bug]: "
+labels: ["bug"]
+assignees: []
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for reporting a bug! Please provide the following details to help us resolve the issue.
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Bug Description
+      description: Provide a detailed description of the bug, including steps to reproduce it.
+      placeholder: "Describe the issue here..."
+    validations:
+      required: true
+
+  - type: input
+    id: os
+    attributes:
+      label: Operating System
+      description: Specify the environment where the issue occurs (e.g., OS, version).
+      placeholder: "Windows 11 Version 10.0.26100 Build 26100 / Ubuntu 24.03"
+    validations:
+      required: true
+
+  - type: input
+    id: device
+    attributes:
+      label: Device
+      description: Specify the device you are using
+      placeholder: "Custom PC, Lenovo P51 or Raspberry Pi4"
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to Reproduce and actual Behavior
+      description: List the steps to reproduce the issue.
+      placeholder: |
+        1. Go to '...'
+        2. Click on '...'
+        3. Observe the error
+        => The app should crashed.
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected Behavior
+      description: Describe what you expected to happen.
+      placeholder: "App should not crash"
+    validations:
+      required: true
+
+  - type: input
+    id: screenshots
+    attributes:
+      label: Screenshots or Logs
+      description: Provide links to screenshots or logs, if applicable.
+      placeholder: "e.g., Attach a screenshot or paste a log link here."
+
+  - type: textarea
+    id: workaround
+    attributes:
+      label: Workarounds
+      description: Describe what currently can be done to circumvent the issue
+      placeholder: "Using the flag --magic make the error go away"

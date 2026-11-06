@@ -1,144 +1,277 @@
-pub mod binary_sensor;
-pub mod home_assistant;
-pub mod sensor;
-pub mod sensor_mapper;
-pub mod button;
-pub mod switch;
-pub mod mapper;
-pub mod utils;
-pub mod internal;
+pub mod configuration;
+pub mod constants;
 pub mod features;
-pub extern crate paste;
+pub mod global_value;
+pub mod internal;
+pub mod mapper;
+pub mod state;
+pub mod text_sensor;
+pub mod utils;
+#[cfg(feature = "validation")]
+pub mod validation;
+pub extern crate serde_value;
+#[doc(hidden)]
+pub use paste;
 
-use home_assistant::sensors::Component;
-use internal::sensors::InternalComponent;
-use std::{collections::HashMap, pin::Pin};
+use garde::Validate;
+use internal::sensors::UbiComponent;
+use serde::Deserialize;
+use std::{collections::HashMap, future::Future, pin::Pin};
 use tokio::sync::broadcast::{Receiver, Sender};
-use serde::{Deserialize};
 
+use crate::configuration::binary_sensor::Trigger;
+use crate::constants::{is_readable_string, is_readable_string_option};
+use crate::state::StateStore;
 
 pub type BoxFuture<'a, T> = Pin<Box<dyn Future<Output = T> + Send + 'a>>;
+pub type ModuleRunFuture = BoxFuture<'static, Result<(), Box<dyn std::error::Error>>>;
 
 pub trait Module
 where
     Self: Send,
 {
     /// This is the main entry point for the module.
-    fn new(config_string: &String) -> Result<Self, String> where Self: Sized;
+    fn new(config_string: &str, config_path: &str) -> Result<Self, String>
+    where
+        Self: Sized;
 
     /// This will be called to validate the module configuration and set the module up for the later run command.
     /// It is guaranteed to be be called before the run command.
     /// Do not do any heavy lifting in this function, as it will block the main thread.
-    fn components(&mut self) -> Vec<InternalComponent>;
+    fn components(&mut self) -> Vec<UbiComponent>;
 
     // This will be called in a separate Thread to run the module and its functionality.
     fn run(
         &self,
         sender: Sender<ChangedMessage>,
         receiver: Receiver<PublishedMessage>,
-    ) -> Pin<Box<dyn Future<Output = Result<(), Box<dyn std::error::Error>>> + Send + 'static>>;
+        state: StateStore,
+    ) -> ModuleRunFuture;
 }
-
-
 
 #[derive(Debug, Clone)]
 pub struct BluetoothProxyMessage {
     pub reason: String,
     pub mac: String,
-    pub rssi: i16, 
-    pub name: String, 
-    pub service_uuids: Vec<String>, 
-    pub service_data: HashMap<String, Vec<u8>>, 
+    pub rssi: i16,
+    pub name: String,
+    pub service_uuids: Vec<String>,
+    pub service_data: HashMap<String, Vec<u8>>,
     pub manufacturer_data: HashMap<String, Vec<u8>>,
 }
 
-
 #[derive(Debug, Clone)]
 pub enum ChangedMessage {
-    ButtonPress { key: String },
-    SwitchStateChange { key: String, state: bool },
-    SwitchStateCommand { key: String, state: bool },
-    SensorValueChange { key: String, value: f32 },
-    BinarySensorValueChange { key: String, value: bool },
+    ButtonPress {
+        key: String,
+    },
+    SwitchStateChange {
+        key: String,
+        state: bool,
+    },
+    SwitchStateCommand {
+        key: String,
+        state: bool,
+    },
+    SensorValueChange {
+        key: String,
+        value: f32,
+    },
+    BinarySensorValueChange {
+        key: String,
+        value: bool,
+    },
+    LightStateChange {
+        key: String,
+        state: bool,
+        brightness: Option<f32>,
+        red: Option<f32>,
+        green: Option<f32>,
+        blue: Option<f32>,
+    },
+    LightStateCommand {
+        key: String,
+        state: bool,
+        brightness: Option<f32>,
+        red: Option<f32>,
+        green: Option<f32>,
+        blue: Option<f32>,
+    },
+    NumberValueChange {
+        key: String,
+        value: f32,
+    },
+    NumberValueCommand {
+        key: String,
+        value: f32,
+    },
+    TextSensorValueChange {
+        key: String,
+        value: String,
+    },
     BluetoothProxyMessage(BluetoothProxyMessage),
+    /// Combined so a single message can carry any subset of playback/volume/mute
+    /// changes instead of needing one enum variant per field.
+    MediaPlayerStateChange {
+        key: String,
+        playing: Option<bool>,
+        volume: Option<f32>,
+        muted: Option<bool>,
+    },
 }
-
 
 #[derive(Debug, Clone)]
 pub enum PublishedMessage {
-    Components { components: Vec<Component> },
-    ButtonPressed { key: String },
-    SwitchStateChange { key: String, state: bool },
-    SwitchStateCommand { key: String, state: bool },
-    SensorValueChanged { key: String, value: f32 },
-    BinarySensorValueChanged { key: String, value: bool },
-    BluetoothProxyMessage (BluetoothProxyMessage),
+    ButtonPressed {
+        key: String,
+    },
+    SwitchStateChange {
+        key: String,
+        state: bool,
+    },
+    SwitchStateCommand {
+        key: String,
+        state: bool,
+    },
+    SensorValueChanged {
+        key: String,
+        value: f32,
+    },
+    BinarySensorValueChanged {
+        key: String,
+        value: bool,
+    },
+    LightStateChange {
+        key: String,
+        state: bool,
+        brightness: Option<f32>,
+        red: Option<f32>,
+        green: Option<f32>,
+        blue: Option<f32>,
+    },
+    LightStateCommand {
+        key: String,
+        state: bool,
+        brightness: Option<f32>,
+        red: Option<f32>,
+        green: Option<f32>,
+        blue: Option<f32>,
+    },
+    NumberValueChanged {
+        key: String,
+        value: f32,
+    },
+    NumberValueCommand {
+        key: String,
+        value: f32,
+    },
+    TextSensorValueChanged {
+        key: String,
+        value: String,
+    },
+    BluetoothProxyMessage(BluetoothProxyMessage),
+    MediaPlayerStateChanged {
+        key: String,
+        playing: Option<bool>,
+        volume: Option<f32>,
+        muted: Option<bool>,
+    },
 }
 
-#[derive(Clone, Deserialize, Debug)]
-pub struct NoConfig {}
+#[derive(Clone, Deserialize, Debug, Validate)]
+#[garde(allow_unvalidated)]
+pub struct NoConfig {
+    pub platform: String,
+}
 
+impl NoConfig {
+    pub fn is_configured(&self) -> bool {
+        false
+    }
+    pub fn get_object_id(&self) -> String {
+        unimplemented!();
+    }
+}
 
-#[derive(Clone, Deserialize, Debug)]
+#[derive(Clone, Deserialize, Debug, Validate)]
+#[serde(deny_unknown_fields)]
 pub struct UbiHome {
+    #[garde(custom(is_readable_string), length(min = 3, max = 100))]
     pub name: String,
+    #[garde(custom(is_readable_string_option), length(min = 3, max = 100))]
     pub friendly_name: Option<String>,
+    #[garde(custom(is_readable_string_option), length(min = 3, max = 100))]
     pub area: Option<String>,
+    /// Actions to run once, when UbiHome starts up.
+    #[garde(dive)]
+    pub on_startup: Option<Trigger>,
 }
-
 
 #[macro_export]
 macro_rules! config_template {
     (
-        $component_name:ident, 
-        $component_config:ty, 
-        $button_extension:ident, 
-        $binary_sensor_extension:ident, 
+        $component_name:ident,
+        $component_config:ty,
+        $button_extension:ident,
+        $binary_sensor_extension:ident,
         $sensor_extension:ident,
-        $switch_extension:ident) => {
-
+        $switch_extension:ident,
+        $light_extension:ident,
+        $number_extension:ident,
+        $text_sensor_extension:ident,
+        $media_player_extension:ident) => {
         use duration_str::deserialize_option_duration;
-        use ubihome_core::template_button;
-        use ubihome_core::template_binary_sensor;
-        use ubihome_core::template_sensor;
-        use ubihome_core::template_switch;
-        use ubihome_core::template_mapper;
+        use garde::Validate;
         use ubihome_core::UbiHome;
+        use ubihome_core::template_mapper;
 
+        template_mapper!(map_light, $component_name, $light_extension);
+        template_mapper!(map_switch, $component_name, $switch_extension);
+        template_mapper!(map_number, $component_name, $number_extension);
+        template_mapper!(map_sensor, $component_name, $sensor_extension);
+        template_mapper!(map_button, $component_name, $button_extension);
+        template_mapper!(map_binary_sensor, $component_name, $binary_sensor_extension);
+        template_mapper!(map_text_sensor, $component_name, $text_sensor_extension);
+        template_mapper!(map_media_player, $component_name, $media_player_extension);
 
-        template_button!($component_name, $button_extension);
-        template_binary_sensor!($component_name, $binary_sensor_extension);
-        template_sensor!($component_name, $sensor_extension);
-        template_switch!($component_name, $switch_extension);
-        
-
-
-
-
-        template_mapper!(map_sensor, Sensor);
-        template_mapper!(map_button, ButtonConfig);
-        template_mapper!(map_binary_sensor, BinarySensor);
-        template_mapper!(map_switch, Switch);
-
-
-        #[derive(Clone, Deserialize, Debug)]
+        #[derive(Clone, Deserialize, Debug, Validate)]
+        #[garde(allow_unvalidated)]
         pub struct CoreConfig {
+            #[garde(dive)]
             pub ubihome: UbiHome,
 
+            #[garde(dive)]
             pub $component_name: $component_config,
 
             #[serde(default, deserialize_with = "map_button")]
-            pub button: Option<HashMap<String, ButtonConfig>>,
+            #[garde(dive)]
+            pub button: Option<HashMap<String, $button_extension>>,
 
             #[serde(default, deserialize_with = "map_sensor")]
-            pub sensor: Option<HashMap<String, Sensor>>,
+            #[garde(dive)]
+            pub sensor: Option<HashMap<String, $sensor_extension>>,
 
             #[serde(default, deserialize_with = "map_binary_sensor")]
-            pub binary_sensor: Option<HashMap<String, BinarySensor>>,
+            #[garde(dive)]
+            pub binary_sensor: Option<HashMap<String, $binary_sensor_extension>>,
 
             #[serde(default, deserialize_with = "map_switch")]
-            pub switch: Option<HashMap<String, Switch>>,
+            #[garde(dive)]
+            pub switch: Option<HashMap<String, $switch_extension>>,
+
+            #[serde(default, deserialize_with = "map_light")]
+            #[garde(dive)]
+            pub light: Option<HashMap<String, $light_extension>>,
+
+            #[serde(default, deserialize_with = "map_number")]
+            pub number: Option<HashMap<String, $number_extension>>,
+
+            #[serde(default, deserialize_with = "map_text_sensor")]
+            pub text_sensor: Option<HashMap<String, $text_sensor_extension>>,
+
+            #[serde(default, deserialize_with = "map_media_player")]
+            #[garde(dive)]
+            pub media_player: Option<HashMap<String, $media_player_extension>>,
         }
     };
 }
-

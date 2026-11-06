@@ -1,5 +1,119 @@
 # Changelog
 
+## [0.12.0](https://github.com/UbiHome/UbiHome/compare/v0.11.0...ubihome-core-v0.12.0) (2026-05-14)
+
+
+### Features
+
+* add `number` platform support for shell component ([#112](https://github.com/UbiHome/UbiHome/issues/112)) ([1799769](https://github.com/UbiHome/UbiHome/commit/1799769ccddf70cfff0f73e764e659cdef5280cd))
+* better validation ([#101](https://github.com/UbiHome/UbiHome/issues/101)) ([c3099f1](https://github.com/UbiHome/UbiHome/commit/c3099f1a2ebec34c2f621e149a5ad839d2780b8b))
+* support `accuracy_decimals` in sensor entity configuration ([#113](https://github.com/UbiHome/UbiHome/issues/113)) ([9ccbcd4](https://github.com/UbiHome/UbiHome/commit/9ccbcd4efd39304b4a1960d548eb33b6e282ff41))
+
+## [0.11.0](https://github.com/UbiHome/UbiHome/compare/v0.10.0...ubihome-core-v0.11.0) (2026-05-10)
+
+
+### Features
+
+* add `number` platform support for shell component ([#112](https://github.com/UbiHome/UbiHome/issues/112)) ([1799769](https://github.com/UbiHome/UbiHome/commit/1799769ccddf70cfff0f73e764e659cdef5280cd))
+* support `accuracy_decimals` in sensor entity configuration ([#113](https://github.com/UbiHome/UbiHome/issues/113)) ([9ccbcd4](https://github.com/UbiHome/UbiHome/commit/9ccbcd4efd39304b4a1960d548eb33b6e282ff41))
+
+
+### Bug Fixes
+
+* [#105](https://github.com/UbiHome/UbiHome/issues/105) ([b564199](https://github.com/UbiHome/UbiHome/commit/b5641993f3825ac0f7f690f543318dd3db08092e))
+
+## [0.10.0](https://github.com/UbiHome/UbiHome/compare/v0.9.3...ubihome-core-v0.10.0) (2026-04-16)
+
+
+### Features
+
+* support `accuracy_decimals` in sensor entity configuration ([#113](https://github.com/UbiHome/UbiHome/issues/113)) ([9ccbcd4](https://github.com/UbiHome/UbiHome/commit/9ccbcd4efd39304b4a1960d548eb33b6e282ff41))
+
+
+### Bug Fixes
+
+* [#105](https://github.com/UbiHome/UbiHome/issues/105) ([b564199](https://github.com/UbiHome/UbiHome/commit/b5641993f3825ac0f7f690f543318dd3db08092e))
+
+## [0.9.3](https://github.com/UbiHome/UbiHome/compare/v0.9.2...ubihome-core-v0.9.3) (2026-04-14)
+
+
+### Bug Fixes
+
+* [#105](https://github.com/UbiHome/UbiHome/issues/105) ([b564199](https://github.com/UbiHome/UbiHome/commit/b5641993f3825ac0f7f690f543318dd3db08092e))
+
+## [0.9.2](https://github.com/UbiHome/UbiHome/compare/v0.9.1...ubihome-core-v0.9.2) (2026-04-14)
+
+
+### Bug Fixes
+
+* [#105](https://github.com/UbiHome/UbiHome/issues/105) ([b564199](https://github.com/UbiHome/UbiHome/commit/b5641993f3825ac0f7f690f543318dd3db08092e))
+
+## [0.9.1](https://github.com/UbiHome/UbiHome/compare/v0.9.0...ubihome-core-v0.9.1) (2026-04-14)
+
+
+### Bug Fixes
+
+* [#105](https://github.com/UbiHome/UbiHome/issues/105) ([b564199](https://github.com/UbiHome/UbiHome/commit/b5641993f3825ac0f7f690f543318dd3db08092e))
+
+## [0.9.0](https://github.com/UbiHome/UbiHome/compare/v0.8.6...ubihome-core-v0.9.0) (2025-08-03)
+
+
+### Features
+
+* add password and key authentcation + light sensor ([#82](https://github.com/UbiHome/UbiHome/issues/82)) ([89c11f2](https://github.com/UbiHome/UbiHome/commit/89c11f2aeec96048663c64edc0b351c8ba7df911))
+
+
+### Bug Fixes
+
+* address not found on linux ([1b6315d](https://github.com/UbiHome/UbiHome/commit/1b6315de0a8267c630358c105b45580f57bef32f))
+* api switch ([#76](https://github.com/UbiHome/UbiHome/issues/76)) ([c27b34c](https://github.com/UbiHome/UbiHome/commit/c27b34cf57e886dc54878e064cd907c5c1463bc4))
+
+## [0.8.6](https://github.com/UbiHome/UbiHome/compare/v0.8.5...ubihome-core-v0.8.6) (2025-05-10)
+
+
+### Bug Fixes
+
+* address not found on linux ([1b6315d](https://github.com/UbiHome/UbiHome/commit/1b6315de0a8267c630358c105b45580f57bef32f))
+* api switch ([#76](https://github.com/UbiHome/UbiHome/issues/76)) ([c27b34c](https://github.com/UbiHome/UbiHome/commit/c27b34cf57e886dc54878e064cd907c5c1463bc4))
+
+## [0.8.5](https://github.com/UbiHome/UbiHome/compare/v0.8.4...ubihome-core-v0.8.5) (2025-05-10)
+
+
+### Bug Fixes
+
+* api switch ([#76](https://github.com/UbiHome/UbiHome/issues/76)) ([c27b34c](https://github.com/UbiHome/UbiHome/commit/c27b34cf57e886dc54878e064cd907c5c1463bc4))
+
+## [0.8.4](https://github.com/UbiHome/UbiHome/compare/v0.8.3...ubihome-core-v0.8.4) (2025-05-10)
+
+
+### Bug Fixes
+
+* api switch ([#76](https://github.com/UbiHome/UbiHome/issues/76)) ([c27b34c](https://github.com/UbiHome/UbiHome/commit/c27b34cf57e886dc54878e064cd907c5c1463bc4))
+
+## [0.8.3](https://github.com/UbiHome/UbiHome/compare/v0.8.2...ubihome-core-v0.8.3) (2025-05-10)
+
+
+### Bug Fixes
+
+* api switch ([#76](https://github.com/UbiHome/UbiHome/issues/76)) ([c27b34c](https://github.com/UbiHome/UbiHome/commit/c27b34cf57e886dc54878e064cd907c5c1463bc4))
+* automatically get ip address ([08e0a27](https://github.com/UbiHome/UbiHome/commit/08e0a276e239d554bc1a6415f7a70fb8ec6ba93a))
+
+## [0.8.2](https://github.com/UbiHome/UbiHome/compare/v0.8.1...ubihome-core-v0.8.2) (2025-05-10)
+
+
+### Bug Fixes
+
+* add switch to native api ([7a947ad](https://github.com/UbiHome/UbiHome/commit/7a947ad3acdf891c713a654f74efb6ec6dfa21a1))
+* automatically get ip address ([08e0a27](https://github.com/UbiHome/UbiHome/commit/08e0a276e239d554bc1a6415f7a70fb8ec6ba93a))
+
+## [0.8.1](https://github.com/UbiHome/UbiHome/compare/v0.8.0...ubihome-core-v0.8.1) (2025-05-09)
+
+
+### Bug Fixes
+
+* add switch to native api ([7a947ad](https://github.com/UbiHome/UbiHome/commit/7a947ad3acdf891c713a654f74efb6ec6dfa21a1))
+* automatically get ip address ([08e0a27](https://github.com/UbiHome/UbiHome/commit/08e0a276e239d554bc1a6415f7a70fb8ec6ba93a))
+
 ## [0.8.0](https://github.com/UbiHome/UbiHome/compare/ubihome-core-v0.7.3...ubihome-core-v0.8.0) (2025-05-09)
 
 

@@ -1,43 +1,53 @@
 name: docs
 on:
+  pull_request:
+    paths:
+      - documentation/**
+      - .dagger/**
+      - dagger.json
+      - .github/workflows/docs.yml
+    branches-ignore:
+      - release
   push:
     branches:
       - main
     paths:
       - documentation/**
+      - .dagger/**
+      - dagger.json
       - .github/workflows/docs.yml
-        
-permissions:
-  contents: write
+
 jobs:
-  deploy:
+  check:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
+      - name: Run docs checks
+        uses: dagger/dagger-for-github@v8.4.1
         with:
-          fetch-depth: 0
-      - name: Configure Git Credentials
-        run: |
-          git config user.name github-actions[bot]
-          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
-      - uses: actions/setup-python@v5
+          version: v0.20.8
+          call: docs-check
+          cloud-token: ${{ secrets.DAGGER_CLOUD_TOKEN }}
+
+  deploy:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Build docs site with Dagger
+        uses: dagger/dagger-for-github@v8.4.1
         with:
-          python-version: 3.x
-      - run: echo "cache_id=$(date --utc '+%V')" >> $GITHUB_ENV 
-      - uses: actions/cache@v4
+          version: v0.20.8
+          call: docs-build-dir export --path=./documentation/site
+          cloud-token: ${{ secrets.DAGGER_CLOUD_TOKEN }}
+
+      - name: Deploy to ubihome.github.io repository
+        uses: peaceiris/actions-gh-pages@v4
         with:
-          key: mkdocs-material-${{ env.cache_id }}
-          path: documentation/.cache 
-          restore-keys: |
-            mkdocs-material-
-      - run: pip install mkdocs-material[imaging] pillow cairosvg mkdocs-awesome-nav mkdocs-macros-plugin mkdocs-git-revision-date-localized-plugin
-      
-      # https://stackoverflow.com/questions/64374179/how-to-push-to-another-repository-in-github-actions
-      - name: Change deploy location
-        run: |- 
-          git config --unset-all http.https://github.com/.extraheader
-          git remote set-url origin https://danielhabenicht:${{ secrets.CUSTOM_GITHUB_PAT }}@github.com/UbiHome/ubihome.github.io
-          git remote -v
-      - run: |-
-          cd documentation
-          mkdocs gh-deploy --force
+          external_repository: UbiHome/ubihome.github.io
+          publish_dir: ./documentation/site
+          publish_branch: gh-pages
+          personal_token: ${{ secrets.CUSTOM_GITHUB_PAT }}

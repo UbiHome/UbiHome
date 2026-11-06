@@ -2,21 +2,39 @@
 
 ## Installation
 
+1. Install [`uv`](https://docs.astral.sh/uv/getting-started/installation/)
+
+```bash
+cd tests
+uv sync
 ```
-pipx install poetry
-```
+
+## Linux
 
 ## Just run them
 
 ```bash
 make prepare-test-linux
 make test
+cd tests
+uv run pytest
+
+uv run ruff check
 ```
-## Development
+
+## If something is not working
 
 ```bash
-make prepare-test-linux
+# Linux
+pkill -8  ubihome
+# Check that no processes are running
+ps aux | grep ubihome
+```
+
+## Windows
+
+```powershell
 cd tests
-eval $(poetry env activate)
-pytest
+cp ..\target\debug\ubihome.exe .\ubihome.exe
+uv run pytest
 ```

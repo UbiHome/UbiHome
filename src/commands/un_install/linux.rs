@@ -1,8 +1,8 @@
-use std::{env, fs};
-use std::{path::Path, time::Duration};
 use log::debug;
 use shell_exec::{Execution, Shell};
 use std::str;
+use std::{env, fs};
+use std::{path::Path, time::Duration};
 
 fn service_file() -> String {
     use crate::constants::SERVICE_NAME;
@@ -11,24 +11,46 @@ fn service_file() -> String {
 
 pub const SYSTEMD_FILE_PATH: &str = "/etc/systemd/system";
 
-
-pub async fn install(location: &str){
+pub async fn install(location: &str) {
     use crate::constants::SERVICE_DESCRIPTION;
 
     // TODO: Run update logic if already installed (e.g. stop service before copy)
-    println!("Installing UbiHome to {}", location);
+    println!("Installing UbiHome:");
     println!(" - Creating Folder at {}", location);
     fs::create_dir_all(location).expect("Unable to create directory");
 
+    let current_exe = env::current_exe().unwrap();
     let new_path = Path::new(location).join("ubihome");
-    println!(" - Copying Binary to {}", new_path.display());
-    fs::copy(env::current_exe().unwrap(), new_path).expect("Unable to copy file");
+
+    // Compare against the canonicalized target directory (not `new_path` itself) so this
+    // also works when no binary exists at the target location yet. Overwriting the binary
+    // that is currently executing fails with "Text file busy" on Linux/macOS.
+    let already_in_place = new_path
+        .parent()
+        .and_then(|dir| dir.canonicalize().ok())
+        .map(|dir| dir.join("ubihome"))
+        .and_then(|target| current_exe.canonicalize().ok().map(|exe| exe == target))
+        .unwrap_or(false);
+
+    if already_in_place {
+        println!(
+            " - Binary is already at {}, skipping copy",
+            new_path.display()
+        );
+    } else {
+        println!(" - Copying Binary to {}", new_path.display());
+        fs::copy(&current_exe, &new_path).expect("Unable to copy file");
+    }
 
     let service_file = service_file();
 
     let systemd_file_path = Path::new(SYSTEMD_FILE_PATH).join(&service_file);
-    println!(" - Creating Systemd Service file {}", systemd_file_path.to_string_lossy().to_string());
-    let systemd_file: String = format!("[Unit]
+    println!(
+        " - Creating Systemd Service file {}",
+        systemd_file_path.to_string_lossy()
+    );
+    let systemd_file: String = format!(
+        "[Unit]
 Description={}
 After=network-online.target
 
@@ -42,7 +64,9 @@ WorkingDirectory={}
 
 
 [Install]
-WantedBy=multi-user.target", SERVICE_DESCRIPTION, location, location);
+WantedBy=multi-user.target",
+        SERVICE_DESCRIPTION, location, location
+    );
 
     fs::write(systemd_file_path, systemd_file).expect("Unable to write file");
     println!("- Installing Systemd Service");
@@ -52,23 +76,30 @@ WantedBy=multi-user.target", SERVICE_DESCRIPTION, location, location);
     println!("  - Starting Service");
     execute_command(format!("systemctl start {}", service_file).as_str()).await;
 
+    let config_path = Path::new(location).join("config.yaml");
+    if crate::DEFAULT_CONFIG.is_none() && !config_path.exists() {
+        println!(
+            "WARNING: No embedded default configuration and no config.yaml found. The service will fail to start until you place a config.yaml at {}",
+            config_path.display()
+        );
+    }
+
     println!("Successfully installed and started!");
     println!("Query the status via `systemctl status {}`", service_file);
     println!("Or follow the log with `journalctl -u {}`", service_file);
-
 }
 
 async fn execute_command(command: &str) {
     let execution = Execution::builder()
-    .shell(Shell::default())
-    .timeout(Duration::from_secs(5))
-    .cmd(command.to_string())
-    .build();
+        .shell(Shell::default())
+        .timeout(Duration::from_secs(5))
+        .cmd(command.to_string())
+        .build();
 
     let output = execution.execute(b"").await;
     match output {
         Ok(output) => {
-            let output_string = str::from_utf8(&output).unwrap_or(""); 
+            let output_string = str::from_utf8(&output).unwrap_or("");
             debug!("Command executed successfully: {}", output_string);
         }
         Err(e) => {
@@ -77,16 +108,13 @@ async fn execute_command(command: &str) {
     }
 }
 
-pub async fn uninstall(location: &str){
-
+pub async fn uninstall(location: &str) {
     if location.chars().filter(|c| *c == '/').count() < 2 {
         println!("To not shoot yourself in the foot, please provide a longer path");
         return;
     }
 
-    println!("Uninstalling UbiHome at {}", location);
-    println!(" - Remove Folder at {}", location);
-    fs::remove_dir(location).unwrap();
+    println!("Uninstalling UbiHome:");
 
     println!("- Removing Systemd Service");
     let service_file = service_file();
@@ -94,9 +122,11 @@ pub async fn uninstall(location: &str){
     execute_command(format!("systemctl disable {}", service_file).as_str()).await;
     let systemd_file_path = Path::new(SYSTEMD_FILE_PATH).join(&service_file);
     fs::remove_file(systemd_file_path).expect("Unable to remove file");
-    
+
     execute_command("systemctl daemon-reload").await;
-    println!("TODO: remove log files?");
 
+    println!(" - Remove Folder at {}", location);
+    fs::remove_dir(location).unwrap();
 
+    println!("Successfully uninstalled UbiHome.");
 }

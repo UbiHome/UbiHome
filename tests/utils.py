@@ -1,9 +1,61 @@
-from asyncio import sleep
-import fcntl
+import asyncio
+import logging
 import os
+import platform
+import re
 import signal
-from subprocess import PIPE, Popen
-import time
+import socket
+from asyncio.subprocess import Process
+from dataclasses import dataclass
+from enum import Enum
+
+import yaml
+
+
+def represent_none(self, _):
+    return self.represent_scalar("tag:yaml.org,2002:null", "")
+
+
+yaml.add_representer(type(None), represent_none)
+
+
+def _get_free_port() -> int:
+    """Ask the OS for an unused TCP port instead of guessing one."""
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+        sock.bind(("127.0.0.1", 0))
+        return sock.getsockname()[1]
+
+
+@dataclass
+class HomeAssistantRuntime:
+    base_url: str
+    username: str
+    password: str
+
+
+class Platform(Enum):
+    WINDOWS = "Windows"
+    LINUX = "Linux"
+    MACOS = "Darwin"
+
+
+def os_platform() -> Platform:
+    platform_str = platform.system()
+    if platform_str == "Linux":
+        return Platform.LINUX
+    elif platform_str == "Darwin":
+        return Platform.MACOS
+    elif platform_str == "Windows":
+        return Platform.WINDOWS
+    else:
+        raise ValueError(f"Unsupported platform: {platform_str}")
+
+
+OS_PLATFORM = os_platform()
+
+# Shell backend used by the test configs. Windows uses PowerShell; every other
+# platform (Linux CI, macOS) uses bash.
+SHELL_TYPE = "powershell" if OS_PLATFORM is Platform.WINDOWS else "bash"
 
 DEFAULT_CONFIG = """
 ubihome:
@@ -12,10 +64,10 @@ ubihome:
 logger:
   level: DEBUG
 
-shell: 
+shell:
   type: bash
 
-button: 
+button:
  - platform: shell
    id: my_button
    name: "Write Hello World"
@@ -28,7 +80,7 @@ sensor:
     icon: mdi:memory
     state_class: "measurement"
     unit_of_measurement: "%"
-    update_interval: 30s # 0 only executes it once and assumes a long running processes.
+    update_interval: 30s
     command: |-
       cat testfile
 
@@ -47,105 +99,237 @@ api:
     key: "token"
 """
 
-class UbiHome(object):
-    
-    def __init__(self, arguments, config = None):
-        self.config = config if config else DEFAULT_CONFIG
+
+class UbiHome:
+    """Context manager to run UbiHome with a given configuration."""
+
+    process: Process | None = None
+    _stdout_task = None
+    _stderr_task = None
+    stdout: str | None = None
+    stderr: str | None = None
+    port: int | None = None
+    _stderr_has_error: bool = False
+
+    async def _raise_if_stderr_task_failed(self):
+        if not self._stderr_task or not self._stderr_task.done() or self._stderr_task.cancelled():
+            return
+        error = self._stderr_task.exception()
+        if not error:
+            return
+        # Clean up for all failure types, not just AssertionError, so the child
+        # process and temp config file are never leaked when we re-raise.
+        await self._cleanup()
+        if isinstance(error, AssertionError):
+            raise error
+        raise AssertionError("UbiHome stderr reader task failed") from error
+
+    async def _cleanup(self):
+        try:
+            os.remove(self.configuration_file)
+        except FileNotFoundError:
+            pass
+        if self.process:
+            # Try to terminate gracefully
+            try:
+                self.process.terminate()
+            except ProcessLookupError:
+                pass
+            try:
+                await asyncio.wait_for(self.process.wait(), timeout=5)
+            except TimeoutError:
+                self.process.kill()
+                await self.process.wait()
+
+            # Cancel the stdout/stderr reading tasks
+            if self._stdout_task:
+                self._stdout_task.cancel()
+                try:
+                    await self._stdout_task
+                except asyncio.CancelledError:
+                    pass
+
+            if self._stderr_task:
+                self._stderr_task.cancel()
+                try:
+                    await self._stderr_task
+                except asyncio.CancelledError:
+                    pass
+            # Works on windows?!
+            if platform.system() == "Windows":
+                os.kill(self.process.pid, signal.CTRL_BREAK_EVENT)
+
+            # self.process = None
+
+    def __init__(
+        self,
+        *arguments,
+        config=DEFAULT_CONFIG,
+        throw_on_error=True,
+        wait_for_api=False,
+        extra_logging=True,
+    ):
         self.arguments = arguments
         self.configuration_file = f"config{os.getpid()}.yaml"
+        self.throw_on_error = throw_on_error
+        self.wait_for_api = wait_for_api
+        self.extra_logging = extra_logging
+        if platform.system() == "Windows":
+            file = "ubihome.exe"
+        else:
+            file = "ubihome"
+        # self.executable = os.path.join(os.getcwd(), "..", "target", "debug", file)
+        self.executable = os.path.join(os.getcwd(), file)
+        logging.info("Using UbiHome executable: %s", self.executable)
 
+        if config:
+            config_yaml = yaml.safe_load(config)
+            if "api" in config_yaml:
+                if config_yaml["api"] is None:
+                    config_yaml["api"] = {}
+                self.port = _get_free_port()
+                config_yaml["api"]["port"] = self.port
 
-    def __enter__(self):
-        with open(self.configuration_file, "w") as f:
-            f.write(self.config)
-            
-        self.process = Popen(
-            f"./ubihome -c " + self.configuration_file + " " + self.arguments,
-            shell=True,
-            stdout=PIPE,
-            stderr=PIPE,
-            cwd=os.getcwd(),
-            preexec_fn=os.setsid
-        )
-        return self
-    
+            self.config = yaml.dump(config_yaml)
+        else:
+            self.config = None
+
     async def __aenter__(self):
-        self.__enter__()
-        await sleep(0.5)
+        my_env = os.environ.copy()
+        if self.extra_logging:
+            my_env["RUST_LOG"] = "TRACE"
+        else:
+            my_env["RUST_LOG"] = ""
+        my_env["RUST_BACKTRACE"] = "1"
+        my_env["RUSTFLAGS"] = "-Awarnings"
+        if self.config:
+            with open(self.configuration_file, "w") as f:
+                f.write(self.config)
+
+        if os.path.exists(self.executable):
+            # Use pre-build binaries
+            arguments = [self.executable]
+            if self.config:
+                arguments += ["-c", self.configuration_file]
+            if len(self.arguments) > 0 and self.arguments[0]:
+                arguments += list(self.arguments)
+
+            logging.info("Starting with command: %s", " ".join(arguments))
+            self.process = await asyncio.create_subprocess_exec(
+                *arguments,
+                env=my_env,
+                stderr=asyncio.subprocess.PIPE,
+                stdout=asyncio.subprocess.PIPE,
+            )
+        else:
+            raise Exception(f"{self.executable} does not exist. Please build UbiHome first.")
+
+        self._stdout_task = asyncio.create_task(self._read_stdout())
+        self._stderr_task = asyncio.create_task(self._read_stderr())
+
+        if self.port and self.wait_for_api:
+            print("Waiting for server to start...")
+            while True:
+                await self._raise_if_stderr_task_failed()
+                if self.process and self.process.returncode is not None:
+                    raise AssertionError(f"UbiHome exited before API startup (exit code: {self.process.returncode})")
+
+                # Use a fresh socket per attempt: on macOS/BSD a blocking socket
+                # whose connect() failed with ECONNREFUSED is poisoned and every
+                # later connect() returns EINVAL, so a reused socket would never
+                # observe the port opening.
+                sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                try:
+                    result = sock.connect_ex(("127.0.0.1", self.port))
+                finally:
+                    sock.close()
+                if result == 0:
+                    print("Port is open")
+                    break
+                await asyncio.sleep(0.1)
+
         return self
 
     async def __aexit__(self, exctype, value, tb):
-        await sleep(1)
-        self.__exit__(exctype, value, tb)
+        await self._raise_if_stderr_task_failed()
+        await self._cleanup()
 
-    def __exit__(self, exctype, value, tb):
-        os.remove(self.configuration_file)
-        stderr = self.get_stderr()
-        print(self.get_stdout())
-            
-        self.process.terminate()
-        # Make sure its really dead:
-        try: 
-          os.killpg(os.getpgid(self.process.pid), signal.SIGTERM)  # Send the signal to all the process groups
-        except Exception:
-          pass
-        if stderr:
-            raise Exception(f"Error: {stderr}")
+    async def _read_stdout(self):
+        """Read and print stdout from the server process."""
+        self.stdout = ""
 
-    def get_stdout(self):
-        return self.__non_block_read(self.process.stdout)
+        while True:
+            if not self.process or not self.process.stdout:
+                return
+            line = await self.process.stdout.readline()
+            if not line:
+                break
+            message = line.decode("utf-8")
+            self.stdout += message
+            print(message.rstrip())
 
-    def get_stderr(self):
-        return self.__non_block_read(self.process.stderr)
-    
-    @staticmethod
-    def __non_block_read(output):
-        if output.closed:
-            return ""
-        fd = output.fileno()
-        fl = fcntl.fcntl(fd, fcntl.F_GETFL)
-        fcntl.fcntl(fd, fcntl.F_SETFL, fl | os.O_NONBLOCK)
-        try:
-            return output.read().decode()
-        except:
-            return ""
+    async def _read_stderr(self):
+        """Read and print stderr from the server process."""
+        self.stderr = ""
+        self._stderr_has_error = False
+        while True:
+            if not self.process or not self.process.stderr:
+                return
+            line = await self.process.stderr.readline()
+            if not line:
+                break
+            message = line.decode("utf-8")
+            self.stderr += message
+            if self.throw_on_error and message.rstrip():
+                self._stderr_has_error = True
 
-def run_ubihome(arguments, config = None) -> str: 
-    with UbiHome(arguments, config) as ubihome:
-      stdout, stderr = ubihome.process.communicate()
-      if stderr:
-          raise Exception(f"Error: {stderr.decode().strip()}")
-
-      return stdout.decode()
+        if self.throw_on_error and self._stderr_has_error:
+            raise AssertionError(f"UbiHome wrote to stderr:\n{(self.stderr or '').rstrip()}")
 
 
-def wait_and_get_file(file_path, timeout=5):
+async def run_ubihome(*arguments, config=None, throw_on_error=False, extra_logging=True) -> tuple[str, str]:
+    async with UbiHome(
+        *arguments,
+        config=config,
+        throw_on_error=throw_on_error,
+        extra_logging=extra_logging,
+    ) as ubihome:
+        await asyncio.sleep(1)
+        return (ubihome.stdout or "", ubihome.stderr or "")
+
+
+# FROM https://github.com/esphome/esphome/blob/58a9e30017b7094c9cf8bfb0739b610ba5bcd450/esphome/helpers.py#L65
+
+FNV1_OFFSET_BASIS = 2166136261
+FNV1_PRIME = 16777619
+
+
+def snake_case(value):
+    """Same behaviour as `helpers.cpp` method `str_snake_case`."""
+    return value.replace(" ", "_").lower()
+
+
+_DISALLOWED_CHARS = re.compile(r"[^a-zA-Z0-9-_]")
+
+
+def sanitize(value):
+    """Same behaviour as `helpers.cpp` method `str_sanitize`."""
+    return _DISALLOWED_CHARS.sub("_", value)
+
+
+def fnv1_hash(string: str) -> int:
+    """FNV-1 32-bit hash function (multiply then XOR)."""
+    hash_value = FNV1_OFFSET_BASIS
+    for char in string:
+        hash_value = (hash_value * FNV1_PRIME) & 0xFFFFFFFF
+        hash_value ^= ord(char)
+    return hash_value
+
+
+def fnv1_hash_object_id(name: str) -> int:
+    """Compute FNV-1 hash of name with snake_case + sanitize transformations.
+
+    IMPORTANT: Must produce same result as C++ fnv1_hash_object_id() in helpers.h.
+    Used for pre-computing entity object_id hashes at code generation time.
     """
-    Wait for a file to be created or modified.
-    """
-    start_time = time.time()
-    while not os.path.exists(file_path):
-        if time.time() - start_time > timeout:
-            raise TimeoutError(f"File {file_path} was not created within {timeout} seconds.")
-        time.sleep(0.1)
-    return open(file_path, "r").read()
-
-
-def wait_for_mock_state(file_path, expected_state, timeout=5):
-    """
-    Wait for a file to be created or modified.
-    """
-    state = None
-    start_time = time.time()
-    while expected_state != state:
-      if time.time() - start_time > timeout:
-        raise TimeoutError(f"State does not match within {timeout} seconds: {expected_state} != {state}.")
-      while not os.path.exists(file_path):
-          if time.time() - start_time > timeout:
-              raise TimeoutError(f"File {file_path} was not created within {timeout} seconds.")
-          time.sleep(0.1)
-
-      state = open(file_path, "r").read()
-      time.sleep(0.1)
-
-    return True
+    return fnv1_hash(sanitize(snake_case(name)))

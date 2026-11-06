@@ -1,13 +1,19 @@
-# [Documentation](https://ubihome.github.io/) Repository for UbiHome
-
-Work on it:
+# Documentation (Astro Starlight)
 
 ```bash
-docker compose up
+cd documentation
+npm install
+npm run dev         # local preview on http://localhost:8000
+npm run check       # biome check with --write (formats/lints and updates files)
+npm run check-only  # non-mutating checks for CI/verification
+npm run build       # production build in documentation/site
+npm run preview    # preview built site
 ```
 
-Visit [http://localhost:8000](http://localhost:8000) to see the documentation preview.
+Dagger commands:
 
-## Links
-
-- [Icons and Emojis](https://squidfunk.github.io/mkdocs-material/reference/icons-emojis/)
+```bash
+dagger call docs-preview up
+dagger check
+dagger call docs-build-dir export --path ./documentation/site
+```

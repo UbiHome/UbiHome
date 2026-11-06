@@ -1,5 +1,73 @@
 # Changelog
 
+## [0.13.0](https://github.com/UbiHome/UbiHome/compare/v0.12.0...ubihome-bluetooth_proxy-v0.13.0) (2026-05-14)
+
+
+### Features
+
+* add `number` platform support for shell component ([#112](https://github.com/UbiHome/UbiHome/issues/112)) ([1799769](https://github.com/UbiHome/UbiHome/commit/1799769ccddf70cfff0f73e764e659cdef5280cd))
+* better validation ([#101](https://github.com/UbiHome/UbiHome/issues/101)) ([c3099f1](https://github.com/UbiHome/UbiHome/commit/c3099f1a2ebec34c2f621e149a5ad839d2780b8b))
+
+## [0.12.0](https://github.com/UbiHome/UbiHome/compare/v0.11.2...ubihome-bluetooth_proxy-v0.12.0) (2026-05-10)
+
+
+### Features
+
+* add `number` platform support for shell component ([#112](https://github.com/UbiHome/UbiHome/issues/112)) ([1799769](https://github.com/UbiHome/UbiHome/commit/1799769ccddf70cfff0f73e764e659cdef5280cd))
+
+## [0.11.2](https://github.com/UbiHome/UbiHome/compare/v0.11.1...ubihome-bluetooth_proxy-v0.11.2) (2026-04-16)
+
+## [0.11.1](https://github.com/UbiHome/UbiHome/compare/v0.11.0...ubihome-bluetooth_proxy-v0.11.1) (2026-04-14)
+
+## [0.11.0](https://github.com/UbiHome/UbiHome/compare/ubihome-bluetooth_proxy-v0.10.4...ubihome-bluetooth_proxy-v0.11.0) (2026-04-14)
+
+
+### Features
+
+* add bluetooth proxy ([#53](https://github.com/UbiHome/UbiHome/issues/53)) ([1308582](https://github.com/UbiHome/UbiHome/commit/1308582057511d01e8a99cf93bf3f71d83df22e0))
+* add illuminance sensor ([#83](https://github.com/UbiHome/UbiHome/issues/83)) ([fc24c29](https://github.com/UbiHome/UbiHome/commit/fc24c2945849140969b0d7cf6a308fd91852d027))
+* add password and key authentcation + light sensor ([#82](https://github.com/UbiHome/UbiHome/issues/82)) ([89c11f2](https://github.com/UbiHome/UbiHome/commit/89c11f2aeec96048663c64edc0b351c8ba7df911))
+* switch shell entity via mqtt ([b0e4bd4](https://github.com/UbiHome/UbiHome/commit/b0e4bd45affcb8494ddc53903a132d9edb871509))
+
+
+### Bug Fixes
+
+* bluetooth proxy addresses are wrong ([23c787e](https://github.com/UbiHome/UbiHome/commit/23c787ef2b51604831c0a3cda2b10026d0859798))
+* build by not adding bluetooth_proxy for now ([1e9deeb](https://github.com/UbiHome/UbiHome/commit/1e9deeb3cf267044f4082338ca447b5ace39eede))
+
+## [0.10.4](https://github.com/UbiHome/UbiHome/compare/v0.10.0...ubihome-bluetooth_proxy-v0.10.4) (2026-04-14)
+
+## [0.10.0](https://github.com/UbiHome/UbiHome/compare/v0.9.0...ubihome-bluetooth_proxy-v0.10.0) (2025-12-21)
+
+
+### Features
+
+* add illuminance sensor ([#83](https://github.com/UbiHome/UbiHome/issues/83)) ([fc24c29](https://github.com/UbiHome/UbiHome/commit/fc24c2945849140969b0d7cf6a308fd91852d027))
+
+## [0.9.0](https://github.com/UbiHome/UbiHome/compare/v0.8.11...ubihome-bluetooth_proxy-v0.9.0) (2025-08-03)
+
+
+### Features
+
+* add password and key authentcation + light sensor ([#82](https://github.com/UbiHome/UbiHome/issues/82)) ([89c11f2](https://github.com/UbiHome/UbiHome/commit/89c11f2aeec96048663c64edc0b351c8ba7df911))
+
+## [0.8.11](https://github.com/UbiHome/UbiHome/compare/v0.8.10...ubihome-bluetooth_proxy-v0.8.11) (2025-05-10)
+
+## [0.8.10](https://github.com/UbiHome/UbiHome/compare/v0.8.9...ubihome-bluetooth_proxy-v0.8.10) (2025-05-10)
+
+## [0.8.9](https://github.com/UbiHome/UbiHome/compare/v0.8.8...ubihome-bluetooth_proxy-v0.8.9) (2025-05-10)
+
+
+### Bug Fixes
+
+* bluetooth proxy addresses are wrong ([23c787e](https://github.com/UbiHome/UbiHome/commit/23c787ef2b51604831c0a3cda2b10026d0859798))
+
+## [0.8.8](https://github.com/UbiHome/UbiHome/compare/v0.8.7...ubihome-bluetooth_proxy-v0.8.8) (2025-05-10)
+
+## [0.8.7](https://github.com/UbiHome/UbiHome/compare/v0.8.6...ubihome-bluetooth_proxy-v0.8.7) (2025-05-10)
+
+## [0.8.6](https://github.com/UbiHome/UbiHome/compare/v0.8.5...ubihome-bluetooth_proxy-v0.8.6) (2025-05-09)
+
 ## [0.8.5](https://github.com/UbiHome/UbiHome/compare/v0.8.4...ubihome-bluetooth_proxy-v0.8.5) (2025-05-09)
 
 ## [0.8.4](https://github.com/UbiHome/UbiHome/compare/v0.8.3...ubihome-bluetooth_proxy-v0.8.4) (2025-05-09)

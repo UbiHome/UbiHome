@@ -1,4 +1,4 @@
-.PHONY: prepare-test-linux test prepare-test-linux-fast
+.PHONY: prepare-test-linux test prepare-test-linux-fast lint
 
 prepare-test-linux:
 	cargo build --release
@@ -8,5 +8,12 @@ prepare-test-linux-fast:
 	cargo build
 	cp target/debug/ubihome ./tests/ubihome
 
-test: prepare-test-linux-fast
-	cd tests && poetry run pytest -vvv
+test-fast: prepare-test-linux-fast
+	cd tests && uv run pytest -vvv
+
+test: prepare-test-linux
+	cd tests && uv run pytest -vvv
+
+lint:
+	cargo fmt --all -- --check
+	cargo clippy --all-targets --all-features -- -D warnings

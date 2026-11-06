@@ -1,0 +1,60 @@
+---
+title: 'Number'
+sidebar:
+  order: 1
+---
+
+import SupportedPlatforms from '../../../../components/SupportedPlatforms.astro';
+
+```yaml title="Base Example"
+number:
+  - platform: ... # See supported platforms at the end of this page
+    name: 'Display Brightness'
+    id: display_brightness
+    icon: mdi:brightness-6
+    device_class: ''
+    state_class: measurement
+    unit_of_measurement: '%'
+    min_value: 0.0
+    max_value: 100.0
+    step: 1.0
+```
+
+:::note[Platform-specific attributes]
+Each platform may require additional attributes not shown above.
+Check the [page of the platform](/features/platforms/#platforms) for the full list of required and optional options.
+:::
+
+## Attributes
+
+Common attributes are documented in [Common Component Properties](/features/components/common_properties/).
+
+| Property              | Description                                   | Example       |
+| --------------------- | --------------------------------------------- | ------------- |
+| `device_class`        | Home Assistant number classification.         | `""`          |
+| `state_class`         | Home Assistant state class for number values. | `measurement` |
+| `unit_of_measurement` | Optional value unit shown in user interfaces. | `%`           |
+| `min_value`           | Lower boundary for allowed values.            | `0.0`         |
+| `max_value`           | Upper boundary for allowed values.            | `100.0`       |
+| `step`                | Increment/decrement step size.                | `1.0`         |
+
+### Triggers
+
+See [Triggers and Actions](/features/components/actions/) for how triggers work.
+
+| Property | Description                                  | Example |
+| -------- | --------------------------------------------- | ------- |
+| _(none)_ | Number currently has no additional triggers. | _(n/a)_ |
+
+Supported filters are documented in [Filters](/features/components/filters/).
+
+<SupportedPlatforms />
+
+Similar to ESPHome: [Number](https://esphome.io/components/number/)
+
+{/* Backlinks to be displayed */}
+
+<div style='display:none' aria-hidden='true'>
+  <a href='/features/platforms/template/'>Template</a>
+  <a href='/features/components/actions/'>Triggers and Actions</a>
+</div>

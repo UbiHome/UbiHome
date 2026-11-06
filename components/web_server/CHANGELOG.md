@@ -1,5 +1,55 @@
 # Changelog
 
+## [0.13.0](https://github.com/UbiHome/UbiHome/compare/v0.12.0...ubihome-web_server-v0.13.0) (2026-05-14)
+
+
+### Features
+
+* add `number` platform support for shell component ([#112](https://github.com/UbiHome/UbiHome/issues/112)) ([1799769](https://github.com/UbiHome/UbiHome/commit/1799769ccddf70cfff0f73e764e659cdef5280cd))
+* better validation ([#101](https://github.com/UbiHome/UbiHome/issues/101)) ([c3099f1](https://github.com/UbiHome/UbiHome/commit/c3099f1a2ebec34c2f621e149a5ad839d2780b8b))
+
+## [0.12.0](https://github.com/UbiHome/UbiHome/compare/v0.11.2...ubihome-web_server-v0.12.0) (2026-05-10)
+
+
+### Features
+
+* add `number` platform support for shell component ([#112](https://github.com/UbiHome/UbiHome/issues/112)) ([1799769](https://github.com/UbiHome/UbiHome/commit/1799769ccddf70cfff0f73e764e659cdef5280cd))
+
+## [0.11.2](https://github.com/UbiHome/UbiHome/compare/v0.11.1...ubihome-web_server-v0.11.2) (2026-04-16)
+
+## [0.11.1](https://github.com/UbiHome/UbiHome/compare/v0.11.0...ubihome-web_server-v0.11.1) (2026-04-14)
+
+## [0.11.0](https://github.com/UbiHome/UbiHome/compare/ubihome-web_server-v0.10.4...ubihome-web_server-v0.11.0) (2026-04-14)
+
+
+### Features
+
+* add password and key authentcation + light sensor ([#82](https://github.com/UbiHome/UbiHome/issues/82)) ([89c11f2](https://github.com/UbiHome/UbiHome/commit/89c11f2aeec96048663c64edc0b351c8ba7df911))
+* switch shell entity via mqtt ([b0e4bd4](https://github.com/UbiHome/UbiHome/commit/b0e4bd45affcb8494ddc53903a132d9edb871509))
+* Web server component ([#57](https://github.com/UbiHome/UbiHome/issues/57)) ([7489814](https://github.com/UbiHome/UbiHome/commit/7489814821233bbc0c98ccd2b8894d1693c7355a))
+* working basic binary filters ([52e0bc0](https://github.com/UbiHome/UbiHome/commit/52e0bc0f6b6c028165252675881714b6764bbdea))
+
+## [0.10.4](https://github.com/UbiHome/UbiHome/compare/v0.9.0...ubihome-web_server-v0.10.4) (2026-04-14)
+
+## [0.9.0](https://github.com/UbiHome/UbiHome/compare/v0.8.11...ubihome-web_server-v0.9.0) (2025-08-03)
+
+
+### Features
+
+* add password and key authentcation + light sensor ([#82](https://github.com/UbiHome/UbiHome/issues/82)) ([89c11f2](https://github.com/UbiHome/UbiHome/commit/89c11f2aeec96048663c64edc0b351c8ba7df911))
+
+## [0.8.11](https://github.com/UbiHome/UbiHome/compare/v0.8.10...ubihome-web_server-v0.8.11) (2025-05-10)
+
+## [0.8.10](https://github.com/UbiHome/UbiHome/compare/v0.8.9...ubihome-web_server-v0.8.10) (2025-05-10)
+
+## [0.8.9](https://github.com/UbiHome/UbiHome/compare/v0.8.8...ubihome-web_server-v0.8.9) (2025-05-10)
+
+## [0.8.8](https://github.com/UbiHome/UbiHome/compare/v0.8.7...ubihome-web_server-v0.8.8) (2025-05-10)
+
+## [0.8.7](https://github.com/UbiHome/UbiHome/compare/v0.8.6...ubihome-web_server-v0.8.7) (2025-05-10)
+
+## [0.8.6](https://github.com/UbiHome/UbiHome/compare/v0.8.5...ubihome-web_server-v0.8.6) (2025-05-09)
+
 ## [0.8.5](https://github.com/UbiHome/UbiHome/compare/v0.8.4...ubihome-web_server-v0.8.5) (2025-05-09)
 
 ## [0.8.4](https://github.com/UbiHome/UbiHome/compare/v0.8.3...ubihome-web_server-v0.8.4) (2025-05-09)

@@ -12,9 +12,15 @@ on:
       fileending:
         type: string
         required: true
+      release-file-name:
+        type: string
+        required: true
 jobs:
   build:
     runs-on: ${{ inputs.runs-on }}
+    env:
+      # Picked up by build.rs to embed "pr-<number>" as the version for PR builds.
+      UBIHOME_PR_NUMBER: ${{ github.event.pull_request.number }}
     steps:
       - uses: actions/checkout@v4
 
@@ -24,7 +30,7 @@ jobs:
 
       - name: Add extra packages (Linux)
         if: inputs.runs-on == 'ubuntu-24.04'
-        run: sudo apt install -y libdbus-1-dev pkg-config
+        run: sudo apt-get update && sudo apt-get install -y libdbus-1-dev pkg-config libasound2-dev libpipewire-0.3-dev
 
       - name: Set up Rust
         if: inputs.runs-on == 'macOS-latest'
@@ -69,13 +75,16 @@ jobs:
       #     # Add "--locked" again when release please is not updating all Cargo.toml files
       #     args: ''
 
-      # Save executable
+      # Save executable as an unzipped, single-file artifact (downloadable directly,
+      # and fetchable by `ubihome update --pr <number>`).
+      - name: Rename binary for artifact upload
+        run: cp target/${{ inputs.target }}/release/ubihome${{ inputs.fileending }} target/${{ inputs.target }}/release/${{ inputs.release-file-name }}
+
       - name: Archive artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
-          name: release-${{ inputs.target }}
-          path: |
-            target/${{ inputs.target }}/release/ubihome${{ inputs.fileending }}
+          path: target/${{ inputs.target }}/release/${{ inputs.release-file-name }}
+          archive: false
 
   test:
     runs-on: ${{ inputs.runs-on }}
@@ -84,21 +93,48 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: Download Artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
-          name: release-${{ inputs.target }}
+          name: ${{ inputs.release-file-name }}
           path: tests/
+      - name: Rename downloaded binary
+        run: mv tests/${{ inputs.release-file-name }} tests/ubihome
       - uses: actions/setup-python@v5
         with:
-          python-version: 3.12
-      - name: Run image
-        uses: abatilo/actions-poetry@v3
+          python-version: 3.14
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
         with:
-          poetry-version: 2.1.2
+          # Install a specific version of uv.
+          version: '0.8.4'
       - name: Run tests
         run: |-
+          docker pull ghcr.io/home-assistant/home-assistant:2026.4.3
           cd tests
           chmod +x ubihome
           ls -l
-          poetry install
-          poetry run pytest
+          uv run --locked playwright install --with-deps
+          uv run --locked pytest -vvv
+
+      - name: Generate Allure report
+        if: always()
+        run: |
+          npm install -g allure-commandline
+          allure generate tests/allure-results --single-file --clean -o tests/allure-report
+          mv tests/allure-report/index.html tests/allure-report/allure-report-${{ inputs.target }}.html
+
+      - name: Archive artifacts
+        uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: results-${{ inputs.target }}
+          path: |
+            tests/test-results
+            tests/allure-results
+
+      - name: Upload Allure report
+        uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          path: tests/allure-report/allure-report-${{ inputs.target }}.html
+          archive: false

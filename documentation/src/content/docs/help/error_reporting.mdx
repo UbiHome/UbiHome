@@ -1,0 +1,44 @@
+---
+title: 'Error Reporting'
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+## Manual
+
+If you run into an error please [file a report](https://github.com/UbiHome/UbiHome/issues/new?template=bug_report.yml).
+
+## Automatic
+
+You can also share the error by reproducing it while appending the `--sentry` flag.
+
+```bash
+ubihome <command> --sentry https://d3a005bc1ad1d57da91ca66e971dd507@o197997.ingest.us.sentry.io/4511509123760128`
+
+# Example:
+ubihome run --sentry https://d3a005bc1ad1d57da91ca66e971dd507@o197997.ingest.us.sentry.io/4511509123760128`
+```
+
+<Aside>
+  Third Party error reporting is (and will always be) opt-in. The project will always prioritize user privacy. We will
+  never collect or share any data without explicit consent from the user.
+</Aside>
+
+<Aside type='caution'>
+  The project tries its best to not collect any personal data. However it may still be possible that error data contains
+  personal information. Report manually if you are concerned about privacy. Also [Sentry](https://sentry.io/) is a
+  third-party service, with its own privacy policies and will collect at least technical data (e.g IP address).
+</Aside>
+
+Set the `SENTRY` environment variable to report all errors without the need to append the `--sentry` flag every time.:
+
+```bash
+export SENTRY=https://d3a005bc1ad1d57da91ca66e971dd507@o197997.ingest.us.sentry.io/4511509123760128
+```
+
+### Add to `systemd` service
+
+```
+[Service]
+Environment="SENTRY=https://d3a005bc1ad1d57da91ca66e971dd507@o197997.ingest.us.sentry.io/4511509123760128"
+```

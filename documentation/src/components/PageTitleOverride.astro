@@ -1,0 +1,63 @@
+---
+// biome-ignore-all lint/correctness/noUnusedImports: not supported yet
+// biome-ignore-all lint/correctness/noUnusedVariables: not supported yet
+/**
+ * Custom PageTitle that displays tags below the page heading
+ */
+import StarlightPageTitle from "@astrojs/starlight/components/PageTitle.astro";
+import { TagsList } from "starlight-tags/components";
+
+interface StarlightRouteData {
+	tags?: string[];
+	hideTags?: boolean;
+}
+
+interface StarlightLocals {
+	starlightRoute?: {
+		entry?: {
+			data?: StarlightRouteData;
+		};
+	};
+	starlightTags?: {
+		tags: Map<string, { type?: string }>;
+	};
+}
+
+const locals = Astro.locals as StarlightLocals;
+const pageData = locals.starlightRoute?.entry?.data;
+const pageTagIds = pageData?.tags ?? [];
+const hideTags = pageData?.hideTags ?? false;
+
+const osTagIds = pageTagIds.filter(
+	(tagId) => locals.starlightTags?.tags.get(tagId)?.type === "os",
+);
+---
+
+<StarlightPageTitle {...Astro.props} />
+{!hideTags && osTagIds.length > 0 && (
+  <div class="os-support-row" aria-label="OS Support">
+    <span class="os-support-title">OS Support:</span>
+    <TagsList tagIds={osTagIds} variant="outline" layout="inline" />
+  </div>
+)}
+
+<style>
+  .os-support-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 0.75rem;
+    flex-wrap: wrap;
+  }
+
+  .os-support-title {
+    font-size: var(--sl-text-sm);
+    color: var(--sl-color-gray-3);
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
+  .os-support-row :global(.fb-tags-list) {
+    margin: 0;
+  }
+</style>

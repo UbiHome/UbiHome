@@ -1,0 +1,57 @@
+---
+title: 'Sensor'
+sidebar:
+  order: 1
+---
+
+import SupportedPlatforms from '../../../../components/SupportedPlatforms.astro';
+
+```yaml title="Base Example"
+sensor:
+  - platform: ... # See supported platforms at the end of this page
+    name: 'My Sensor'
+    id: ram_usage
+    icon: mdi:memory
+    device_class: data_size
+    state_class: measurement
+    unit_of_measurement: '%'
+    accuracy_decimals: 2
+```
+
+:::note[Platform-specific attributes]
+Each platform may require additional attributes not shown above.
+Check the [page of the platform](/features/platforms/#platforms) for the full list of required and optional options.
+:::
+
+## Attributes
+
+Common attributes are documented in [Common Component Properties](/features/components/common_properties/).
+
+| Property              | Description                                                  | Example       |
+| --------------------- | ------------------------------------------------------------ | ------------- |
+| `device_class`        | Home Assistant device classification for the sensor value.   | `data_size`   |
+| `state_class`         | Home Assistant state class (for example `measurement`).      | `measurement` |
+| `unit_of_measurement` | Unit shown in user interfaces (for example `%`, `°C`, `Pa`). | `%`           |
+| `accuracy_decimals`   | Number of decimals reported for the sensor value.            | `2`           |
+
+### Triggers
+
+See [Triggers and Actions](/features/components/actions/) for how triggers work.
+
+| Property | Description                                  | Example |
+| -------- | --------------------------------------------- | ------- |
+| _(none)_ | Sensor currently has no additional triggers. | _(n/a)_ |
+
+Supported filters are documented in [Filters](/features/components/filters/).
+
+<SupportedPlatforms />
+
+Similar to ESPHome: [Sensor](https://esphome.io/components/sensor/)
+
+{/* Backlinks to be displayed */}
+
+<div style='display:none' aria-hidden='true'>
+  <a href='/examples/system_ressources/'>Monitor system resources</a>
+  <a href='/examples/measure_temperature/'>Measure Temperature, Humidity and Pressure with BME280</a>
+  <a href='/examples/illuminance/'>Report your laptop's ambient light sensor</a>
+</div>

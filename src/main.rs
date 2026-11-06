@@ -1,20 +1,28 @@
+mod builtins;
+mod components;
+mod config;
 mod constants;
+mod logger_setup;
 
 use commands::run;
 use commands::un_install::{install, uninstall};
-use commands::update::update;
+use commands::update::{update, update_pr};
 use flexi_logger::{Duplicate, Logger};
-use inquire::Text;
 
-use clap::{Arg, ArgAction, Command};
-use log::{debug, error, info, trace, warn};
+use clap::{Arg, Command};
+use std::sync::Arc;
 use std::{env, fs};
 
 mod commands;
 
-const VERSION: &str = env!("CARGO_PKG_VERSION");
-const DESCRIPTION: &str = env!("CARGO_PKG_DESCRIPTION");
-const CARGO_PKG_HOMEPAGE: &str = env!("CARGO_PKG_HOMEPAGE");
+const VERSION: &str = concat!(env!("GIT_TAG"), " (", env!("GIT_HASH"), ")");
+const DESCRIPTION: &str = "UbiHome is a system which allows you to integrate any device running an OS into your smart home.";
+const HOMEPAGE: &str = "https://github.com/UbiHome/UbiHome";
+const DEFAULT_CONFIG_FILE_YML: &str = "config.yml";
+const DEFAULT_CONFIG_FILE_YAML: &str = "config.yaml";
+
+// Embed the default configuration file at compile time
+const DEFAULT_CONFIG: Option<&str> = option_env!("CONFIG_YAML");
 
 #[cfg(target_os = "windows")]
 use windows_service::{
@@ -30,7 +38,6 @@ define_windows_service!(ffi_service_main, windows_service_main);
 
 #[cfg(target_os = "windows")]
 fn windows_service_main(_arguments: Vec<std::ffi::OsString>) {
-    use log::error;
     use std::time::Duration;
 
     use constants::SERVICE_NAME;
@@ -63,13 +70,13 @@ fn windows_service_main(_arguments: Vec<std::ffi::OsString>) {
     let mut dir = env::current_exe().unwrap();
     dir.pop();
     dir.push("config.yaml");
-    let config_file = dir.to_string_lossy().to_string();
+    let config_file = dir.to_string_lossy();
 
-    if let Err(e) = run::run(Some(&config_file), Some(shutdown_rx)) {
-        error!("{}", e)
+    if let Err(e) = run::run(&config_file, false, Some(shutdown_rx)) {
+        log::error!("{}", e)
     }
 
-    info!("Service is stopping...");
+    log::info!("Service is stopping...");
     status_handle
         .set_service_status(ServiceStatus {
             process_id: None,
@@ -84,126 +91,219 @@ fn windows_service_main(_arguments: Vec<std::ffi::OsString>) {
 }
 
 fn cli() -> Command {
+    let run_args: Vec<Arg> = vec![
+        #[cfg(target_os = "windows")]
+        Arg::new("as-windows-service")
+            .long("as-windows-service")
+            .help("Flag to identify if run as windows service.")
+            .hide(true)
+            .action(clap::ArgAction::SetTrue)
+            .num_args(0),
+    ];
+
     Command::new("UbiHome")
-        .about(format!("UbiHome {}\n\n{}\nDocumentation: https://ubihome.github.io/\nHomepage: {}" ,VERSION, DESCRIPTION, CARGO_PKG_HOMEPAGE))
+        .about(format!("UbiHome {}\n\n{}\nDocumentation: https://ubihome.github.io/\nHomepage: {}" ,VERSION, DESCRIPTION, HOMEPAGE))
         .version(VERSION)
         .subcommand_required(true)
         .arg_required_else_help(true)
         .args([
             Arg::new("configuration_file")
-                .short('c')
-                .long("configuration")
-                .help("Optional configuration file. If not provided, the default configuration will be used.")
-                .default_value("config.yaml"),
+            .short('c')
+            .long("configuration")
+            .help("Optional configuration file. If not provided, config.yml (or config.yaml) in the current directory is used."),
             Arg::new("log_level")
-                .long("log-level")
-                .help("The log level (overwrite config.yaml setting).")
-
+            .long("log-level")
+            .global(true)
+            .help("The log level (overwrites the config)."),
+            Arg::new("sentry")
+            .long("sentry")
+            .env("SENTRY")
+            .global(true)
+            .help("Sentry DSN to enable error reporting. If not provided, error reporting is disabled.")
+            .num_args(1),
         ])
         .subcommand(
             Command::new("run")
                 .about("Run UbiHome manually.")
-                .args([
-                    // TODO:
-                    // #[cfg(target_os = "windows")]
-                    Arg::new("as-windows-service")
-                        .long("as-windows-service")
-                        .help("Flag to identify if run as windows service.")
-                        .hide(true)
-                        .action(ArgAction::SetTrue)
-                        .num_args(0)
-                ])
+                .args(run_args),
         )
-        .subcommand(
-            Command::new("validate")
-                    .about("Validates the configuration file.")
-        )
+        .subcommand(Command::new("validate").about("Validates the configuration file."))
         .subcommand(
             Command::new("install")
-                    .about("Install UbiHome")
-                    .arg(
-                        Arg::new("location")
-                        .help( "The location to install UbiHome.")
-                    )
+                .about("Install UbiHome")
+                .arg(Arg::new("location").help("The location to install UbiHome.")),
         )
         .subcommand(
             Command::new("update")
-                    .about("Update the current UbiHome executable (from GitHub).")
+                .about("Update the current UbiHome executable (from GitHub).")
+                .arg(
+                    Arg::new("include_pre_release")
+                        .long("include-pre-release")
+                        .help("Include pre-release tags (unstable versions).")
+                        .action(clap::ArgAction::SetTrue)
+                        .num_args(0),
+                )
+                .subcommand(
+                    Command::new("pr")
+                        .about("Update to the latest development build published for a pull request.")
+                        .arg(
+                            Arg::new("pr_number")
+                                .help("The pull request number to update to.")
+                                .value_parser(clap::value_parser!(u32))
+                                .required(true),
+                        )
+                        .arg(
+                            Arg::new("token")
+                                .long("token")
+                                .env("GITHUB_TOKEN")
+                                .help("GitHub token used to download the PR build.")
+                                .num_args(1)
+                                .required(true),
+                        ),
+                ),
         )
         .subcommand(
             Command::new("uninstall")
-                    .about("Uninstall UbiHome")
-                    .arg(
-                        Arg::new("location")
-                        .help( "The location where UbiHome is installed.")
-                    )
+                .about("Uninstall UbiHome")
+                .arg(Arg::new("location").help("The location where UbiHome is installed.")),
         )
 }
 
 fn main() {
-    let matches = cli().get_matches();
-    let config_file = matches.try_get_one::<String>("configuration_file").unwrap();
-    let log_level = matches.try_get_one::<String>("log_level").unwrap();
+    let cli = cli();
+    let matches = cli.try_get_matches();
 
-    #[cfg(any(target_os = "linux", target_os = "macos"))]
-    let default_installation_path = "/usr/bin/ubihome";
-    #[cfg(target_os = "windows")]
-    let default_installation_path = "C:\\Program Files\\ubihome";
+    match matches {
+        Ok(matches) => {
+            let config_file_option = matches
+                .try_get_one::<String>("configuration_file")
+                .unwrap_or_default();
 
-    match matches.subcommand() {
-        Some(("install", sub_matches)) => {
-            let location = sub_matches.try_get_one::<String>("location").unwrap();
-            if let Some(location) = location {
-                // Perform installation logic here
-                install(location);
-            } else {
-                let location = Text::new("Where do you want to install UbiHome?")
-                    .with_default(default_installation_path)
-                    .prompt();
-                install(location.unwrap().as_str());
-            }
-        }
-        Some(("update", sub_matches)) => {
-            if let Some(log_level) = log_level {
-                let mut logger_builder = Logger::try_with_env_or_str(log_level).unwrap();
-                logger_builder = logger_builder.duplicate_to_stdout(Duplicate::Debug);
-                logger_builder.start().unwrap();
+            let default_config_file = format!(
+                "{}/{}",
+                env::current_dir().unwrap().display(),
+                DEFAULT_CONFIG_FILE_YML
+            );
+            let alternate_config_file = format!(
+                "{}/{}",
+                env::current_dir().unwrap().display(),
+                DEFAULT_CONFIG_FILE_YAML
+            );
+            let config_file = match config_file_option {
+                Some(file) => file.clone(),
+                None => {
+                    if DEFAULT_CONFIG.is_none() {
+                        log::info!("Checking default configs");
+                        if fs::metadata(&default_config_file).is_ok() {
+                            default_config_file
+                        } else {
+                            alternate_config_file
+                        }
+                    } else {
+                        "".to_owned()
+                    }
+                }
+            };
 
+            let log_level = matches.try_get_one::<String>("log_level").unwrap();
+
+            let sentry = matches
+                .try_get_one::<String>("sentry")
+                .unwrap_or(None)
+                .cloned();
+            if sentry.is_some() {
+                println!("Error reporting: active");
             }
-            update().unwrap();
-        }
-        Some(("uninstall", sub_matches)) => {
-            let location = sub_matches.try_get_one::<String>("location").unwrap();
-            if let Some(location) = location {
-                // Perform installation logic here
-                uninstall(location);
-            } else {
-                let location = Text::new("OS Home is not installed under the default location. Where should the uninstall script run?").with_default(default_installation_path).prompt();
-                uninstall(location.unwrap().as_str());
+            // The guard must be kept alive for the full duration of the process.
+            // Dropping it would shut down Sentry and stop error reporting.
+            let _sentry_guard = sentry.as_deref().map(|dsn| {
+                sentry::init((
+                    dsn,
+                    sentry::ClientOptions {
+                        before_send: Some(Arc::new(|mut event| {
+                            event.server_name = None; // Don't send server name
+                            Some(event)
+                        })),
+                        release: Some(VERSION.into()),
+                        session_mode: sentry::SessionMode::Application,
+                        ..Default::default()
+                    },
+                ))
+            });
+
+            match matches.subcommand() {
+                Some(("install", sub_matches)) => {
+                    let location = sub_matches.try_get_one::<String>("location").unwrap();
+                    install(location.cloned());
+                }
+                Some(("update", sub_matches)) => {
+                    if let Some(log_level) = log_level {
+                        let mut logger_builder = Logger::try_with_env_or_str(log_level).unwrap();
+                        logger_builder = logger_builder.duplicate_to_stdout(Duplicate::Trace);
+                        logger_builder.start().unwrap();
+                    }
+                    match sub_matches.subcommand() {
+                        Some(("pr", pr_matches)) => {
+                            let pr_number = *pr_matches.get_one::<u32>("pr_number").unwrap();
+                            let github_token =
+                                pr_matches.get_one::<String>("token").unwrap().clone();
+                            update_pr(pr_number, github_token).unwrap();
+                        }
+                        _ => {
+                            let include_pre_release = sub_matches
+                                .get_one::<bool>("include_pre_release")
+                                .copied()
+                                .unwrap_or(false);
+                            update(include_pre_release).unwrap();
+                        }
+                    }
+                }
+                Some(("uninstall", sub_matches)) => {
+                    let location = sub_matches.try_get_one::<String>("location").unwrap();
+                    uninstall(location.cloned());
+                }
+                Some(("validate", _)) => match run::run(&config_file, true, None) {
+                    Ok(_) => println!("Configuration is valid."),
+                    Err(e) => {
+                        eprintln!("Configuration is invalid:\n{}", e);
+                        std::process::exit(1);
+                    }
+                },
+                #[allow(unused_variables)]
+                Some(("run", sub_matches)) => {
+                    println!("UbiHome - {}", VERSION);
+                    #[cfg(target_os = "windows")]
+                    let is_windows_service =
+                        sub_matches.get_one::<bool>("as-windows-service").unwrap();
+                    #[cfg(target_os = "windows")]
+                    if *is_windows_service {
+                        // Run as a Windows service
+                        log::info!("Running as Windows service");
+                        #[cfg(target_os = "windows")]
+                        use windows_service::service_dispatcher;
+                        #[cfg(target_os = "windows")]
+                        service_dispatcher::start(constants::SERVICE_NAME, ffi_service_main)
+                            .unwrap();
+                        panic!("Running as a Windows service is not supported on Linux.");
+                    } else {
+                        // Run normally
+                        if let Err(e) = run::run(&config_file, false, None) {
+                            eprintln!("Configuration is invalid: {}", e);
+                            std::process::exit(1);
+                        }
+                    }
+                    #[cfg(not(target_os = "windows"))]
+                    if let Err(e) = run::run(&config_file, false, None) {
+                        eprintln!("Configuration is invalid: {}", e);
+                        std::process::exit(1);
+                    }
+                }
+                _ => {
+                    println!("No subcommand was used");
+                }
             }
+            std::process::exit(0);
         }
-        Some(("validate", sub_matches)) => {
-            todo!("Validate UbiHome");
-        }
-        Some(("run", sub_matches)) => {
-            println!("UbiHome - {}", VERSION);
-            let is_windows_service = sub_matches.get_one::<bool>("as-windows-service").unwrap();
-            if *is_windows_service {
-                // Run as a Windows service
-                info!("Running as Windows service");
-                #[cfg(target_os = "windows")]
-                use windows_service::service_dispatcher;
-                #[cfg(target_os = "windows")]
-                service_dispatcher::start(constants::SERVICE_NAME, ffi_service_main).unwrap();
-                panic!("Running as a Windows service is not supported on Linux.");
-            } else {
-                // Run normally
-                run::run(config_file, None).unwrap();
-            }
-        }
-        _ => {
-            println!("No subcommand was used");
-        }
-    }
-    std::process::exit(0);
+        Err(err) => err.exit(),
+    };
 }

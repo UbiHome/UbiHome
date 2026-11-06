@@ -1,0 +1,63 @@
+name: Create Release PR
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  release-pr:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+
+      - name: Fetch release branch
+        run: git fetch origin release:release
+
+      - name: Check for differences
+        id: diff
+        run: |
+          if git diff --quiet release..main; then
+            echo "No changes to release branch."
+            echo "skip=true" >> $GITHUB_OUTPUT
+          else
+            echo "skip=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Create PR from main to release
+        if: steps.diff.outputs.skip == 'false'
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.CUSTOM_GITHUB_PAT }}
+          script: |
+            const title = 'release: stable release';
+            const body = 'Merge this PR to create a new stable release.';
+            const base = 'release';
+            const head = 'main';
+
+            const { data: existing } = await github.rest.pulls.list({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              base,
+              head: `${context.repo.owner}:${head}`,
+            });
+
+            if (existing.length > 0) {
+              core.info(`PR already exists: #${existing[0].number}`);
+              return;
+            }
+
+            const { data: pr } = await github.rest.pulls.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title,
+              body,
+              base,
+              head,
+              draft: false,
+            });
+
+            core.info(`Created PR #${pr.number}: ${pr.html_url}`);

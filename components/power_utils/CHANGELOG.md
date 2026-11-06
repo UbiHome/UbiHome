@@ -1,5 +1,60 @@
 # Changelog
 
+## [0.13.0](https://github.com/UbiHome/UbiHome/compare/v0.12.0...ubihome-power_utils-v0.13.0) (2026-05-14)
+
+
+### Features
+
+* add `number` platform support for shell component ([#112](https://github.com/UbiHome/UbiHome/issues/112)) ([1799769](https://github.com/UbiHome/UbiHome/commit/1799769ccddf70cfff0f73e764e659cdef5280cd))
+* better validation ([#101](https://github.com/UbiHome/UbiHome/issues/101)) ([c3099f1](https://github.com/UbiHome/UbiHome/commit/c3099f1a2ebec34c2f621e149a5ad839d2780b8b))
+
+## [0.12.0](https://github.com/UbiHome/UbiHome/compare/v0.11.2...ubihome-power_utils-v0.12.0) (2026-05-10)
+
+
+### Features
+
+* add `number` platform support for shell component ([#112](https://github.com/UbiHome/UbiHome/issues/112)) ([1799769](https://github.com/UbiHome/UbiHome/commit/1799769ccddf70cfff0f73e764e659cdef5280cd))
+
+## [0.11.2](https://github.com/UbiHome/UbiHome/compare/v0.11.1...ubihome-power_utils-v0.11.2) (2026-04-16)
+
+## [0.11.1](https://github.com/UbiHome/UbiHome/compare/v0.11.0...ubihome-power_utils-v0.11.1) (2026-04-14)
+
+## [0.11.0](https://github.com/UbiHome/UbiHome/compare/ubihome-power_utils-v0.10.4...ubihome-power_utils-v0.11.0) (2026-04-14)
+
+
+### Features
+
+* add password and key authentcation + light sensor ([#82](https://github.com/UbiHome/UbiHome/issues/82)) ([89c11f2](https://github.com/UbiHome/UbiHome/commit/89c11f2aeec96048663c64edc0b351c8ba7df911))
+* add power utils ([84c7cb8](https://github.com/UbiHome/UbiHome/commit/84c7cb89f67348b86beed384820d0f3a4cbab8af))
+* switch shell entity via mqtt ([b0e4bd4](https://github.com/UbiHome/UbiHome/commit/b0e4bd45affcb8494ddc53903a132d9edb871509))
+* working basic binary filters ([52e0bc0](https://github.com/UbiHome/UbiHome/commit/52e0bc0f6b6c028165252675881714b6764bbdea))
+
+
+### Bug Fixes
+
+* build error and add more power utils ([12b2fd3](https://github.com/UbiHome/UbiHome/commit/12b2fd3df3266ed28bc0499f8e89968d2e9a9e79))
+
+## [0.10.4](https://github.com/UbiHome/UbiHome/compare/v0.9.0...ubihome-power_utils-v0.10.4) (2026-04-14)
+
+## [0.9.0](https://github.com/UbiHome/UbiHome/compare/v0.8.11...ubihome-power_utils-v0.9.0) (2025-08-03)
+
+
+### Features
+
+* add password and key authentcation + light sensor ([#82](https://github.com/UbiHome/UbiHome/issues/82)) ([89c11f2](https://github.com/UbiHome/UbiHome/commit/89c11f2aeec96048663c64edc0b351c8ba7df911))
+
+## [0.8.11](https://github.com/UbiHome/UbiHome/compare/v0.8.10...ubihome-power_utils-v0.8.11) (2025-05-10)
+
+## [0.8.10](https://github.com/UbiHome/UbiHome/compare/v0.8.9...ubihome-power_utils-v0.8.10) (2025-05-10)
+
+## [0.8.9](https://github.com/UbiHome/UbiHome/compare/v0.8.8...ubihome-power_utils-v0.8.9) (2025-05-10)
+
+## [0.8.8](https://github.com/UbiHome/UbiHome/compare/v0.8.7...ubihome-power_utils-v0.8.8) (2025-05-10)
+
+## [0.8.7](https://github.com/UbiHome/UbiHome/compare/v0.8.6...ubihome-power_utils-v0.8.7) (2025-05-10)
+
+## [0.8.6](https://github.com/UbiHome/UbiHome/compare/v0.8.5...ubihome-power_utils-v0.8.6) (2025-05-09)
+
 ## [0.8.5](https://github.com/UbiHome/UbiHome/compare/v0.8.4...ubihome-power_utils-v0.8.5) (2025-05-09)
 
 ## [0.8.4](https://github.com/UbiHome/UbiHome/compare/v0.8.3...ubihome-power_utils-v0.8.4) (2025-05-09)
