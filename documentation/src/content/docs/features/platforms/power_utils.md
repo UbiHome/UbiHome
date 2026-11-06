@@ -1,6 +1,6 @@
 ---
 title: 'Power Utilities'
-description: 'Shutdown, reboot, logout, hibernate or sleep the device'
+description: 'Shutdown, reboot, logout, hibernate or sleep the device, or restart UbiHome'
 tags:
   - linux
   - macos

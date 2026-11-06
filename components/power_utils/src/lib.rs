@@ -36,6 +36,14 @@ fn restart_process() {
             return;
         }
     };
+    // After `ubihome update` swapped the binary, Linux reports the running image
+    // as "<path> (deleted)"; the updated binary is at the original path.
+    #[cfg(target_os = "linux")]
+    let exe = exe
+        .to_str()
+        .and_then(|path| path.strip_suffix(" (deleted)"))
+        .map(std::path::PathBuf::from)
+        .unwrap_or(exe);
     let args: Vec<String> = std::env::args().skip(1).collect();
 
     #[cfg(unix)]
@@ -136,6 +144,7 @@ impl Module for UbiHomePlatform {
                     name,
                     internal,
                     id: id.clone(),
+                    entity_category,
                 },
                 PowerAction::Shutdown => UbiButton {
                     platform: "sensor".to_string(),
