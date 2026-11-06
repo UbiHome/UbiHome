@@ -74,7 +74,7 @@ fn restart_process() {
 #[derive(Debug, Copy, Clone, Deserialize, Validate)]
 #[serde(rename_all = "camelCase")]
 pub enum PowerAction {
-    #[serde(alias = "reboot", alias = "restart")]
+    #[serde(alias = "reboot")]
     Reboot,
     /// Restarts the UbiHome process itself (not the machine).
     #[serde(rename = "restart_service")]
