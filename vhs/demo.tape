@@ -1,17 +1,17 @@
 # Where should we write the GIF?
-Output demo.gif
+Output "/output/demo.gif"
 
-# Set up a 1200x600 terminal with 46px font.
+# Set up a 1200x800 terminal with 18px font.
 Set FontSize 18
 Set Width 1200
-Set Height 700
+Set Height 800
 Set Padding 15
 Set LoopOffset 5
 
 Hide
-Type `echo "0.5" > sensor`
+Type `echo "0.5" > sensor && echo "false" > motion`
 Enter
-Type "rm -f config.yaml && clear"
+Type "rm -f config.yaml hello && clear"
 Enter
 Show
 
@@ -24,23 +24,9 @@ Enter
 Type "  name: 'demo'"
 Enter
 Enter
-Type "logger:"
-Enter
-Type "  level: info"
-Enter
-Type "  logs:"
-Enter
-Type "    web_server: debug"
-Enter
-Enter
 Type "# Integrate with Home Assistant"
 Enter
 Type "api:"
-Enter
-Enter
-Type "# Allow simple HTTP Triggers"
-Enter
-Type "web_server:"
 Enter
 Enter
 Type "shell:"
@@ -50,7 +36,9 @@ Type "button:"
 Enter
 Type " - platform: shell"
 Enter
-Type `   name: "Example button"`
+Type `   id: say_hello`
+Enter
+Type `   name: "Say hello"`
 Enter
 Type `   command: "echo \"Hello World\" > hello"`
 Enter
@@ -64,11 +52,29 @@ Enter
 Type `   command: "cat sensor"`
 Enter
 Type `   update_interval: 1s`
+Enter
+Enter
+Type "binary_sensor:"
+Enter
+Type " - platform: shell"
+Enter
+Type `   name: "Motion"`
+Enter
+Type `   command: "cat motion"`
+Enter
+Type `   update_interval: 1s`
+Enter
+Type "   on_press:"
+Enter
+Type "     then:"
+Enter
+Type "       - button.press: say_hello"
 
 
 Set TypingSpeed 0.1
 
-Sleep 1s
+# Leave time to read the config.
+Sleep 6s
 
 Ctrl+X
 Type "y"
@@ -76,7 +82,7 @@ Enter
 
 
 Hide
-Type "nohup sh ./trigger_button.sh > /dev/null 2> /dev/null < /dev/null && clear"
+Type "sh ./simulate_events.sh && clear"
 Enter
 Show
 

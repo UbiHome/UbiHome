@@ -11,6 +11,8 @@
 
 Simply [download](https://ubihome.github.io/getting_started/index.html) the executable and configure it.
 
+![UbiHome demo: writing a configuration and running it](documentation/public/assets/demo.gif)
+
 ```yaml
 # Unsecure example configuration
 

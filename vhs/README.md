@@ -1,9 +1,8 @@
 # Demo GIF
 
-https://github.com/charmbracelet/vhs
+Generates `documentation/public/assets/demo.gif` with [VHS](https://github.com/charmbracelet/vhs) from `demo.tape`. UbiHome is built inside the image, so only Docker is required.
 
 ```bash
-cargo build --release
 cd vhs
 docker compose run --rm --build generate
 

@@ -1,13 +1,15 @@
 services:
   generate:
-    build: .
+    build: &build
+      context: ..
+      dockerfile: vhs/Dockerfile
     volumes:
       - ./:/vhs
-      - ./../target/release/ubihome:/vhs/ubihome
+      - ../documentation/public/assets:/output
     command: demo.tape
-  
+
   record:
-    build: .
+    build: *build
     volumes:
       - ./:/vhs
     entrypoint: /bin/bash
