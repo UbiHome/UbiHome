@@ -168,7 +168,6 @@ class UbiHome:
         throw_on_error=True,
         wait_for_api=False,
         extra_logging=True,
-        executable=None,
     ):
         self.arguments = arguments
         self.configuration_file = f"config{os.getpid()}.yaml"
@@ -180,7 +179,7 @@ class UbiHome:
         else:
             file = "ubihome"
         # self.executable = os.path.join(os.getcwd(), "..", "target", "debug", file)
-        self.executable = executable or os.path.join(os.getcwd(), file)
+        self.executable = os.path.join(os.getcwd(), file)
         logging.info("Using UbiHome executable: %s", self.executable)
 
         if config:
