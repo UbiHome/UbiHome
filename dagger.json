@@ -1,6 +1,6 @@
 {
 	"name": "UbiHome",
-	"engineVersion": "v0.20.8",
+	"engineVersion": "v0.21.11",
 	"sdk": {
 		"source": "typescript"
 	},
