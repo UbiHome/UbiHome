@@ -16,4 +16,5 @@ Dagger commands:
 dagger call docs-preview up
 dagger check
 dagger call docs-build-dir export --path ./documentation/site
+dagger call demo-gif export --path ./documentation/public/assets/demo.gif  # re-record from .dagger/demo.tape
 ```

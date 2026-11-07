@@ -1,5 +1,5 @@
 # Where should we write the GIF?
-Output "/output/demo.gif"
+Output demo.gif
 
 # Set up a 1200x800 terminal with 18px font.
 Set FontSize 18
@@ -9,9 +9,7 @@ Set Padding 15
 Set LoopOffset 5
 
 Hide
-Type `echo "0.5" > sensor && echo "false" > motion`
-Enter
-Type "rm -f config.yaml hello && clear"
+Type `echo "0.5" > sensor && echo "false" > motion && clear`
 Enter
 Show
 
@@ -82,7 +80,8 @@ Enter
 
 
 Hide
-Type "sh ./simulate_events.sh && clear"
+# Simulate a short motion event while `ubihome run` is recording.
+Type `(sh -c "sleep 5; echo true > motion; sleep 1; echo false > motion" > /dev/null 2>&1 &) && clear`
 Enter
 Show
 

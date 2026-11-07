@@ -19,6 +19,7 @@ import {
 	check,
 	type Directory,
 	dag,
+	type File,
 	func,
 	object,
 	type Service,
@@ -190,6 +191,54 @@ export class UbiHome {
 				"warnings",
 			])
 			.stdout();
+	}
+
+	/**
+	 * Record the demo GIF from demo.tape with VHS, using a fresh UbiHome build.
+	 */
+	@func()
+	demoGif(
+		@argument({
+			defaultPath: ".",
+			ignore: [
+				"**",
+				"!components",
+				"!components/**",
+				"!src",
+				"!src/**",
+				"!build.rs",
+				"!Cargo.toml",
+				"!Cargo.lock",
+			],
+		})
+		source: Directory,
+		@argument({ defaultPath: ".dagger/demo.tape" })
+		tape: File,
+	): File {
+		const ubihome = this.rustContainer(source)
+			.withMountedCache("target", dag.cacheVolume("rust-target"))
+			.withExec(["cargo", "build", "--release"])
+			.withExec(["cp", "target/release/ubihome", "/ubihome"])
+			.file("/ubihome");
+
+		return dag
+			.container()
+			.from("ghcr.io/charmbracelet/vhs")
+			.withExec(["apt-get", "update"])
+			.withExec([
+				"apt-get",
+				"install",
+				"-y",
+				"nano",
+				"libdbus-1-3",
+				"libasound2t64",
+				"libpipewire-0.3-0t64",
+			])
+			.withFile("/usr/local/bin/ubihome", ubihome)
+			.withWorkdir("/vhs")
+			.withFile("demo.tape", tape)
+			.withExec(["vhs", "demo.tape"])
+			.file("demo.gif");
 	}
 
 	/**
