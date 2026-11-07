@@ -154,8 +154,12 @@ impl Module for UbiHomePlatform {
         state: StateStore,
     ) -> Pin<Box<dyn Future<Output = Result<(), Box<dyn std::error::Error>>> + Send + 'static>>
     {
-        let ip = get_ip_address().unwrap();
-        let mac = get_network_mac_address(ip).unwrap();
+        let mac = match get_ip_address().and_then(get_network_mac_address) {
+            Ok(mac) => mac,
+            Err(err) => {
+                return Box::pin(async move { Err(format!("api: {err}").into()) });
+            }
+        };
 
         let server_base = match EspHomeApi::builder()
             .api_version_major(1)

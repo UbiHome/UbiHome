@@ -28,7 +28,7 @@ pub fn get_ip_address() -> Result<IpAddr, String> {
     }
 
     let mut all_addrs: Vec<IpAddr> = best_local_addrs()
-        .unwrap()
+        .map_err(|e| format!("Failed to determine best local addresses: {e}"))?
         .into_iter()
         .map(|addr| addr.addr())
         // Will only contain addresses from interfaces with best default routes
@@ -52,10 +52,12 @@ pub fn get_ip_address() -> Result<IpAddr, String> {
     });
 
     debug!("Best local addresses: {:?}", all_addrs);
-    all_addrs
-        .first()
-        .cloned()
-        .ok_or("No valid IP address found".to_string())
+    all_addrs.first().cloned().ok_or(
+        "no network address available at startup (no interface with a MAC address has an IP). \
+         The network must be up before UbiHome starts: check your network connection and the \
+         start order of the service."
+            .to_string(),
+    )
 }
 
 // use mac_address::MacAddressIterator;

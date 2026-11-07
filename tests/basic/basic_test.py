@@ -1,6 +1,8 @@
+import asyncio
+
 import pytest
 
-from utils import OS_PLATFORM, Platform, run_ubihome
+from utils import OS_PLATFORM, Platform, UbiHome, run_ubihome
 
 
 @pytest.mark.asyncio
@@ -83,3 +85,25 @@ Options:
           Print version
 """  # noqa: E501
     )
+
+
+@pytest.mark.asyncio
+async def test_module_failure_exits_non_zero_with_clear_error():
+    """A module failing at runtime must stop UbiHome with a non-zero exit code
+    and name the module, instead of exiting successfully."""
+    config = """
+ubihome:
+  name: module_failure
+
+mdns:
+  # TEST-NET-1: never assigned to a local interface, so the lookup fails.
+  ip: 192.0.2.1
+"""
+    async with UbiHome("run", config=config, throw_on_error=False) as ubihome:
+        exit_code = await asyncio.wait_for(ubihome.process.wait(), timeout=10)
+        await asyncio.sleep(0.1)
+
+        assert exit_code == 1
+        assert "mdns: Ip Address not found" in ubihome.stderr
+        assert "UbiHome stopped because a task failed." in ubihome.stderr
+        assert "Configuration is invalid" not in ubihome.stderr

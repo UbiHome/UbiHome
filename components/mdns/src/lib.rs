@@ -63,12 +63,12 @@ impl Module for UbiHomePlatform {
         let config = self.config.clone();
         info!("Starting MDNS with config: {:?}", config.mdns);
         Box::pin(async move {
-            let default_ip = get_ip_address().unwrap();
+            let default_ip = get_ip_address().map_err(|err| format!("mdns: {err}"))?;
 
             let ip = config.mdns.clone().and_then(|c| c.ip).unwrap_or(default_ip);
             debug!("Advertising IP: {:?}", ip);
 
-            let default_mac = get_network_mac_address(ip).unwrap();
+            let default_mac = get_network_mac_address(ip).map_err(|err| format!("mdns: {err}"))?;
 
             let mac = config
                 .mdns

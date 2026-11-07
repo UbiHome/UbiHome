@@ -97,11 +97,13 @@ pub(crate) fn run_platforms(
         let state = state.clone();
         tasks.spawn(async move {
             // A module returning Ok(()) is a normal, intentional exit and stays
-            // silent. An Err is a real failure: unwrap panics, which is reported to
-            // Sentry by the panic integration. Tasks are collected in a JoinSet so
-            // the caller observes the panic (instead of it being swallowed by this
-            // task) and shuts the application down.
-            module.run(tx, rx, state).await.unwrap();
+            // silent. An Err is a real failure: panicking reports it to Sentry via
+            // the panic integration. Tasks are collected in a JoinSet so the caller
+            // observes the panic (instead of it being swallowed by this task) and
+            // shuts the application down.
+            if let Err(err) = module.run(tx, rx, state).await {
+                panic!("{err}");
+            }
         });
     }
 }
@@ -173,7 +175,7 @@ mod tests {
         );
     }
 
-    /// A module returning Err is a real failure: unwrap panics, which the
+    /// A module returning Err is a real failure: the task panics, which the
     /// supervisor observes (via a JoinError) to trigger application shutdown.
     #[tokio::test]
     async fn run_platforms_erroring_module_panics_task() {
@@ -183,6 +185,12 @@ mod tests {
         assert!(
             join_error.is_panic(),
             "the failure must surface as a panic, not a cancellation"
+        );
+        let message = join_error.into_panic();
+        assert_eq!(
+            message.downcast_ref::<String>().map(String::as_str),
+            Some("mock module failure"),
+            "the panic must carry the module's error message as is"
         );
     }
 }
