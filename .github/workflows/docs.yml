@@ -39,11 +39,11 @@ jobs:
           call: docs-build-dir export --path=./documentation/site
           cloud-token: ${{ secrets.DAGGER_CLOUD_TOKEN }}
 
-      - name: Record demo GIF with Dagger
+      - name: Record demo GIFs with Dagger
         uses: dagger/dagger-for-github@v8.4.1
         with:
           version: v0.21.11
-          call: demo-gif export --path=./documentation/site/assets/demo.gif
+          call: demo-gifs export --path=./documentation/site/assets
           cloud-token: ${{ secrets.DAGGER_CLOUD_TOKEN }}
 
       - name: Deploy to ubihome.github.io repository

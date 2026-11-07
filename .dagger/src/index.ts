@@ -19,7 +19,6 @@ import {
 	check,
 	type Directory,
 	dag,
-	type File,
 	func,
 	object,
 	type Service,
@@ -194,10 +193,10 @@ export class UbiHome {
 	}
 
 	/**
-	 * Record the demo GIF from demo.tape with VHS, using a fresh UbiHome build.
+	 * Record a GIF for every tape in .dagger/tapes with VHS, using a fresh UbiHome build.
 	 */
 	@func()
-	demoGif(
+	async demoGifs(
 		@argument({
 			defaultPath: ".",
 			ignore: [
@@ -212,16 +211,16 @@ export class UbiHome {
 			],
 		})
 		source: Directory,
-		@argument({ defaultPath: ".dagger/demo.tape" })
-		tape: File,
-	): File {
+		@argument({ defaultPath: ".dagger/tapes" })
+		tapes: Directory,
+	): Promise<Directory> {
 		const ubihome = this.rustContainer(source)
 			.withMountedCache("target", dag.cacheVolume("rust-target"))
 			.withExec(["cargo", "build", "--release"])
 			.withExec(["cp", "target/release/ubihome", "/ubihome"])
 			.file("/ubihome");
 
-		return dag
+		const vhs = dag
 			.container()
 			.from("ghcr.io/charmbracelet/vhs")
 			.withExec(["apt-get", "update"])
@@ -235,10 +234,17 @@ export class UbiHome {
 				"libpipewire-0.3-0t64",
 			])
 			.withFile("/usr/local/bin/ubihome", ubihome)
-			.withWorkdir("/vhs")
-			.withFile("demo.tape", tape)
-			.withExec(["vhs", "demo.tape"])
-			.file("demo.gif");
+			.withWorkdir("/vhs");
+
+		let gifs = dag.directory();
+		for (const tape of await tapes.glob("*.tape")) {
+			const gif = tape.replace(/\.tape$/, ".gif");
+			gifs = gifs.withFile(
+				gif,
+				vhs.withFile(tape, tapes.file(tape)).withExec(["vhs", tape]).file(gif),
+			);
+		}
+		return gifs;
 	}
 
 	/**

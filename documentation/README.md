@@ -16,5 +16,5 @@ Dagger commands:
 dagger call docs-preview up
 dagger check
 dagger call docs-build-dir export --path ./documentation/site
-dagger call demo-gif export --path ./documentation/public/assets/demo.gif  # recorded on every deploy, only needed for a local preview
+dagger call demo-gifs export --path ./documentation/public/assets  # recorded on every deploy, only needed for a local preview
 ```

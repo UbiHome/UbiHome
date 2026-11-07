@@ -48,6 +48,8 @@ Starts UbiHome: loads and validates the configuration file, then loads and runs 
 ubihome run
 ```
 
+![Writing a configuration and running it with ubihome run](/assets/demo.gif)
+
 ## `validate`
 
 Loads and validates the configuration file the same way `run` does, but exits immediately afterwards instead of starting any platform. Useful for checking a configuration change before restarting the service.
@@ -55,6 +57,8 @@ Loads and validates the configuration file the same way `run` does, but exits im
 ```bash
 ubihome validate
 ```
+
+![ubihome validate pointing at a typo in the configuration, then passing once it is fixed](/assets/validate.gif)
 
 ## `install`
 
