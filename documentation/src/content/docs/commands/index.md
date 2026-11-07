@@ -48,12 +48,6 @@ Starts UbiHome: loads and validates the configuration file, then loads and runs 
 ubihome run
 ```
 
-### Network at startup
-
-The [Native API](/features/connectivity/native_api/), [MDNS](/features/connectivity/mdns/) and [MQTT](/features/connectivity/mqtt/) need a network address when they start. Without one UbiHome stops with an error and a non-zero exit code.
-
-`network-online.target` can be reached before Wi-Fi has an address. The systemd service created by [`install`](#install) restarts 10 seconds after such a failure; a custom unit needs `Restart=on-failure` or `Restart=always`.
-
 ## `validate`
 
 Loads and validates the configuration file the same way `run` does, but exits immediately afterwards instead of starting any platform. Useful for checking a configuration change before restarting the service.
