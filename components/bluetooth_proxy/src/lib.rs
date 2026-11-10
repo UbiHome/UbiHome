@@ -7,7 +7,8 @@ use std::collections::HashMap;
 use std::{future::Future, pin::Pin, str};
 use tokio::sync::broadcast::{Receiver, Sender};
 use ubihome_core::{
-    config_template, internal::sensors::UbiComponent, ChangedMessage, Module, PublishedMessage,
+    config_template, internal::sensors::UbiComponent, state::StateStore, ChangedMessage, Module,
+    PublishedMessage,
 };
 use ubihome_core::{BluetoothProxyMessage, NoConfig};
 
@@ -25,6 +26,7 @@ pub struct BluetoothProxyConfig {
 config_template!(
     bluetooth_proxy,
     Option<BluetoothProxyConfig>,
+    NoConfig,
     NoConfig,
     NoConfig,
     NoConfig,
@@ -57,6 +59,7 @@ impl Module for UbiHomePlatform {
         &self,
         sender: Sender<ChangedMessage>,
         _: Receiver<PublishedMessage>,
+        _state: StateStore,
     ) -> Pin<Box<dyn Future<Output = Result<(), Box<dyn std::error::Error>>> + Send + 'static>>
     {
         let config = self.config.clone();

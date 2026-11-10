@@ -16,11 +16,10 @@ use ubihome_core::template_text_sensor;
 use ubihome_core::{
     config_template,
     internal::sensors::{UbiBinarySensor, UbiButton, UbiSensor},
-    ChangedMessage, Module, PublishedMessage,
+    state::StateStore,
+    ChangedMessage, Module, NoConfig, PublishedMessage,
 };
 
-use ubihome_core::constants::is_id_string_option;
-use ubihome_core::constants::is_readable_string;
 use ubihome_core::template_binary_sensor;
 use ubihome_core::template_button;
 use ubihome_core::template_number;
@@ -91,7 +90,6 @@ template_button! {
 template_switch! {
 
     #[derive(Clone, Deserialize, Debug, Validate)]
-    #[garde(allow_unvalidated)]
     pub struct ShellSwitchConfig {
         #[garde(length(min = 1))]
         pub command_on: String,
@@ -168,7 +166,8 @@ config_template!(
     ShellSwitchConfig,
     ShellLightConfig,
     ShellNumberConfig,
-    ShellTextSensorConfig
+    ShellTextSensorConfig,
+    NoConfig
 );
 
 pub struct UbiHomePlatform {
@@ -200,8 +199,10 @@ impl Module for UbiHomePlatform {
                 state_class: sensor.state_class.clone(),
                 unit_of_measurement: sensor.unit_of_measurement.clone(),
                 accuracy_decimals: sensor.accuracy_decimals,
-                name: sensor.name.clone(),
+                name: sensor.name.clone().unwrap_or_default(),
+                internal: sensor.internal,
                 id: id.clone(),
+                entity_category: sensor.entity_category,
                 filters: sensor.filters.clone(),
             }));
             sensors.insert(id.clone(), sensor);
@@ -214,8 +215,10 @@ impl Module for UbiHomePlatform {
                 platform: "sensor".to_string(),
                 icon: binary_sensor.icon.clone(),
                 device_class: binary_sensor.device_class.clone(),
-                name: binary_sensor.name.clone(),
+                name: binary_sensor.name.clone().unwrap_or_default(),
+                internal: binary_sensor.internal,
                 id: id.clone(),
+                entity_category: binary_sensor.entity_category,
                 on_press: binary_sensor.on_press.clone(),
                 on_release: binary_sensor.on_release.clone(),
                 filters: binary_sensor.filters.clone(),
@@ -229,8 +232,10 @@ impl Module for UbiHomePlatform {
             components.push(UbiComponent::Button(UbiButton {
                 platform: "sensor".to_string(),
                 icon: button.icon.clone(),
-                name: button.name.clone(),
+                name: button.name.clone().unwrap_or_default(),
+                internal: button.internal,
                 id: id.clone(),
+                entity_category: button.entity_category,
             }));
             buttons.insert(id.clone(), button);
         }
@@ -241,8 +246,10 @@ impl Module for UbiHomePlatform {
             components.push(UbiComponent::Switch(UbiSwitch {
                 platform: "sensor".to_string(),
                 icon: switch.icon.clone(),
-                name: switch.name.clone(),
+                name: switch.name.clone().unwrap_or_default(),
+                internal: switch.internal,
                 id: id.clone(),
+                entity_category: switch.entity_category,
                 device_class: None,
                 assumed_state: switch.command_state.is_none(),
             }));
@@ -255,8 +262,10 @@ impl Module for UbiHomePlatform {
             components.push(UbiComponent::Light(UbiLight {
                 platform: "light".to_string(),
                 icon: light.icon.clone(),
-                name: light.name.clone(),
+                name: light.name.clone().unwrap_or_default(),
+                internal: light.internal,
                 id: id.clone(),
+                entity_category: light.entity_category,
                 disabled_by_default: light.disabled_by_default.unwrap_or(true),
             }));
             lights.insert(id.clone(), light);
@@ -268,8 +277,10 @@ impl Module for UbiHomePlatform {
             components.push(UbiComponent::Number(UbiNumber {
                 platform: "number".to_string(),
                 icon: number.icon.clone(),
-                name: number.name.clone(),
+                name: number.name.clone().unwrap_or_default(),
+                internal: number.internal,
                 id: id.clone(),
+                entity_category: number.entity_category,
                 min_value: number.min_value.unwrap_or(0.0),
                 max_value: number.max_value.unwrap_or(100.0),
                 step: number.step.unwrap_or(1.0),
@@ -286,8 +297,10 @@ impl Module for UbiHomePlatform {
             components.push(UbiComponent::TextSensor(UbiTextSensor {
                 platform: "text_sensor".to_string(),
                 icon: text_sensor.icon.clone(),
-                name: text_sensor.name.clone(),
+                name: text_sensor.name.clone().unwrap_or_default(),
+                internal: text_sensor.internal,
                 id: id.clone(),
+                entity_category: text_sensor.entity_category,
                 device_class: text_sensor.device_class.clone(),
             }));
             text_sensors.insert(id.clone(), text_sensor);
@@ -314,6 +327,7 @@ impl Module for UbiHomePlatform {
         &self,
         sender: Sender<ChangedMessage>,
         mut receiver: Receiver<PublishedMessage>,
+        _state: StateStore,
     ) -> Pin<Box<dyn Future<Output = Result<(), Box<dyn std::error::Error>>> + Send + 'static>>
     {
         let config = self.config.clone();
@@ -608,12 +622,24 @@ impl Module for UbiHomePlatform {
                             match output {
                                 Ok(output) => {
                                     debug!("Sensor {} output: {}", key, output);
-                                    let value = output;
-
-                                    _ = cloned_sender.send(ChangedMessage::SensorValueChange {
-                                        key: key.clone(),
-                                        value: value.parse().unwrap(),
-                                    });
+                                    match output.trim().parse::<f32>() {
+                                        Ok(value) => {
+                                            _ = cloned_sender.send(
+                                                ChangedMessage::SensorValueChange {
+                                                    key: key.clone(),
+                                                    value,
+                                                },
+                                            );
+                                        }
+                                        Err(e) => {
+                                            warn!(
+                                                "Sensor {} command returned unparseable output (expected parsable number) '{}': {}",
+                                                key,
+                                                output.trim(),
+                                                e
+                                            );
+                                        }
+                                    }
                                 }
                                 Err(e) => {
                                     error!("Error executing command: {}", e);
@@ -660,7 +686,11 @@ impl Module for UbiHomePlatform {
                                     } else if output.trim().to_lowercase() == "false" {
                                         false
                                     } else {
-                                        debug!("Invalid switch sensor output: {}", output);
+                                        warn!(
+                                            "Switch {} command returned unexpected output (expected 'true'/'false'): '{}'",
+                                            key,
+                                            output.trim()
+                                        );
                                         interval.tick().await;
                                         continue;
                                     };
@@ -707,7 +737,12 @@ impl Module for UbiHomePlatform {
                                     } else if output.trim().to_lowercase() == "false" {
                                         false
                                     } else {
-                                        debug!("Invalid binary sensor output: {}", output);
+                                        warn!(
+                                            "Binary Sensor {} command returned unexpected output (expected 'true'/'false'): '{}'",
+                                            key,
+                                            output.trim()
+                                        );
+                                        interval.tick().await;
                                         continue;
                                     };
                                     debug!("Binary Sensor '{}' output: {}", key, value);
@@ -761,7 +796,11 @@ impl Module for UbiHomePlatform {
                                     } else if output.trim().to_lowercase() == "false" {
                                         false
                                     } else {
-                                        debug!("Invalid light state output: {}", output);
+                                        warn!(
+                                            "Light {} command returned unexpected output (expected 'true'/'false'): '{}'",
+                                            key,
+                                            output.trim()
+                                        );
                                         interval.tick().await;
                                         continue;
                                     };
@@ -827,8 +866,9 @@ impl Module for UbiHomePlatform {
                                             );
                                         }
                                         Err(e) => {
-                                            debug!(
-                                                "Invalid number state output '{}': {}",
+                                            warn!(
+                                                "Number {} command returned unparseable output (expected parsable number) '{}': {}",
+                                                key,
                                                 output.trim(),
                                                 e
                                             );
@@ -951,7 +991,7 @@ number:
     command_set: "echo {{ value }}"
 "#;
 
-        let module = UbiHomePlatform::new(&config.to_string());
+        let module = UbiHomePlatform::new(config, "config.yml");
         assert!(
             module.is_ok(),
             "Shell module should parse number config successfully"
@@ -998,7 +1038,7 @@ number:
     name: "Volume"
 "#;
 
-        let module = UbiHomePlatform::new(&config.to_string());
+        let module = UbiHomePlatform::new(config, "config.yml");
         assert!(
             module.is_ok(),
             "Shell module should parse minimal number config successfully"
@@ -1043,7 +1083,7 @@ text_sensor:
     command: "whoami"
 "#;
 
-        let module = UbiHomePlatform::new(&config.to_string());
+        let module = UbiHomePlatform::new(config, "config.yml");
         assert!(
             module.is_ok(),
             "Shell module should parse text_sensor config successfully"
@@ -1082,7 +1122,7 @@ text_sensor:
     command: "hostname"
 "#;
 
-        let module = UbiHomePlatform::new(&config.to_string());
+        let module = UbiHomePlatform::new(config, "config.yml");
         assert!(
             module.is_ok(),
             "Shell module should parse minimal text_sensor config successfully"
@@ -1104,6 +1144,92 @@ text_sensor:
         assert!(
             text_sensor.update_interval.is_none(),
             "Minimal text_sensor should have no update_interval"
+        );
+    }
+
+    const INTERNAL_BASE: &str = r#"
+ubihome:
+  name: "Test Device"
+
+shell:
+  type: bash
+"#;
+
+    fn parse_binary_sensor(entry: &str) -> Result<UbiHomePlatform, String> {
+        let config = format!("{INTERNAL_BASE}\nbinary_sensor:\n  - platform: shell\n{entry}");
+        UbiHomePlatform::new(&config, "test.yaml")
+    }
+
+    #[test]
+    fn component_with_only_id_is_internal() {
+        let mut module = parse_binary_sensor("    id: hidden_switch\n    command: \"echo ON\"\n")
+            .expect("config with only an id should be valid");
+        let components = module.components();
+        assert_eq!(components.len(), 1);
+        assert!(
+            components[0].is_internal(),
+            "a component with only an id must be internal"
+        );
+    }
+
+    #[test]
+    fn component_with_name_is_not_internal() {
+        let mut module =
+            parse_binary_sensor("    name: \"Front Door\"\n    command: \"echo ON\"\n")
+                .expect("config with a name should be valid");
+        let components = module.components();
+        assert_eq!(components.len(), 1);
+        assert!(
+            !components[0].is_internal(),
+            "a component with a name must not be internal"
+        );
+    }
+
+    #[test]
+    fn component_with_name_and_id_is_not_internal() {
+        let mut module = parse_binary_sensor(
+            "    name: \"Front Door\"\n    id: front_door\n    command: \"echo ON\"\n",
+        )
+        .expect("config with name and id should be valid");
+        let components = module.components();
+        assert_eq!(components.len(), 1);
+        assert!(!components[0].is_internal());
+    }
+
+    #[test]
+    fn component_without_name_or_id_is_rejected() {
+        let result = parse_binary_sensor("    command: \"echo ON\"\n");
+        assert!(
+            result.is_err(),
+            "a component with neither name nor id must be rejected"
+        );
+    }
+
+    #[test]
+    fn explicit_internal_true_overrides_named_default() {
+        let mut module = parse_binary_sensor(
+            "    name: \"Front Door\"\n    internal: true\n    command: \"echo ON\"\n",
+        )
+        .expect("config should be valid");
+        let components = module.components();
+        assert_eq!(components.len(), 1);
+        assert!(
+            components[0].is_internal(),
+            "internal: true must override the named (non-internal) default"
+        );
+    }
+
+    #[test]
+    fn explicit_internal_false_overrides_id_only_default() {
+        let mut module = parse_binary_sensor(
+            "    id: hidden_switch\n    internal: false\n    command: \"echo ON\"\n",
+        )
+        .expect("config should be valid");
+        let components = module.components();
+        assert_eq!(components.len(), 1);
+        assert!(
+            !components[0].is_internal(),
+            "internal: false must override the id-only (internal) default"
         );
     }
 }

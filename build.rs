@@ -23,6 +23,14 @@ fn main() {
         .and_then(|o| String::from_utf8(o.stdout).ok())
         .map(|s| s.trim().to_string())
         .filter(|s| !s.is_empty())
+        .or_else(|| {
+            // Set by CI for pull request builds, so PR builds report a version like
+            // "pr-42 (a1b2c3d)" instead of "development (a1b2c3d)".
+            env::var("UBIHOME_PR_NUMBER")
+                .ok()
+                .filter(|s| !s.is_empty())
+                .map(|pr_number| format!("pr-{}", pr_number))
+        })
         .unwrap_or_else(|| "development".to_string());
 
     println!("cargo:rustc-env=GIT_TAG={}", git_tag);
@@ -49,6 +57,7 @@ fn main() {
     println!("cargo::rerun-if-changed=Cargo.toml");
     println!("cargo::rerun-if-changed=.git/HEAD");
     println!("cargo::rerun-if-changed=.git/refs/tags");
+    println!("cargo::rerun-if-env-changed=UBIHOME_PR_NUMBER");
     // let yaml_path =  Path::join(Path::new(&env::var_os("CARGO_MANIFEST_DIR").unwrap()), "config.yaml");
     // if let Ok(content) = fs::read_to_string(yaml_path) {
     // let config = Yaml::load_from_str(&content).unwrap();

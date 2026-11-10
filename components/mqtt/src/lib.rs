@@ -20,13 +20,14 @@ use ubihome_core::{
     config_template,
     features::ip::{get_ip_address, get_network_mac_address},
     internal::sensors::UbiComponent,
+    state::StateStore,
     ChangedMessage, Module, NoConfig, PublishedMessage,
 };
 
 mod discovery;
 use discovery::*;
 
-#[derive(Clone, Deserialize, Debug, Validate)]
+#[derive(Clone, Deserialize, Validate)]
 #[garde(allow_unvalidated)]
 pub struct MqttConfig {
     pub discovery_prefix: Option<String>,
@@ -36,8 +37,24 @@ pub struct MqttConfig {
     pub password: Option<String>,
 }
 
+// The MQTT password is a credential and must never be written to logs. A manual
+// `Debug` impl redacts it so that any accidental `{:?}` formatting cannot leak
+// it, while still showing whether a password is configured.
+impl std::fmt::Debug for MqttConfig {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("MqttConfig")
+            .field("discovery_prefix", &self.discovery_prefix)
+            .field("broker", &self.broker)
+            .field("port", &self.port)
+            .field("username", &self.username)
+            .field("password", &self.password.as_ref().map(|_| "[REDACTED]"))
+            .finish()
+    }
+}
+
 config_template!(
-    mqtt, MqttConfig, NoConfig, NoConfig, NoConfig, NoConfig, NoConfig, NoConfig, NoConfig
+    mqtt, MqttConfig, NoConfig, NoConfig, NoConfig, NoConfig, NoConfig, NoConfig, NoConfig,
+    NoConfig
 );
 
 #[derive(Clone, Debug)]
@@ -63,6 +80,7 @@ impl Module for UbiHomePlatform {
         &self,
         sender: Sender<ChangedMessage>,
         mut receiver: Receiver<PublishedMessage>,
+        state: StateStore,
     ) -> Pin<Box<dyn Future<Output = Result<(), Box<dyn std::error::Error>>> + Send + 'static>>
     {
         let config = self.config.clone();
@@ -106,218 +124,208 @@ impl Module for UbiHomePlatform {
 
             let all_mqtt_components_clone = all_mqtt_components.clone();
             tokio::spawn(async move {
+                {
+                    let components = state.components().to_vec();
+                    let mut mqtt_components: HashMap<String, HAMqttComponent> = HashMap::new();
+                    let mut topics: Vec<String> = vec![];
+
+                    for component in components {
+                        // Internal components (configured with an
+                        // id but no name) are not exposed over MQTT.
+                        if component.is_internal() {
+                            continue;
+                        }
+                        match component {
+                            // TODO: Use object_id generator
+                            // let id = sensor.unique_id.unwrap_or(format!(
+                            //     "{}_{}",
+                            //     core_config.ubihome.name, sensor.name
+                            // ));
+                            UbiComponent::Switch(switch) => {
+                                let topic = format!(
+                                    "{}/{}/set",
+                                    base_topic_clone.clone(),
+                                    switch.id.clone()
+                                );
+                                topics.push(topic.clone());
+
+                                mqtt_components.insert(
+                                    switch.id.clone(),
+                                    HAMqttComponent::Switch(HAMqttSwitch {
+                                        platform: "switch".to_string(),
+                                        unique_id: switch.id.clone(),
+                                        command_topic: topic,
+                                        state_topic: format!(
+                                            "{}/{}",
+                                            base_topic_clone.clone(),
+                                            switch.id.clone()
+                                        ),
+                                        name: switch.name.clone(),
+                                        icon: switch.icon.clone(),
+                                        object_id: switch.id.clone(),
+                                    }),
+                                );
+                            }
+                            UbiComponent::Button(button) => {
+                                let topic =
+                                    format!("{}/{}", base_topic_clone.clone(), button.id.clone());
+                                topics.push(topic.clone());
+                                mqtt_components.insert(
+                                    button.id.clone(),
+                                    HAMqttComponent::Button(HAMqttButton {
+                                        platform: "button".to_string(),
+                                        unique_id: button.id.clone(),
+                                        command_topic: topic,
+                                        name: button.name.clone(),
+                                        icon: button.icon.clone(),
+                                        object_id: button.id.clone(),
+                                    }),
+                                );
+                            }
+                            UbiComponent::Sensor(sensor) => {
+                                mqtt_components.insert(
+                                    sensor.id.clone(),
+                                    HAMqttComponent::Sensor(HAMqttSensor {
+                                        platform: "sensor".to_string(),
+                                        icon: sensor.icon.clone(),
+                                        unique_id: sensor.id.clone(),
+                                        device_class: sensor
+                                            .device_class
+                                            .clone()
+                                            .unwrap_or("".to_string()),
+                                        unit_of_measurement: sensor
+                                            .unit_of_measurement
+                                            .clone()
+                                            .unwrap_or("".to_string()),
+                                        name: sensor.name.clone(),
+                                        state_topic: format!(
+                                            "{}/{}",
+                                            base_topic_clone.clone(),
+                                            sensor.id.clone()
+                                        ),
+                                        object_id: sensor.id.clone(),
+                                    }),
+                                );
+                            }
+                            UbiComponent::BinarySensor(sensor) => {
+                                mqtt_components.insert(
+                                    sensor.id.clone(),
+                                    HAMqttComponent::BinarySensor(HAMqttBinarySensor {
+                                        platform: "binary_sensor".to_string(),
+                                        icon: sensor.icon.clone(),
+                                        unique_id: sensor.id.clone(),
+                                        device_class: sensor
+                                            .device_class
+                                            .clone()
+                                            .unwrap_or("".to_string()),
+                                        name: sensor.name.clone(),
+                                        state_topic: format!(
+                                            "{}/{}",
+                                            base_topic_clone.clone(),
+                                            sensor.id.clone()
+                                        ),
+                                        object_id: sensor.id.clone(),
+                                    }),
+                                );
+                            }
+                            UbiComponent::Light(_light) => {
+                                // TODO: Add MQTT light support if needed
+                                // For now, just skip light components for MQTT
+                            }
+                            UbiComponent::Number(number) => {
+                                let state_topic =
+                                    format!("{}/{}", base_topic_clone.clone(), number.id.clone());
+                                let command_topic = format!(
+                                    "{}/{}/set",
+                                    base_topic_clone.clone(),
+                                    number.id.clone()
+                                );
+                                topics.push(command_topic.clone());
+
+                                mqtt_components.insert(
+                                    number.id.clone(),
+                                    HAMqttComponent::Number(HAMqttNumber {
+                                        platform: "number".to_string(),
+                                        unique_id: number.id.clone(),
+                                        command_topic,
+                                        state_topic,
+                                        name: number.name.clone(),
+                                        icon: number.icon.clone(),
+                                        object_id: number.id.clone(),
+                                        min: number.min_value,
+                                        max: number.max_value,
+                                        step: number.step,
+                                        unit_of_measurement: number
+                                            .unit_of_measurement
+                                            .clone()
+                                            .filter(|s| !s.is_empty()),
+                                    }),
+                                );
+                            }
+                            UbiComponent::TextSensor(_text_sensor) => {
+                                // TODO: Add MQTT text sensor support if needed
+                            }
+                            UbiComponent::MediaPlayer(_media_player) => {
+                                // TODO: Add MQTT media_player support if needed
+                            }
+                        }
+                    }
+                    {
+                        let mut all_mqtt_components = all_mqtt_components_clone.write().await;
+                        all_mqtt_components.extend(mqtt_components.clone());
+                        debug!("MQTT Components: {:?}", mqtt_components.keys());
+                    }
+
+                    let ip = get_ip_address().unwrap();
+                    let mac = get_network_mac_address(ip).unwrap();
+                    let device = HAMqttDevice {
+                        identifiers: vec![config.ubihome.name.clone()],
+                        manufacturer: format!(
+                            "{} {} {}",
+                            whoami::platform(),
+                            whoami::distro(),
+                            whoami::arch()
+                        ),
+                        name: config.ubihome.name.clone(),
+                        model: whoami::devicename(),
+                        connections: vec![HAMqttConnection {
+                            r#type: "mac".to_string(),
+                            value: mac,
+                        }],
+                    };
+
+                    let origin = HAMqttOrigin {
+                        name: "ubihome".to_string(),
+                        sw: "0.1".to_string(),
+                        url: "https://test.com".to_string(),
+                    };
+
+                    let discovery_message = HAMqttDiscoveryMessage {
+                        device,
+                        origin,
+                        components: mqtt_components.clone(),
+                    };
+                    let discovery_payload = serde_json::to_string(&discovery_message).unwrap();
+
+                    debug!("Publishing discovery message to topic: {}", discovery_topic);
+                    debug!("Discovery payload: {}", discovery_payload);
+                    client
+                        .publish(&discovery_topic, QoS::AtLeastOnce, false, discovery_payload)
+                        .await
+                        .unwrap();
+
+                    debug!("Discovery message published successfully");
+
+                    // Subscribe to the discovery topic
+                    for topic in topics {
+                        debug!("Subscribing to topic: {}", topic);
+                        client.subscribe(&topic, QoS::AtLeastOnce).await.unwrap();
+                    }
+                }
                 loop {
                     match receiver.recv().await {
                         Ok(cmd) => {
                             match cmd {
-                                PublishedMessage::Components { components } => {
-                                    let mut mqtt_components: HashMap<String, HAMqttComponent> =
-                                        HashMap::new();
-                                    let mut topics: Vec<String> = vec![];
-
-                                    for component in components {
-                                        match component {
-                                            // TODO: Use object_id generator
-                                            // let id = sensor.unique_id.unwrap_or(format!(
-                                            //     "{}_{}",
-                                            //     core_config.ubihome.name, sensor.name
-                                            // ));
-                                            UbiComponent::Switch(switch) => {
-                                                let topic = format!(
-                                                    "{}/{}/set",
-                                                    base_topic_clone.clone(),
-                                                    switch.id.clone()
-                                                );
-                                                topics.push(topic.clone());
-
-                                                mqtt_components.insert(
-                                                    switch.id.clone(),
-                                                    HAMqttComponent::Switch(HAMqttSwitch {
-                                                        platform: "switch".to_string(),
-                                                        unique_id: switch.id.clone(),
-                                                        command_topic: topic,
-                                                        state_topic: format!(
-                                                            "{}/{}",
-                                                            base_topic_clone.clone(),
-                                                            switch.id.clone()
-                                                        ),
-                                                        name: switch.name.clone(),
-                                                        icon: switch.icon.clone(),
-                                                        object_id: switch.id.clone(),
-                                                    }),
-                                                );
-                                            }
-                                            UbiComponent::Button(button) => {
-                                                let topic = format!(
-                                                    "{}/{}",
-                                                    base_topic_clone.clone(),
-                                                    button.id.clone()
-                                                );
-                                                topics.push(topic.clone());
-                                                mqtt_components.insert(
-                                                    button.id.clone(),
-                                                    HAMqttComponent::Button(HAMqttButton {
-                                                        platform: "button".to_string(),
-                                                        unique_id: button.id.clone(),
-                                                        command_topic: topic,
-                                                        name: button.name.clone(),
-                                                        icon: button.icon.clone(),
-                                                        object_id: button.id.clone(),
-                                                    }),
-                                                );
-                                            }
-                                            UbiComponent::Sensor(sensor) => {
-                                                mqtt_components.insert(
-                                                    sensor.id.clone(),
-                                                    HAMqttComponent::Sensor(HAMqttSensor {
-                                                        platform: "sensor".to_string(),
-                                                        icon: sensor.icon.clone(),
-                                                        unique_id: sensor.id.clone(),
-                                                        device_class: sensor
-                                                            .device_class
-                                                            .clone()
-                                                            .unwrap_or("".to_string()),
-                                                        unit_of_measurement: sensor
-                                                            .unit_of_measurement
-                                                            .clone()
-                                                            .unwrap_or("".to_string()),
-                                                        name: sensor.name.clone(),
-                                                        state_topic: format!(
-                                                            "{}/{}",
-                                                            base_topic_clone.clone(),
-                                                            sensor.id.clone()
-                                                        ),
-                                                        object_id: sensor.id.clone(),
-                                                    }),
-                                                );
-                                            }
-                                            UbiComponent::BinarySensor(sensor) => {
-                                                mqtt_components.insert(
-                                                    sensor.id.clone(),
-                                                    HAMqttComponent::BinarySensor(
-                                                        HAMqttBinarySensor {
-                                                            platform: "binary_sensor".to_string(),
-                                                            icon: sensor.icon.clone(),
-                                                            unique_id: sensor.id.clone(),
-                                                            device_class: sensor
-                                                                .device_class
-                                                                .clone()
-                                                                .unwrap_or("".to_string()),
-                                                            name: sensor.name.clone(),
-                                                            state_topic: format!(
-                                                                "{}/{}",
-                                                                base_topic_clone.clone(),
-                                                                sensor.id.clone()
-                                                            ),
-                                                            object_id: sensor.id.clone(),
-                                                        },
-                                                    ),
-                                                );
-                                            }
-                                            UbiComponent::Light(_light) => {
-                                                // TODO: Add MQTT light support if needed
-                                                // For now, just skip light components for MQTT
-                                            }
-                                            UbiComponent::Number(number) => {
-                                                let state_topic = format!(
-                                                    "{}/{}",
-                                                    base_topic_clone.clone(),
-                                                    number.id.clone()
-                                                );
-                                                let command_topic = format!(
-                                                    "{}/{}/set",
-                                                    base_topic_clone.clone(),
-                                                    number.id.clone()
-                                                );
-                                                topics.push(command_topic.clone());
-
-                                                mqtt_components.insert(
-                                                    number.id.clone(),
-                                                    HAMqttComponent::Number(HAMqttNumber {
-                                                        platform: "number".to_string(),
-                                                        unique_id: number.id.clone(),
-                                                        command_topic,
-                                                        state_topic,
-                                                        name: number.name.clone(),
-                                                        icon: number.icon.clone(),
-                                                        object_id: number.id.clone(),
-                                                        min: number.min_value,
-                                                        max: number.max_value,
-                                                        step: number.step,
-                                                        unit_of_measurement: number
-                                                            .unit_of_measurement
-                                                            .clone()
-                                                            .filter(|s| !s.is_empty()),
-                                                    }),
-                                                );
-                                            }
-                                            UbiComponent::TextSensor(_text_sensor) => {
-                                                // TODO: Add MQTT text sensor support if needed
-                                            }
-                                        }
-                                    }
-                                    {
-                                        let mut all_mqtt_components =
-                                            all_mqtt_components_clone.write().await;
-                                        all_mqtt_components.extend(mqtt_components.clone());
-                                        debug!("MQTT Components: {:?}", mqtt_components.keys());
-                                    }
-
-                                    let ip = get_ip_address().unwrap();
-                                    let mac = get_network_mac_address(ip).unwrap();
-                                    let device = HAMqttDevice {
-                                        identifiers: vec![config.ubihome.name.clone()],
-                                        manufacturer: format!(
-                                            "{} {} {}",
-                                            whoami::platform(),
-                                            whoami::distro(),
-                                            whoami::arch()
-                                        ),
-                                        name: config.ubihome.name.clone(),
-                                        model: whoami::devicename(),
-                                        connections: vec![HAMqttConnection {
-                                            r#type: "mac".to_string(),
-                                            value: mac,
-                                        }],
-                                    };
-
-                                    let origin = HAMqttOrigin {
-                                        name: "ubihome".to_string(),
-                                        sw: "0.1".to_string(),
-                                        url: "https://test.com".to_string(),
-                                    };
-
-                                    let discovery_message = HAMqttDiscoveryMessage {
-                                        device,
-                                        origin,
-                                        components: mqtt_components.clone(),
-                                    };
-                                    let discovery_payload =
-                                        serde_json::to_string(&discovery_message).unwrap();
-
-                                    debug!(
-                                        "Publishing discovery message to topic: {}",
-                                        discovery_topic
-                                    );
-                                    debug!("Discovery payload: {}", discovery_payload);
-                                    client
-                                        .publish(
-                                            &discovery_topic,
-                                            QoS::AtLeastOnce,
-                                            false,
-                                            discovery_payload,
-                                        )
-                                        .await
-                                        .unwrap();
-
-                                    debug!("Discovery message published successfully");
-
-                                    // Subscribe to the discovery topic
-                                    for topic in topics {
-                                        debug!("Subscribing to topic: {}", topic);
-                                        client.subscribe(&topic, QoS::AtLeastOnce).await.unwrap();
-                                    }
-                                }
                                 PublishedMessage::SensorValueChanged { key, value } => {
                                     debug!("Sensor value published: {} = {}", key, value);
                                     // Handle sensor value change
@@ -540,5 +548,37 @@ impl Module for UbiHomePlatform {
             error!("MQTT event loop terminated");
             Ok(())
         })
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // Defense-in-depth for issue #178: the MQTT password is a credential and
+    // must never appear in Debug/log output.
+    #[test]
+    fn test_mqtt_password_is_never_in_debug_output() {
+        const TEST_PASSWORD: &str = "super-secret-mqtt-password";
+        let config = MqttConfig {
+            discovery_prefix: Some("ubihome".to_string()),
+            broker: "mqtt.example.com".to_string(),
+            port: Some(1883),
+            username: Some("user".to_string()),
+            password: Some(TEST_PASSWORD.to_string()),
+        };
+
+        let rendered = format!("{config:?}");
+        assert!(
+            !rendered.contains(TEST_PASSWORD),
+            "MQTT password leaked in Debug output: {rendered}"
+        );
+        assert!(
+            rendered.contains("[REDACTED]"),
+            "expected redaction marker in Debug output: {rendered}"
+        );
+        // Non-sensitive fields should still be visible.
+        assert!(rendered.contains("mqtt.example.com"));
+        assert!(rendered.contains("user"));
     }
 }

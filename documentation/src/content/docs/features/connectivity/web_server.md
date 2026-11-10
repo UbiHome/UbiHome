@@ -1,5 +1,6 @@
 ---
 title: 'Web Server'
+description: 'Trigger an action via the web server and its REST API'
 sidebar:
   badge:
     text: Experimental

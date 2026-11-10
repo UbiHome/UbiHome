@@ -29,7 +29,8 @@ sensor:
     filters:
       - round: 2
 """
-    io_mock.set_value("0.1111")
+    # Round down: 1.123345 -> 1.12
+    io_mock.set_value("1.123345")
 
     async with UbiHome("run", config=DEVICE_INFO_CONFIG, wait_for_api=True) as ubihome:
         api = aioesphomeapi.APIClient("127.0.0.1", ubihome.port, "")
@@ -46,9 +47,6 @@ sensor:
         mock = Mock()
         api.subscribe_states(mock)
 
-        # Round down: 1.123345 -> 1.12
-        io_mock.set_value("1.123345")
-
         while not mock.called:
             await sleep(0.1)
 
@@ -56,20 +54,18 @@ sensor:
         assert state.state == pytest.approx(1.12)
 
         # Round up: 1.126 -> 1.13
-        mock.reset_mock()
         io_mock.set_value("1.126")
 
-        while not mock.called:
+        while not (mock.called and mock.call_args.args[0].state == pytest.approx(1.13)):
             await sleep(0.1)
 
         state = mock.call_args.args[0]
         assert state.state == pytest.approx(1.13)
 
         # Edge case: 1.125 rounds to 1.12 (round-half-to-even / banker's rounding in f32)
-        mock.reset_mock()
         io_mock.set_value("1.125")
 
-        while not mock.called:
+        while not (mock.called and mock.call_args.args[0].state == pytest.approx(1.12)):
             await sleep(0.1)
 
         state = mock.call_args.args[0]
@@ -97,7 +93,8 @@ sensor:
     filters:
       - round: 3
 """
-    io_mock.set_value("0.1111")
+    # Round down: 1.12341 -> 1.123
+    io_mock.set_value("1.12341")
 
     async with UbiHome("run", config=DEVICE_INFO_CONFIG, wait_for_api=True) as ubihome:
         api = aioesphomeapi.APIClient("127.0.0.1", ubihome.port, "")
@@ -109,9 +106,6 @@ sensor:
         mock = Mock()
         api.subscribe_states(mock)
 
-        # Round down: 1.12341 -> 1.123
-        io_mock.set_value("1.12341")
-
         while not mock.called:
             await sleep(0.1)
 
@@ -119,10 +113,9 @@ sensor:
         assert state.state == pytest.approx(1.123)
 
         # Round up: 1.12361 -> 1.124
-        mock.reset_mock()
         io_mock.set_value("1.12361")
 
-        while not mock.called:
+        while not (mock.called and mock.call_args.args[0].state == pytest.approx(1.124)):
             await sleep(0.1)
 
         state = mock.call_args.args[0]
