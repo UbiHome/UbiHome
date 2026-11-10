@@ -3,7 +3,9 @@ use esphome_native_api::hash::hash_fnv1;
 use esphome_native_api::parser::ProtoMessage;
 use esphome_native_api::proto::BinarySensorStateResponse;
 use esphome_native_api::proto::BluetoothLeAdvertisementResponse;
+use esphome_native_api::proto::BluetoothProxyCapabilities;
 use esphome_native_api::proto::BluetoothServiceData;
+use esphome_native_api::proto::DeviceCapabilitiesResponse;
 use esphome_native_api::proto::EntityCategory;
 use esphome_native_api::proto::LightStateResponse;
 use esphome_native_api::proto::ListEntitiesBinarySensorResponse;
@@ -453,6 +455,7 @@ impl Module for UbiHomePlatform {
                                                 key: *key,
                                                 device_id: 0,
                                                 state,
+                                                missing_state: false,
                                             })
                                         })
                                     }
@@ -573,6 +576,28 @@ impl Module for UbiHomePlatform {
                                         .await
                                         .unwrap();
                                     }
+                                    ProtoMessage::DeviceCapabilitiesRequest(request) => {
+                                        debug!("DeviceCapabilitiesRequest: {:?}", request);
+                                        // Clients wait for this response before subscribing
+                                        // to states, so it must always be answered.
+                                        // Mirrors the feature flags sent in DeviceInfoResponse.
+                                        let response_message = DeviceCapabilitiesResponse {
+                                            bluetooth_proxy: Some(BluetoothProxyCapabilities {
+                                                feature_flags: 1,
+                                                mac_address: String::new(),
+                                            }),
+                                            ..Default::default()
+                                        };
+                                        if tx
+                                            .send(ProtoMessage::DeviceCapabilitiesResponse(
+                                                response_message,
+                                            ))
+                                            .await
+                                            .is_err()
+                                        {
+                                            break;
+                                        }
+                                    }
                                     ProtoMessage::SubscribeLogsRequest(request) => {
                                         debug!("SubscribeLogsRequest: {:?}", request);
                                         let response_message = SubscribeLogsResponse {
@@ -650,6 +675,7 @@ impl Module for UbiHomePlatform {
                                                             key: *key,
                                                             device_id: 0,
                                                             state,
+                                                            missing_state: false,
                                                         },
                                                     )
                                                 }
