@@ -11,11 +11,6 @@ on:
   push:
     branches:
       - main
-    paths:
-      - documentation/**
-      - .dagger/**
-      - dagger.json
-      - .github/workflows/docs.yml
 
 jobs:
   check:
@@ -42,6 +37,13 @@ jobs:
         with:
           version: v0.21.11
           call: docs-build-dir export --path=./documentation/site
+          cloud-token: ${{ secrets.DAGGER_CLOUD_TOKEN }}
+
+      - name: Record demo GIFs with Dagger
+        uses: dagger/dagger-for-github@v8.4.1
+        with:
+          version: v0.21.11
+          call: demo-gifs export --path=./documentation/site/assets
           cloud-token: ${{ secrets.DAGGER_CLOUD_TOKEN }}
 
       - name: Deploy to ubihome.github.io repository

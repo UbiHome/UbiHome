@@ -676,7 +676,7 @@ Remove the "{}:" entry from your configuration or install the cargo crate contai
             });
         }
 
-        println!("Platforms: {:?}", initialized_platforms);
+        debug!("Platforms: {:?}", initialized_platforms);
 
         let ctrl_c = async {
             signal::ctrl_c()

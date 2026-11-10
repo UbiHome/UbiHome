@@ -193,6 +193,61 @@ export class UbiHome {
 	}
 
 	/**
+	 * Record a GIF for every tape in .dagger/tapes with VHS, using a fresh UbiHome build.
+	 */
+	@func()
+	async demoGifs(
+		@argument({
+			defaultPath: ".",
+			ignore: [
+				"**",
+				"!components",
+				"!components/**",
+				"!src",
+				"!src/**",
+				"!build.rs",
+				"!Cargo.toml",
+				"!Cargo.lock",
+			],
+		})
+		source: Directory,
+		@argument({ defaultPath: ".dagger/tapes" })
+		tapes: Directory,
+	): Promise<Directory> {
+		const ubihome = this.rustContainer(source)
+			.withMountedCache("target", dag.cacheVolume("rust-target"))
+			.withExec(["cargo", "build", "--release"])
+			.withExec(["cp", "target/release/ubihome", "/ubihome"])
+			.file("/ubihome");
+
+		const vhs = dag
+			.container()
+			.from("ghcr.io/charmbracelet/vhs")
+			.withExec(["apt-get", "update"])
+			.withExec([
+				"apt-get",
+				"install",
+				"-y",
+				"nano",
+				"libdbus-1-3",
+				"libasound2t64",
+				"libpipewire-0.3-0t64",
+			])
+			.withFile("/usr/local/bin/ubihome", ubihome)
+			.withWorkdir("/vhs");
+
+		let gifs = dag.directory();
+		for (const tape of await tapes.glob("*.tape")) {
+			const gif = tape.replace(/\.tape$/, ".gif");
+			gifs = gifs.withFile(
+				gif,
+				vhs.withFile(tape, tapes.file(tape)).withExec(["vhs", tape]).file(gif),
+			);
+		}
+		return gifs;
+	}
+
+	/**
 	 * Check Python code style with ruff (linter and formatter check).
 	 */
 	@func()
