@@ -18,6 +18,19 @@ use std::time::Duration;
 use tokio::sync::broadcast;
 use tokio::{runtime::Runtime, signal};
 
+/// A supervised task failed at runtime, as opposed to the configuration being
+/// invalid. The cause has already been logged by the time this is returned.
+#[derive(Debug)]
+pub(crate) struct TaskFailed;
+
+impl std::fmt::Display for TaskFailed {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "UbiHome stopped because a task failed.")
+    }
+}
+
+impl std::error::Error for TaskFailed {}
+
 fn read_base_config(path: &str) -> Result<String, String> {
     if path.is_empty() {
         // TODO: Fallback to the embedded default configuration once wired up
@@ -141,7 +154,7 @@ Remove the "{}:" entry from your configuration or install the cargo crate contai
 
     // Spawn the root task
     let rt = Runtime::new().unwrap();
-    rt.block_on(async {
+    let result = rt.block_on(async {
         let (internal_tx, modules_rx) = broadcast::channel::<PublishedMessage>(16);
         let (modules_tx, mut internal_rx) = broadcast::channel::<ChangedMessage>(16);
 
@@ -698,7 +711,8 @@ Remove the "{}:" entry from your configuration or install the cargo crate contai
         // Supervise every task in the set: a task returning normally (e.g. a module
         // whose run() returned Ok(())) is an intentional exit and is ignored, but a
         // task that panics (e.g. a module's run() returned Err via unwrap) is a real
-        // failure that must bring the whole application down gracefully.
+        // failure that must bring the whole application down gracefully and make
+        // it exit with a non-zero status, so service managers see it as failed.
         let task_supervisor = async {
             loop {
                 match supervised_tasks.join_next().await {
@@ -711,7 +725,7 @@ Remove the "{}:" entry from your configuration or install the cargo crate contai
                         if let Some(client) = sentry::Hub::current().client() {
                             client.flush(Some(Duration::from_secs(2)));
                         }
-                        break;
+                        break Err(TaskFailed);
                     }
                     // All tasks have exited normally; nothing left to supervise, so
                     // keep waiting for a shutdown signal instead of exiting.
@@ -734,21 +748,21 @@ Remove the "{}:" entry from your configuration or install the cargo crate contai
                 }
             };
             tokio::select! {
-                _ = ctrl_c => {},
-                _ = terminate => {},
-                _ = shutdown_event => {},
-                _ = task_supervisor => {},
+                _ = ctrl_c => Ok(()),
+                _ = terminate => Ok(()),
+                _ = shutdown_event => Ok(()),
+                result = task_supervisor => result,
             }
         } else {
             tokio::select! {
-                _ = ctrl_c => {},
-                _ = terminate => {},
-                _ = task_supervisor => {},
+                _ = ctrl_c => Ok(()),
+                _ = terminate => Ok(()),
+                result = task_supervisor => result,
             }
         }
     });
     debug!("Shutdown complete");
-    Ok(())
+    Ok(result?)
 }
 
 #[cfg(test)]

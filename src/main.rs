@@ -169,6 +169,14 @@ fn cli() -> Command {
         )
 }
 
+fn report_run_error(error: &(dyn std::error::Error + 'static)) {
+    if error.is::<run::TaskFailed>() {
+        eprintln!("{}", error);
+    } else {
+        eprintln!("Configuration is invalid: {}", error);
+    }
+}
+
 fn main() {
     let cli = cli();
     let matches = cli.try_get_matches();
@@ -288,13 +296,13 @@ fn main() {
                     } else {
                         // Run normally
                         if let Err(e) = run::run(&config_file, false, None) {
-                            eprintln!("Configuration is invalid: {}", e);
+                            report_run_error(e.as_ref());
                             std::process::exit(1);
                         }
                     }
                     #[cfg(not(target_os = "windows"))]
                     if let Err(e) = run::run(&config_file, false, None) {
-                        eprintln!("Configuration is invalid: {}", e);
+                        report_run_error(e.as_ref());
                         std::process::exit(1);
                     }
                 }

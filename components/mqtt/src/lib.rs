@@ -85,6 +85,12 @@ impl Module for UbiHomePlatform {
     {
         let config = self.config.clone();
         Box::pin(async move {
+            // Resolved here rather than in the discovery task below: that task
+            // is not supervised, so a failure there would go unnoticed.
+            let mac = get_ip_address()
+                .and_then(get_network_mac_address)
+                .map_err(|err| format!("mqtt: {err}"))?;
+
             let mut mqttoptions = MqttOptions::new(
                 config.ubihome.name.clone(),
                 config.mqtt.broker.clone(),
@@ -276,8 +282,6 @@ impl Module for UbiHomePlatform {
                         debug!("MQTT Components: {:?}", mqtt_components.keys());
                     }
 
-                    let ip = get_ip_address().unwrap();
-                    let mac = get_network_mac_address(ip).unwrap();
                     let device = HAMqttDevice {
                         identifiers: vec![config.ubihome.name.clone()],
                         manufacturer: format!(
