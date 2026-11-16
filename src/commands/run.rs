@@ -7,7 +7,7 @@ use ubihome_core::configuration::binary_sensor::FilterType;
 use ubihome_core::configuration::sensor::SensorFilterType;
 use ubihome_core::internal::sensors::UbiComponent;
 use ubihome_core::state::{EntityState, StateStoreWriter};
-use ubihome_core::{ChangedMessage, PublishedMessage};
+use ubihome_core::{ChangedMessage, Module, PublishedMessage};
 
 use futures_signals::signal::{Mutable, SignalExt};
 use log::{debug, error, trace};
@@ -50,19 +50,13 @@ fn read_base_config(path: &str) -> Result<String, String> {
     })
 }
 
-pub(crate) fn run(
+/// Validates the base structure of the configuration and returns it together
+/// with the configured (dynamically loaded) platform names.
+fn validate_base(
+    config_string: &str,
     config_path: &str,
-    validate_only: bool,
-    shutdown_signal: Option<mpsc::Receiver<()>>,
-) -> Result<(), Box<dyn std::error::Error>> {
-    let log_directory = logger_setup::default_log_directory();
-    let mut logger = logger_setup::init(&log_directory);
-
-    println!("LogDirectory: {}", log_directory.display());
-
-    let config_string: String = read_base_config(config_path)?;
-
-    let mut platforms = get_platforms_from_config(&config_string);
+) -> Result<(BaseConfig, Vec<String>), Box<dyn std::error::Error>> {
+    let mut platforms = get_platforms_from_config(config_string);
     // Builtin top-level sections (e.g. `globals`) are handled directly by the
     // main binary and must not be treated as dynamically-loaded platform crates.
     platforms.retain(|p| !builtins::BUILTIN_SECTIONS.contains(&p.as_str()));
@@ -85,25 +79,36 @@ pub(crate) fn run(
         allowed_platforms: Some(allowed_platforms),
     };
     let validation_result = serde_saphyr::from_str_with_options_context_valid::<BaseConfig>(
-        &config_string,
+        config_string,
         no_snippet.clone(),
         &ctx,
     );
 
-    if let Err(errors) = validation_result {
-        let report = serde_saphyr::miette::to_miette_report(&errors, &config_string, config_path);
-        return Err(format!("{:?}", report).into());
+    match validation_result {
+        Ok(config) => Ok((config, platforms)),
+        Err(errors) => {
+            let report =
+                serde_saphyr::miette::to_miette_report(&errors, config_string, config_path);
+            Err(format!("{:?}", report).into())
+        }
     }
-    let config = validation_result.unwrap();
+}
 
-    if let Some(logger_config) = config.logger.as_ref() {
-        logger_setup::apply_config(&mut logger, &log_directory, logger_config);
-    };
+/// Configured platform modules, their discovered components and the builtin
+/// components.
+type LoadedPlatforms = (
+    Vec<Box<dyn Module>>,
+    Vec<UbiComponent>,
+    builtins::BuiltinConfig,
+);
 
-    debug!("BaseConfiguration: {:?}", config);
-
+/// Parses and validates every configured platform and the builtin components.
+fn load_platforms(
+    config_string: &str,
+    config_path: &str,
+    platforms: &[String],
+) -> Result<LoadedPlatforms, Box<dyn std::error::Error>> {
     let mut platforms_to_load: BTreeSet<Platform> = BTreeSet::new();
-    println!("Platforms to load: {:?}", platforms);
     for platform in platforms.iter() {
         if let Ok(platform_enum) = Platform::from_str(platform) {
             platforms_to_load.insert(platform_enum);
@@ -115,19 +120,54 @@ Remove the "{}:" entry from your configuration or install the cargo crate contai
             ).into());
         }
     }
-    let configuration_result = configure_platforms(&config_string, config_path, &platforms_to_load);
-    if let Err(e) = configuration_result {
-        return Err(e.into());
-    }
-    let mut configured_platforms = configuration_result.unwrap();
+    let mut configured_platforms =
+        configure_platforms(config_string, config_path, &platforms_to_load)?;
     log::info!("Loaded {} modules", configured_platforms.len());
-    let mut initialized_platforms = initialize_platforms(&mut configured_platforms).unwrap();
+    let mut initialized_platforms = initialize_platforms(&mut configured_platforms)?;
 
     // Builtin components (template switches/buttons/numbers, globals) are
     // parsed and wired up by the main binary itself; see `crate::builtins` for
     // the rationale.
-    let builtin = builtins::parse(&config_string, config_path)?;
+    let builtin = builtins::parse(config_string, config_path)?;
     initialized_platforms.extend(builtins::template::to_components(&builtin.template));
+    Ok((configured_platforms, initialized_platforms, builtin))
+}
+
+/// Runs the same validation as `ubihome validate` on an in-memory
+/// configuration (used by the visual editor).
+#[cfg_attr(not(feature = "config_editor"), allow(dead_code))]
+pub(crate) fn validate_config_str(
+    config_string: &str,
+    config_path: &str,
+) -> Result<(), Box<dyn std::error::Error>> {
+    let (_, platforms) = validate_base(config_string, config_path)?;
+    load_platforms(config_string, config_path, &platforms)?;
+    Ok(())
+}
+
+pub(crate) fn run(
+    config_path: &str,
+    validate_only: bool,
+    shutdown_signal: Option<mpsc::Receiver<()>>,
+) -> Result<(), Box<dyn std::error::Error>> {
+    let log_directory = logger_setup::default_log_directory();
+    let mut logger = logger_setup::init(&log_directory);
+
+    println!("LogDirectory: {}", log_directory.display());
+
+    let config_string: String = read_base_config(config_path)?;
+
+    let (config, platforms) = validate_base(&config_string, config_path)?;
+
+    if let Some(logger_config) = config.logger.as_ref() {
+        logger_setup::apply_config(&mut logger, &log_directory, logger_config);
+    };
+
+    debug!("BaseConfiguration: {:?}", config);
+
+    println!("Platforms to load: {:?}", platforms);
+    let (configured_platforms, initialized_platforms, builtin) =
+        load_platforms(&config_string, config_path, &platforms)?;
 
     if validate_only {
         return Ok(());
@@ -805,5 +845,20 @@ mod tests {
         fs::remove_file(&path).ok();
 
         assert_eq!(result.unwrap(), "ubihome:\n  name: test\n");
+    }
+
+    #[test]
+    fn validate_config_str_accepts_valid_config() {
+        let config = "ubihome:\n  name: test\nshell:\nbutton:\n  - platform: shell\n    name: Say Hello\n    command: echo hello\n";
+        let result = super::validate_config_str(config, "config.yaml");
+        assert!(result.is_ok(), "{:?}", result.err());
+    }
+
+    #[test]
+    fn validate_config_str_reports_platform_errors() {
+        // Structurally valid, but `command` is required by the shell button.
+        let config =
+            "ubihome:\n  name: test\nshell:\nbutton:\n  - platform: shell\n    name: Say Hello\n";
+        assert!(super::validate_config_str(config, "config.yaml").is_err());
     }
 }

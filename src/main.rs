@@ -129,6 +129,12 @@ fn cli() -> Command {
         )
         .subcommand(Command::new("validate").about("Validates the configuration file."))
         .subcommand(
+            Command::new("edit")
+                .about("Open the visual configuration editor.")
+                // Only advertised in builds that include the editor.
+                .hide(cfg!(not(feature = "config_editor"))),
+        )
+        .subcommand(
             Command::new("install")
                 .about("Install UbiHome")
                 .arg(Arg::new("location").help("The location to install UbiHome.")),
@@ -167,6 +173,24 @@ fn cli() -> Command {
                 .about("Uninstall UbiHome")
                 .arg(Arg::new("location").help("The location where UbiHome is installed.")),
         )
+}
+
+#[cfg(feature = "config_editor")]
+fn edit(config_file: &str) -> Result<(), String> {
+    let path = (!config_file.is_empty()).then(|| std::path::PathBuf::from(config_file));
+    let validator: ubihome_config_editor::Validator = Box::new(|text, file_name| {
+        run::validate_config_str(text, file_name).map_err(|e| e.to_string())
+    });
+    ubihome_config_editor::run_native(path, Some(validator))
+}
+
+#[cfg(not(feature = "config_editor"))]
+fn edit(_config_file: &str) -> Result<(), String> {
+    Err(
+        "This build of UbiHome does not include the visual configuration editor. \
+Rebuild with `--features config_editor`, or use the web editor."
+            .to_string(),
+    )
 }
 
 fn main() {
@@ -261,6 +285,12 @@ fn main() {
                 Some(("uninstall", sub_matches)) => {
                     let location = sub_matches.try_get_one::<String>("location").unwrap();
                     uninstall(location.cloned());
+                }
+                Some(("edit", _)) => {
+                    if let Err(e) = edit(&config_file) {
+                        eprintln!("{}", e);
+                        std::process::exit(1);
+                    }
                 }
                 Some(("validate", _)) => match run::run(&config_file, true, None) {
                     Ok(_) => println!("Configuration is valid."),

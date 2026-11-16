@@ -6,6 +6,8 @@ use cargo_toml::Manifest;
 use std::process::Command;
 // use saphyr::Yaml;
 
+const NON_PLATFORM_CRATES: &[&str] = &["ubihome-core", "ubihome-config_editor"];
+
 // const RESERVED_KEYWORDS: [&str; 5] = ["ubihome", "button", "sensor", "binary_sensor", "text_sensor"];
 
 fn main() {
@@ -77,7 +79,8 @@ fn main() {
         .dependencies
         .iter()
         .filter(|k| k.0.starts_with("ubihome-"))
-        .filter(|p| p.0 != "ubihome-core")
+        // Shared/support crates that are not platforms.
+        .filter(|p| !NON_PLATFORM_CRATES.contains(&p.0.as_str()))
         .map(|(k, _)| k)
         .collect::<Vec<_>>();
 

@@ -24,6 +24,8 @@ ubihome-sendspin = { path = "components/sendspin" }
 ubihome-shell = { path = "components/shell" }
 ubihome-status = { path = "components/status" }
 ubihome-web_server = { path = "components/web_server" }
+# Not a platform: excluded from platform discovery in build.rs.
+ubihome-config_editor = { path = "config_editor", optional = true }
 inquire = "0.7.5"
 shell_exec = "0.2.0"
 flexi_logger = "0.29.8"
@@ -51,6 +53,9 @@ sentry = { version = "0.48.2", default-features = false, features = [
     "rustls",
 ] }
 
+[features]
+# Visual configuration editor (`ubihome edit`), built with egui.
+config_editor = ["dep:ubihome-config_editor"]
 
 [build-dependencies]
 cargo_toml = "0.22.1"
@@ -84,4 +89,5 @@ members = [
     "components/shell",
     "components/status",
     "components/web_server",
+    "config_editor",
 ]

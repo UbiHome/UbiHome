@@ -56,6 +56,16 @@ Loads and validates the configuration file the same way `run` does, but exits im
 ubihome validate
 ```
 
+## `edit`
+
+Opens the visual configuration editor (built with [egui](https://www.egui.rs/)) for the configuration file. Entities and platform sections are edited as forms, with a raw YAML view for anything else. The configuration is validated as you type, with the same checks as `validate`.
+
+```bash
+ubihome edit
+```
+
+The editor is an optional build feature (`cargo build --release --features config_editor`); builds without it print a hint instead. It can also be built for the browser from `config_editor/` with [Trunk](https://trunkrs.dev/) (`trunk build --release`). The web version opens and downloads files, and only runs the quick structural checks.
+
 ## `install`
 
 Installs UbiHome as a persistent background service (systemd on Linux/macOS, a Windows Service on Windows) so it survives reboots, and starts it. Copies the current executable to the target location and points the service at it.

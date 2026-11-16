@@ -4,6 +4,7 @@ on:
   pull_request:
     paths:
       - 'components/**'
+      - 'config_editor/**'
       - 'src/**'
       - 'build.rs'
       - 'Cargo.toml'
@@ -54,3 +55,17 @@ jobs:
       release-file-name: ${{ matrix.release_file_name }}
     # If you might want to use a secret in the build or test job then you would need to pass secrets, inherit disables secret isolation
     secrets: inherit
+
+  config-editor:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Rust (with wasm target)
+        run: rustup target add wasm32-unknown-unknown
+      - name: Lint
+        run: |
+          cargo clippy -p ubihome-config_editor --all-targets -- -D warnings
+          cargo clippy -p ubihome-config_editor --target wasm32-unknown-unknown -- -D warnings
+          cargo clippy --features config_editor -- -D warnings
+      - name: Test
+        run: cargo test -p ubihome-config_editor

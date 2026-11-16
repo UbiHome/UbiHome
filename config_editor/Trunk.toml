@@ -1,0 +1,5 @@
+[build]
+target = "index.html"
+dist = "dist"
+# Relative URLs so the bundle can be hosted under any path (e.g. the docs site).
+public_url = "./"
