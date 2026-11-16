@@ -53,19 +53,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "ahash"
-version = "0.8.12"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5a15f179cd60c4584b8a8c596927aadc462e27f2ca70c04e0071964a73ba7a75"
-dependencies = [
- "cfg-if",
- "getrandom 0.3.4",
- "once_cell",
- "version_check",
- "zerocopy",
-]
-
-[[package]]
 name = "aho-corasick"
 version = "1.1.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1890,9 +1877,9 @@ dependencies = [
 
 [[package]]
 name = "granit-parser"
-version = "0.0.2"
+version = "2.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b7e736dfe3881c53a7dce0685eb18202d0d9fe6911782f9870946eb9ee89d778"
+checksum = "05f05586d4d4df3d47123207826c40b252728b438a1a07bad3c01ee6bea401df"
 dependencies = [
  "arraydeque",
  "smallvec",
@@ -4388,17 +4375,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "saphyr-parser-bw"
-version = "0.0.611"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "67dec0c833db75dc98957956b303fe447ffc5eb13f2325ef4c2350f7f3aa69e3"
-dependencies = [
- "arraydeque",
- "smallvec",
- "thiserror 2.0.18",
-]
-
-[[package]]
 name = "schannel"
 version = "0.1.29"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4598,43 +4574,19 @@ dependencies = [
 
 [[package]]
 name = "serde-saphyr"
-version = "0.0.23"
+version = "2.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "09fbdfe7a27a1b1633dfc0c4c8e65940b8d819c5ddb9cca48ebc3223b00c8b14"
+checksum = "d43fb82d550b07e6f929a58d7d0935182602f48ddead875f5ee313c41c8f07fe"
 dependencies = [
- "ahash",
  "annotate-snippets 0.12.16",
  "base64",
  "encoding_rs_io",
  "garde",
- "getrandom 0.3.4",
- "miette",
- "nohash-hasher",
- "num-traits",
- "regex",
- "saphyr-parser-bw",
- "serde",
- "smallvec",
- "zmij",
-]
-
-[[package]]
-name = "serde-saphyr"
-version = "0.0.26"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "dcc7fe48e34d02a97bc8e6253b8b91e5a47fe2c47eaacb5149cefbb69922eaf0"
-dependencies = [
- "ahash",
- "annotate-snippets 0.12.16",
- "base64",
- "encoding_rs_io",
- "garde",
- "getrandom 0.3.4",
  "granit-parser",
  "miette",
  "nohash-hasher",
  "num-traits",
- "serde",
+ "serde_core",
  "smallvec",
  "zmij",
 ]
@@ -5680,7 +5632,7 @@ dependencies = [
  "self-replace",
  "sentry",
  "serde",
- "serde-saphyr 0.0.23",
+ "serde-saphyr",
  "shell_exec",
  "tokio",
  "ubihome-api",
@@ -5710,7 +5662,7 @@ dependencies = [
  "garde",
  "log",
  "serde",
- "serde-saphyr 0.0.26",
+ "serde-saphyr",
  "tokio",
  "ubihome-core",
  "whoami",
@@ -5728,7 +5680,7 @@ dependencies = [
  "libdbus-sys",
  "log",
  "serde",
- "serde-saphyr 0.0.26",
+ "serde-saphyr",
  "tokio",
  "ubihome-core",
 ]
@@ -5743,7 +5695,7 @@ dependencies = [
  "linux-embedded-hal",
  "log",
  "serde",
- "serde-saphyr 0.0.26",
+ "serde-saphyr",
  "tokio",
  "ubihome-core",
 ]
@@ -5760,7 +5712,7 @@ dependencies = [
  "paste",
  "regex",
  "serde",
- "serde-saphyr 0.0.26",
+ "serde-saphyr",
  "serde-value",
  "serde_json",
  "tokio",
@@ -5776,7 +5728,7 @@ dependencies = [
  "garde",
  "log",
  "serde",
- "serde-saphyr 0.0.26",
+ "serde-saphyr",
  "tokio",
  "ubihome-core",
 ]
@@ -5791,7 +5743,7 @@ dependencies = [
  "log",
  "rppal",
  "serde",
- "serde-saphyr 0.0.26",
+ "serde-saphyr",
  "tokio",
  "ubihome-core",
 ]
@@ -5805,7 +5757,7 @@ dependencies = [
  "industrial-io",
  "log",
  "serde",
- "serde-saphyr 0.0.26",
+ "serde-saphyr",
  "tokio",
  "ubihome-core",
  "windows 0.61.3",
@@ -5821,7 +5773,7 @@ dependencies = [
  "log",
  "mdns-sd 0.13.11",
  "serde",
- "serde-saphyr 0.0.26",
+ "serde-saphyr",
  "tokio",
  "ubihome-core",
 ]
@@ -5835,7 +5787,7 @@ dependencies = [
  "log",
  "rumqttc",
  "serde",
- "serde-saphyr 0.0.26",
+ "serde-saphyr",
  "serde_json",
  "serde_tuple",
  "tokio",
@@ -5864,7 +5816,7 @@ dependencies = [
  "garde",
  "log",
  "serde",
- "serde-saphyr 0.0.26",
+ "serde-saphyr",
  "system_shutdown",
  "tokio",
  "ubihome-core",
@@ -5882,7 +5834,7 @@ dependencies = [
  "parking_lot",
  "sendspin",
  "serde",
- "serde-saphyr 0.0.26",
+ "serde-saphyr",
  "tokio",
  "tokio-tungstenite 0.24.0",
  "ubihome-core",
@@ -5897,7 +5849,7 @@ dependencies = [
  "garde",
  "log",
  "serde",
- "serde-saphyr 0.0.26",
+ "serde-saphyr",
  "shell_exec",
  "tokio",
  "ubihome-core",
@@ -5926,7 +5878,7 @@ dependencies = [
  "garde",
  "log",
  "serde",
- "serde-saphyr 0.0.26",
+ "serde-saphyr",
  "tokio",
  "tokio-stream",
  "tower-http",

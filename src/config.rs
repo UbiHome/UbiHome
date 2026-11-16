@@ -235,9 +235,8 @@ switch:
         let ctx = BaseConfigContext {
             allowed_platforms: Some(vec!["gpio".to_string()]),
         };
-        let no_snippet = serde_saphyr::Options {
+        let no_snippet = serde_saphyr::options! {
             with_snippet: false,
-            ..Default::default()
         };
         let result = serde_saphyr::from_str_with_options_context_valid::<BaseConfig>(
             config, no_snippet, &ctx,
@@ -261,9 +260,8 @@ switch:
         let ctx = BaseConfigContext {
             allowed_platforms: Some(vec!["gpio".to_string()]),
         };
-        let no_snippet = serde_saphyr::Options {
+        let no_snippet = serde_saphyr::options! {
             with_snippet: false,
-            ..Default::default()
         };
         let result = serde_saphyr::from_str_with_options_context_valid::<BaseConfig>(
             config, no_snippet, &ctx,

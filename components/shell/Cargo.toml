@@ -11,5 +11,5 @@ shell_exec = "0.2.0"
 ubihome-core = { path = "../core", features = ["validation"] }
 tokio = { version = "1", features = ["full"] }
 duration-str = "0.16.1"
-serde-saphyr = { version = "0.0.26", features = ["garde", "miette"] }
+serde-saphyr = { version = "2.1.1", features = ["garde", "miette"] }
 garde = { version = "0.22.1", features = ["serde"] }
