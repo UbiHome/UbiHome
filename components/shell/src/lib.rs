@@ -1,6 +1,6 @@
 use duration_str::deserialize_duration;
 use log::{debug, error, trace, warn};
-use serde::{Deserialize, Deserializer};
+use serde::Deserialize;
 use shell_exec::{Execution, Shell, ShellError};
 use std::collections::HashMap;
 use std::{future::Future, pin::Pin, str, time::Duration};
@@ -182,10 +182,10 @@ pub struct UbiHomePlatform {
     text_sensors: HashMap<String, ShellTextSensorConfig>,
 }
 
-impl Module for UbiHomePlatform {
-    fn new(config_string: &str, config_path: &str) -> Result<Self, String> {
-        let config =
-            ubihome_core::validation::validate_config::<CoreConfig>(config_string, config_path)?;
+impl ubihome_core::platform::ConfigurableModule for UbiHomePlatform {
+    type Config = CoreConfig;
+
+    fn new(config: CoreConfig) -> Result<Self, String> {
         debug!("Shell config: {:?}", config);
         let mut components: Vec<UbiComponent> = Vec::new();
 
@@ -318,7 +318,9 @@ impl Module for UbiHomePlatform {
             text_sensors,
         })
     }
+}
 
+impl Module for UbiHomePlatform {
     fn components(&mut self) -> Vec<UbiComponent> {
         self.components.clone()
     }
@@ -968,6 +970,7 @@ async fn execute_command(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use ubihome_core::platform::ConfigurableModule;
 
     #[test]
     fn test_number_config_parsing() {
@@ -991,7 +994,7 @@ number:
     command_set: "echo {{ value }}"
 "#;
 
-        let module = UbiHomePlatform::new(config, "config.yml");
+        let module = UbiHomePlatform::from_yaml(config);
         assert!(
             module.is_ok(),
             "Shell module should parse number config successfully"
@@ -1038,7 +1041,7 @@ number:
     name: "Volume"
 "#;
 
-        let module = UbiHomePlatform::new(config, "config.yml");
+        let module = UbiHomePlatform::from_yaml(config);
         assert!(
             module.is_ok(),
             "Shell module should parse minimal number config successfully"
@@ -1083,7 +1086,7 @@ text_sensor:
     command: "whoami"
 "#;
 
-        let module = UbiHomePlatform::new(config, "config.yml");
+        let module = UbiHomePlatform::from_yaml(config);
         assert!(
             module.is_ok(),
             "Shell module should parse text_sensor config successfully"
@@ -1122,7 +1125,7 @@ text_sensor:
     command: "hostname"
 "#;
 
-        let module = UbiHomePlatform::new(config, "config.yml");
+        let module = UbiHomePlatform::from_yaml(config);
         assert!(
             module.is_ok(),
             "Shell module should parse minimal text_sensor config successfully"
@@ -1157,7 +1160,7 @@ shell:
 
     fn parse_binary_sensor(entry: &str) -> Result<UbiHomePlatform, String> {
         let config = format!("{INTERNAL_BASE}\nbinary_sensor:\n  - platform: shell\n{entry}");
-        UbiHomePlatform::new(&config, "test.yaml")
+        UbiHomePlatform::from_yaml(&config)
     }
 
     #[test]

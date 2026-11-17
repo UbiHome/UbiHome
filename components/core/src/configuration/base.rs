@@ -91,6 +91,23 @@ macro_rules! with_base_entity_properties {
                 }
             }
 
+            impl $crate::platform::EntityConfig for $name {
+                fn platform(&self) -> &str {
+                    &self.platform
+                }
+                fn object_id(&self) -> String {
+                    self.get_object_id()
+                }
+                fn triggers(&self) -> Vec<(&'static str, &$crate::configuration::automation::Trigger)> {
+                    #[allow(unused_mut)]
+                    let mut triggers = Vec::new();
+                    $(
+                        $crate::platform::push_trigger(&mut triggers, stringify!($field_name), &self.$field_name);
+                    )*
+                    triggers
+                }
+            }
+
             // Raw, unvalidated counterpart of `$name` that deserializes the
             // fields as the user wrote them. The `TryFrom` impl enforces the
             // name/id rule and resolves `internal`.

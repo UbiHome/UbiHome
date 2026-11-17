@@ -1,5 +1,5 @@
 use log::{debug, info};
-use serde::{Deserialize, Deserializer};
+use serde::Deserialize;
 use std::collections::HashMap;
 use std::future;
 use std::net::IpAddr;
@@ -40,13 +40,15 @@ pub struct UbiHomePlatform {
     config: CoreConfig,
 }
 
-impl Module for UbiHomePlatform {
-    fn new(config_string: &str, config_path: &str) -> Result<Self, String> {
-        let config =
-            ubihome_core::validation::validate_config::<CoreConfig>(config_string, config_path)?;
+impl ubihome_core::platform::ConfigurableModule for UbiHomePlatform {
+    type Config = CoreConfig;
 
+    fn new(config: CoreConfig) -> Result<Self, String> {
         Ok(UbiHomePlatform { config })
     }
+}
+
+impl Module for UbiHomePlatform {
     fn components(&mut self) -> Vec<UbiComponent> {
         let components: Vec<UbiComponent> = Vec::new();
 

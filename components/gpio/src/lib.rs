@@ -1,5 +1,5 @@
 use log::{debug, warn};
-use serde::{Deserialize, Deserializer};
+use serde::Deserialize;
 use std::collections::HashMap;
 use std::{future::Future, pin::Pin, str};
 use tokio::sync::broadcast::{Receiver, Sender};
@@ -118,11 +118,10 @@ pub struct UbiHomePlatform {
     switches: HashMap<String, GpioOutputConfig>,
 }
 
-impl Module for UbiHomePlatform {
-    fn new(config_string: &str, config_path: &str) -> Result<Self, String> {
-        let config =
-            ubihome_core::validation::validate_config::<CoreConfig>(config_string, config_path)?;
+impl ubihome_core::platform::ConfigurableModule for UbiHomePlatform {
+    type Config = CoreConfig;
 
+    fn new(config: CoreConfig) -> Result<Self, String> {
         // info!("GPIO config: {:?}", config);
         let mut components: Vec<UbiComponent> = Vec::new();
         let mut binary_sensors: HashMap<String, GpioSensorConfig> = HashMap::new();
@@ -183,7 +182,9 @@ impl Module for UbiHomePlatform {
             switches,
         })
     }
+}
 
+impl Module for UbiHomePlatform {
     fn components(&mut self) -> Vec<UbiComponent> {
         self.components.clone()
     }
@@ -412,6 +413,7 @@ impl Module for UbiHomePlatform {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use ubihome_core::platform::ConfigurableModule;
 
     #[test]
     fn test_switch_config_parsing() {
@@ -431,7 +433,7 @@ switch:
     restore_mode: ALWAYS_ON
 "#;
 
-        let module = UbiHomePlatform::new(config, "config.yml");
+        let module = UbiHomePlatform::from_yaml(config);
         assert!(
             module.is_ok(),
             "GPIO module should parse switch config successfully: {:?}",
@@ -469,7 +471,7 @@ switch:
     pin: 12
 "#;
 
-        let module = UbiHomePlatform::new(config, "config.yml");
+        let module = UbiHomePlatform::from_yaml(config);
         assert!(
             module.is_ok(),
             "GPIO module should parse minimal switch config successfully: {:?}",
@@ -504,7 +506,7 @@ switch:
     pin: 200
 "#;
 
-        let module = UbiHomePlatform::new(config, "config.yml");
+        let module = UbiHomePlatform::from_yaml(config);
         assert!(
             module.is_err(),
             "GPIO module should reject a pin number outside the valid GPIO range"

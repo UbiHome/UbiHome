@@ -21,15 +21,17 @@ Prioritize safe, minimal changes, and validate behavior with targeted tests.
   - Default config lookup: `config.yml` then `config.yaml`.
 - Runtime orchestration: `src/commands/run.rs`
   - Reads config file content.
-  - Extracts configured top-level platforms.
-  - Validates with `serde_saphyr` + `garde` using `BaseConfig` context.
-  - Dynamically loads platform modules and runs them on tokio tasks.
-- Base config + platform discovery: `src/config.rs`.
+  - Parses + validates the whole file once into the generated `RootConfig` (`src/components.rs`).
+  - Builds the configured platform modules from it and runs them on tokio tasks.
+- Whole-file validation (platform availability, duplicate ids, action/lambda references): `src/config.rs`.
 
 ## Dynamic Platform Wiring
 
 - `build.rs` discovers dependencies prefixed with `ubihome-` (except `ubihome-core`) from root `Cargo.toml`.
 - It generates `components.rs` into `OUT_DIR`; root `src/components.rs` includes it.
+- `generate_component_methods!` in `src/components.rs` turns that list into a single `RootConfig`: one
+  optional section per platform, and per entity kind an enum dispatched on `platform:`
+  (`ubihome_core::platform::visit_platform_map`, which streams instead of buffering to keep error locations).
 - Do not edit generated `OUT_DIR/components.rs` manually.
 - If adding/removing platform crates, update root `Cargo.toml` dependency/workspace entries and rebuild.
 
@@ -38,16 +40,20 @@ Prioritize safe, minimal changes, and validate behavior with targeted tests.
 Most platform crates follow this model:
 
 1. Define platform-specific config structs (`serde::Deserialize` + `garde::Validate`).
-2. Use `ubihome_core::config_template!` to produce a combined `CoreConfig`.
-3. Implement `ubihome_core::Module` for `UbiHomePlatform` with:
-   - `new(config_string)` for parsing/validation.
+2. Use `ubihome_core::config_template!` to declare the config types and generate `CoreConfig`
+   (implements `ubihome_core::platform::PlatformConfigTypes`).
+3. Implement `ubihome_core::platform::ConfigurableModule` for `UbiHomePlatform`:
+   `new(config: CoreConfig)` receives the already validated config (crates never parse YAML).
+   In tests use `UbiHomePlatform::from_yaml(...)`.
+4. Implement `ubihome_core::Module` with:
    - `components()` for discovered entities.
    - `run(sender, receiver)` for async behavior.
 
 Shared primitives/macro locations:
 
 - `components/core/src/lib.rs` (Module trait, message enums, `config_template!`).
-- `components/core/src/mapper.rs` (`template_mapper_new!` for mapping lists into keyed maps).
+- `components/core/src/platform.rs` (single-pass config traits, `platform:` dispatch).
+- `components/core/src/validation.rs` (`validate_config`, standalone `parse_platform_config`).
 
 ## Build, Lint, Test Commands
 
@@ -86,10 +92,9 @@ From repo root:
 ## Configuration + Validation Notes
 
 - The project uses `serde-saphyr` for YAML parsing and rich validation/reporting.
-- Runtime validation path is in `src/commands/run.rs` using:
-  - `serde_saphyr::from_str_with_options_context_valid::<BaseConfig>(...)`
-  - `serde_saphyr::miette::to_miette_report(...)`
-- Top-level platform extraction currently relies on line-based parsing in `get_platforms_from_config`; be careful when changing YAML shape assumptions.
+- The file is parsed exactly once: `ubihome_core::validation::validate_config::<RootConfig>(...)` in `src/commands/run.rs`.
+- Cross-entity checks live in the hand-written `Validate` for `RootConfig` (`src/config.rs`) and report errors via
+  garde paths, so they get source locations like every other field error.
 
 ## Change Strategy For Agents
 
@@ -133,7 +138,7 @@ Deduced from review feedback; apply to docs changes.
 - Dynamic platform include: `src/components.rs`
 - Build codegen: `build.rs`
 - Core trait/macro: `components/core/src/lib.rs`
-- Mapper macro: `components/core/src/mapper.rs`
+- Single-pass config support: `components/core/src/platform.rs`
 - Test docs: `tests/README.md`
 - Docs build docs: `documentation/README.md`
 

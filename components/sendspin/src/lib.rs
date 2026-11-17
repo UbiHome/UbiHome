@@ -9,7 +9,7 @@ use sendspin::protocol::messages::{
 };
 use sendspin::sync::ClockSync;
 use sendspin::ProtocolClientBuilder;
-use serde::{Deserialize, Deserializer};
+use serde::Deserialize;
 use std::collections::HashMap;
 use std::sync::Arc;
 use std::time::{SystemTime, UNIX_EPOCH};
@@ -670,18 +670,19 @@ pub struct UbiHomePlatform {
     pub sendspin_config: SendspinConfig,
 }
 
-impl Module for UbiHomePlatform {
-    fn new(config_string: &str, config_path: &str) -> Result<Self, String> {
-        let config =
-            ubihome_core::validation::validate_config::<CoreConfig>(config_string, config_path)?;
+impl ubihome_core::platform::ConfigurableModule for UbiHomePlatform {
+    type Config = CoreConfig;
 
+    fn new(config: CoreConfig) -> Result<Self, String> {
         let sendspin_config = config.sendspin.clone();
         Ok(UbiHomePlatform {
             config,
             sendspin_config,
         })
     }
+}
 
+impl Module for UbiHomePlatform {
     fn components(&mut self) -> Vec<UbiComponent> {
         self.config
             .media_player
@@ -812,6 +813,7 @@ impl Module for UbiHomePlatform {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use ubihome_core::platform::ConfigurableModule;
 
     #[test]
     fn test_media_player_config_parsing() {
@@ -842,7 +844,7 @@ media_player:
         - button.press: chime
 "#;
 
-        let module = UbiHomePlatform::new(config, "config.yml");
+        let module = UbiHomePlatform::from_yaml(config);
         assert!(
             module.is_ok(),
             "Sendspin module should parse media_player config successfully: {:?}",
@@ -888,7 +890,7 @@ media_player:
     name: "Living Room Speaker"
 "#;
 
-        let module = UbiHomePlatform::new(config, "config.yml");
+        let module = UbiHomePlatform::from_yaml(config);
         assert!(
             module.is_ok(),
             "Sendspin module should parse minimal media_player config successfully: {:?}",
@@ -939,7 +941,7 @@ media_player:
       - switch.turn_on: office_light
 "#;
 
-        let module = UbiHomePlatform::new(config, "config.yml");
+        let module = UbiHomePlatform::from_yaml(config);
         assert!(
             module.is_err(),
             "Sendspin module should reject on_play given as a bare sequence"
@@ -960,7 +962,7 @@ media_player:
     volume: 200
 "#;
 
-        let module = UbiHomePlatform::new(config, "config.yml");
+        let module = UbiHomePlatform::from_yaml(config);
         assert!(
             module.is_err(),
             "Sendspin module should reject a volume outside of 0-100"
@@ -984,7 +986,7 @@ media_player:
         - switch.turn_on: office_light
 "#;
 
-        let mut module = UbiHomePlatform::new(config, "config.yml").expect("should parse");
+        let mut module = UbiHomePlatform::from_yaml(config).expect("should parse");
         let components = module.components();
         assert_eq!(components.len(), 1, "Should build exactly one component");
         match &components[0] {
@@ -1015,7 +1017,7 @@ media_player:
     id: kitchen_speaker
 "#;
 
-        let mut module = UbiHomePlatform::new(config, "config.yml").expect("should parse");
+        let mut module = UbiHomePlatform::from_yaml(config).expect("should parse");
         let components = module.components();
         assert_eq!(
             components.len(),
@@ -1033,7 +1035,7 @@ ubihome:
 sendspin: {}
 "#;
 
-        let mut module = UbiHomePlatform::new(config, "config.yml").expect("should parse");
+        let mut module = UbiHomePlatform::from_yaml(config).expect("should parse");
         assert_eq!(module.components().len(), 0);
     }
 
@@ -1051,7 +1053,7 @@ media_player:
     bogus_field: 1
 "#;
 
-        let module = UbiHomePlatform::new(config, "config.yml");
+        let module = UbiHomePlatform::from_yaml(config);
         assert!(
             module.is_err(),
             "Sendspin module should reject an unknown media_player field"

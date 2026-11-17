@@ -22,7 +22,6 @@ use std::sync::Arc;
 use tokio::net::TcpSocket;
 use tower_http::timeout::TimeoutLayer;
 
-use serde::Deserializer;
 use std::collections::HashMap;
 use std::{future::Future, pin::Pin, str};
 use tokio::sync::broadcast::{Receiver, Sender};
@@ -173,14 +172,15 @@ async fn events_stream(
     )
 }
 
-impl Module for UbiHomePlatform {
-    fn new(config_string: &str, config_path: &str) -> Result<Self, String> {
-        let config =
-            ubihome_core::validation::validate_config::<CoreConfig>(config_string, config_path)?;
+impl ubihome_core::platform::ConfigurableModule for UbiHomePlatform {
+    type Config = CoreConfig;
 
+    fn new(config: CoreConfig) -> Result<Self, String> {
         Ok(UbiHomePlatform { config })
     }
+}
 
+impl Module for UbiHomePlatform {
     fn components(&mut self) -> Vec<UbiComponent> {
         let components: Vec<UbiComponent> = Vec::new();
 

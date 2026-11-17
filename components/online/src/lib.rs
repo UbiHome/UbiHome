@@ -2,7 +2,7 @@ use duration_str::{
     deserialize_duration, deserialize_option_duration as deserialize_optional_duration,
 };
 use log::{debug, warn};
-use serde::{Deserialize, Deserializer};
+use serde::Deserialize;
 use std::{collections::HashMap, future::Future, pin::Pin, time::Duration};
 use tokio::{
     net::{TcpStream, UdpSocket},
@@ -146,11 +146,10 @@ pub struct UbiHomePlatform {
     binary_sensors: HashMap<String, RuntimeBinarySensorConfig>,
 }
 
-impl Module for UbiHomePlatform {
-    fn new(config_string: &str, config_path: &str) -> Result<Self, String> {
-        let config =
-            ubihome_core::validation::validate_config::<CoreConfig>(config_string, config_path)?;
+impl ubihome_core::platform::ConfigurableModule for UbiHomePlatform {
+    type Config = CoreConfig;
 
+    fn new(config: CoreConfig) -> Result<Self, String> {
         let global_timeout = config.online.timeout;
         let global_targets = &config.online.targets;
 
@@ -202,7 +201,9 @@ impl Module for UbiHomePlatform {
             binary_sensors,
         })
     }
+}
 
+impl Module for UbiHomePlatform {
     fn components(&mut self) -> Vec<UbiComponent> {
         self.components.clone()
     }
