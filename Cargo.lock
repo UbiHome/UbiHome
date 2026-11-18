@@ -5874,6 +5874,7 @@ dependencies = [
 name = "ubihome-sendspin"
 version = "0.13.0"
 dependencies = [
+ "base64",
  "cpal",
  "duration-str",
  "garde",

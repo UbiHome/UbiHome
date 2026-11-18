@@ -19,6 +19,9 @@ Each `media_player` entry is its own Sendspin player, with its own connection to
 sendspin:
   # Optional: Address of the Sendspin server (default: automatically discovered via mDNS)
   # server: ws://
+  # Optional: Audio codec requested from the server: pcm, opus or flac (default: pcm)
+  # Use opus on weak Wi-Fi: it needs a fraction of PCM's ~1.5 Mbit/s.
+  # codec: pcm
   # Optional: Audio format used by every player (defaults shown)
   # bit_depth: 16
   # sample_rate: 48000
@@ -49,6 +52,7 @@ To find the device name enable debug logging for UbiHome and look for the line `
 - Multiple `media_player` entries, each with its own connection to the server and its own output device
 - Play/pause/stop, with triggers for custom automations
 - Volume control, with a trigger on volume change
+- PCM, Opus and FLAC audio
 
 ### Supported audio backends
 

@@ -1,8 +1,9 @@
+use base64::prelude::{Engine as _, BASE64_STANDARD};
 use core::panic;
 use cpal::traits::{DeviceTrait, HostTrait};
 use cpal::Device;
 use log::{debug, error, info, trace, warn};
-use sendspin::audio::decode::{Decoder, PcmDecoder, PcmEndian};
+use sendspin::audio::decode::{Decoder, FlacDecoder, OpusDecoder, PcmDecoder, PcmEndian};
 use sendspin::audio::{AudioBuffer, AudioFormat, Codec, SyncedPlayer, SyncedPlayerConfig};
 use sendspin::protocol::messages::{
     AudioFormatSpec, ClientState, Message, PlayerCommandType, PlayerState, PlayerV1Support,
@@ -106,6 +107,29 @@ pub struct SendspinConfig {
     pub buffer_size: Option<u32>,
     /// Milliseconds of audio to pre-buffer before starting playback. Default: 500.
     pub start_buffer_ms: Option<u64>,
+    /// Audio codec requested from the server. Default: pcm.
+    /// `opus` needs far less bandwidth (useful on weak Wi-Fi), `flac` is lossless.
+    pub codec: Option<SendspinCodec>,
+}
+
+/// Audio codec negotiated with the Sendspin server.
+#[derive(Clone, Copy, Deserialize, Debug, Default, PartialEq, Eq)]
+#[serde(rename_all = "lowercase")]
+pub enum SendspinCodec {
+    #[default]
+    Pcm,
+    Opus,
+    Flac,
+}
+
+impl SendspinCodec {
+    fn as_str(self) -> &'static str {
+        match self {
+            SendspinCodec::Pcm => "pcm",
+            SendspinCodec::Opus => "opus",
+            SendspinCodec::Flac => "flac",
+        }
+    }
 }
 
 template_media_player! {
@@ -153,6 +177,7 @@ struct PlayerRuntimeConfig {
     sample_rate: u32,
     buffer_size: Option<u32>,
     start_buffer_ms: u64,
+    codec: SendspinCodec,
     server: String,
 }
 
@@ -172,6 +197,7 @@ async fn run_player(cfg: PlayerRuntimeConfig, changed_tx: Sender<ChangedMessage>
         sample_rate,
         buffer_size,
         start_buffer_ms,
+        codec,
         server,
     } = cfg;
 
@@ -182,7 +208,11 @@ async fn run_player(cfg: PlayerRuntimeConfig, changed_tx: Sender<ChangedMessage>
         resolve_output_device(output_id.as_deref());
     }
 
-    info!("Player config: start_buffer={}ms", start_buffer_ms);
+    info!(
+        "Player config: codec={}, start_buffer={}ms",
+        codec.as_str(),
+        start_buffer_ms
+    );
 
     // Create a channel for sending commands to the audio player thread.
     // The player thread outlives individual server connections, so it is
@@ -297,10 +327,15 @@ async fn run_player(cfg: PlayerRuntimeConfig, changed_tx: Sender<ChangedMessage>
             .name(name.clone())
             .player_v1_support(PlayerV1Support {
                 supported_formats: vec![AudioFormatSpec {
-                    codec: "pcm".to_string(),
+                    codec: codec.as_str().to_string(),
                     channels: 2,
                     sample_rate,
-                    bit_depth,
+                    // Opus is always decoded from 16-bit-equivalent packets.
+                    bit_depth: if codec == SendspinCodec::Opus {
+                        16
+                    } else {
+                        bit_depth
+                    },
                 }],
                 buffer_capacity: 50 * 1024 * 1024, // 50 MB
                 supported_commands: vec!["volume".to_string(), "mute".to_string()],
@@ -346,7 +381,7 @@ async fn run_player(cfg: PlayerRuntimeConfig, changed_tx: Sender<ChangedMessage>
         }
 
         // Message handling variables (reset for each connection)
-        let mut decoder: Option<PcmDecoder> = None;
+        let mut decoder: Option<Box<dyn Decoder + Send>> = None;
         let mut audio_format: Option<AudioFormat> = None;
         let mut endian_locked: Option<PcmEndian> = None; // Auto-detect on first chunk
         let mut buffered_duration_us: u64 = 0; // Track buffered audio duration in microseconds
@@ -369,33 +404,79 @@ async fn run_player(cfg: PlayerRuntimeConfig, changed_tx: Sender<ChangedMessage>
                                     player_config.bit_depth
                                 );
 
-                                // Validate codec before proceeding
-                                if player_config.codec != "pcm" {
-                                    error!("ERROR: Unsupported codec '{}' - only 'pcm' is supported!", player_config.codec);
-                                    error!("Server is sending compressed audio that we can't decode!");
-                                    continue;
-                                }
+                                // Tear down the previous stream's decoder first so a
+                                // rejected stream/start leaves "no decoder, no format".
+                                decoder = None;
+                                audio_format = None;
+                                endian_locked = None;
+
+                                let codec = match player_config.codec.as_str() {
+                                    "pcm" => Codec::Pcm,
+                                    "opus" => Codec::Opus,
+                                    "flac" => Codec::Flac,
+                                    other => {
+                                        error!("Unsupported codec '{}' - only 'pcm', 'opus' and 'flac' are supported", other);
+                                        continue;
+                                    }
+                                };
 
                                 if player_config.bit_depth != 16 && player_config.bit_depth != 24 {
-                                    error!("ERROR: Unsupported bit depth {} - only 16 or 24-bit PCM supported!", player_config.bit_depth);
+                                    error!("Unsupported bit depth {} - only 16 or 24-bit supported", player_config.bit_depth);
                                     continue;
                                 }
 
+                                // Codec header arrives base64-encoded (for FLAC: the
+                                // fLaC marker plus the STREAMINFO block).
+                                let codec_header: Option<Vec<u8>> = match player_config.codec_header.as_deref() {
+                                    Some(b64) => match BASE64_STANDARD.decode(b64) {
+                                        Ok(header) => Some(header),
+                                        Err(e) => {
+                                            error!("Invalid base64 codec header: {}", e);
+                                            continue;
+                                        }
+                                    },
+                                    None => None,
+                                };
+
+                                decoder = match codec {
+                                    // PCM decoder is created on the first chunk, after
+                                    // endianness is locked in.
+                                    Codec::Pcm => None,
+                                    Codec::Opus => match OpusDecoder::new(player_config.sample_rate, player_config.channels) {
+                                        Ok(opus) => Some(Box::new(opus)),
+                                        Err(e) => {
+                                            error!("Invalid Opus stream format: {}", e);
+                                            continue;
+                                        }
+                                    },
+                                    Codec::Flac => match codec_header.as_deref() {
+                                        Some(header) => match FlacDecoder::with_header(header) {
+                                            Ok(flac) => Some(Box::new(flac)),
+                                            Err(e) => {
+                                                error!("Invalid FLAC codec header: {}", e);
+                                                continue;
+                                            }
+                                        },
+                                        None => Some(Box::new(FlacDecoder::new())),
+                                    },
+                                    Codec::Mp3 => unreachable!(),
+                                };
+
                                 audio_format = Some(AudioFormat {
-                                    codec: Codec::Pcm,
+                                    codec,
                                     sample_rate: player_config.sample_rate,
                                     channels: player_config.channels,
                                     bit_depth: player_config.bit_depth,
-                                    codec_header: None,
+                                    codec_header,
                                 });
-
-                                // Decoder will be created on first chunk after auto-detecting endianness
-                                decoder = None;
-                                endian_locked = None;
                                 buffered_duration_us = 0; // Reset on new stream
                                 playback_started = false;
                                 first_chunk_logged = false; // Reset for new stream
-                                debug!("Waiting for first audio chunk to auto-detect endianness...");
+                                if codec == Codec::Pcm {
+                                    debug!("Waiting for first audio chunk to auto-detect endianness...");
+                                } else {
+                                    debug!("Decoder ready, waiting for audio chunks...");
+                                }
 
                                 let _ = changed_tx.send(ChangedMessage::MediaPlayerStateChange {
                                     key: media_player_id.clone(),
@@ -564,8 +645,8 @@ async fn run_player(cfg: PlayerRuntimeConfig, changed_tx: Sender<ChangedMessage>
                         first_chunk_logged = true;
                     }
 
-                    if let Some(ref fmt) = audio_format {
-                        // Frame sanity check
+                    if let Some(fmt) = audio_format.as_ref().filter(|f| f.codec == Codec::Pcm) {
+                        // Frame sanity check (raw PCM only)
                         let bytes_per_sample = match fmt.bit_depth {
                             16 => 2,
                             24 => 3,
@@ -591,7 +672,7 @@ async fn run_player(cfg: PlayerRuntimeConfig, changed_tx: Sender<ChangedMessage>
                             // Default to Little-Endian (standard for macOS/Windows/Linux)
                             let endian = PcmEndian::Little;
                             endian_locked = Some(endian);
-                            decoder = Some(PcmDecoder::with_endian(fmt.bit_depth, endian));
+                            decoder = Some(Box::new(PcmDecoder::with_endian(fmt.bit_depth, endian)));
                             debug!("Using Little-Endian PCM (standard for modern systems)");
                         }
                     }
@@ -716,6 +797,7 @@ impl Module for UbiHomePlatform {
         let sample_rate = self.sendspin_config.sample_rate.unwrap_or(48000);
         let buffer_size = self.sendspin_config.buffer_size;
         let start_buffer_ms = self.sendspin_config.start_buffer_ms.unwrap_or(500);
+        let codec = self.sendspin_config.codec.unwrap_or_default();
 
         let media_players: Vec<(String, SendspinMediaPlayerConfig)> = self
             .config
@@ -785,6 +867,7 @@ impl Module for UbiHomePlatform {
                     sample_rate,
                     buffer_size,
                     start_buffer_ms,
+                    codec,
                     server: server.clone(),
                 };
                 let changed_tx = sender.clone();

@@ -18,6 +18,7 @@ parking_lot = "0.12"
 mdns-sd = "0.17.2"
 sendspin = "0.3.7"
 garde = { version = "0.22.1", features = ["serde"] }
+base64 = "0.22.1"
 
 [target.'cfg(all(target_os = "linux", target_arch = "arm", target_env = "musl"))'.dependencies]
 cpal = { version = "0.18.0", features = ["pulseaudio"] }
