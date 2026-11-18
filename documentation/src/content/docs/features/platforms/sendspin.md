@@ -65,7 +65,23 @@ To find the device name enable debug logging for UbiHome and look for the line `
 ### How to find the server address?
 
 By default UbiHome will try to discover the Sendspin server using mDNS.
-If this does not work you can specify the address manually in the configuration (e.g. `ws://192.168.178.123:8927/sendspin`).
+If this does not work (e.g. the server is in another subnet, which mDNS does not cross) you can specify the address manually in the configuration (e.g. `ws://192.168.178.123:8927/sendspin`).
+
+### PulseAudio / PipeWire when running as a service
+
+The service installed by `ubihome install` runs as `root`, but PulseAudio and PipeWire run per desktop user.
+Root therefore cannot see that user's outputs (e.g. Bluetooth speakers) and playback falls back to another device or stays silent.
+Point the service at the user's sound server with a systemd override (`sudo systemctl edit ubihome`):
+
+```ini
+[Service]
+# 1000 = UID of the desktop user (check with `id -u <user>`)
+Environment=PULSE_SERVER=unix:/run/user/1000/pulse/native
+Environment=XDG_RUNTIME_DIR=/run/user/1000
+```
+
+Then run `sudo systemctl restart ubihome`. To check that root can reach the sound server: `sudo env PULSE_SERVER=unix:/run/user/1000/pulse/native pactl list short sinks`.
+The user's outputs then show up as `pulseaudio:<sink name>` in the `Devices:` log (see below), e.g. `output_id: "pulseaudio:bluez_output.00_12_6F_F1_FF_61.1"`.
 
 ### How to find the output device id?
 
