@@ -19,6 +19,9 @@ Each `media_player` entry is its own Sendspin player, with its own connection to
 sendspin:
   # Optional: Address of the Sendspin server (default: automatically discovered via mDNS)
   # server: ws://
+  # Optional: Codecs in order of preference, pcm is always added (default shown).
+  # Use [opus] on weak Wi-Fi.
+  # codecs: [flac, opus, pcm]
   # Optional: Audio format used by every player (defaults shown)
   # bit_depth: 16
   # sample_rate: 48000
@@ -49,6 +52,7 @@ To find the device name enable debug logging for UbiHome and look for the line `
 - Multiple `media_player` entries, each with its own connection to the server and its own output device
 - Play/pause/stop, with triggers for custom automations
 - Volume control, with a trigger on volume change
+- PCM, Opus and FLAC audio
 
 ### Supported audio backends
 
@@ -61,6 +65,18 @@ To find the device name enable debug logging for UbiHome and look for the line `
 
 By default UbiHome will try to discover the Sendspin server using mDNS.
 If this does not work you can specify the address manually in the configuration (e.g. `ws://192.168.178.123:8927/sendspin`).
+
+### PulseAudio / PipeWire when running as a service
+
+The service runs as `root` and cannot use the desktop user's PulseAudio/PipeWire outputs (e.g. Bluetooth speakers).
+Point it to the user's sound server with `sudo systemctl edit ubihome` and restart the service:
+
+```ini
+[Service]
+# 1000 = UID of the desktop user (`id -u <user>`)
+Environment=PULSE_SERVER=unix:/run/user/1000/pulse/native
+Environment=XDG_RUNTIME_DIR=/run/user/1000
+```
 
 ### How to find the output device id?
 
