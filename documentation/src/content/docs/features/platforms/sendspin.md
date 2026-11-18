@@ -19,9 +19,10 @@ Each `media_player` entry is its own Sendspin player, with its own connection to
 sendspin:
   # Optional: Address of the Sendspin server (default: automatically discovered via mDNS)
   # server: ws://
-  # Optional: Audio codec requested from the server: pcm, opus or flac (default: pcm)
-  # Use opus on weak Wi-Fi: it needs a fraction of PCM's ~1.5 Mbit/s.
-  # codec: pcm
+  # Optional: Codecs offered to the server, most preferred first (default shown).
+  # The server streams the first one it can encode; pcm is always added as fallback.
+  # On weak Wi-Fi use [opus]: it needs a fraction of PCM's ~1.5 Mbit/s.
+  # codecs: [flac, opus, pcm]
   # Optional: Audio format used by every player (defaults shown)
   # bit_depth: 16
   # sample_rate: 48000

@@ -107,16 +107,17 @@ pub struct SendspinConfig {
     pub buffer_size: Option<u32>,
     /// Milliseconds of audio to pre-buffer before starting playback. Default: 500.
     pub start_buffer_ms: Option<u64>,
-    /// Audio codec requested from the server. Default: pcm.
+    /// Audio codecs offered to the server, most preferred first. The server
+    /// streams the first one it can encode. `pcm` is always appended as a
+    /// fallback. Default: [flac, opus, pcm].
     /// `opus` needs far less bandwidth (useful on weak Wi-Fi), `flac` is lossless.
-    pub codec: Option<SendspinCodec>,
+    pub codecs: Option<Vec<SendspinCodec>>,
 }
 
 /// Audio codec negotiated with the Sendspin server.
-#[derive(Clone, Copy, Deserialize, Debug, Default, PartialEq, Eq)]
+#[derive(Clone, Copy, Deserialize, Debug, PartialEq, Eq)]
 #[serde(rename_all = "lowercase")]
 pub enum SendspinCodec {
-    #[default]
     Pcm,
     Opus,
     Flac,
@@ -130,6 +131,26 @@ impl SendspinCodec {
             SendspinCodec::Flac => "flac",
         }
     }
+}
+
+/// Default codec preference: lossless FLAC, then low-bandwidth Opus, then raw PCM.
+const DEFAULT_CODECS: [SendspinCodec; 3] =
+    [SendspinCodec::Flac, SendspinCodec::Opus, SendspinCodec::Pcm];
+
+/// Resolve the configured codec preference: drop duplicates (keeping the first
+/// occurrence) and append PCM if missing, since the Sendspin spec requires
+/// every player to support it.
+fn resolve_codecs(configured: Option<&[SendspinCodec]>) -> Vec<SendspinCodec> {
+    let mut codecs: Vec<SendspinCodec> = Vec::new();
+    let requested = configured
+        .filter(|c| !c.is_empty())
+        .unwrap_or(&DEFAULT_CODECS);
+    for codec in requested.iter().chain(std::iter::once(&SendspinCodec::Pcm)) {
+        if !codecs.contains(codec) {
+            codecs.push(*codec);
+        }
+    }
+    codecs
 }
 
 template_media_player! {
@@ -177,8 +198,31 @@ struct PlayerRuntimeConfig {
     sample_rate: u32,
     buffer_size: Option<u32>,
     start_buffer_ms: u64,
-    codec: SendspinCodec,
+    codecs: Vec<SendspinCodec>,
     server: String,
+}
+
+/// Formats advertised to the server, in the order of `codecs` (most
+/// preferred first; servers pick the first one they can encode).
+fn supported_formats(
+    codecs: &[SendspinCodec],
+    sample_rate: u32,
+    bit_depth: u8,
+) -> Vec<AudioFormatSpec> {
+    codecs
+        .iter()
+        .map(|&codec| AudioFormatSpec {
+            codec: codec.as_str().to_string(),
+            channels: 2,
+            sample_rate,
+            // Opus is always decoded from 16-bit-equivalent packets.
+            bit_depth: if codec == SendspinCodec::Opus {
+                16
+            } else {
+                bit_depth
+            },
+        })
+        .collect()
 }
 
 /// Runs a single Sendspin player: connects to `cfg.server`, decodes audio and
@@ -197,7 +241,7 @@ async fn run_player(cfg: PlayerRuntimeConfig, changed_tx: Sender<ChangedMessage>
         sample_rate,
         buffer_size,
         start_buffer_ms,
-        codec,
+        codecs,
         server,
     } = cfg;
 
@@ -209,8 +253,12 @@ async fn run_player(cfg: PlayerRuntimeConfig, changed_tx: Sender<ChangedMessage>
     }
 
     info!(
-        "Player config: codec={}, start_buffer={}ms",
-        codec.as_str(),
+        "Player config: codecs=[{}], start_buffer={}ms",
+        codecs
+            .iter()
+            .map(|c| c.as_str())
+            .collect::<Vec<_>>()
+            .join(", "),
         start_buffer_ms
     );
 
@@ -326,17 +374,7 @@ async fn run_player(cfg: PlayerRuntimeConfig, changed_tx: Sender<ChangedMessage>
             .client_id(id.clone())
             .name(name.clone())
             .player_v1_support(PlayerV1Support {
-                supported_formats: vec![AudioFormatSpec {
-                    codec: codec.as_str().to_string(),
-                    channels: 2,
-                    sample_rate,
-                    // Opus is always decoded from 16-bit-equivalent packets.
-                    bit_depth: if codec == SendspinCodec::Opus {
-                        16
-                    } else {
-                        bit_depth
-                    },
-                }],
+                supported_formats: supported_formats(&codecs, sample_rate, bit_depth),
                 buffer_capacity: 50 * 1024 * 1024, // 50 MB
                 supported_commands: vec!["volume".to_string(), "mute".to_string()],
             })
@@ -797,7 +835,7 @@ impl Module for UbiHomePlatform {
         let sample_rate = self.sendspin_config.sample_rate.unwrap_or(48000);
         let buffer_size = self.sendspin_config.buffer_size;
         let start_buffer_ms = self.sendspin_config.start_buffer_ms.unwrap_or(500);
-        let codec = self.sendspin_config.codec.unwrap_or_default();
+        let codecs = resolve_codecs(self.sendspin_config.codecs.as_deref());
 
         let media_players: Vec<(String, SendspinMediaPlayerConfig)> = self
             .config
@@ -867,7 +905,7 @@ impl Module for UbiHomePlatform {
                     sample_rate,
                     buffer_size,
                     start_buffer_ms,
-                    codec,
+                    codecs: codecs.clone(),
                     server: server.clone(),
                 };
                 let changed_tx = sender.clone();
@@ -1139,5 +1177,56 @@ media_player:
             module.is_err(),
             "Sendspin module should reject an unknown media_player field"
         );
+    }
+
+    #[test]
+    fn test_codecs_default_order() {
+        use SendspinCodec::*;
+        assert_eq!(resolve_codecs(None), vec![Flac, Opus, Pcm]);
+        assert_eq!(resolve_codecs(Some(&[])), vec![Flac, Opus, Pcm]);
+    }
+
+    #[test]
+    fn test_codecs_keep_order_dedup_and_append_pcm() {
+        use SendspinCodec::*;
+        assert_eq!(resolve_codecs(Some(&[Opus])), vec![Opus, Pcm]);
+        assert_eq!(resolve_codecs(Some(&[Pcm, Opus])), vec![Pcm, Opus]);
+        assert_eq!(
+            resolve_codecs(Some(&[Opus, Flac, Opus])),
+            vec![Opus, Flac, Pcm]
+        );
+    }
+
+    #[test]
+    fn test_supported_formats_order_and_opus_bit_depth() {
+        let formats = supported_formats(
+            &[SendspinCodec::Opus, SendspinCodec::Flac, SendspinCodec::Pcm],
+            48000,
+            24,
+        );
+        let summary: Vec<(&str, u8)> = formats
+            .iter()
+            .map(|f| (f.codec.as_str(), f.bit_depth))
+            .collect();
+        assert_eq!(summary, vec![("opus", 16), ("flac", 24), ("pcm", 24)]);
+    }
+
+    #[test]
+    fn test_codecs_config_parsing() {
+        let config = r#"
+ubihome:
+  name: "Test Codecs"
+
+sendspin:
+  codecs: [opus, pcm]
+"#;
+        let module = UbiHomePlatform::new(config, "config.yml").expect("valid config");
+        assert_eq!(
+            module.sendspin_config.codecs,
+            Some(vec![SendspinCodec::Opus, SendspinCodec::Pcm])
+        );
+
+        let bad = "ubihome:\n  name: x\nsendspin:\n  codecs: [mp3]\n";
+        assert!(UbiHomePlatform::new(bad, "config.yml").is_err());
     }
 }
