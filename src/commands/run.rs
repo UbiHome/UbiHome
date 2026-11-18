@@ -74,9 +74,8 @@ pub(crate) fn run(
         });
     }
 
-    let no_snippet = serde_saphyr::Options {
+    let no_snippet = serde_saphyr::options! {
         with_snippet: false,
-        ..Default::default()
     };
     // Entities may reference builtin platforms (e.g. `platform: template`) that
     // have no dedicated top-level section, so allow them during validation.

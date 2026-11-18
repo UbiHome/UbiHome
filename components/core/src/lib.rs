@@ -207,6 +207,51 @@ pub struct UbiHome {
     pub on_startup: Option<Trigger>,
 }
 
+/// Deserializes a platform section, treating an empty value (`shell:`) like
+/// an empty mapping (`shell: {}`).
+///
+/// `serde-saphyr` 2.x rejects YAML null for mapping-based structs, but a bare
+/// `platform:` line is the documented way to enable a platform with its
+/// defaults. Non-null values are passed through untouched, so error locations
+/// are preserved.
+pub fn null_as_empty<'de, D, T>(deserializer: D) -> Result<T, D::Error>
+where
+    D: serde::Deserializer<'de>,
+    T: serde::Deserialize<'de>,
+{
+    struct NullAsEmpty<T>(std::marker::PhantomData<T>);
+
+    impl<'de, T: serde::Deserialize<'de>> serde::de::Visitor<'de> for NullAsEmpty<T> {
+        type Value = T;
+
+        fn expecting(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+            f.write_str("a mapping or an empty value")
+        }
+
+        fn visit_some<D: serde::Deserializer<'de>>(self, d: D) -> Result<T, D::Error> {
+            T::deserialize(d)
+        }
+
+        fn visit_none<E: serde::de::Error>(self) -> Result<T, E> {
+            use serde::de::value::{MapDeserializer, UnitDeserializer};
+            // `Option<Config>` sections stay `None`; structs are built from
+            // an empty mapping so defaults and "missing field" errors apply.
+            T::deserialize(UnitDeserializer::<E>::new()).or_else(|_| {
+                T::deserialize(MapDeserializer::<_, E>::new(std::iter::empty::<(
+                    String,
+                    String,
+                )>()))
+            })
+        }
+
+        fn visit_unit<E: serde::de::Error>(self) -> Result<T, E> {
+            self.visit_none()
+        }
+    }
+
+    deserializer.deserialize_option(NullAsEmpty(std::marker::PhantomData))
+}
+
 #[macro_export]
 macro_rules! config_template {
     (
@@ -240,6 +285,7 @@ macro_rules! config_template {
             #[garde(dive)]
             pub ubihome: UbiHome,
 
+            #[serde(deserialize_with = "ubihome_core::null_as_empty")]
             #[garde(dive)]
             pub $component_name: $component_config,
 
