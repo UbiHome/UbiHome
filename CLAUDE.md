@@ -125,6 +125,15 @@ Deduced from review feedback; apply to docs changes.
 - Fold short explanatory notes into the example itself (e.g. as YAML comments) rather than leaving them as separate standalone sentences.
 - When trimming prose, keep the useful links (e.g. to the Filters page) rather than dropping them with the sentence.
 
+## Pull Request Guidelines
+
+PRs are squash-merged: the PR title becomes the commit subject and the PR description becomes the commit body, which ends up in the release notes.
+
+- Title: a Conventional Commit (`feat(sendspin): …`, `fix(api): …`); it is the changelog entry.
+- Description: written for users reading the release notes. Say what changed and what it means for them: new options (with a short YAML example and the default), behaviour changes, docs added. No testing logs, investigation notes or follow-up ideas.
+- Put everything else in the first comment directly below the description: how it was tested (commands, results, devices), background and root cause, design decisions, and follow-ups or known issues outside the PR.
+- When the scope changes (e.g. an option is renamed), update the description to match the final state instead of appending to it.
+
 ## Useful Paths
 
 - Root binary: `src/main.rs`
