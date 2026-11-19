@@ -4,12 +4,35 @@ title: 'Triggers and Actions'
 
 Some components expose **triggers** that run a list of **actions** when something happens (for example a state change).
 
-Currently triggers are available on the [Binary Sensor](/features/entities/binary_sensor/):
+Triggers are available on the [Binary Sensor](/features/entities/binary_sensor/):
 
 - `on_press` — runs when the state changes to `true`.
 - `on_release` — runs when the state changes to `false`.
 
-Each trigger takes a `then` block listing the actions to run in order:
+and on the [Template](/features/platforms/template/) switch, button and number:
+
+- `turn_on_action` — runs when the template switch is turned on.
+- `turn_off_action` — runs when the template switch is turned off.
+- `on_press` — runs when the template button is pressed.
+- `set_action` — runs when the template number is set to a new value.
+
+and on the [Media Player](/features/entities/media_player/):
+
+- `on_play` — runs when playback starts.
+- `on_pause` — runs when playback stops/pauses.
+- `on_volume_change` — runs when the volume changes.
+
+There is also a global `on_startup` trigger, configured under `ubihome:`, that runs once when UbiHome starts:
+
+```yaml
+ubihome:
+  name: 'Raspberry Pi behind the TV'
+  on_startup:
+    then:
+      - switch.turn_on: status_led
+```
+
+A trigger takes a `then` block listing the actions to run in order:
 
 ```yaml
 binary_sensor:
@@ -36,5 +59,30 @@ See [Filters](/features/components/filters/) for the available debounce filters.
 | `switch.turn_on`  | switch `id` | Turns the referenced [switch](/features/entities/switch/) on.  |
 | `switch.turn_off` | switch `id` | Turns the referenced [switch](/features/entities/switch/) off. |
 | `button.press`    | button `id` | Presses the referenced [button](/features/entities/button/), running its platform action. |
+| `globals.set`     | `id`, `value` | Sets a [global](/features/components/globals/) variable to `value`. |
+| `delay`           | duration    | Pauses the action list for the given duration (e.g. `2s`, `500ms`) before running the next action. |
+| `logger.log`      | value       | Logs the given value to the console at info level. |
 
-The argument is the `id` of the target entity, so make sure the switch or button you reference has an `id` set.
+For entity actions the argument is the `id` of the target entity, so make sure the switch or button you reference has an `id` set.
+
+```yaml
+binary_sensor:
+  - platform: gpio
+    name: 'Button'
+    pin: 17
+    on_press:
+      then:
+        - switch.turn_on: screen
+        - delay: 30s
+        - switch.turn_off: screen
+```
+
+`globals.set` takes `id`/`value` arguments instead of a single id; see
+[Globals](/features/components/globals/) for the `value` syntax.
+
+`logger.log` takes a plain YAML scalar (string, boolean, or number), the same
+way `globals.set`'s `value` does:
+
+```yaml
+- logger.log: 'Motion detected'
+```

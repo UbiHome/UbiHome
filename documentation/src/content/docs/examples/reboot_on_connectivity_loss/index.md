@@ -1,11 +1,11 @@
 ---
-title: 'Reboot on internet outage'
+title: 'Reboot on connectivity loss'
 description: 'Automatically reboot the device after it loses internet connectivity for 5 minutes.'
 ---
 
-This example reboots the device automatically once it has lost internet connectivity for five minutes. It combines the [online](/features/platforms/online/) binary sensor with a [power_utils](/features/platforms/power_utils/) reboot button.
+This example reboots the device automatically once it has lost internet connectivity for five minutes.
 
-The `delayed_off: 5min` filter makes sure the device only reboots after the connection has been down continuously for five minutes; a short blip that recovers within that window is ignored. When the sensor finally reports "offline", the `on_release` trigger presses the reboot button via the `button.press` action.
+The `delayed_off: 5min` filter makes sure the device only reboots after the connection has been down continuously for five minutes. The `on_release` trigger presses the reboot button via the `button.press` action.
 
 ```yaml
 ubihome:

@@ -31,7 +31,7 @@ Commands:
 
 Options:
   -c, --configuration <configuration_file>
-          Optional configuration file. If not provided, the default configuration will be used. [default: config.yml config.yaml]
+          Optional configuration file. If not provided, config.yml (or config.yaml) in the current directory is used.
       --log-level <log_level>
           The log level (overwrites the config).
       --sentry <sentry>
@@ -72,7 +72,7 @@ Commands:
 
 Options:
   -c, --configuration <configuration_file>
-          Optional configuration file. If not provided, the default configuration will be used. [default: config.yml config.yaml]
+          Optional configuration file. If not provided, config.yml (or config.yaml) in the current directory is used.
       --log-level <log_level>
           The log level (overwrites the config).
       --sentry <sentry>

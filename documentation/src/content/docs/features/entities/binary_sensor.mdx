@@ -1,0 +1,48 @@
+---
+title: 'Binary Sensor'
+sidebar:
+  order: 1
+---
+
+import SupportedPlatforms from '../../../../components/SupportedPlatforms.astro';
+
+```yaml title="Base Example"
+binary_sensor:
+  - platform: ... # See supported platforms at the end of this page
+    name: 'My Binary Sensor'
+    device_class: presence
+```
+
+:::note[Platform-specific attributes]
+Each platform may require additional attributes not shown above.
+Check the [page of the platform](/features/platforms/#platforms) for the full list of required and optional options.
+:::
+
+## Attributes
+
+Common attributes are documented in [Common Component Properties](/features/components/common_properties/).
+
+| Property       | Description                                                                    | Example    |
+| -------------- | ------------------------------------------------------------------------------ | ---------- |
+| `device_class` | Home Assistant binary sensor class (for example `presence`, `motion`, `door`). | `presence` |
+
+### Triggers
+
+Trigger can issue [actions](/features/components/actions/). Additionally they can be [filtered](/features/components/filters/).
+
+| Property     | Description                                            | Example                             |
+| ------------ | ------------------------------------------------------ | ----------------------------------- |
+| `on_press`   | Trigger block that runs when state changes to `true`.  | `then: - switch.turn_on: "screen"`  |
+| `on_release` | Trigger block that runs when state changes to `false`. | `then: - switch.turn_off: "screen"` |
+
+<SupportedPlatforms />
+
+Similar to ESPHome: [Binary Sensor](https://esphome.io/components/binary_sensor/)
+
+{/* Backlinks to be displayed */}
+
+<div style='display:none' aria-hidden='true'>
+  <a href='/examples/motion_detection/'>Motion Detection</a>
+  <a href='/examples/automatic_screen_power_control/'>Automatic Screen Power Control</a>
+  <a href='/examples/bluetooth_monitor_control/'>Monitor and control Bluetooth devices</a>
+</div>

@@ -1,0 +1,78 @@
+---
+import AnchorHeading from "@astrojs/starlight/components/AnchorHeading.astro";
+
+const stripSlashes = (value: string, onlyStripPrefix?: boolean): string => {
+	let normalized = value;
+	if (normalized.startsWith("/")) {
+		normalized = normalized.slice(1);
+	}
+	if (!onlyStripPrefix && normalized.endsWith("/")) {
+		normalized = normalized.slice(0, -1);
+	}
+	return normalized;
+};
+
+const ensureTrailingSlash = (value: string): string =>
+	value.endsWith("/") ? value : `${value}/`;
+
+const slug = ensureTrailingSlash(
+	stripSlashes(Astro.url.pathname.replaceAll("\\", "/")),
+);
+---
+
+<div class="supported-platforms" data-slug={slug} hidden>
+	<AnchorHeading level={2} id="supported-platforms">Supported Platforms</AnchorHeading>
+	<ul></ul>
+</div>
+
+<script>
+	const trimSlashes = (value) => String(value || "").replace(/^\/+|\/+$/g, "");
+
+	const isPlatformBacklink = (link) => {
+		const normalized = trimSlashes(link);
+		return normalized === "features/platforms" || normalized.startsWith("features/platforms/");
+	};
+
+	window.addEventListener("DOMContentLoaded", () => {
+		let baseUrl = import.meta.env.BASE_URL;
+		if (!baseUrl.endsWith("/")) {
+			baseUrl += "/";
+		}
+
+		(async () => {
+			const container = document.querySelector(".supported-platforms[data-slug]");
+			if (!container) return;
+
+			const sitemap = await (await fetch(`${baseUrl}sitegraph/sitemap.json`)).json();
+			const slug = container.getAttribute("data-slug") ?? "";
+			const entry = sitemap[slug];
+			const platforms = Array.isArray(entry?.backlinks)
+				? entry.backlinks.filter(isPlatformBacklink)
+				: [];
+
+			if (platforms.length === 0) {
+				container.remove();
+				return;
+			}
+
+			platforms.sort((a, b) =>
+				String(sitemap[a]?.title ?? a).localeCompare(String(sitemap[b]?.title ?? b)),
+			);
+
+			const list = container.querySelector("ul");
+			if (!list) return;
+			list.innerHTML = "";
+
+			for (const link of platforms) {
+				const li = document.createElement("li");
+				const a = document.createElement("a");
+				a.href = `/${String(link).replace(/^\/+/, "")}`;
+				a.textContent = String(sitemap[link]?.title ?? link);
+				li.appendChild(a);
+				list.appendChild(li);
+			}
+
+			container.hidden = false;
+		})();
+	});
+</script>

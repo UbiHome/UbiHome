@@ -1,13 +1,17 @@
 pub mod configuration;
 pub mod constants;
 pub mod features;
+pub mod global_value;
 pub mod internal;
 pub mod mapper;
+pub mod state;
 pub mod text_sensor;
 pub mod utils;
 #[cfg(feature = "validation")]
 pub mod validation;
 pub extern crate serde_value;
+#[doc(hidden)]
+pub use paste;
 
 use garde::Validate;
 use internal::sensors::UbiComponent;
@@ -15,7 +19,9 @@ use serde::Deserialize;
 use std::{collections::HashMap, future::Future, pin::Pin};
 use tokio::sync::broadcast::{Receiver, Sender};
 
+use crate::configuration::binary_sensor::Trigger;
 use crate::constants::{is_readable_string, is_readable_string_option};
+use crate::state::StateStore;
 
 pub type BoxFuture<'a, T> = Pin<Box<dyn Future<Output = T> + Send + 'a>>;
 pub type ModuleRunFuture = BoxFuture<'static, Result<(), Box<dyn std::error::Error>>>;
@@ -39,6 +45,7 @@ where
         &self,
         sender: Sender<ChangedMessage>,
         receiver: Receiver<PublishedMessage>,
+        state: StateStore,
     ) -> ModuleRunFuture;
 }
 
@@ -103,13 +110,18 @@ pub enum ChangedMessage {
         value: String,
     },
     BluetoothProxyMessage(BluetoothProxyMessage),
+    /// Combined so a single message can carry any subset of playback/volume/mute
+    /// changes instead of needing one enum variant per field.
+    MediaPlayerStateChange {
+        key: String,
+        playing: Option<bool>,
+        volume: Option<f32>,
+        muted: Option<bool>,
+    },
 }
 
 #[derive(Debug, Clone)]
 pub enum PublishedMessage {
-    Components {
-        components: Vec<UbiComponent>,
-    },
     ButtonPressed {
         key: String,
     },
@@ -158,6 +170,12 @@ pub enum PublishedMessage {
         value: String,
     },
     BluetoothProxyMessage(BluetoothProxyMessage),
+    MediaPlayerStateChanged {
+        key: String,
+        playing: Option<bool>,
+        volume: Option<f32>,
+        muted: Option<bool>,
+    },
 }
 
 #[derive(Clone, Deserialize, Debug, Validate)]
@@ -184,6 +202,9 @@ pub struct UbiHome {
     pub friendly_name: Option<String>,
     #[garde(custom(is_readable_string_option), length(min = 3, max = 100))]
     pub area: Option<String>,
+    /// Actions to run once, when UbiHome starts up.
+    #[garde(dive)]
+    pub on_startup: Option<Trigger>,
 }
 
 #[macro_export]
@@ -197,7 +218,8 @@ macro_rules! config_template {
         $switch_extension:ident,
         $light_extension:ident,
         $number_extension:ident,
-        $text_sensor_extension:ident) => {
+        $text_sensor_extension:ident,
+        $media_player_extension:ident) => {
         use duration_str::deserialize_option_duration;
         use garde::Validate;
         use ubihome_core::UbiHome;
@@ -210,6 +232,7 @@ macro_rules! config_template {
         template_mapper!(map_button, $component_name, $button_extension);
         template_mapper!(map_binary_sensor, $component_name, $binary_sensor_extension);
         template_mapper!(map_text_sensor, $component_name, $text_sensor_extension);
+        template_mapper!(map_media_player, $component_name, $media_player_extension);
 
         #[derive(Clone, Deserialize, Debug, Validate)]
         #[garde(allow_unvalidated)]
@@ -245,6 +268,10 @@ macro_rules! config_template {
 
             #[serde(default, deserialize_with = "map_text_sensor")]
             pub text_sensor: Option<HashMap<String, $text_sensor_extension>>,
+
+            #[serde(default, deserialize_with = "map_media_player")]
+            #[garde(dive)]
+            pub media_player: Option<HashMap<String, $media_player_extension>>,
         }
     };
 }

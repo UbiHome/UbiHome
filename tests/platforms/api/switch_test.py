@@ -53,7 +53,7 @@ switch:
 
         # Test switching the switch on via command
         api.switch_command(switch_key, True)
-        io_mock.wait_for_mock_state("true")
+        await io_mock.wait_for_mock_state("true")
 
         # State update should be send back
         state_switched_to_true = False
@@ -65,7 +65,7 @@ switch:
 
         # Test switching the switch off via command
         api.switch_command(switch_key, False)
-        io_mock.wait_for_mock_state("false")
+        await io_mock.wait_for_mock_state("false")
 
         # State update should be send back
         state_switched_to_false = False

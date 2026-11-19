@@ -42,4 +42,4 @@ button:
         assert entity.name == button_name
 
         api.button_command(fnv1_hash_object_id(button_id))
-        assert io_mock.wait_for_mock_state("Hello World!\n")
+        assert await io_mock.wait_for_mock_state("Hello World!\n")

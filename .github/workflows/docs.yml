@@ -26,7 +26,7 @@ jobs:
       - name: Run docs checks
         uses: dagger/dagger-for-github@v8.4.1
         with:
-          version: v0.20.8
+          version: v0.21.11
           call: docs-check
           cloud-token: ${{ secrets.DAGGER_CLOUD_TOKEN }}
 
@@ -40,7 +40,7 @@ jobs:
       - name: Build docs site with Dagger
         uses: dagger/dagger-for-github@v8.4.1
         with:
-          version: v0.20.8
+          version: v0.21.11
           call: docs-build-dir export --path=./documentation/site
           cloud-token: ${{ secrets.DAGGER_CLOUD_TOKEN }}
 
