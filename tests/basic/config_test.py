@@ -90,7 +90,11 @@ ubihome:
 
 unknown_platform:
 """,
-            'Unknown platform specified: unknown_platform\nRemove the "unknown_platform:" entry from your configuration or install the cargo crate containing the platform',  # noqa: E501
+            [
+                "Unknown platform specified: unknown_platform",
+                'Remove the "unknown_platform:" entry from your configuration',
+                "`unknown_platform`",
+            ],
         ),
         (
             # No base platform config

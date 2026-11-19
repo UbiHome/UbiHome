@@ -1,5 +1,5 @@
 use log::debug;
-use serde::{Deserialize, Deserializer};
+use serde::Deserialize;
 use std::{collections::HashMap, future::Future, pin::Pin};
 use tokio::sync::broadcast::{Receiver, Sender};
 use ubihome_core::configuration::base::EntityCategory;
@@ -39,11 +39,10 @@ pub struct UbiHomePlatform {
     binary_sensor_ids: Vec<String>,
 }
 
-impl Module for UbiHomePlatform {
-    fn new(config_string: &str, config_path: &str) -> Result<Self, String> {
-        let config =
-            ubihome_core::validation::validate_config::<CoreConfig>(config_string, config_path)?;
+impl ubihome_core::platform::ConfigurableModule for UbiHomePlatform {
+    type Config = CoreConfig;
 
+    fn new(config: CoreConfig) -> Result<Self, String> {
         let mut components: Vec<UbiComponent> = Vec::new();
         let mut binary_sensor_ids: Vec<String> = Vec::new();
 
@@ -75,7 +74,9 @@ impl Module for UbiHomePlatform {
             binary_sensor_ids,
         })
     }
+}
 
+impl Module for UbiHomePlatform {
     fn components(&mut self) -> Vec<UbiComponent> {
         self.components.clone()
     }

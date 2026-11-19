@@ -1,6 +1,5 @@
 use crate::builtins::{self, Globals};
-use crate::components::{configure_platforms, initialize_platforms, run_platforms, Platform};
-use crate::config::{get_platforms_from_config, BaseConfig, BaseConfigContext};
+use crate::components::{initialize_platforms, run_platforms, RootConfig};
 use crate::logger_setup;
 
 use ubihome_core::configuration::binary_sensor::FilterType;
@@ -11,7 +10,7 @@ use ubihome_core::{ChangedMessage, PublishedMessage};
 
 use futures_signals::signal::{Mutable, SignalExt};
 use log::{debug, error, trace};
-use std::collections::{BTreeSet, HashMap};
+use std::collections::HashMap;
 use std::fs;
 use std::sync::mpsc;
 use std::time::Duration;
@@ -62,10 +61,17 @@ pub(crate) fn run(
 
     let config_string: String = read_base_config(config_path)?;
 
-    let mut platforms = get_platforms_from_config(&config_string);
-    // Builtin top-level sections (e.g. `globals`) are handled directly by the
-    // main binary and must not be treated as dynamically-loaded platform crates.
-    platforms.retain(|p| !builtins::BUILTIN_SECTIONS.contains(&p.as_str()));
+    // The whole file - base sections, builtins and every platform - is
+    // deserialized and validated in a single pass, so cross-references
+    // (actions -> switches/buttons/globals) are checked with source locations.
+    let config =
+        ubihome_core::validation::validate_config::<RootConfig>(&config_string, config_path)?;
+
+    if let Some(logger_config) = config.logger.as_ref() {
+        logger_setup::apply_config(&mut logger, &log_directory, logger_config);
+    };
+
+    let platforms = config.configured_platforms();
     debug!("Configured modules: {:?}", platforms);
 
     if sentry::Hub::current().client().is_some() {
@@ -74,60 +80,15 @@ pub(crate) fn run(
         });
     }
 
-    let no_snippet = serde_saphyr::Options {
-        with_snippet: false,
-        ..Default::default()
-    };
-    // Entities may reference builtin platforms (e.g. `platform: template`) that
-    // have no dedicated top-level section, so allow them during validation.
-    let mut allowed_platforms = platforms.clone();
-    allowed_platforms.push(builtins::TEMPLATE_PLATFORM.to_string());
-    let ctx = BaseConfigContext {
-        allowed_platforms: Some(allowed_platforms),
-    };
-    let validation_result = serde_saphyr::from_str_with_options_context_valid::<BaseConfig>(
-        &config_string,
-        no_snippet.clone(),
-        &ctx,
-    );
-
-    if let Err(errors) = validation_result {
-        let report = serde_saphyr::miette::to_miette_report(&errors, &config_string, config_path);
-        return Err(format!("{:?}", report).into());
-    }
-    let config = validation_result.unwrap();
-
-    if let Some(logger_config) = config.logger.as_ref() {
-        logger_setup::apply_config(&mut logger, &log_directory, logger_config);
-    };
-
-    debug!("BaseConfiguration: {:?}", config);
-
-    let mut platforms_to_load: BTreeSet<Platform> = BTreeSet::new();
     println!("Platforms to load: {:?}", platforms);
-    for platform in platforms.iter() {
-        if let Ok(platform_enum) = Platform::from_str(platform) {
-            platforms_to_load.insert(platform_enum);
-        } else {
-            return Err(format!(
-                r#"Unknown platform specified: {}
-Remove the "{}:" entry from your configuration or install the cargo crate containing the platform."#,
-                platform, platform
-            ).into());
-        }
-    }
-    let configuration_result = configure_platforms(&config_string, config_path, &platforms_to_load);
-    if let Err(e) = configuration_result {
-        return Err(e.into());
-    }
-    let mut configured_platforms = configuration_result.unwrap();
+    let mut configured_platforms = config.build_modules()?;
     log::info!("Loaded {} modules", configured_platforms.len());
     let mut initialized_platforms = initialize_platforms(&mut configured_platforms).unwrap();
 
     // Builtin components (template switches/buttons/numbers, globals) are
-    // parsed and wired up by the main binary itself; see `crate::builtins` for
-    // the rationale.
-    let builtin = builtins::parse(&config_string, config_path)?;
+    // wired up by the main binary itself; see `crate::builtins` for the
+    // rationale.
+    let builtin = config.builtin();
     initialized_platforms.extend(builtins::template::to_components(&builtin.template));
 
     if validate_only {

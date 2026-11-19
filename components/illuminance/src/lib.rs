@@ -1,7 +1,6 @@
 use duration_str::deserialize_duration;
 use log::{debug, error, info, warn};
 use serde::Deserialize;
-use serde::Deserializer;
 use std::{collections::HashMap, future::Future, pin::Pin, time::Duration};
 use tokio::{
     sync::broadcast::{Receiver, Sender},
@@ -35,7 +34,7 @@ fn default_update_interval() -> Duration {
 
 #[derive(Clone, Deserialize, Debug, Validate)]
 #[garde(allow_unvalidated)]
-struct AmbientLightConfig {}
+pub struct AmbientLightConfig {}
 
 config_template!(
     illuminance,
@@ -55,11 +54,10 @@ pub struct UbiHomePlatform {
     sensors: HashMap<String, AmbientLightSensorConfig>,
 }
 
-impl Module for UbiHomePlatform {
-    fn new(config_string: &str, config_path: &str) -> Result<Self, String> {
-        let config =
-            ubihome_core::validation::validate_config::<CoreConfig>(config_string, config_path)?;
+impl ubihome_core::platform::ConfigurableModule for UbiHomePlatform {
+    type Config = CoreConfig;
 
+    fn new(config: CoreConfig) -> Result<Self, String> {
         debug!("AmbientLight sensor config: {:?}", config);
 
         let mut components: Vec<UbiComponent> = Vec::new();
@@ -103,7 +101,9 @@ impl Module for UbiHomePlatform {
             sensors,
         })
     }
+}
 
+impl Module for UbiHomePlatform {
     fn components(&mut self) -> Vec<UbiComponent> {
         self.components.clone()
     }

@@ -29,7 +29,7 @@ use log::debug;
 use log::error;
 use log::info;
 use log::warn;
-use serde::{Deserialize, Deserializer};
+use serde::Deserialize;
 use ubihome_core::configuration::base::EntityCategory as UbiEntityCategory;
 
 fn entity_category_from(category: Option<UbiEntityCategory>) -> i32 {
@@ -137,14 +137,15 @@ pub struct UbiHomePlatform {
     config: CoreConfig,
 }
 
-impl Module for UbiHomePlatform {
-    fn new(config_string: &str, config_path: &str) -> Result<Self, String> {
-        let config =
-            ubihome_core::validation::validate_config::<CoreConfig>(config_string, config_path)?;
+impl ubihome_core::platform::ConfigurableModule for UbiHomePlatform {
+    type Config = CoreConfig;
 
+    fn new(config: CoreConfig) -> Result<Self, String> {
         Ok(UbiHomePlatform { config })
     }
+}
 
+impl Module for UbiHomePlatform {
     fn components(&mut self) -> Vec<UbiComponent> {
         Vec::new()
     }
@@ -897,6 +898,7 @@ impl Module for UbiHomePlatform {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use ubihome_core::platform::ConfigurableModule;
 
     #[test]
     fn test_api_config_parsing() {
@@ -911,7 +913,7 @@ api:
 
 "#;
 
-        let api_module = UbiHomePlatform::new(config, "config.yml");
+        let api_module = UbiHomePlatform::from_yaml(config);
         assert!(api_module.is_ok(), "API module should parse successfully");
 
         let module = api_module.unwrap();
@@ -942,7 +944,7 @@ api:
 "#
         );
 
-        let module = UbiHomePlatform::new(&config, "config.yml").expect("should parse");
+        let module = UbiHomePlatform::from_yaml(&config).expect("should parse");
 
         // Debug of the encryption config, the api config and the whole core
         // config must all redact the key.
@@ -977,7 +979,7 @@ ubihome:
 api: {}
 "#;
 
-        let api_module = UbiHomePlatform::new(config, "config.yml");
+        let api_module = UbiHomePlatform::from_yaml(config);
         assert!(api_module.is_ok(), "API module should parse successfully");
 
         let module = api_module.unwrap();

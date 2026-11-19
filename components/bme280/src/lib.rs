@@ -1,5 +1,4 @@
-use log::debug;
-use serde::{Deserialize, Deserializer};
+use serde::Deserialize;
 use std::{collections::HashMap, future::Future, pin::Pin, str, time::Duration};
 use tokio::sync::broadcast::{Receiver, Sender};
 use ubihome_core::{
@@ -48,6 +47,23 @@ impl BME280SensorConfig {
     }
 }
 
+impl ubihome_core::platform::EntityConfig for BME280SensorConfig {
+    fn platform(&self) -> &str {
+        &self.platform
+    }
+    fn object_id(&self) -> String {
+        self.get_object_id()
+    }
+    fn triggers(
+        &self,
+    ) -> Vec<(
+        &'static str,
+        &ubihome_core::configuration::automation::Trigger,
+    )> {
+        Vec::new()
+    }
+}
+
 #[derive(PartialEq, Eq, Clone, Debug, Hash)]
 pub enum Measurement {
     Temperature,
@@ -82,11 +98,10 @@ config_template!(
     NoConfig
 );
 
-impl Module for UbiHomePlatform {
-    fn new(config_string: &str, config_path: &str) -> Result<Self, String> {
-        let config =
-            ubihome_core::validation::validate_config::<CoreConfig>(config_string, config_path)?;
+impl ubihome_core::platform::ConfigurableModule for UbiHomePlatform {
+    type Config = CoreConfig;
 
+    fn new(config: CoreConfig) -> Result<Self, String> {
         // info!("BME280 config: {:?}", config);
         let mut components: Vec<UbiComponent> = Vec::new();
         let mut sensors: Vec<BME280Sensor> = Vec::new();
@@ -258,7 +273,9 @@ impl Module for UbiHomePlatform {
             sensors,
         })
     }
+}
 
+impl Module for UbiHomePlatform {
     fn components(&mut self) -> Vec<UbiComponent> {
         self.components.clone()
     }

@@ -3,7 +3,7 @@ pub mod constants;
 pub mod features;
 pub mod global_value;
 pub mod internal;
-pub mod mapper;
+pub mod platform;
 pub mod state;
 pub mod text_sensor;
 pub mod utils;
@@ -26,18 +26,15 @@ use crate::state::StateStore;
 pub type BoxFuture<'a, T> = Pin<Box<dyn Future<Output = T> + Send + 'a>>;
 pub type ModuleRunFuture = BoxFuture<'static, Result<(), Box<dyn std::error::Error>>>;
 
+/// A running platform module. Construction from config happens through
+/// [`platform::ConfigurableModule`].
 pub trait Module
 where
     Self: Send,
 {
-    /// This is the main entry point for the module.
-    fn new(config_string: &str, config_path: &str) -> Result<Self, String>
-    where
-        Self: Sized;
-
-    /// This will be called to validate the module configuration and set the module up for the later run command.
-    /// It is guaranteed to be be called before the run command.
-    /// Do not do any heavy lifting in this function, as it will block the main thread.
+    /// The entities this module provides. Called once after construction and
+    /// before [`Module::run`]. Do not do any heavy lifting in this function,
+    /// as it will block the main thread.
     fn components(&mut self) -> Vec<UbiComponent>;
 
     // This will be called in a separate Thread to run the module and its functionality.
@@ -193,6 +190,22 @@ impl NoConfig {
     }
 }
 
+/// `NoConfig` marks an entity kind the platform does not provide; validation
+/// rejects any entity of that kind pointing at the platform.
+impl platform::EntityConfig for NoConfig {
+    const SUPPORTED: bool = false;
+
+    fn platform(&self) -> &str {
+        &self.platform
+    }
+    fn object_id(&self) -> String {
+        String::new()
+    }
+    fn triggers(&self) -> Vec<(&'static str, &Trigger)> {
+        Vec::new()
+    }
+}
+
 #[derive(Clone, Deserialize, Debug, Validate)]
 #[serde(deny_unknown_fields)]
 pub struct UbiHome {
@@ -207,6 +220,12 @@ pub struct UbiHome {
     pub on_startup: Option<Trigger>,
 }
 
+/// Declares the config types of a platform crate and generates its
+/// `CoreConfig` (the platform's slice of the configuration file).
+///
+/// `CoreConfig` is not deserialized by the platform crate: the main binary
+/// parses and validates the whole file once and builds it via
+/// [`platform::PlatformConfigTypes::from_parts`].
 #[macro_export]
 macro_rules! config_template {
     (
@@ -223,55 +242,48 @@ macro_rules! config_template {
         use duration_str::deserialize_option_duration;
         use garde::Validate;
         use ubihome_core::UbiHome;
-        use ubihome_core::template_mapper;
 
-        template_mapper!(map_light, $component_name, $light_extension);
-        template_mapper!(map_switch, $component_name, $switch_extension);
-        template_mapper!(map_number, $component_name, $number_extension);
-        template_mapper!(map_sensor, $component_name, $sensor_extension);
-        template_mapper!(map_button, $component_name, $button_extension);
-        template_mapper!(map_binary_sensor, $component_name, $binary_sensor_extension);
-        template_mapper!(map_text_sensor, $component_name, $text_sensor_extension);
-        template_mapper!(map_media_player, $component_name, $media_player_extension);
-
-        #[derive(Clone, Deserialize, Debug, Validate)]
-        #[garde(allow_unvalidated)]
+        #[derive(Clone, Debug)]
         pub struct CoreConfig {
-            #[garde(dive)]
             pub ubihome: UbiHome,
-
-            #[garde(dive)]
             pub $component_name: $component_config,
-
-            #[serde(default, deserialize_with = "map_button")]
-            #[garde(dive)]
             pub button: Option<HashMap<String, $button_extension>>,
-
-            #[serde(default, deserialize_with = "map_sensor")]
-            #[garde(dive)]
             pub sensor: Option<HashMap<String, $sensor_extension>>,
-
-            #[serde(default, deserialize_with = "map_binary_sensor")]
-            #[garde(dive)]
             pub binary_sensor: Option<HashMap<String, $binary_sensor_extension>>,
-
-            #[serde(default, deserialize_with = "map_switch")]
-            #[garde(dive)]
             pub switch: Option<HashMap<String, $switch_extension>>,
-
-            #[serde(default, deserialize_with = "map_light")]
-            #[garde(dive)]
             pub light: Option<HashMap<String, $light_extension>>,
-
-            #[serde(default, deserialize_with = "map_number")]
             pub number: Option<HashMap<String, $number_extension>>,
-
-            #[serde(default, deserialize_with = "map_text_sensor")]
             pub text_sensor: Option<HashMap<String, $text_sensor_extension>>,
-
-            #[serde(default, deserialize_with = "map_media_player")]
-            #[garde(dive)]
             pub media_player: Option<HashMap<String, $media_player_extension>>,
+        }
+
+        impl ::ubihome_core::platform::PlatformConfigTypes for CoreConfig {
+            const NAME: &'static str = stringify!($component_name);
+            type Section = $component_config;
+            type Button = $button_extension;
+            type BinarySensor = $binary_sensor_extension;
+            type Sensor = $sensor_extension;
+            type Switch = $switch_extension;
+            type Light = $light_extension;
+            type Number = $number_extension;
+            type TextSensor = $text_sensor_extension;
+            type MediaPlayer = $media_player_extension;
+
+            fn from_parts(parts: ::ubihome_core::platform::PlatformParts<Self>) -> Self {
+                use ::ubihome_core::platform::into_entity_map;
+                CoreConfig {
+                    ubihome: parts.ubihome,
+                    $component_name: parts.section,
+                    button: into_entity_map(parts.button),
+                    sensor: into_entity_map(parts.sensor),
+                    binary_sensor: into_entity_map(parts.binary_sensor),
+                    switch: into_entity_map(parts.switch),
+                    light: into_entity_map(parts.light),
+                    number: into_entity_map(parts.number),
+                    text_sensor: into_entity_map(parts.text_sensor),
+                    media_player: into_entity_map(parts.media_player),
+                }
+            }
         }
     };
 }

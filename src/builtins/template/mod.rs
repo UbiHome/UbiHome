@@ -25,6 +25,42 @@ use ubihome_core::{ChangedMessage, PublishedMessage};
 use crate::builtins::globals::GlobalChanged;
 use crate::builtins::{run_actions, Globals};
 
+use crate::builtins::globals::GlobalType;
+
+/// The global a template entity's `lambda` reads from, together with the
+/// global types the entity can use. Checked during config validation.
+pub trait LambdaGlobal {
+    fn lambda_global(&self) -> Option<(&str, &'static [GlobalType])>;
+}
+
+impl LambdaGlobal for TemplateSwitchConfig {
+    fn lambda_global(&self) -> Option<(&str, &'static [GlobalType])> {
+        self.state_global().map(|id| (id, &[GlobalType::Bool][..]))
+    }
+}
+
+impl LambdaGlobal for TemplateNumberConfig {
+    fn lambda_global(&self) -> Option<(&str, &'static [GlobalType])> {
+        self.state_global()
+            .map(|id| (id, &[GlobalType::Float, GlobalType::Int][..]))
+    }
+}
+
+impl LambdaGlobal for TemplateSensorConfig {
+    fn lambda_global(&self) -> Option<(&str, &'static [GlobalType])> {
+        Some((
+            self.state_global(),
+            &[GlobalType::Float, GlobalType::Int][..],
+        ))
+    }
+}
+
+impl LambdaGlobal for TemplateButtonConfig {
+    fn lambda_global(&self) -> Option<(&str, &'static [GlobalType])> {
+        None
+    }
+}
+
 /// The parsed `platform: template` entities from the configuration.
 #[derive(Debug, Default, Clone)]
 pub struct TemplateConfig {

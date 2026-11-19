@@ -1,5 +1,5 @@
 use log::{debug, error, info};
-use serde::{Deserialize, Deserializer};
+use serde::Deserialize;
 use std::collections::HashMap;
 use std::{future::Future, pin::Pin, str};
 use tokio::sync::broadcast::{Receiver, Sender};
@@ -63,11 +63,10 @@ pub struct UbiHomePlatform {
     buttons: HashMap<String, PowerAction>,
 }
 
-impl Module for UbiHomePlatform {
-    fn new(config_string: &str, config_path: &str) -> Result<Self, String> {
-        let config =
-            ubihome_core::validation::validate_config::<CoreConfig>(config_string, config_path)?;
+impl ubihome_core::platform::ConfigurableModule for UbiHomePlatform {
+    type Config = CoreConfig;
 
+    fn new(config: CoreConfig) -> Result<Self, String> {
         info!("PowerUtils config: {:?}", config);
         let mut components: Vec<UbiComponent> = Vec::new();
 
@@ -128,7 +127,9 @@ impl Module for UbiHomePlatform {
             buttons,
         })
     }
+}
 
+impl Module for UbiHomePlatform {
     fn components(&mut self) -> Vec<UbiComponent> {
         self.components.clone()
     }
