@@ -15,5 +15,5 @@ garde = { version = "0.22.1", features = ["serde"] }
 ubihome-core = { path = "../core", features = ["validation"] }
 tokio = { version = "1", features = ["full"] }
 futures = "0.3.31"
-tokio-stream = "0.1.17"
+tokio-stream = { version = "0.1.17", features = ["sync"] }
 async-stream = "0.3.6"
