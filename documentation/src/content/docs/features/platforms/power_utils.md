@@ -1,6 +1,6 @@
 ---
 title: 'Power Utilities'
-description: 'Shutdown, reboot, logout, hibernate or sleep the device'
+description: 'Shutdown, reboot, logout, hibernate or sleep the device, or restart UbiHome'
 tags:
   - linux
   - macos
@@ -18,6 +18,11 @@ button:
   - platform: power_utils
     name: 'Reboot'
     action: reboot
+
+  # Restarts the UbiHome process itself (not the machine).
+  - platform: power_utils
+    name: 'Restart UbiHome'
+    action: restart_service
 
   - platform: power_utils
     name: 'Logout'
